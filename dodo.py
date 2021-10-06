@@ -63,7 +63,6 @@ def task_extract_swde_verticals():
     output = f'{SWDE_DIR}/data'
     def extract_src():
         for archive in glob.glob(f'{input}/*.7z'):
-            print(f'Extracting {archive}')
             exec(f'7z x {archive} -o"{output}"')
 
     return {
