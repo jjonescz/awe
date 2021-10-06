@@ -1,6 +1,8 @@
 # `doit` configuration file; see https://pydoit.org/contents.html.
 
 import os
+import glob
+import subprocess
 
 DOIT_CONFIG = {
     'verbosity': 2
@@ -9,6 +11,10 @@ SWDE_URL = 'https://codeplexarchive.blob.core.windows.net/archive/projects/swde/
 DATA_DIR = 'data'
 SWDE_ZIP = f'{DATA_DIR}/swde.zip'
 SWDE_DIR = f'{DATA_DIR}/swde'
+
+def exec(command):
+    print(f'$ {command}')
+    subprocess.run(command, shell=True, check=True)
 
 def task_install():
     """pip install"""
@@ -37,4 +43,34 @@ def task_extract_swde():
         'actions': [f'unzip {SWDE_ZIP} -d {SWDE_DIR} || true'],
         'file_dep': [SWDE_ZIP],
         'targets': [SWDE_DIR]
+    }
+
+def task_extract_swde_src():
+    """extract SWDE sourceCode.zip"""
+
+    input = f'{SWDE_DIR}/sourceCode/sourceCode.zip'
+    output = f'{SWDE_DIR}/src'
+    return {
+        'actions': [f'unzip {input} -d {output}'],
+        'file_dep': [input],
+        'targets': [output]
+    }
+
+def task_extract_swde_verticals():
+    """extract SWDE 7z archives"""
+
+    input = f'{SWDE_DIR}/src'
+    output = f'{SWDE_DIR}/data'
+    def extract_src():
+        for archive in glob.glob(f'{input}/*.7z'):
+            print(f'Extracting {archive}')
+            exec(f'7z x {archive} -o"{output}"')
+
+    return {
+        'actions': [
+            f'mkdir -p {output}',
+            extract_src
+        ],
+        'file_dep': [input],
+        'targets': [output]
     }
