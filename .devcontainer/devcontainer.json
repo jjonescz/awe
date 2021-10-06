@@ -32,7 +32,7 @@
 		"ms-python.vscode-pylance"
 	],
 	
-	// "postCreateCommand": "pip3 install --user -r requirements.txt",
+	"postCreateCommand": "./sh/install.sh || true",
 
 	"remoteUser": "vscode"
 }
