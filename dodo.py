@@ -27,5 +27,6 @@ def task_download():
 
     return {
         'actions': [download],
-        'targets': [SWDE_ZIP]
+        'targets': [SWDE_ZIP],
+        'uptodate': [True]
     }
