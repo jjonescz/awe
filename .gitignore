@@ -3,3 +3,6 @@ __pycache__/
 
 # Python package `doit`
 .doit.db
+
+# Data downloaded by `dodo.py`
+/data/
