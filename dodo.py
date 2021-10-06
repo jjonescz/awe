@@ -1,3 +1,5 @@
+# `doit` configuration file; see https://pydoit.org/contents.html.
+
 DOIT_CONFIG = {
     'verbosity': 2
 }
