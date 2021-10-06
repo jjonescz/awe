@@ -4,15 +4,10 @@
 	"name": "Python 3",
 	"build": {
 		"dockerfile": "Dockerfile",
-		"context": "..",
-		"args": { 
-			// Python version
-			"VARIANT": "3.6",
-		}
+		"context": ".."
 	},
 
 	"settings": { 
-		"python.pythonPath": "/usr/local/bin/python",
 		"python.languageServer": "Pylance",
 		"python.linting.enabled": true,
 		"python.linting.pylintEnabled": true,
@@ -32,7 +27,5 @@
 		"ms-python.vscode-pylance"
 	],
 	
-	"postCreateCommand": "./sh/install.sh || true",
-
-	"remoteUser": "vscode"
+	"postCreateCommand": "./sh/install.sh || true"
 }

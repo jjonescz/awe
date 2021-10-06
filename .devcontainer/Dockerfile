@@ -1,8 +1,4 @@
-# See here for image contents: https://github.com/microsoft/vscode-dev-containers/tree/v0.194.3/containers/python-3/.devcontainer/base.Dockerfile
-
-# [Choice] Python version: 3, 3.9, 3.8, 3.7, 3.6
-ARG VARIANT="3.9"
-FROM mcr.microsoft.com/vscode/devcontainers/python:0-${VARIANT}
+FROM continuumio/miniconda3
 
 ENV \
     # Disable interactivity of `apt-get`.
@@ -10,7 +6,14 @@ ENV \
 
 # Install programs.
 RUN apt-get update && apt-get install --yes --no-install-recommends \
+    # Needed to create non-root user with sudo priviledges below.
+    sudo \
+    # Needed to sign Git commits using GPG.
+    gnupg2 \
     # Needed to unzip SWDE.
     p7zip-full \
     # Clean up.
     && rm -rf /var/lib/{apt,dpkg,cache,log}
+
+# Install Python.
+RUN conda install -y python=3.6
