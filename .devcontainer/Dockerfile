@@ -6,8 +6,6 @@ ENV \
 
 # Install programs.
 RUN apt-get update && apt-get install --yes --no-install-recommends \
-    # Needed to create non-root user with sudo priviledges below.
-    sudo \
     # Needed to sign Git commits using GPG.
     gnupg2 \
     # Needed to unzip SWDE.
