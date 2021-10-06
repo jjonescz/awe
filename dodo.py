@@ -3,6 +3,7 @@
 import os
 import glob
 import subprocess
+import awe.data.swde
 
 DOIT_CONFIG = {
     'verbosity': 2
@@ -12,7 +13,7 @@ DATA_DIR = 'data'
 SWDE_ZIP = f'{DATA_DIR}/swde.zip'
 SWDE_DIR = f'{DATA_DIR}/swde'
 
-def exec(command):
+def exec(command: str):
     print(f'$ {command}')
     subprocess.run(command, shell=True, check=True)
 
@@ -59,17 +60,18 @@ def task_extract_swde_src():
 def task_extract_swde_verticals():
     """extract SWDE 7z archives"""
 
-    input = f'{SWDE_DIR}/src'
-    output = f'{SWDE_DIR}/data'
+    inputs = [f'{SWDE_DIR}/src/{v}.7z' for v in awe.data.swde.VERTICALS]
+    output_dir = f'{SWDE_DIR}/data'
+    outputs = [f'{output_dir}/{v}' for v in awe.data.swde.VERTICALS]
     def extract_src():
         for archive in glob.glob(f'{input}/*.7z'):
-            exec(f'7z x {archive} -o"{output}"')
+            exec(f'7z x {archive} -o"{output_dir}"')
 
     return {
         'actions': [
-            f'mkdir -p {output}',
+            f'mkdir -p {output_dir}',
             extract_src
         ],
-        'file_dep': [input],
-        'targets': [output]
+        'file_dep': inputs,
+        'targets': outputs
     }
