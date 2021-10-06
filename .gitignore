@@ -1,2 +1,5 @@
 # Python
 __pycache__/
+
+# Python package `doit`
+.doit.db
