@@ -1,2 +1,2 @@
 #!/bin/bash
-pip3 install -r requirements.txt
+conda env update --prune -f environment.yml
