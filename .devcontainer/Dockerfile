@@ -12,6 +12,3 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     p7zip-full \
     # Clean up.
     && rm -rf /var/lib/{apt,dpkg,cache,log}
-
-# Install Python and PyTorch Geometric.
-RUN conda install -y python=3.6 pyg=2.0.1 -c pyg -c conda-forge
