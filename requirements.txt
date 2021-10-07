@@ -1,0 +1,6 @@
+# See https://pip.pypa.io/en/stable/cli/pip_install/#requirements-file-format.
+-f https://data.pyg.org/whl/torch-1.9.0+cpu.html
+ipykernel==6.4.1
+torch-scatter==2.0.8
+torch-sparse==0.6.12
+torch-geometric==2.0.1
