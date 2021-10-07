@@ -26,11 +26,5 @@
 		"ms-python.vscode-pylance"
 	],
 	
-	"postCreateCommand": "./sh/install.sh || true",
-
-	"remoteEnv": {
-		// Make conda use repository configuration. See
-		// https://conda.io/projects/conda/en/latest/user-guide/configuration/use-condarc.html.
-		"CONDARC": "${containerWorkspaceFolder}/.condarc"
-	}
+	"postCreateCommand": "./sh/install.sh || true"
 }

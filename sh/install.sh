@@ -1,2 +1,2 @@
 #!/bin/bash
-conda env update --prune -f environment.yml
+sudo pip install -r requirements.txt
