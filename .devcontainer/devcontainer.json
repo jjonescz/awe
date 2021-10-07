@@ -1,5 +1,4 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
-// https://github.com/microsoft/vscode-dev-containers/tree/v0.194.3/containers/python-3
+// See https://aka.ms/devcontainer.json.
 {
 	"name": "Python 3",
 	"build": {
@@ -27,5 +26,11 @@
 		"ms-python.vscode-pylance"
 	],
 	
-	"postCreateCommand": "./sh/install.sh || true"
+	"postCreateCommand": "./sh/install.sh || true",
+
+	"remoteEnv": {
+		// Make conda use repository configuration. See
+		// https://conda.io/projects/conda/en/latest/user-guide/configuration/use-condarc.html.
+		"CONDARC": "${containerWorkspaceFolder}/.condarc"
+	}
 }
