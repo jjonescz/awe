@@ -63,16 +63,17 @@ def task_extract_swde_src():
         'targets': [output_dir]
     }
 
-def task_extract_swde_verticals():
+def task_extract_swde_7z():
     """extract SWDE 7z archives"""
 
     input_dir = f'{swde.DIR}/src'
-    input_zips = [f'{input_dir}/{v.name}.7z' for v in swde.VERTICALS]
+    names = [v.name for v in swde.VERTICALS] + [swde.GROUND_TRUTH]
+    input_zips = [f'{input_dir}/{n}.7z' for n in names]
     output_dir = swde.DATA_DIR
-    output_dirs = [f'{output_dir}/{v.name}' for v in swde.VERTICALS]
+    output_dirs = [f'{output_dir}/{n}' for n in names]
     def extract_src():
         for archive in input_zips:
-            shell(f'7z x {archive} -o"{output_dir}"')
+            shell(f'7z x {archive} -aos -o"{output_dir}"')
 
     return {
         'actions': [

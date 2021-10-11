@@ -10,6 +10,7 @@ URL = 'https://codeplexarchive.blob.core.windows.net/archive/projects/swde/swde.
 ZIP = f'{constants.DATA_DIR}/swde.zip'
 DIR = f'{constants.DATA_DIR}/swde'
 DATA_DIR = f'{DIR}/data'
+GROUND_TRUTH = 'groundtruth'
 
 WEBSITE_REGEX = r'^(\w+)-(\w+)\((\d+)\)$'
 PAGE_REGEX = r'^(\d{4})\.htm$'
