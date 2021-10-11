@@ -23,8 +23,14 @@ class Vertical:
     @property
     def websites(self):
         if self._websites is None:
-            self._websites = [w for w in get_websites(self)]
+            self._websites = list(self._iterate_websites())
         return self._websites
+
+    def _iterate_websites(self):
+        for subdir in os.listdir(self.dir_path):
+            website = Website(self, subdir)
+            assert website.dir_name == subdir
+            yield website
 
     @property
     def dir_path(self):
@@ -47,8 +53,14 @@ class Website:
     @property
     def pages(self):
         if self._pages is None:
-            self._pages = [p for p in get_pages(self)]
+            self._pages = list(self._iterate_pages())
         return self._pages
+
+    def _iterate_pages(self):
+        for file in os.listdir(f'{self.dir_path}'):
+            page = Page(self, file)
+            assert page.file_name == file
+            yield page
 
     @property
     def dir_name(self):
@@ -75,18 +87,6 @@ class Page:
     @property
     def file_path(self):
         return f'{self.site.dir_path}/{self.file_name}'
-
-def get_websites(vertical: Vertical):
-    for subdir in os.listdir(vertical.dir_path):
-        website = Website(vertical, subdir)
-        assert website.dir_name == subdir
-        yield website
-
-def get_pages(site: Website):
-    for file in os.listdir(f'{site.dir_path}'):
-        page = Page(site, file)
-        assert page.file_name == file
-        yield page
 
 VERTICALS = [
     Vertical('auto'),
