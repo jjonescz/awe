@@ -1,12 +1,13 @@
-from dataclasses import dataclass, field
 import os
 import re
+from dataclasses import dataclass, field
 
-SWDE_URL = 'https://codeplexarchive.blob.core.windows.net/archive/projects/swde/swde.zip'
-DATA_DIR = 'data'
-SWDE_ZIP = f'{DATA_DIR}/swde.zip'
-SWDE_DIR = f'{DATA_DIR}/swde'
-SWDE_DATA_DIR = f'{SWDE_DIR}/data'
+import constants
+
+URL = 'https://codeplexarchive.blob.core.windows.net/archive/projects/swde/swde.zip'
+ZIP = f'{constants.DATA_DIR}/swde.zip'
+DIR = f'{constants.DATA_DIR}/swde'
+DATA_DIR = f'{DIR}/data'
 
 WEBSITE_REGEX = r'^(\w+)-(\w+)\((\d+)\)$'
 
@@ -41,7 +42,7 @@ class Website:
         return f'{self.vertical}-{self.name}({self.page_count})'
 
 def get_websites(vertical: str):
-    for subdir in os.listdir(f'{SWDE_DATA_DIR}/{vertical}'):
+    for subdir in os.listdir(f'{DATA_DIR}/{vertical}'):
         website = Website(subdir)
         assert website.dir_name == subdir
         yield website

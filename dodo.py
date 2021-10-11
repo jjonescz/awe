@@ -1,18 +1,13 @@
-# `doit` configuration file; see https://pydoit.org/contents.html.
+"""`doit` configuration file; see https://pydoit.org/contents.html."""
 
 import os
 import subprocess
-import awe.data.swde
+
+from awe.data import swde
 
 DOIT_CONFIG = {
     'verbosity': 2
 }
-SWDE_URL = awe.data.swde.SWDE_URL
-DATA_DIR = awe.data.swde.DATA_DIR
-SWDE_ZIP = awe.data.swde.SWDE_ZIP
-SWDE_DIR = awe.data.swde.SWDE_DIR
-SWDE_DATA_DIR = awe.data.swde.SWDE_DATA_DIR
-SWDE_VERTICALS = awe.data.swde.VERTICALS
 
 def shell(command: str):
     print(f'$ {command}')
@@ -41,10 +36,10 @@ def task_download_swde():
 
     return {
         'actions': [
-            f'mkdir -p {os.path.dirname(SWDE_ZIP)}',
-            f'curl {SWDE_URL} --output {SWDE_ZIP}'
+            f'mkdir -p {os.path.dirname(swde.ZIP)}',
+            f'curl {swde.URL} --output {swde.ZIP}'
         ],
-        'targets': [SWDE_ZIP],
+        'targets': [swde.ZIP],
         'uptodate': [True]
     }
 
@@ -52,16 +47,16 @@ def task_extract_swde():
     """extract SWDE zip"""
 
     return {
-        'actions': [f'unzip {SWDE_ZIP} -d {SWDE_DIR} || true'],
-        'file_dep': [SWDE_ZIP],
-        'targets': [SWDE_DIR]
+        'actions': [f'unzip {swde.ZIP} -d {swde.DIR} || true'],
+        'file_dep': [swde.ZIP],
+        'targets': [swde.DIR]
     }
 
 def task_extract_swde_src():
     """extract SWDE sourceCode.zip"""
 
-    input_zip = f'{SWDE_DIR}/sourceCode/sourceCode.zip'
-    output_dir = f'{SWDE_DIR}/src'
+    input_zip = f'{swde.DIR}/sourceCode/sourceCode.zip'
+    output_dir = f'{swde.DIR}/src'
     return {
         'actions': [f'unzip {input_zip} -d {output_dir}'],
         'file_dep': [input_zip],
@@ -71,10 +66,10 @@ def task_extract_swde_src():
 def task_extract_swde_verticals():
     """extract SWDE 7z archives"""
 
-    input_dir = f'{SWDE_DIR}/src'
-    input_zips = [f'{input_dir}/{v.name}.7z' for v in SWDE_VERTICALS]
-    output_dir = SWDE_DATA_DIR
-    output_dirs = [f'{output_dir}/{v.name}' for v in SWDE_VERTICALS]
+    input_dir = f'{swde.DIR}/src'
+    input_zips = [f'{input_dir}/{v.name}.7z' for v in swde.VERTICALS]
+    output_dir = swde.DATA_DIR
+    output_dirs = [f'{output_dir}/{v.name}' for v in swde.VERTICALS]
     def extract_src():
         for archive in input_zips:
             shell(f'7z x {archive} -o"{output_dir}"')
