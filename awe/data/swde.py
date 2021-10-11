@@ -10,6 +10,7 @@ DIR = f'{constants.DATA_DIR}/swde'
 DATA_DIR = f'{DIR}/data'
 
 WEBSITE_REGEX = r'^(\w+)-(\w+)\((\d+)\)$'
+PAGE_REGEX = r'^(\d{4})\.htm$'
 
 def ignore_field(**kwargs):
     return field(init=False, repr=False, hash=False, compare=False, **kwargs)
@@ -25,11 +26,16 @@ class Vertical:
             self._websites = [w for w in get_websites(self)]
         return self._websites
 
+    @property
+    def dir_path(self):
+        return f'{DATA_DIR}/{self.name}'
+
 @dataclass
 class Website:
     vertical: Vertical
     name: str
     page_count: int
+    _pages: list['Page'] = ignore_field(default=None)
 
     def __init__(self, vertical: Vertical, dir_name: str):
         match = re.search(WEBSITE_REGEX, dir_name)
@@ -39,14 +45,48 @@ class Website:
         self.page_count = int(match.group(3))
 
     @property
+    def pages(self):
+        if self._pages is None:
+            self._pages = [p for p in get_pages(self)]
+        return self._pages
+
+    @property
     def dir_name(self):
         return f'{self.vertical.name}-{self.name}({self.page_count})'
 
+    @property
+    def dir_path(self):
+        return f'{self.vertical.dir_path}/{self.dir_name}'
+
+@dataclass
+class Page:
+    site: Website
+    index: int
+
+    def __init__(self, site: Website, file_name: str):
+        match = re.search(PAGE_REGEX, file_name)
+        self.site = site
+        self.index = int(match.group(1))
+
+    @property
+    def file_name(self):
+        return f'{self.index:04}.htm'
+
+    @property
+    def file_path(self):
+        return f'{self.site.dir_path}/{self.file_name}'
+
 def get_websites(vertical: Vertical):
-    for subdir in os.listdir(f'{DATA_DIR}/{vertical.name}'):
+    for subdir in os.listdir(vertical.dir_path):
         website = Website(vertical, subdir)
         assert website.dir_name == subdir
         yield website
+
+def get_pages(site: Website):
+    for file in os.listdir(f'{site.dir_path}'):
+        page = Page(site, file)
+        assert page.file_name == file
+        yield page
 
 VERTICALS = [
     Vertical('auto'),
