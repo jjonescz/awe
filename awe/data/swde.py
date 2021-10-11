@@ -54,6 +54,7 @@ class Website:
     def pages(self):
         if self._pages is None:
             self._pages = list(self._iterate_pages())
+            assert len(self._pages) == self.page_count
         return self._pages
 
     def _iterate_pages(self):
