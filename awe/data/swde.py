@@ -98,7 +98,7 @@ class GroundTruthField:
         assert name == self.name
 
         # Read second line.
-        count, *_ = lines[1].split('\t')
+        count, _, _, _ = lines[1].split('\t')
         assert int(count) == self.site.page_count
 
         # Read rest of the file.
