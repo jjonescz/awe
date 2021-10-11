@@ -1,4 +1,5 @@
 # See https://pip.pypa.io/en/stable/cli/pip_install/#requirements-file-format.
+# For list of packages, see https://pypi.org/.
 -f https://data.pyg.org/whl/torch-1.9.0+cpu.html
 # Jupyter
 ipykernel==6.4.1
