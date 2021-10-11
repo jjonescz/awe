@@ -1,6 +1,7 @@
 # AI-based web extractor
 
 This repository contains source code for AI-based structured web data extractor.
+Python source code is contained in directory `awe`.
 
 ## Usage
 
@@ -9,7 +10,7 @@ Containers](https://code.visualstudio.com/docs/remote/containers).
 
 ### Running
 
-See available commands via `doit list`.
+See available commands via `doit list`. Their source code is in `dodo.py`.
 
 ## Development
 
