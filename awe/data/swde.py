@@ -1,3 +1,4 @@
+import glob
 import os
 import re
 from dataclasses import dataclass, field
@@ -15,6 +16,7 @@ GROUND_TRUTH = 'groundtruth'
 WEBSITE_REGEX = r'^(\w+)-(\w+)\((\d+)\)$'
 PAGE_REGEX = r'^(\d{4})\.htm$'
 BASE_TAG_REGEX = r'^<base href="([^\n]*)"/>\w*\n(.*)'
+GROUNDTRUTH_REGEX = r'^(\w+)-(\w+)-(\w+)\.txt$'
 
 def ignore_field(**kwargs):
     return field(init=False, repr=False, hash=False, compare=False, **kwargs)
@@ -39,6 +41,10 @@ class Vertical:
     @property
     def dir_path(self):
         return f'{DATA_DIR}/{self.name}'
+
+    @property
+    def groundtruth_path_prefix(self):
+        return f'{DATA_DIR}/{GROUND_TRUTH}/{self.name}/{self.name}'
 
 @dataclass
 class Website:
@@ -74,6 +80,19 @@ class Website:
     @property
     def dir_path(self):
         return f'{self.vertical.dir_path}/{self.dir_name}'
+
+    @property
+    def groundtruth_path_prefix(self):
+        return f'{self.vertical.groundtruth_path_prefix}-{self.name}'
+
+    @property
+    def fields(self):
+        for file in glob.glob(f'{self.groundtruth_path_prefix}-*.txt'):
+            file_name = os.path.basename(file)
+            match = re.search(GROUNDTRUTH_REGEX, file_name)
+            assert match.group(1) == self.vertical.name
+            assert match.group(2) == self.name
+            yield match.group(3)
 
 @dataclass
 class Page:
