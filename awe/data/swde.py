@@ -213,6 +213,23 @@ class GroundTruthEntry:
     field: GroundTruthField
     page: Page
     values: list[str] = add_field()
+    _nodes: list[parsel.Selector] = cache_field()
+
+    @property
+    def nodes(self):
+        """Returns nodes from `page.html` matching the groundtruth `values`."""
+        if self._nodes is None:
+            self._nodes = list(self._iterate_nodes())
+        return self._nodes
+
+    def _iterate_nodes(self):
+        for value in self.values:
+            match = self.page.html.xpath(
+                '//*[normalize-space(text()) = $value]',
+                value=value
+            )
+            assert len(match) > 0
+            yield from match
 
 VERTICALS = [
     Vertical('auto'),
