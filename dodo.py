@@ -12,6 +12,7 @@ DATA_DIR = awe.data.swde.DATA_DIR
 SWDE_ZIP = awe.data.swde.SWDE_ZIP
 SWDE_DIR = awe.data.swde.SWDE_DIR
 SWDE_DATA_DIR = awe.data.swde.SWDE_DATA_DIR
+SWDE_VERTICALS = awe.data.swde.VERTICALS
 
 def shell(command: str):
     print(f'$ {command}')
@@ -71,9 +72,9 @@ def task_extract_swde_verticals():
     """extract SWDE 7z archives"""
 
     input_dir = f'{SWDE_DIR}/src'
-    input_zips = [f'{input_dir}/{v}.7z' for v in awe.data.swde.VERTICALS]
+    input_zips = [f'{input_dir}/{v.name}.7z' for v in SWDE_VERTICALS]
     output_dir = SWDE_DATA_DIR
-    output_dirs = [f'{output_dir}/{v}' for v in awe.data.swde.VERTICALS]
+    output_dirs = [f'{output_dir}/{v.name}' for v in SWDE_VERTICALS]
     def extract_src():
         for archive in input_zips:
             shell(f'7z x {archive} -o"{output_dir}"')

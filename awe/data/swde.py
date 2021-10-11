@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import os
 import re
 
@@ -8,18 +8,21 @@ SWDE_ZIP = f'{DATA_DIR}/swde.zip'
 SWDE_DIR = f'{DATA_DIR}/swde'
 SWDE_DATA_DIR = f'{SWDE_DIR}/data'
 
-VERTICALS = [
-    "auto",
-    "book",
-    "camera",
-    "job",
-    "movie",
-    "nbaplayer",
-    "restaurant",
-    "university"
-]
+WEBSITE_REGEX = r'^(\w+)-(\w+)\((\d+)\)$'
 
-WEBSITE_REGEX = r"^(\w+)-(\w+)\((\d+)\)$"
+def ignore_field(**kwargs):
+    return field(init=False, repr=False, hash=False, compare=False, **kwargs)
+
+@dataclass
+class Vertical:
+    name: str
+    _websites: list['Website'] = ignore_field(default=None)
+
+    @property
+    def websites(self):
+        if self._websites is None:
+            self._websites = [w for w in get_websites(self.name)]
+        return self._websites
 
 @dataclass
 class Website:
@@ -42,3 +45,14 @@ def get_websites(vertical: str):
         website = Website(subdir)
         assert website.dir_name == subdir
         yield website
+
+VERTICALS = [
+    Vertical('auto'),
+    Vertical('book'),
+    Vertical('camera'),
+    Vertical('job'),
+    Vertical('movie'),
+    Vertical('nbaplayer'),
+    Vertical('restaurant'),
+    Vertical('university')
+]
