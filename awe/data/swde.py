@@ -39,7 +39,7 @@ class Vertical:
         return self._websites
 
     def _iterate_websites(self):
-        for subdir in os.listdir(self.dir_path):
+        for subdir in sorted(os.listdir(self.dir_path)):
             website = Website(self, subdir)
             assert website.dir_name == subdir
             yield website
@@ -102,11 +102,13 @@ class GroundTruthField:
         assert int(count) == self.site.page_count
 
         # Read rest of the file.
-        for index, (line, page) in enumerate(zip(lines[2:], self.site.pages)):
+        for index, line in enumerate(lines[2:]):
             expected_index, expected_nonnull_count, *values = line.split('\t')
             assert int(expected_index) == index
             parsed_values = [] if values == ['<NULL>'] else values
             assert int(expected_nonnull_count) == len(parsed_values)
+            page = self.site.pages[index]
+            assert page.index == index
             yield GroundTruthEntry(self, page, parsed_values)
 
 @dataclass
@@ -132,7 +134,7 @@ class Website:
         return self._pages
 
     def _iterate_pages(self):
-        for file in os.listdir(f'{self.dir_path}'):
+        for file in sorted(os.listdir(f'{self.dir_path}')):
             page = Page(self, file)
             assert page.file_name == file
             yield page
