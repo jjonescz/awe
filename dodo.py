@@ -1,7 +1,6 @@
 # `doit` configuration file; see https://pydoit.org/contents.html.
 
 import os
-import glob
 import subprocess
 import awe.data.swde
 
@@ -13,7 +12,7 @@ DATA_DIR = 'data'
 SWDE_ZIP = f'{DATA_DIR}/swde.zip'
 SWDE_DIR = f'{DATA_DIR}/swde'
 
-def exec(command: str):
+def shell(command: str):
     print(f'$ {command}')
     subprocess.run(command, shell=True, check=True)
 
@@ -49,29 +48,30 @@ def task_extract_swde():
 def task_extract_swde_src():
     """extract SWDE sourceCode.zip"""
 
-    input = f'{SWDE_DIR}/sourceCode/sourceCode.zip'
-    output = f'{SWDE_DIR}/src'
+    input_zip = f'{SWDE_DIR}/sourceCode/sourceCode.zip'
+    output_dir = f'{SWDE_DIR}/src'
     return {
-        'actions': [f'unzip {input} -d {output}'],
-        'file_dep': [input],
-        'targets': [output]
+        'actions': [f'unzip {input_zip} -d {output_dir}'],
+        'file_dep': [input_zip],
+        'targets': [output_dir]
     }
 
 def task_extract_swde_verticals():
     """extract SWDE 7z archives"""
 
-    inputs = [f'{SWDE_DIR}/src/{v}.7z' for v in awe.data.swde.VERTICALS]
+    input_dir = f'{SWDE_DIR}/src'
+    input_zips = [f'{input_dir}/{v}.7z' for v in awe.data.swde.VERTICALS]
     output_dir = f'{SWDE_DIR}/data'
-    outputs = [f'{output_dir}/{v}' for v in awe.data.swde.VERTICALS]
+    output_dirs = [f'{output_dir}/{v}' for v in awe.data.swde.VERTICALS]
     def extract_src():
-        for archive in glob.glob(f'{input}/*.7z'):
-            exec(f'7z x {archive} -o"{output_dir}"')
+        for archive in input_zips:
+            shell(f'7z x {archive} -o"{output_dir}"')
 
     return {
         'actions': [
             f'mkdir -p {output_dir}',
             extract_src
         ],
-        'file_dep': inputs,
-        'targets': outputs
+        'file_dep': input_zips,
+        'targets': output_dirs
     }
