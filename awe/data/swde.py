@@ -31,11 +31,11 @@ class Website:
     def dir_name(self):
         return f'{self.vertical}-{self.name}({self.page_count})'
 
-def parse_website(dir_name):
+def parse_website(dir_name: str):
     match = re.search(WEBSITE_REGEX, dir_name)
     return Website(match.group(1), match.group(2), int(match.group(3)))
 
-def get_websites(vertical):
+def get_websites(vertical: str):
     for subdir in os.listdir(f'{SWDE_DATA_DIR}/{vertical}'):
         website = parse_website(subdir)
         assert website.dir_name == subdir
