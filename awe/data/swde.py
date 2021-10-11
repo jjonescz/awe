@@ -27,13 +27,19 @@ class Website:
     name: str
     page_count: int
 
+    @property
+    def dir_name(self):
+        return f'{self.vertical}-{self.name}({self.page_count})'
+
 def parse_website(dir_name):
     match = re.search(WEBSITE_REGEX, dir_name)
     return Website(match.group(1), match.group(2), int(match.group(3)))
 
 def get_websites(vertical):
     for subdir in os.listdir(f'{SWDE_DATA_DIR}/{vertical}'):
-        yield parse_website(subdir)
+        website = parse_website(subdir)
+        assert website.dir_name == subdir
+        yield website
 
 WEBSITES = {
     "auto": [
