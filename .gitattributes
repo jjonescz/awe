@@ -1,1 +1,4 @@
+# Disable auto CRLF.
+* -text
+
 *.ipynb filter=strip-notebook-output
