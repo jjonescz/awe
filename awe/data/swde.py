@@ -79,7 +79,7 @@ class Page:
     site: Website
     index: int
     _url: str = ignore_field(default=None)
-    _parsed: parsel.Selector = ignore_field(default=None)
+    _html: parsel.Selector = ignore_field(default=None)
 
     def __init__(self, site: Website, file_name: str):
         match = re.search(PAGE_REGEX, file_name)
@@ -104,7 +104,7 @@ class Page:
         # Note that there is a `<base />` tag appended before each HTML document
         # in SWDE with the actual crawled URL.
         self._url = match.group(1)
-        self._parsed = parsel.Selector(match.group(2))
+        self._html = parsel.Selector(match.group(2))
 
     @property
     def url(self):
@@ -113,10 +113,10 @@ class Page:
         return self._url
 
     @property
-    def parsed(self):
-        if self._parsed is None:
+    def html(self):
+        if self._html is None:
             self.parse()
-        return self._parsed
+        return self._html
 
 VERTICALS = [
     Vertical('auto'),
