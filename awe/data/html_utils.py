@@ -1,5 +1,6 @@
 import parsel
 import html
+from lxml import etree
 
 def clean(page: parsel.Selector):
     page.css('script, style').remove()
@@ -13,6 +14,9 @@ def unescape(text: str):
             html._invalid_charrefs[key] = chr(key)
         setattr(html, '_hacked', True)
     return html.unescape(text)
+
+def get_el_xpath(node: etree._Element):
+    return node.getroottree().getpath(node)
 
 def get_xpath(
     node: parsel.Selector,
@@ -30,4 +34,11 @@ def get_xpath(
             enumerate(children)
         ))
         return f'{get_xpath(parent)}/text()[{index + 1}]'
-    return node.root.getroottree().getpath(node.root)
+    return get_el_xpath(node.root)
+
+def iter_fragments(node: etree._Element):
+    """Gets XPaths of all text fragments in subtree of `node`."""
+    for subnode in node.iter():
+        subnode_xpath = get_el_xpath(subnode)
+        for index, _ in enumerate(subnode.xpath('text()')):
+            yield f'{subnode_xpath}/text()[{index + 1}]'
