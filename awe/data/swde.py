@@ -225,8 +225,10 @@ class GroundTruthEntry:
 
     def _iterate_nodes(self):
         for value in self.values:
+            # Note that this XPath is written so that it finds text fragments X,
+            # Y, Z separately in HTML `<p>X<br>Y<br>Z</p>`.
             match = self.page.html.xpath(
-                '//*[normalize-space(text()) = $value]',
+                '//*/text()[normalize-space(.) = $value]',
                 value=saxutils.unescape(value)
             )
             assert len(match) > 0, f'No match found for {value} in {self}.'
