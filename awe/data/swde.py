@@ -18,6 +18,7 @@ WEBSITE_REGEX = r'^(\w+)-(\w+)\((\d+)\)$'
 PAGE_REGEX = r'^(\d{4})\.htm$'
 BASE_TAG_REGEX = r'^<base href="([^\n]*)"/>\w*\n(.*)'
 GROUNDTRUTH_REGEX = r'^(\w+)-(\w+)-(\w+)\.txt$'
+WHITESPACE_REGEX = r'[\s\u200b]'
 
 def add_field(**kwargs):
     return field(hash=False, compare=False, **kwargs)
@@ -199,7 +200,7 @@ class Page:
         # Note that there is a `<base />` tag appended before each HTML document
         # in SWDE with the actual crawled URL.
         url = match.group(1)
-        html = parsel.Selector(match.group(2))
+        html = match.group(2)
         return url, html
 
     @property
@@ -209,6 +210,10 @@ class Page:
     @property
     def html(self):
         return self.parse()[1]
+
+    @property
+    def dom(self):
+        return parsel.Selector(self.html)
 
 @dataclass
 class GroundTruthEntry:
@@ -223,27 +228,23 @@ class GroundTruthEntry:
 
     def _iterate_nodes(self):
         page_html = self.page.html
+
+        # HACK: If there are HTML-encoded spaces in the HTML (e.g., `&nbsp;`),
+        # they are preserved in the groundtruth. If they're there as plain
+        # Unicode characters (not HTML-encoded), they're not preserved. This is
+        # a bug/inconsistency in the dataset. Therefore, we remove these
+        # characters before matching.
+        page_html = re.sub(WHITESPACE_REGEX, ' ', page_html)
+
+        page_dom = parsel.Selector(page_html)
+
         for value in self.values:
             # Note that this XPath is written so that it finds text fragments X,
             # Y, Z separately in HTML `<p>X<br>Y<br>Z</p>`.
-            unescaped_value = html_utils.unescape(value)
-            match = page_html.xpath(
+            match = page_dom.xpath(
                 '//*/text()[normalize-space(.) = $value]',
-                value=unescaped_value
+                value=html_utils.unescape(value)
             )
-
-            # HACK: If there are spaces in the HTML written as `&nbsp;`, they
-            # are preserved in the groundtruth. If they're there as plain
-            # Unicode characters (not HTML-encoded), they're not preserved,
-            # therefore we must try this second query sometimes. (This is a
-            # bug/inconsistency in the dataset.)
-            if len(match) == 0:
-                match = page_html.xpath(
-                    '//*/text()[normalize-space(translate(., ' +
-                    '"\xa0\u200b", " ")) = $value]',
-                    value=unescaped_value
-                )
-
             assert len(match) > 0, \
                 f'No match found for {self.field.name}="{value}" in ' + \
                 f'{self.page.file_path}.'
