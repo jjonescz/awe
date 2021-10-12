@@ -20,7 +20,9 @@ WEBSITE_REGEX = r'^(\w+)-(\w+)\((\d+)\)$'
 PAGE_REGEX = r'^(\d{4})\.htm$'
 BASE_TAG_REGEX = r'^<base href="([^\n]*)"/>\w*\n(.*)'
 GROUNDTRUTH_REGEX = r'^(\w+)-(\w+)-(\w+)\.txt$'
-WHITESPACE_REGEX = r'[\s\u200b]'
+
+WHITESPACE_REGEX = r'([^\S\r\n]|[\u200b])'
+"""Matches whitespace except newline."""
 
 def add_field(**kwargs):
     return field(hash=False, compare=False, **kwargs)
@@ -258,6 +260,14 @@ class GroundTruthEntry:
                     value=unescaped_value
                 )
 
+            # HACK: In some groundtruth data, newlines are completely ignored.
+            if len(match) == 0:
+                match = page_dom.xpath(
+                    '//text()[normalize-space(' +
+                    'translate(., "\n", "")) = $value]',
+                    value=unescaped_value
+                )
+
             assert len(match) > 0, \
                 f'No match found for {self.field.name}="{value}" in ' + \
                 f'{self.page.file_path}.'
@@ -281,7 +291,7 @@ VERTICALS = [
 
 def validate(*, verticals_skip=0):
     for vertical in tqdm(VERTICALS[verticals_skip:], desc='verticals'):
-        for website in tqdm(vertical.websites[7:], desc='websites', leave=False):
+        for website in tqdm(vertical.websites, desc='websites', leave=False):
             for groundtruth_field in tqdm(website.groundtruth, desc='fields', leave=False):
                 for entry in groundtruth_field.entries:
                     _ = entry.nodes
