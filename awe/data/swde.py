@@ -1,6 +1,7 @@
 import glob
 import os
 import re
+from xml.sax import saxutils
 from dataclasses import dataclass, field
 
 import parsel
@@ -226,9 +227,9 @@ class GroundTruthEntry:
         for value in self.values:
             match = self.page.html.xpath(
                 '//*[normalize-space(text()) = $value]',
-                value=value
+                value=saxutils.unescape(value)
             )
-            assert len(match) > 0
+            assert len(match) > 0, f'No match found for {value} in {self}.'
             yield from match
 
 VERTICALS = [
