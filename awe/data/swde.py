@@ -43,6 +43,12 @@ class Vertical:
         for subdir in sorted(os.listdir(self.dir_path)):
             website = Website(self, subdir)
             assert website.dir_name == subdir
+
+            # HACK: Skip website careerbuilder.com whose groundtruth values are
+            # in HTML comments (that's bug in the dataset).
+            if self.name == 'job' and website.name == 'careerbuilder':
+                continue
+
             yield website
 
     @property
@@ -225,7 +231,8 @@ class GroundTruthEntry:
                 value=html_utils.unescape(value)
             )
             assert len(match) > 0, \
-                f'No match found for "{value}" in {self.page.file_path}.'
+                f'No match found for {self.field.name}="{value}" in ' + \
+                f'{self.page.file_path}.'
             yield from match
 
 VERTICALS = [
@@ -239,8 +246,8 @@ VERTICALS = [
     Vertical('university')
 ]
 
-def validate():
-    for vertical in tqdm(VERTICALS, desc='verticals'):
+def validate(*, verticals_skip=0):
+    for vertical in tqdm(VERTICALS[verticals_skip:], desc='verticals'):
         for website in tqdm(vertical.websites, desc='websites', leave=False):
             for groundtruth_field in tqdm(website.groundtruth, desc='fields', leave=False):
                 for entry in groundtruth_field.entries:
