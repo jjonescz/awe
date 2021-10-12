@@ -14,6 +14,8 @@ DIR = f'{constants.DATA_DIR}/swde'
 DATA_DIR = f'{DIR}/data'
 GROUND_TRUTH = 'groundtruth'
 
+NBSP = html_utils.unescape('&nbsp;')
+
 WEBSITE_REGEX = r'^(\w+)-(\w+)\((\d+)\)$'
 PAGE_REGEX = r'^(\d{4})\.htm$'
 BASE_TAG_REGEX = r'^<base href="([^\n]*)"/>\w*\n(.*)'
@@ -250,8 +252,7 @@ class GroundTruthEntry:
             # HACK: In some groundtruth data, unbreakable spaces are ignored.
             if len(match) == 0:
                 def normalize(x):
-                    nbsp = html_utils.unescape('&nbsp;')
-                    return f'normalize-space(translate({x}, "{nbsp}", " "))'
+                    return f'normalize-space(translate({x}, "{NBSP}", " "))'
                 match = page_dom.xpath(
                     f'//text()[{normalize(".")} = {normalize("$value")}]',
                     value=unescaped_value
