@@ -1,5 +1,4 @@
 import glob
-import html
 import os
 import re
 from dataclasses import dataclass, field
@@ -7,7 +6,7 @@ from dataclasses import dataclass, field
 import parsel
 from tqdm.auto import tqdm
 
-from . import constants
+from awe.data import constants, html_utils
 
 URL = 'https://codeplexarchive.blob.core.windows.net/archive/projects/swde/swde.zip'
 ZIP = f'{constants.DATA_DIR}/swde.zip'
@@ -230,7 +229,7 @@ class GroundTruthEntry:
             # Y, Z separately in HTML `<p>X<br>Y<br>Z</p>`.
             match = self.page.html.xpath(
                 '//*/text()[normalize-space(.) = $value]',
-                value=html.unescape(value)
+                value=html_utils.unescape(value)
             )
             assert len(match) > 0, \
                 f'No match found for "{value}" in {self.page.file_path}.'
@@ -250,6 +249,6 @@ VERTICALS = [
 def validate():
     for vertical in tqdm(VERTICALS, desc='verticals'):
         for website in tqdm(vertical.websites, desc='websites', leave=False):
-            for field in tqdm(website.groundtruth, desc='fields', leave=False):
-                for entry in field.entries:
+            for groundtruth_field in tqdm(website.groundtruth, desc='fields', leave=False):
+                for entry in groundtruth_field.entries:
                     _ = entry.nodes
