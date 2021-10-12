@@ -4,6 +4,8 @@
 # Jupyter
 ipykernel==6.4.1
 nbconvert==6.2.0
+ipywidgets==7.6.5
+jupyter==1.0.0
 # PyTorch
 torch==1.9.0
 torch-scatter==2.0.8
