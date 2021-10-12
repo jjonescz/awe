@@ -241,10 +241,22 @@ class GroundTruthEntry:
         for value in self.values:
             # Note that this XPath is written so that it finds text fragments X,
             # Y, Z separately in HTML `<p>X<br>Y<br>Z</p>`.
+            unescaped_value = html_utils.unescape(value)
             match = page_dom.xpath(
-                '//*/text()[normalize-space(.) = $value]',
-                value=html_utils.unescape(value)
+                '//text()[normalize-space(.) = $value]',
+                value=unescaped_value
             )
+
+            # HACK: In some groundtruth data, unbreakable spaces are ignored.
+            if len(match) == 0:
+                def normalize(x):
+                    nbsp = html_utils.unescape('&nbsp;')
+                    return f'normalize-space(translate({x}, "{nbsp}", " "))'
+                match = page_dom.xpath(
+                    f'//text()[{normalize(".")} = {normalize("$value")}]',
+                    value=unescaped_value
+                )
+
             assert len(match) > 0, \
                 f'No match found for {self.field.name}="{value}" in ' + \
                 f'{self.page.file_path}.'
@@ -268,7 +280,7 @@ VERTICALS = [
 
 def validate(*, verticals_skip=0):
     for vertical in tqdm(VERTICALS[verticals_skip:], desc='verticals'):
-        for website in tqdm(vertical.websites, desc='websites', leave=False):
+        for website in tqdm(vertical.websites[7:], desc='websites', leave=False):
             for groundtruth_field in tqdm(website.groundtruth, desc='fields', leave=False):
                 for entry in groundtruth_field.entries:
                     _ = entry.nodes
