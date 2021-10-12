@@ -227,7 +227,10 @@ class GroundTruthEntry:
 
     @property
     def nodes(self):
-        """Returns nodes from `page.html` matching the groundtruth `values`."""
+        """
+        Returns XPaths to nodes from `page.html` matching the groundtruth
+        `values`.
+        """
         return list(self._iterate_nodes())
 
     def _iterate_nodes(self):
@@ -245,10 +248,10 @@ class GroundTruthEntry:
         for value in self.values:
             # Note that this XPath is written so that it finds text fragments X,
             # Y, Z separately in HTML `<p>X<br>Y<br>Z</p>`.
-            unescaped_value = html_utils.unescape(value)
+            args = { 'value': html_utils.unescape(value) }
             match = page_dom.xpath(
                 '//text()[normalize-space(.) = $value]',
-                value=unescaped_value
+                **args
             )
 
             # HACK: In some groundtruth data, unbreakable spaces are ignored.
@@ -257,7 +260,7 @@ class GroundTruthEntry:
                     return f'normalize-space(translate({x}, "{NBSP}", " "))'
                 match = page_dom.xpath(
                     f'//text()[{normalize(".")} = {normalize("$value")}]',
-                    value=unescaped_value
+                    **args
                 )
 
             # HACK: In some groundtruth data, newlines are completely ignored.
@@ -265,13 +268,15 @@ class GroundTruthEntry:
                 match = page_dom.xpath(
                     '//text()[normalize-space(' +
                     'translate(., "\n", "")) = $value]',
-                    value=unescaped_value
+                    **args
                 )
 
             assert len(match) > 0, \
                 f'No match found for {self.field.name}="{value}" in ' + \
                 f'{self.page.file_path}.'
-            yield from match
+
+            for node in match:
+                yield html_utils.get_xpath(node, page_dom, **args)
 
 VERTICALS = [
     Vertical('auto'),

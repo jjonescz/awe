@@ -14,7 +14,11 @@ def unescape(text: str):
         setattr(html, '_hacked', True)
     return html.unescape(text)
 
-def get_xpath(node: parsel.Selector, root: parsel.Selector = None, **kwargs):
+def get_xpath(
+    node: parsel.Selector,
+    root: parsel.Selector = None,
+    **kwargs
+) -> str:
     """Gets absolute XPath for a node."""
     if isinstance(node.root, str):
         # String nodes are complicated.
