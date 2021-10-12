@@ -232,14 +232,15 @@ class GroundTruthEntry:
                 value=unescaped_value
             )
 
-            # Note that if there is space in the HTML written as `&nbsp;`, it is
-            # preserved in the groundtruth. If it's there as plain Unicode
-            # character (not HTML-encoded), it's not, therefore we must try this
-            # second query sometimes.
+            # HACK: If there are spaces in the HTML written as `&nbsp;`, they
+            # are preserved in the groundtruth. If they're there as plain
+            # Unicode characters (not HTML-encoded), they're not preserved,
+            # therefore we must try this second query sometimes. (This is a
+            # bug/inconsistency in the dataset.)
             if len(match) == 0:
                 match = page_html.xpath(
-                    '//*/text()[normalize-space(translate(., "\xa0", " ")) ' +
-                    '= $value]',
+                    '//*/text()[normalize-space(translate(., ' +
+                    '"\xa0\u200b", " ")) = $value]',
                     value=unescaped_value
                 )
 
