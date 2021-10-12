@@ -255,7 +255,12 @@ VERTICALS = [
     Vertical('book'),
     Vertical('camera'),
     Vertical('job'),
-    Vertical('movie'),
+    # HACK: Skip movie vertical as there are multiple bugs in the dataset:
+    # - MPAA rating is only first character (e.g., "P" in the groundtruth but
+    #   "PG13" in the HTML),
+    # - director is not complete (e.g., "Roy Hill" in the groundtruth but
+    #   "Geogre Roy Hill" in the HTML).
+    #Vertical('movie'),
     Vertical('nbaplayer'),
     Vertical('restaurant'),
     Vertical('university')
