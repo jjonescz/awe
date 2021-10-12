@@ -3,6 +3,7 @@ import html
 
 def clean(page: parsel.Selector):
     page.css('script, style').remove()
+    page.xpath('//comment()').remove()
     return page
 
 def unescape(text: str):
