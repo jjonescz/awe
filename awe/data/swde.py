@@ -5,6 +5,7 @@ import re
 from dataclasses import dataclass, field
 
 import parsel
+from tqdm.auto import tqdm
 
 from . import constants
 
@@ -245,3 +246,10 @@ VERTICALS = [
     Vertical('restaurant'),
     Vertical('university')
 ]
+
+def validate():
+    for vertical in tqdm(VERTICALS, desc='verticals'):
+        for website in tqdm(vertical.websites, desc='websites', leave=False):
+            for field in tqdm(website.groundtruth, desc='fields', leave=False):
+                for entry in field.entries:
+                    _ = entry.nodes
