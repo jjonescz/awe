@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 import parsel
 from tqdm.auto import tqdm
 
-from awe.data import constants, html_utils
+from . import constants, html_utils
 
 URL = 'https://codeplexarchive.blob.core.windows.net/archive/projects/swde/swde.zip'
 ZIP = f'{constants.DATA_DIR}/swde.zip'
@@ -169,8 +169,6 @@ class Website:
 class Page:
     site: Website
     index: int
-    _url: str = cache_field()
-    _html: parsel.Selector = cache_field()
 
     def __init__(self, site: Website, file_name: str):
         match = re.search(PAGE_REGEX, file_name)
@@ -194,40 +192,35 @@ class Page:
         match = re.search(BASE_TAG_REGEX, self.contents, flags=re.RegexFlag.S)
         # Note that there is a `<base />` tag appended before each HTML document
         # in SWDE with the actual crawled URL.
-        self._url = match.group(1)
-        self._html = parsel.Selector(match.group(2))
+        url = match.group(1)
+        html = parsel.Selector(match.group(2))
+        return url, html
 
     @property
     def url(self):
-        if self._url is None:
-            self.parse()
-        return self._url
+        return self.parse()[0]
 
     @property
     def html(self):
-        if self._html is None:
-            self.parse()
-        return self._html
+        return self.parse()[1]
 
 @dataclass
 class GroundTruthEntry:
     field: GroundTruthField
     page: Page
     values: list[str] = add_field()
-    _nodes: list[parsel.Selector] = cache_field()
 
     @property
     def nodes(self):
         """Returns nodes from `page.html` matching the groundtruth `values`."""
-        if self._nodes is None:
-            self._nodes = list(self._iterate_nodes())
-        return self._nodes
+        return list(self._iterate_nodes())
 
     def _iterate_nodes(self):
+        page_html = self.page.html
         for value in self.values:
             # Note that this XPath is written so that it finds text fragments X,
             # Y, Z separately in HTML `<p>X<br>Y<br>Z</p>`.
-            match = self.page.html.xpath(
+            match = page_html.xpath(
                 '//*/text()[normalize-space(.) = $value]',
                 value=html_utils.unescape(value)
             )
