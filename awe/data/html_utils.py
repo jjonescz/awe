@@ -7,6 +7,8 @@ def clean(page: parsel.Selector):
 
 def unescape(text: str):
     # HACK: Process invalid characters as they are, so that it works with XPath.
-    for key in html._invalid_charrefs.keys():
-        html._invalid_charrefs[key] = chr(key)
+    if not getattr(html, '_hacked', False):
+        for key in html._invalid_charrefs.keys():
+            html._invalid_charrefs[key] = chr(key)
+        setattr(html, '_hacked', True)
     return html.unescape(text)
