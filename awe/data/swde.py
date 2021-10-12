@@ -1,7 +1,7 @@
 import glob
+import html
 import os
 import re
-from xml.sax import saxutils
 from dataclasses import dataclass, field
 
 import parsel
@@ -229,9 +229,10 @@ class GroundTruthEntry:
             # Y, Z separately in HTML `<p>X<br>Y<br>Z</p>`.
             match = self.page.html.xpath(
                 '//*/text()[normalize-space(.) = $value]',
-                value=saxutils.unescape(value)
+                value=html.unescape(value)
             )
-            assert len(match) > 0, f'No match found for {value} in {self}.'
+            assert len(match) > 0, \
+                f'No match found for "{value}" in {self.page.file_path}.'
             yield from match
 
 VERTICALS = [
