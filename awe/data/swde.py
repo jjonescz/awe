@@ -226,10 +226,23 @@ class GroundTruthEntry:
         for value in self.values:
             # Note that this XPath is written so that it finds text fragments X,
             # Y, Z separately in HTML `<p>X<br>Y<br>Z</p>`.
+            unescaped_value = html_utils.unescape(value)
             match = page_html.xpath(
                 '//*/text()[normalize-space(.) = $value]',
-                value=html_utils.unescape(value)
+                value=unescaped_value
             )
+
+            # Note that if there is space in the HTML written as `&nbsp;`, it is
+            # preserved in the groundtruth. If it's there as plain Unicode
+            # character (not HTML-encoded), it's not, therefore we must try this
+            # second query sometimes.
+            if len(match) == 0:
+                match = page_html.xpath(
+                    '//*/text()[normalize-space(translate(., "\xa0", " ")) ' +
+                    '= $value]',
+                    value=unescaped_value
+                )
+
             assert len(match) > 0, \
                 f'No match found for {self.field.name}="{value}" in ' + \
                 f'{self.page.file_path}.'
