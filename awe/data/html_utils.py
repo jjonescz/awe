@@ -13,3 +13,17 @@ def unescape(text: str):
             html._invalid_charrefs[key] = chr(key)
         setattr(html, '_hacked', True)
     return html.unescape(text)
+
+def get_xpath(node: parsel.Selector, root: parsel.Selector = None, **kwargs):
+    """Gets absolute XPath for a node."""
+    if isinstance(node.root, str):
+        # String nodes are complicated.
+        parent = root.xpath(f'{node._expr}/..', **kwargs)[0]
+        children = parent.xpath('text()')
+        # Find child that has the same text as `node`.
+        index, _ = next(filter(
+            lambda p: p[1].get() == node.get(),
+            enumerate(children)
+        ))
+        return f'{get_xpath(parent)}/text()[{index + 1}]'
+    return node.root.getroottree().getpath(node.root)
