@@ -22,6 +22,15 @@ def unescape(text: str):
 def get_el_xpath(node: etree._Element) -> str:
     return node.getroottree().getpath(node)
 
+def find_fragment_index(parents: parsel.SelectorList, text_fragment: str):
+    for parent in parents:
+        parent: parsel.Selector
+        for index, fragment in enumerate(parent.xpath('text()')):
+            fragment: parsel.Selector
+            if fragment.get() == text_fragment:
+                return index, parent
+    raise LookupError()
+
 def get_xpath(
     node: parsel.Selector,
     root: parsel.Selector = None,
@@ -31,13 +40,8 @@ def get_xpath(
     if isinstance(node.root, str):
         # String nodes are complicated.
         # pylint: disable-next=protected-access
-        parent = root.xpath(f'{node._expr}/..', **kwargs)[0]
-        children = parent.xpath('text()')
-        # Find child that has the same text as `node`.
-        index, _ = next(filter(
-            lambda p: p[1].get() == node.get(),
-            enumerate(children)
-        ))
+        parents = root.xpath(f'{node._expr}/..', **kwargs)
+        index, parent = find_fragment_index(parents, node.get())
         return f'{get_xpath(parent)}/text()[{index + 1}]'
     return get_el_xpath(node.root)
 
