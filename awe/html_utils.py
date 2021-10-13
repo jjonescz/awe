@@ -47,3 +47,6 @@ def iter_with_fragments(node: etree._Element):
         for index, text in enumerate(subnode.xpath('text()')):
             text: str
             yield f'{subnode_xpath}/text()[{index + 1}]', text
+
+def get_parent_xpath(xpath: str):
+    return xpath[:xpath.rindex('/')]
