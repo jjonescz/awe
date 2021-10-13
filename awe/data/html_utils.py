@@ -15,7 +15,7 @@ def unescape(text: str):
         setattr(html, '_hacked', True)
     return html.unescape(text)
 
-def get_el_xpath(node: etree._Element):
+def get_el_xpath(node: etree._Element) -> str:
     return node.getroottree().getpath(node)
 
 def get_xpath(
@@ -36,9 +36,14 @@ def get_xpath(
         return f'{get_xpath(parent)}/text()[{index + 1}]'
     return get_el_xpath(node.root)
 
-def iter_fragments(node: etree._Element):
-    """Gets XPaths of all text fragments in subtree of `node`."""
+def iter_with_fragments(node: etree._Element):
+    """
+    Gets XPaths of all nodes and their text fragments in subtree of `node`.
+    """
     for subnode in node.iter():
         subnode_xpath = get_el_xpath(subnode)
-        for index, _ in enumerate(subnode.xpath('text()')):
-            yield f'{subnode_xpath}/text()[{index + 1}]'
+        subnode: etree._Element
+        yield subnode_xpath, subnode
+        for index, text in enumerate(subnode.xpath('text()')):
+            text: str
+            yield f'{subnode_xpath}/text()[{index + 1}]', text
