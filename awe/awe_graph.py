@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Union
 
 import parsel
@@ -41,7 +41,7 @@ class HtmlPage:
 
 @dataclass
 class HtmlNode:
-    page: HtmlPage
+    page: HtmlPage = field(repr=False)
 
     id: int
     """Unique ID of the node inside the `page`."""
