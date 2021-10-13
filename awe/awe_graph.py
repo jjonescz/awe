@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Union
 
@@ -7,18 +8,21 @@ from lxml import etree
 from awe import html_utils, utils
 
 
-class HtmlLabels:
+class HtmlLabels(ABC):
+    @abstractmethod
     def get_labels(self, node: 'HtmlNode') -> list[str]:
-        raise NotImplementedError()
+        pass
 
-class HtmlPage:
+class HtmlPage(ABC):
     @property
+    @abstractmethod
     def dom(self) -> parsel.Selector:
-        raise NotImplementedError()
+        pass
 
     @property
+    @abstractmethod
     def labels(self) -> HtmlLabels:
-        raise NotImplementedError()
+        pass
 
     @property
     def root(self):
