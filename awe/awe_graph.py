@@ -6,6 +6,7 @@ import parsel
 from lxml import etree
 
 from awe import html_utils, utils
+from awe.features import Feature
 
 
 class HtmlLabels(ABC):
@@ -68,6 +69,8 @@ class HtmlNode:
     Ground-truth labels of the node or `[]` if it doesn't correspond to any
     target attribute.
     """
+
+    features: list[Feature] = field(init=False, default_factory=list)
 
     _children: list['HtmlNode'] = utils.cache_field()
 
