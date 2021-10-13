@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Iterable, Type, TypeVar
 
 if TYPE_CHECKING:
@@ -32,8 +32,9 @@ class FeatureContext:
             self.add(feature)
 
 class Feature(ABC):
+    @classmethod
     @abstractmethod
-    def apply_to(self,
+    def apply_to(cls,
         node: 'awe_graph.HtmlNode',
         context: FeatureContext
     ) -> bool:
@@ -45,16 +46,16 @@ class Feature(ABC):
         node: 'awe_graph.HtmlNode',
         context: FeatureContext
     ) -> T:
-        feature = cls()
-        if feature.apply_to(node, context):
+        feature = cls.apply_to(node, context)
+        if feature is not None:
             node.features.append(feature)
 
 @dataclass
 class DollarSigns(Feature):
-    count: int = field(init=False)
+    count: int
 
-    def apply_to(self, node: 'awe_graph.HtmlNode', _):
+    @classmethod
+    def apply_to(cls, node: 'awe_graph.HtmlNode', _):
         if node.is_text:
-            self.count = node.text.count('$')
-            return True
-        return False
+            return DollarSigns(node.text.count('$'))
+        return None
