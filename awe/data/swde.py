@@ -1,12 +1,12 @@
 import glob
 import os
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import parsel
 from tqdm.auto import tqdm
 
-from awe import awe_graph, html_utils
+from awe import awe_graph, html_utils, utils
 from awe.data import constants
 
 URL = 'https://codeplexarchive.blob.core.windows.net/archive/projects/swde/swde.zip'
@@ -25,19 +25,10 @@ GROUNDTRUTH_REGEX = r'^(\w+)-(\w+)-(\w+)\.txt$'
 WHITESPACE_REGEX = r'([^\S\r\n]|[\u200b])'
 """Matches whitespace except newline."""
 
-def add_field(**kwargs):
-    return field(hash=False, compare=False, **kwargs)
-
-def ignore_field(**kwargs):
-    return add_field(init=False, repr=False, **kwargs)
-
-def cache_field(**kwargs):
-    return ignore_field(default=None, **kwargs)
-
 @dataclass
 class Vertical:
     name: str
-    _websites: list['Website'] = cache_field()
+    _websites: list['Website'] = utils.cache_field()
 
     @property
     def websites(self):
@@ -73,7 +64,7 @@ class Vertical:
 class GroundTruthField:
     site: 'Website'
     name: str
-    _entries: list['GroundTruthEntry'] = cache_field()
+    _entries: list['GroundTruthEntry'] = utils.cache_field()
 
     def __init__(self, site: 'Website', file_name: str):
         self.site = site
@@ -129,8 +120,8 @@ class Website:
     vertical: Vertical
     name: str
     page_count: int
-    _pages: list['Page'] = cache_field()
-    _groundtruth: list[GroundTruthField] = cache_field()
+    _pages: list['Page'] = utils.cache_field()
+    _groundtruth: list[GroundTruthField] = utils.cache_field()
 
     def __init__(self, vertical: Vertical, dir_name: str):
         match = re.search(WEBSITE_REGEX, dir_name)
@@ -247,7 +238,7 @@ class PageLabels(awe_graph.HtmlLabels):
 class GroundTruthEntry:
     field: GroundTruthField
     page: Page
-    values: list[str] = add_field()
+    values: list[str] = utils.add_field()
 
     @property
     def nodes(self):

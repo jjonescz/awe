@@ -4,7 +4,7 @@ from typing import Union
 import parsel
 from lxml import etree
 
-from awe import html_utils
+from awe import html_utils, utils
 
 
 class HtmlLabels:
@@ -65,7 +65,7 @@ class HtmlNode:
     target attribute.
     """
 
-    children: list['HtmlNode'] = field(init=False, default_factory=list)
+    _children: list['HtmlNode'] = utils.cache_field()
 
     @property
     def is_text(self):
@@ -84,6 +84,11 @@ class HtmlNode:
 
     @property
     def children(self):
+        if self._children is None:
+            self._children = list(self._iterate_children())
+        return self._children
+
+    def _iterate_children(self):
         if not self.is_text:
             index = 0
 
@@ -93,11 +98,11 @@ class HtmlNode:
 
             for child in self.element:
                 child: etree._Element
-                yield HtmlNode(self.page, child, index, self)
+                yield HtmlNode(self.page, index, child, self)
                 index += 1
 
                 if child.tail is not None:
-                    yield HtmlNode(self.page, child.tail, index, self)
+                    yield HtmlNode(self.page, index, child.tail, self)
                     index += 1
 
     @property
