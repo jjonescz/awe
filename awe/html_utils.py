@@ -12,8 +12,10 @@ def clean(page: parsel.Selector):
 def unescape(text: str):
     # HACK: Process invalid characters as they are, so that it works with XPath.
     if not getattr(html, '_hacked', False):
-        for key in html._invalid_charrefs.keys():
-            html._invalid_charrefs[key] = chr(key)
+        # pylint: disable-next=protected-access
+        invalid_charrefs = html._invalid_charrefs
+        for key in invalid_charrefs:
+            invalid_charrefs[key] = chr(key)
         setattr(html, '_hacked', True)
     return html.unescape(text)
 
@@ -28,6 +30,7 @@ def get_xpath(
     """Gets absolute XPath for a node."""
     if isinstance(node.root, str):
         # String nodes are complicated.
+        # pylint: disable-next=protected-access
         parent = root.xpath(f'{node._expr}/..', **kwargs)[0]
         children = parent.xpath('text()')
         # Find child that has the same text as `node`.
