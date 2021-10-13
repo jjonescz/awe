@@ -59,3 +59,15 @@ class DollarSigns(Feature):
         if node.is_text:
             return DollarSigns(node.text.count('$'))
         return None
+
+@dataclass
+class Depth(Feature):
+    relative: float
+
+    @classmethod
+    def apply_to(cls, node: 'awe_graph.HtmlNode', context: FeatureContext):
+        max_depth = getattr(context, 'max_depth', None)
+        if max_depth is None:
+            max_depth = max(map(lambda n: n.depth, context.nodes))
+            setattr(context, 'max_depth', max_depth)
+        return Depth(node.depth / max_depth)
