@@ -6,7 +6,8 @@ from dataclasses import dataclass, field
 import parsel
 from tqdm.auto import tqdm
 
-from . import constants, html_utils
+from .. import html_utils
+from . import constants
 
 URL = 'https://codeplexarchive.blob.core.windows.net/archive/projects/swde/swde.zip'
 ZIP = f'{constants.DATA_DIR}/swde.zip'
