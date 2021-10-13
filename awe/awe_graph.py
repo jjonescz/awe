@@ -38,10 +38,6 @@ class HtmlPage(ABC):
         page_labels = self.labels
         deep_index = 0
         for node in self.root.descendants:
-            # Exclude whitespace fragments.
-            if node.is_text and node.text.isspace():
-                continue
-
             # Create node representation.
             node.labels = page_labels.get_labels(node)
             node.deep_index = deep_index
@@ -92,25 +88,27 @@ class HtmlNode:
     @property
     def children(self):
         if self._children is None:
-            self._children = list(self._iterate_children())
+            self._children = [
+                HtmlNode(self.page, index, child, self)
+                for index, child in enumerate(
+                    child for child in self._iterate_children()
+                    # Exclude whitespace nodes.
+                    if not isinstance(child, str) or not child.isspace()
+                )
+            ]
         return self._children
 
     def _iterate_children(self):
         if not self.is_text:
-            index = 0
-
             if self.element.text is not None:
-                yield HtmlNode(self.page, index, self.element.text, self)
-                index += 1
+                yield self.element.text
 
             for child in self.element:
                 child: etree._Element
-                yield HtmlNode(self.page, index, child, self)
-                index += 1
+                yield child
 
                 if child.tail is not None:
-                    yield HtmlNode(self.page, index, child.tail, self)
-                    index += 1
+                    yield child.tail
 
     @property
     def descendants(self):
