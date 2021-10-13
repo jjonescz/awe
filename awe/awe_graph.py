@@ -31,7 +31,7 @@ class HtmlPage(ABC):
         page_dom = self.dom
         html_utils.clean(page_dom)
 
-        return HtmlNode(self, 0, page_dom.root)
+        return HtmlNode(self, 0, 0, page_dom.root)
 
     @property
     def nodes(self):
@@ -54,6 +54,9 @@ class HtmlNode:
 
     index: int
     """Index inside `parent`."""
+
+    depth: int
+    """Level of nesting."""
 
     element: Union[etree._Element, str]
     """Node or text fragment."""
@@ -88,8 +91,9 @@ class HtmlNode:
     @property
     def children(self):
         if self._children is None:
+            child_depth = self.depth + 1
             self._children = [
-                HtmlNode(self.page, index, child, self)
+                HtmlNode(self.page, index, child_depth, child, self)
                 for index, child in enumerate(
                     child for child in self._iterate_children()
                     # Exclude whitespace nodes.
