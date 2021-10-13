@@ -38,7 +38,7 @@ def get_xpath(
 
 def iter_with_fragments(node: etree._Element):
     """
-    Gets XPaths of all nodes and their text fragments in subtree of `node`.
+    Gets XPaths of all nodes and text fragments in subtree of `node`.
     """
     for subnode in node.iter():
         subnode_xpath = get_el_xpath(subnode)
