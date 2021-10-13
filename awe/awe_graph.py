@@ -53,7 +53,7 @@ class HtmlPage(ABC):
 class HtmlNode:
     page: HtmlPage = field(repr=False)
 
-    deep_index: int = field(init=False, default=0)
+    deep_index: Union[int, None] = field(init=False, default=None)
     """Iteration index of the node inside the `page`."""
 
     index: int
