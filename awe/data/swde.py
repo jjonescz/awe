@@ -235,12 +235,12 @@ class PageLabels(awe_graph.HtmlLabels):
             assert entry.page == page
             self.nodes[groundtruth_field.name] = entry.nodes
 
-    def get_labels(self, xpath: str):
-        return list(self._iter_labels(xpath))
+    def get_labels(self, node: awe_graph.HtmlNode):
+        return list(self._iter_labels(node))
 
-    def _iter_labels(self, xpath: str):
+    def _iter_labels(self, node: awe_graph.HtmlNode):
         for label, xpaths in self.nodes.items():
-            if xpath in xpaths:
+            if node.xpath in xpaths:
                 yield label
 
 @dataclass

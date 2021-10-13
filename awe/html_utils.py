@@ -1,6 +1,8 @@
-import parsel
 import html
+
+import parsel
 from lxml import etree
+
 
 def clean(page: parsel.Selector):
     page.css('script, style').remove()
@@ -35,18 +37,6 @@ def get_xpath(
         ))
         return f'{get_xpath(parent)}/text()[{index + 1}]'
     return get_el_xpath(node.root)
-
-def iter_with_fragments(node: etree._Element):
-    """
-    Gets XPaths of all nodes and text fragments in subtree of `node`.
-    """
-    for subnode in node.iter():
-        subnode_xpath = get_el_xpath(subnode)
-        subnode: etree._Element
-        yield subnode_xpath, subnode
-        for index, text in enumerate(subnode.xpath('text()')):
-            text: str
-            yield f'{subnode_xpath}/text()[{index + 1}]', text
 
 def get_parent_xpath(xpath: str):
     return xpath[:xpath.rindex('/')]

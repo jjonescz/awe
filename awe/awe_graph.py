@@ -2,12 +2,13 @@ from dataclasses import dataclass, field
 from typing import Union
 
 import parsel
+from lxml import etree
 
-from . import html_utils
+from awe import html_utils
 
 
 class HtmlLabels:
-    def get_labels(self, xpath: str) -> list[str]:
+    def get_labels(self, node: 'HtmlNode') -> list[str]:
         raise NotImplementedError()
 
 class HtmlPage:
@@ -20,88 +21,89 @@ class HtmlPage:
         raise NotImplementedError()
 
     @property
-    def nodes(self):
+    def root(self):
         # Prepare page DOM.
         page_dom = self.dom
         html_utils.clean(page_dom)
 
+        return HtmlNode(self, 0, page_dom.root)
+
+    @property
+    def nodes(self):
         page_labels = self.labels
-
-        parent_node, parent_element, prev_node, prev_element = [None] * 4
-        index = 0
-        for xpath, element in html_utils.iter_with_fragments(page_dom.root):
-            is_text = isinstance(element, str)
-
+        deep_index = 0
+        for node in self.root.descendants:
             # Exclude whitespace fragments.
-            if is_text and element.isspace():
+            if node.is_text and node.text.isspace():
                 continue
 
-            # Check relations.
-            go_up, go_down = [False] * 2
-            if not is_text:
-                curr_parent_element = element.getparent()
-                if curr_parent_element != parent_element:
-                    # Parent DOM element has changed.
-                    if curr_parent_element == prev_element:
-                        # If current parent is the previous element, it means
-                        # the iteration went to children of the previous
-                        # element.
-                        go_down = True
-                    else:
-                        # Otherwise, the iteration must have gone up.
-                        go_up = True
-            else:
-                current_parent_xpath = html_utils.get_parent_xpath(xpath)
-                if current_parent_xpath != parent_node.xpath:
-                    # Parent XPath doesn't match.
-                    if parent_node.xpath.startswith(current_parent_xpath):
-                        # If parent's XPath still holds, the iteration went to
-                        # child text fragments of the previous element.
-                        go_down = True
-                    else:
-                        # Otherwise, the iteration must have gone up.
-                        go_up = True
-            if go_down:
-                parent_element = prev_element
-                parent_node = prev_node
-            elif go_up:
-                grandparent = parent_element.getparent()
-                assert curr_parent_element == grandparent
-                parent_element = grandparent
-                parent_node = parent_node.parent
-
             # Create node representation.
-            labels = page_labels.get_labels(xpath)
-            text = element if is_text else None
-            node = HtmlNode(self, index, xpath, labels, text, parent_node)
-
-            # Update parent's children.
-            if parent_node is not None:
-                parent_node.children.append(node)
+            node.labels = page_labels.get_labels(node)
+            node.deep_index = deep_index
 
             yield node
-            index += 1
-            prev_node = node
-            prev_element = element
+            deep_index += 1
 
 @dataclass
 class HtmlNode:
     page: HtmlPage = field(repr=False)
 
-    index: int
+    deep_index: int = field(init=False, default=0)
     """Iteration index of the node inside the `page`."""
 
-    xpath: str
+    index: int
+    """Index inside `parent`."""
 
-    labels: list[str]
+    element: Union[etree._Element, str]
+    """Node or text fragment."""
+
+    parent: Union['HtmlNode', None] = field(default=None)
+
+    labels: list[str] = field(init=False, default_factory=list)
     """
     Ground-truth labels of the node or `[]` if it doesn't correspond to any
     target attribute.
     """
 
-    text: Union[str, None]
-    """Content if this node is a text fragment; otherwise, `None`."""
+    children: list['HtmlNode'] = field(init=False, default_factory=list)
 
-    parent: Union['HtmlNode', None]
+    @property
+    def is_text(self):
+        return isinstance(self.element, str)
 
-    children: list['HtmlNode'] = field(default_factory=list)
+    @property
+    def text(self) -> str:
+        assert self.is_text
+        return self.element
+
+    @property
+    def xpath(self):
+        if self.is_text:
+            return f'{self.parent.xpath}/text()[{self.index + 1}]'
+        return html_utils.get_el_xpath(self.element)
+
+    @property
+    def children(self):
+        if not self.is_text:
+            index = 0
+
+            if self.element.text is not None:
+                yield HtmlNode(self.page, index, self.element.text, self)
+                index += 1
+
+            for child in self.element:
+                child: etree._Element
+                yield HtmlNode(self.page, child, index, self)
+                index += 1
+
+                if child.tail is not None:
+                    yield HtmlNode(self.page, child.tail, index, self)
+                    index += 1
+
+    @property
+    def descendants(self):
+        stack = [self]
+        while len(stack) != 0:
+            node = stack.pop()
+            yield node
+            stack.extend(node.children)
