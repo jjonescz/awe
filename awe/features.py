@@ -4,7 +4,7 @@ from typing import Type, TypeVar
 
 from awe import awe_graph
 
-T = TypeVar('T', bound='Feature')
+T = TypeVar('T', bound='Feature') # pylint: disable=invalid-name
 
 class Feature(ABC):
     @abstractmethod

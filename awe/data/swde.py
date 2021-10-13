@@ -271,8 +271,8 @@ class GroundTruthEntry:
 
             # HACK: In some groundtruth data, unbreakable spaces are ignored.
             if len(match) == 0:
-                def normalize(x):
-                    return f'normalize-space(translate({x}, "{NBSP}", " "))'
+                def normalize(arg):
+                    return f'normalize-space(translate({arg}, "{NBSP}", " "))'
                 match = page_dom.xpath(
                     f'//text()[{normalize(".")} = {normalize("$value")}]',
                     **args
