@@ -6,8 +6,8 @@ from dataclasses import dataclass, field
 import parsel
 from tqdm.auto import tqdm
 
-from .. import html_utils
-from . import constants
+from awe import awe_graph, html_utils
+from awe.data import constants
 
 URL = 'https://codeplexarchive.blob.core.windows.net/archive/projects/swde/swde.zip'
 ZIP = f'{constants.DATA_DIR}/swde.zip'
@@ -89,7 +89,7 @@ class GroundTruthField:
     @property
     def file_path(self):
         return f'{self.site.vertical.groundtruth_dir}/{self.file_name}'
-        
+
     @property
     def lines(self):
         with open(self.file_path, mode='r', encoding='utf-8-sig') as file:
@@ -178,7 +178,7 @@ class Website:
             yield groundtruth_field
 
 @dataclass
-class Page:
+class Page(awe_graph.HtmlPage):
     site: Website
     index: int
 
@@ -219,6 +219,29 @@ class Page:
     @property
     def dom(self):
         return parsel.Selector(self.html)
+
+    @property
+    def labels(self):
+        return PageLabels(self)
+
+class PageLabels(awe_graph.HtmlLabels):
+    nodes: dict[str, list[str]]
+    """Map label -> groundtruth XPaths."""
+
+    def __init__(self, page: Page):
+        self.nodes = dict()
+        for groundtruth_field in page.site.groundtruth:
+            entry = groundtruth_field.entries[page.index]
+            assert entry.page == page
+            self.nodes[groundtruth_field.name] = entry.nodes
+
+    def get_labels(self, xpath: str):
+        return list(self._iter_labels(xpath))
+
+    def _iter_labels(self, xpath: str):
+        for label, xpaths in self.nodes.items():
+            if xpath in xpaths:
+                yield label
 
 @dataclass
 class GroundTruthEntry:
