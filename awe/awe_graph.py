@@ -119,3 +119,15 @@ class HtmlNode:
             node = stack.pop()
             yield node
             stack.extend(node.children)
+
+    @property
+    def prev_siblings(self):
+        return self.parent.children[:self.index]
+
+    @property
+    def next_siblings(self):
+        return self.parent.children[self.index + 1:]
+
+    @property
+    def siblings(self):
+        return self.prev_siblings + self.next_siblings
