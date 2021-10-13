@@ -57,7 +57,7 @@ class HtmlNode:
     element: Union[etree._Element, str]
     """Node or text fragment."""
 
-    parent: Union['HtmlNode', None] = field(default=None)
+    parent: Union['HtmlNode', None] = field(repr=False, default=None)
 
     labels: list[str] = field(init=False, default_factory=list)
     """
