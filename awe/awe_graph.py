@@ -26,8 +26,8 @@ class HtmlPage:
         html_utils.clean(page_dom)
 
         page_labels = self.labels
-        nodes = html_utils.iter_with_fragments(page_dom.root)
-        for index, (xpath, node) in enumerate(nodes):
+        index = 0
+        for xpath, node in html_utils.iter_with_fragments(page_dom.root):
             is_text = isinstance(node, str)
 
             # Exclude whitespace fragments.
@@ -38,13 +38,14 @@ class HtmlPage:
             labels = page_labels.get_labels(xpath)
             text = node if is_text else None
             yield HtmlNode(self, index, xpath, labels, text)
+            index += 1
 
 @dataclass
 class HtmlNode:
     page: HtmlPage = field(repr=False)
 
-    id: int
-    """Unique ID of the node inside the `page`."""
+    index: int
+    """Iteration index of the node inside the `page`."""
 
     xpath: str
 
