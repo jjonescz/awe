@@ -50,6 +50,12 @@ class Feature(ABC):
         if feature is not None:
             node.features.append(feature)
 
+    @classmethod
+    @property
+    @abstractmethod
+    def default(cls: Type[T]) -> T:
+        pass
+
 @dataclass
 class DollarSigns(Feature):
     count: int
@@ -59,6 +65,11 @@ class DollarSigns(Feature):
         if node.is_text:
             return DollarSigns(node.text.count('$'))
         return None
+
+    @classmethod
+    @property
+    def default(cls):
+        return DollarSigns(0)
 
 @dataclass
 class Depth(Feature):
