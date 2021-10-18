@@ -6,3 +6,6 @@ __pycache__/
 
 # Data downloaded by `dodo.py`
 /data/
+
+# PyTorch
+/lightning_logs/

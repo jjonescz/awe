@@ -11,6 +11,7 @@ torch==1.9.0
 torch-scatter==2.0.8
 torch-sparse==0.6.12
 torch-geometric==2.0.1
+pytorch-lightning==1.4.9
 # DoIt (job automation)
 doit==0.33.1
 # Parsel (HTML parsing)
