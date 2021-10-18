@@ -26,7 +26,7 @@ class AweModel(pl.LightningModule):
         y = torch.argmax(y, dim=1)
         z = self.forward(x)
         loss = self.criterion(z, y)
-        # self.log("train_loss", loss)
+        self.log("train_loss", loss)
         return loss
 
     def validation_step(self, batch, batch_idx):
