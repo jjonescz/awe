@@ -15,6 +15,7 @@ class AweModel(pl.LightningModule):
             nn.ReLU(),
             nn.Linear(32, label_count)
         )
+        self.label_count = label_count
         self.label_weights = torch.FloatTensor(label_weights)
 
     def forward(self, x):
@@ -38,7 +39,7 @@ class AweModel(pl.LightningModule):
         preds = torch.argmax(z, dim=1)
         acc = metrics.accuracy(preds, y)
         nt_acc = 0 if sum(y != 0) == 0 else metrics.accuracy(preds[y != 0], y[y != 0])
-        f1 = metrics.f1(preds, y)
+        f1 = metrics.f1(preds, y, average="weighted", num_classes=self.label_count, ignore_index=0)
         self.log("val_loss", loss, prog_bar=True)
         self.log("val_acc", acc, prog_bar=True)
         self.log("val_nt_acc", nt_acc, prog_bar=True)
