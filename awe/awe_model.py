@@ -23,6 +23,7 @@ class AweModel(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         x = x.view(x.size(0), -1)
+        y = torch.argmax(y, dim=1)
         z = self.forward(x)
         loss = self.criterion(z, y)
         self.log("train_loss", loss)
@@ -31,16 +32,19 @@ class AweModel(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         x, y = batch
         x = x.view(x.size(0), -1)
+        y = torch.argmax(y, dim=1)
         z = self.forward(x)
         loss =  self.criterion(z, y)
         preds = torch.argmax(z, dim=1)
-        acc = plf.accuracy(preds, torch.max(y, 1)[1])
+        acc = plf.accuracy(preds, y)
+        nt_acc = 0 if sum(y != 0) == 0 else plf.accuracy(preds[y != 0], y[y != 0])
         self.log("val_loss", loss, prog_bar=True)
         self.log("val_acc", acc, prog_bar=True)
+        self.log("val_nt_acc", nt_acc, prog_bar=True)
         return loss
 
     def criterion(self, z, y):
-        return F.cross_entropy(z, torch.max(y, 1)[1], weight=self.label_weights)
+        return F.cross_entropy(z, y, weight=self.label_weights)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
