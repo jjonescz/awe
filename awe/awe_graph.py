@@ -138,4 +138,4 @@ class HtmlNode:
         for feature in self.features:
             if isinstance(feature, cls):
                 return feature
-        return cls.default
+        return cls.default()

@@ -51,10 +51,8 @@ class Feature(ABC):
             node.features.append(feature)
 
     @classmethod
-    @property
-    @abstractmethod
     def default(cls: Type[T]) -> T:
-        pass
+        raise NotImplementedError()
 
 @dataclass
 class DollarSigns(Feature):
@@ -67,7 +65,6 @@ class DollarSigns(Feature):
         return None
 
     @classmethod
-    @property
     def default(cls):
         return DollarSigns(0)
 
