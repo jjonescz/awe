@@ -1,5 +1,5 @@
 import pytorch_lightning as pl
-from pytorch_lightning.metrics import functional as plf
+from torchmetrics import functional as metrics
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -36,11 +36,13 @@ class AweModel(pl.LightningModule):
         z = self.forward(x)
         loss =  self.criterion(z, y)
         preds = torch.argmax(z, dim=1)
-        acc = plf.accuracy(preds, y)
-        nt_acc = 0 if sum(y != 0) == 0 else plf.accuracy(preds[y != 0], y[y != 0])
+        acc = metrics.accuracy(preds, y)
+        nt_acc = 0 if sum(y != 0) == 0 else metrics.accuracy(preds[y != 0], y[y != 0])
+        f1 = metrics.f1(preds, y)
         self.log("val_loss", loss, prog_bar=True)
         self.log("val_acc", acc, prog_bar=True)
         self.log("val_nt_acc", nt_acc, prog_bar=True)
+        self.log("val_f1", f1, prog_bar=True)
         return loss
 
     def criterion(self, z, y):
