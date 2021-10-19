@@ -81,6 +81,7 @@ class AweModel(pl.LightningModule):
         swde_metrics = [
             compute_swde_metrics(label)
             for label in range(self.label_count)
+            if label != 0
         ]
         swde_f1s = [m[2] for m in swde_metrics]
         swde_f1 = np.mean(swde_f1s)
