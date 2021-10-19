@@ -33,7 +33,7 @@ class AweModel(pl.LightningModule):
     def validation_step(self, batch: data.Batch, batch_idx: int):
         y = batch.y
         z = self.forward(batch.x)
-        loss =  self.criterion(z, y)
+        loss = self.criterion(z, y)
         preds_conf, preds = torch.max(z, dim=1)
 
         # SWDE-inspired metric computation: per-attribute, page-wide.
@@ -92,6 +92,11 @@ class AweModel(pl.LightningModule):
         self.log("val_f1", f1, prog_bar=True)
         self.log("val_swde_f1", swde_f1, prog_bar=True)
         return loss
+
+    def predict_step(self, batch: data.Batch, batch_idx: int):
+        z = self.forward(batch.x)
+        preds = torch.argmax(z, dim=1)
+        return preds
 
     def criterion(self, z, y):
         return F.cross_entropy(z, y, weight=self.label_weights)
