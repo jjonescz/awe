@@ -56,6 +56,8 @@ class Feature(ABC):
 
 @dataclass
 class DollarSigns(Feature):
+    """Number of dollar signs in text."""
+
     count: int
 
     @classmethod
@@ -70,6 +72,8 @@ class DollarSigns(Feature):
 
 @dataclass
 class Depth(Feature):
+    """Relative depth of node in DOM tree."""
+
     relative: float
 
     @classmethod
