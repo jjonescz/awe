@@ -31,60 +31,18 @@ class AweModel(pl.LightningModule):
         return loss
 
     def validation_step(self, batch: data.Batch, batch_idx: int):
-        y = batch.y
-        z = self.forward(batch.x)
-        loss = self.criterion(z, y)
-        preds_conf, preds = torch.max(z, dim=1)
-
-        # SWDE-inspired metric computation: per-attribute, page-wide.
-        def compute_swde_metrics(label):
-            true_positives = 0
-            false_positives = 0
-            true_negatives = 0
-            false_negatives = 0
-            for page in range(batch.num_graphs):
-                # Filter for the page and label.
-                mask = torch.logical_and(batch.batch == page, preds == label)
-                curr_preds_conf = preds_conf[mask]
-
-                if len(curr_preds_conf) == 0:
-                    if (y[batch.batch == page] == label).sum() == 0:
-                        true_negatives += 1
-                    else:
-                        false_negatives += 1
-                    continue
-
-                # Find only the most confident prediction.
-                idx = torch.argmax(curr_preds_conf, dim=0)
-                curr_preds_conf = curr_preds_conf[idx]
-
-                # Is the attribute correctly extracted?
-                if y[mask][idx] == label:
-                    true_positives += 1
-                else:
-                    false_positives += 1
-
-            if (true_positives + false_positives) == 0:
-                precision = 0
-            else:
-                precision = true_positives / (true_positives + false_positives)
-            if (true_positives + false_negatives) == 0:
-                recall = 0
-            else:
-                recall = true_positives / (true_positives + false_negatives)
-            if (precision + recall) == 0:
-                f1 = 0
-            else:
-                f1 = 2 * (precision * recall) / (precision + recall)
-            return precision, recall, f1
-
         swde_metrics = [
-            compute_swde_metrics(label)
+            self.compute_swde_metrics(batch, label)
             for label in range(self.label_count)
             if label != 0
         ]
         swde_f1s = [m[2] for m in swde_metrics]
         swde_f1 = np.mean(swde_f1s)
+
+        y = batch.y
+        z = self.forward(batch.x)
+        loss = self.criterion(z, y)
+        preds = torch.argmax(z, dim=1)
 
         acc = metrics.accuracy(preds, y)
         f1 = metrics.f1(preds, y, average="weighted", num_classes=self.label_count, ignore_index=0)
@@ -105,3 +63,50 @@ class AweModel(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
         return optimizer
+
+    def compute_swde_metrics(self, batch: data.Batch, label: int):
+        """SWDE-inspired metric computation: per-attribute, page-wide."""
+
+        y = batch.y
+        z = self.forward(batch.x)
+        preds_conf, preds = torch.max(z, dim=1)
+
+        true_positives = 0
+        false_positives = 0
+        true_negatives = 0
+        false_negatives = 0
+        for page in range(batch.num_graphs):
+            # Filter for the page and label.
+            mask = torch.logical_and(batch.batch == page, preds == label)
+            curr_preds_conf = preds_conf[mask]
+
+            if len(curr_preds_conf) == 0:
+                if (y[batch.batch == page] == label).sum() == 0:
+                    true_negatives += 1
+                else:
+                    false_negatives += 1
+                continue
+
+            # Find only the most confident prediction.
+            idx = torch.argmax(curr_preds_conf, dim=0)
+            curr_preds_conf = curr_preds_conf[idx]
+
+            # Is the attribute correctly extracted?
+            if y[mask][idx] == label:
+                true_positives += 1
+            else:
+                false_positives += 1
+
+        if (true_positives + false_positives) == 0:
+            precision = 0
+        else:
+            precision = true_positives / (true_positives + false_positives)
+        if (true_positives + false_negatives) == 0:
+            recall = 0
+        else:
+            recall = true_positives / (true_positives + false_negatives)
+        if (precision + recall) == 0:
+            f1 = 0
+        else:
+            f1 = 2 * (precision * recall) / (precision + recall)
+        return precision, recall, f1
