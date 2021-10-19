@@ -108,15 +108,15 @@ class AweModel(pl.LightningModule):
         false_positives = stats['fp']
         false_negatives = stats['fn']
         if (true_positives + false_positives) == 0:
-            precision = 0
+            precision = 0.0
         else:
             precision = true_positives / (true_positives + false_positives)
         if (true_positives + false_negatives) == 0:
-            recall = 0
+            recall = 0.0
         else:
             recall = true_positives / (true_positives + false_negatives)
         if (precision + recall) == 0:
-            f1 = 0
+            f1 = 0.0
         else:
             f1 = 2 * (precision * recall) / (precision + recall)
         return precision, recall, f1
