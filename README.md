@@ -12,6 +12,9 @@ Containers](https://code.visualstudio.com/docs/remote/containers).
 
 See available commands via `doit list`. Their source code is in `dodo.py`.
 
+1. Prepare dataset by running `doit`.
+2. See `notebook.ipynb`.
+
 ## Development
 
 **Adding new Python package:** Add the package to `requirements.txt` and run
