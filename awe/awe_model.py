@@ -34,27 +34,63 @@ class AweModel(pl.LightningModule):
         y = batch.y
         z = self.forward(batch.x)
         loss =  self.criterion(z, y)
-        preds = torch.argmax(z, dim=1)
+        preds_conf, preds = torch.max(z, dim=1)
 
-        def metric(f, mask):
-            return f(preds[mask], y[mask])
+        # SWDE-inspired metric computation: per-attribute, page-wide.
+        def compute_swde_metrics(label):
+            true_positives = 0
+            false_positives = 0
+            true_negatives = 0
+            false_negatives = 0
+            for page in range(batch.num_graphs):
+                # Filter for the page and label.
+                mask = torch.logical_and(batch.batch == page, preds == label)
+                curr_preds_conf = preds_conf[mask]
 
-        def page_metrics(f):
-            """Computes metrics for each page (graph) separately."""
-            return [
-                metric(f, batch.batch == page)
-                for page in range(batch.num_graphs)
-            ]
+                if len(curr_preds_conf) == 0:
+                    if (y[batch.batch == page] == label).sum() == 0:
+                        true_negatives += 1
+                    else:
+                        false_negatives += 1
+                    continue
 
-        accs = page_metrics(metrics.accuracy)
-        f1s = page_metrics(metrics.f1)
+                # Find only the most confident prediction.
+                idx = torch.argmax(curr_preds_conf, dim=0)
+                curr_preds_conf = curr_preds_conf[idx]
+
+                # Is the attribute correctly extracted?
+                if y[mask][idx] == label:
+                    true_positives += 1
+                else:
+                    false_positives += 1
+
+            if (true_positives + false_positives) == 0:
+                precision = 0
+            else:
+                precision = true_positives / (true_positives + false_positives)
+            if (true_positives + false_negatives) == 0:
+                recall = 0
+            else:
+                recall = true_positives / (true_positives + false_negatives)
+            if (precision + recall) == 0:
+                f1 = 0
+            else:
+                f1 = 2 * (precision * recall) / (precision + recall)
+            return precision, recall, f1
+
+        swde_metrics = [
+            compute_swde_metrics(label)
+            for label in range(self.label_count)
+        ]
+        swde_f1s = [m[2] for m in swde_metrics]
+        swde_f1 = np.mean(swde_f1s)
+
         acc = metrics.accuracy(preds, y)
         f1 = metrics.f1(preds, y, average="weighted", num_classes=self.label_count, ignore_index=0)
         self.log("val_loss", loss, prog_bar=True)
         self.log("val_acc", acc, prog_bar=True)
         self.log("val_f1", f1, prog_bar=True)
-        self.log("val_page_acc", np.mean(accs), prog_bar=True)
-        self.log("val_page_f1", np.mean(f1s), prog_bar=True)
+        self.log("val_swde_f1", swde_f1, prog_bar=True)
         return loss
 
     def criterion(self, z, y):
