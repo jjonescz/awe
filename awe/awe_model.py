@@ -1,3 +1,6 @@
+import collections
+from typing import Callable
+
 import numpy as np
 import pytorch_lightning as pl
 import torch
@@ -64,17 +67,13 @@ class AweModel(pl.LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
         return optimizer
 
-    def compute_swde_metrics(self, batch: data.Batch, label: int):
-        """SWDE-inspired metric computation: per-attribute, page-wide."""
+    def predict_swde(self, batch: data.Batch, label: int, callback: Callable):
+        """SWDE-inspired prediction computation: per-attribute, page-wide."""
 
         y = batch.y
         z = self.forward(batch.x)
         preds_conf, preds = torch.max(z, dim=1)
 
-        true_positives = 0
-        false_positives = 0
-        true_negatives = 0
-        false_negatives = 0
         for page in range(batch.num_graphs):
             # Filter for the page and label.
             mask = torch.logical_and(batch.batch == page, preds == label)
@@ -82,9 +81,9 @@ class AweModel(pl.LightningModule):
 
             if len(curr_preds_conf) == 0:
                 if (y[batch.batch == page] == label).sum() == 0:
-                    true_negatives += 1
+                    callback('tn')
                 else:
-                    false_negatives += 1
+                    callback('fn')
                 continue
 
             # Find only the most confident prediction.
@@ -93,10 +92,21 @@ class AweModel(pl.LightningModule):
 
             # Is the attribute correctly extracted?
             if y[mask][idx] == label:
-                true_positives += 1
+                callback('tp')
             else:
-                false_positives += 1
+                callback('fp')
 
+    def compute_swde_metrics(self, batch: data.Batch, label: int):
+        """SWDE-inspired metric computation: per-attribute, page-wide."""
+
+        stats = collections.defaultdict(int)
+        def increment(name: str):
+            stats[name] += 1
+        self.predict_swde(batch, label, increment)
+
+        true_positives = stats['tp']
+        false_positives = stats['fp']
+        false_negatives = stats['fn']
         if (true_positives + false_positives) == 0:
             precision = 0
         else:
