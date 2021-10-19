@@ -34,6 +34,12 @@ class AweModel(pl.LightningModule):
         return loss
 
     def validation_step(self, batch: data.Batch, batch_idx: int):
+        return self._shared_eval_step('val', batch, batch_idx)
+
+    def test_step(self, batch: data.Batch, batch_idx: int):
+        return self._shared_eval_step('test', batch, batch_idx)
+
+    def _shared_eval_step(self, prefix: str, batch: data.Batch, batch_idx: int):
         swde_metrics = [
             self.compute_swde_metrics(batch, label)
             for label in range(self.label_count)
@@ -49,11 +55,16 @@ class AweModel(pl.LightningModule):
 
         acc = metrics.accuracy(preds, y)
         f1 = metrics.f1(preds, y, average="weighted", num_classes=self.label_count, ignore_index=0)
-        self.log("val_loss", loss, prog_bar=True)
-        self.log("val_acc", acc, prog_bar=True)
-        self.log("val_f1", f1, prog_bar=True)
-        self.log("val_swde_f1", swde_f1, prog_bar=True)
-        return loss
+
+        results = {
+            'loss': loss,
+            'acc': acc,
+            'f1': f1,
+            'swde_f1': swde_f1
+        }
+        prefixed = { f'{prefix}_{key}': value for key, value in results.items() }
+        self.log_dict(prefixed, prog_bar=True)
+        return prefixed
 
     def predict_step(self, batch: data.Batch, batch_idx: int):
         z = self.forward(batch.x)
