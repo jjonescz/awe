@@ -2,7 +2,7 @@ import collections
 from typing import Optional
 
 import torch
-from torch_geometric import data
+from torch_geometric.data import Data
 
 from awe import awe_graph, features
 
@@ -22,11 +22,13 @@ def _create_label_map():
 
 class Dataset:
     label_map: Optional[dict[Optional[str], int]]
-    data: dict[str, list[awe_graph.HtmlPage]]
+    data: dict[str, list[Data]]
+    pages: dict[str, list[awe_graph.HtmlPage]]
 
     def __init__(self):
         self.label_map = None
         self.data = {}
+        self.pages = {}
 
     def _prepare_data(self, pages: list[awe_graph.HtmlPage]):
         def get_node_features(node: awe_graph.HtmlNode):
@@ -51,7 +53,7 @@ class Dataset:
             ])
             x = torch.tensor(list(map(get_node_features, ctx.nodes)))
             y = torch.tensor(list(map(get_node_label, ctx.nodes)))
-            return data.Data(x=x, y=y)
+            return Data(x=x, y=y)
 
         return list(map(prepare_page, pages))
 
@@ -61,6 +63,7 @@ class Dataset:
         else:
             # Freeze label map.
             self.label_map.default_factory = None
+        self.pages[name] = pages
         self.data[name] = self._prepare_data(pages)
 
     @property
