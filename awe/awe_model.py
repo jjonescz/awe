@@ -11,10 +11,10 @@ from torchmetrics import functional as metrics
 
 
 class AweModel(pl.LightningModule):
-    def __init__(self, label_count, label_weights):
+    def __init__(self, feature_count, label_count, label_weights):
         super().__init__()
         self.layers = nn.Sequential(
-            nn.Linear(2, 32),
+            nn.Linear(feature_count, 32),
             nn.ReLU(),
             nn.Linear(32, 32),
             nn.ReLU(),

@@ -1,3 +1,4 @@
+import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Iterable, Type, TypeVar
@@ -55,22 +56,6 @@ class Feature(ABC):
         raise NotImplementedError()
 
 @dataclass
-class DollarSigns(Feature):
-    """Number of dollar signs in text."""
-
-    count: int
-
-    @classmethod
-    def apply_to(cls, node: 'awe_graph.HtmlNode', _):
-        if node.is_text:
-            return DollarSigns(node.text.count('$'))
-        return None
-
-    @classmethod
-    def default(cls):
-        return DollarSigns(0)
-
-@dataclass
 class Depth(Feature):
     """Relative depth of node in DOM tree."""
 
@@ -83,3 +68,27 @@ class Depth(Feature):
             max_depth = max(map(lambda n: n.depth, context.nodes))
             setattr(context, 'max_depth', max_depth)
         return Depth(node.depth / max_depth)
+
+@dataclass
+class CharCategories(Feature):
+    """Numbers of different character categories."""
+
+    dollars: int
+    letters: int
+    digits: int
+
+    @classmethod
+    def apply_to(cls, node: 'awe_graph.HtmlNode', _):
+        if node.is_text:
+            def count_pattern(pattern: str):
+                return len(re.findall(pattern, node.text))
+            return CharCategories(
+                dollars=node.text.count('$'),
+                letters=count_pattern(r'[a-zA-Z]'),
+                digits=count_pattern(r'\d')
+            )
+        return None
+
+    @classmethod
+    def default(cls):
+        return CharCategories(0, 0, 0)
