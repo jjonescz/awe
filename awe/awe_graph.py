@@ -139,3 +139,9 @@ class HtmlNode:
             if isinstance(feature, cls):
                 return feature
         return cls.default()
+
+    @property
+    def text_content(self):
+        if self.is_text:
+            return self.text
+        return self.element.text_content()
