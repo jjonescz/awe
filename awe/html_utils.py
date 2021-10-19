@@ -6,7 +6,8 @@ from lxml import etree
 
 def clean(page: parsel.Selector):
     page.css('script, style').remove()
-    page.xpath('//comment()').remove()
+    # Note that root elements cannot be removed, hence the `/*` prefix.
+    page.xpath('/*//comment()').remove()
     return page
 
 def unescape(text: str):
