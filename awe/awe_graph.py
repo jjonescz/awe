@@ -141,7 +141,7 @@ class HtmlNode:
         return cls.default()
 
     @property
-    def text_content(self):
+    def text_content(self) -> str:
         if self.is_text:
             return self.text
         return self.element.text_content()
