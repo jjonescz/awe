@@ -1,8 +1,9 @@
 import pytorch_lightning as pl
-from torchmetrics import functional as metrics
 import torch
 import torch.nn.functional as F
 from torch import nn
+from torch_geometric import data
+from torchmetrics import functional as metrics
 
 
 class AweModel(pl.LightningModule):
@@ -18,21 +19,19 @@ class AweModel(pl.LightningModule):
         self.label_count = label_count
         self.label_weights = torch.FloatTensor(label_weights)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         return self.layers(x)
 
-    def training_step(self, batch, batch_idx):
-        x, y = batch
-        y = torch.argmax(y, dim=1)
-        z = self.forward(x)
+    def training_step(self, batch: data.Batch, batch_idx: int):
+        y = batch.y
+        z = self.forward(batch.x)
         loss = self.criterion(z, y)
         self.log("train_loss", loss)
         return loss
 
-    def validation_step(self, batch, batch_idx):
-        x, y = batch
-        y = torch.argmax(y, dim=1)
-        z = self.forward(x)
+    def validation_step(self, batch: data.Batch, batch_idx: int):
+        y = batch.y
+        z = self.forward(batch.x)
         loss =  self.criterion(z, y)
         preds = torch.argmax(z, dim=1)
         acc = metrics.accuracy(preds, y)
