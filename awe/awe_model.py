@@ -81,9 +81,9 @@ class AweModel(pl.LightningModule):
 
             if len(curr_preds_conf) == 0:
                 if (y[batch.batch == page] == label).sum() == 0:
-                    callback('tn')
+                    callback('tn', mask)
                 else:
-                    callback('fn')
+                    callback('fn', mask)
                 continue
 
             # Find only the most confident prediction.
@@ -92,15 +92,15 @@ class AweModel(pl.LightningModule):
 
             # Is the attribute correctly extracted?
             if y[mask][idx] == label:
-                callback('tp')
+                callback('tp', mask, idx)
             else:
-                callback('fp')
+                callback('fp', mask, idx)
 
     def compute_swde_metrics(self, batch: data.Batch, label: int):
         """SWDE-inspired metric computation: per-attribute, page-wide."""
 
         stats = collections.defaultdict(int)
-        def increment(name: str):
+        def increment(name: str, *_):
             stats[name] += 1
         self.predict_swde(batch, label, increment)
 
