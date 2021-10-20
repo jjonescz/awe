@@ -2,8 +2,7 @@ import collections
 from typing import Optional
 
 import torch
-from torch_geometric import loader
-from torch_geometric.data import Data
+from torch_geometric import loader, data as gdata
 from tqdm.auto import tqdm
 
 from awe import awe_graph, features
@@ -24,7 +23,7 @@ def _create_label_map():
 
 class Dataset:
     label_map: Optional[dict[Optional[str], int]] = None
-    data: dict[str, list[Data]] = {}
+    data: dict[str, list[gdata.Data]] = {}
     pages: dict[str, list[awe_graph.HtmlPage]] = {}
     loaders: dict[str, loader.DataLoader] = {}
 
@@ -48,7 +47,7 @@ class Dataset:
 
             x = torch.vstack(list(map(get_node_features, ctx.nodes)))
             y = torch.tensor(list(map(get_node_label, ctx.nodes)))
-            return Data(x=x, y=y)
+            return gdata.Data(x=x, y=y)
 
         return list(map(prepare_page, tqdm(pages, desc='pages')))
 
@@ -70,3 +69,28 @@ class Dataset:
     def feature_labels(self):
         """Description of each feature vector column."""
         return [label for f in self.features for label in f.labels]
+
+    def iterate_data(self, name: str):
+        """Iterates `HtmlNode`s along with their feature vectors and labels."""
+        page_idx = 0
+        for batch in self.loaders[name]:
+            curr_page = None
+            curr_nodes = None
+            node_offset = 0
+            prev_page = 0
+            for node_idx in range(batch.num_nodes):
+                page_offset = batch.batch[node_idx]
+
+                if prev_page != page_offset:
+                    assert prev_page == page_offset - 1
+                    prev_page = page_offset
+                    node_offset = -node_idx
+
+                page = self.pages[name][page_idx + page_offset]
+                if curr_page != page:
+                    curr_page = page
+                    curr_nodes = list(page.nodes)
+                node = curr_nodes[node_idx + node_offset]
+
+                yield node, batch.x[node_idx], batch.y[node_idx]
+            page_idx += batch.num_graphs
