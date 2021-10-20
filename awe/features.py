@@ -1,7 +1,7 @@
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Iterable, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Optional, TypeVar
 
 import torch
 
@@ -28,14 +28,6 @@ class FeatureContext:
         if self._nodes is None:
             self._nodes = list(self.page.nodes)
         return self._nodes
-
-    def add(self, feature: Type['Feature']):
-        for node in self.nodes:
-            feature.add_to(node, self)
-
-    def add_all(self, features: Iterable[Type['Feature']]):
-        for feature in features:
-            self.add(feature)
 
 class Feature(ABC):
     @property
