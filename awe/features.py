@@ -1,6 +1,5 @@
 import re
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional, TypeVar
 
 import torch
@@ -41,7 +40,6 @@ class Feature(ABC):
         context: FeatureContext) -> torch.FloatTensor:
         """Computes feature vector for the given `node`."""
 
-@dataclass
 class Depth(Feature):
     """Relative depth of node in DOM tree."""
 
@@ -58,7 +56,6 @@ class Depth(Feature):
     def create(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
         return torch.FloatTensor([node.depth / self._get_max_depth(context)])
 
-@dataclass
 class CharCategories(Feature):
     """Counts of different character categories."""
 
