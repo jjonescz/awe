@@ -26,33 +26,28 @@ class Dataset:
     data: dict[str, list[Data]]
     pages: dict[str, list[awe_graph.HtmlPage]]
 
-    def __init__(self):
+    def __init__(self, fs: list[features.Feature]):
         self.label_map = None
         self.data = {}
         self.pages = {}
+        self.features = fs
 
     def _prepare_data(self, pages: list[awe_graph.HtmlPage]):
-        def get_node_features(node: awe_graph.HtmlNode):
-            categories = node.get_feature(features.CharCategories)
-            return [
-                categories.dollars,
-                categories.letters,
-                categories.digits,
-                node.get_feature(features.Depth).relative
-            ]
-
-        def get_node_label(node: awe_graph.HtmlNode):
-            # Only the first label for now.
-            label = None if len(node.labels) == 0 else node.labels[0]
-            return self.label_map[label]
-
         def prepare_page(page: awe_graph.HtmlPage):
             ctx = features.FeatureContext(page)
-            ctx.add_all([
-                features.CharCategories,
-                features.Depth
-            ])
-            x = torch.tensor(list(map(get_node_features, ctx.nodes)))
+
+            def get_node_features(node: awe_graph.HtmlNode):
+                return torch.hstack([
+                    feature.create(node, ctx)
+                    for feature in self.features
+                ])
+
+            def get_node_label(node: awe_graph.HtmlNode):
+                # Only the first label for now.
+                label = None if len(node.labels) == 0 else node.labels[0]
+                return self.label_map[label]
+
+            x = torch.vstack(list(map(get_node_features, ctx.nodes)))
             y = torch.tensor(list(map(get_node_label, ctx.nodes)))
             return Data(x=x, y=y)
 

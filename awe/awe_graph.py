@@ -1,12 +1,11 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Type, Union
+from typing import Union
 
 import parsel
 from lxml import etree
 
 from awe import html_utils, utils
-from awe.features import Feature, T
 
 
 class HtmlLabels(ABC):
@@ -68,8 +67,6 @@ class HtmlNode:
     Ground-truth labels of the node or `[]` if it doesn't correspond to any
     target attribute.
     """
-
-    features: list[Feature] = field(init=False, default_factory=list)
 
     _children: list['HtmlNode'] = utils.cache_field()
 
@@ -133,12 +130,6 @@ class HtmlNode:
     @property
     def siblings(self):
         return self.prev_siblings + self.next_siblings
-
-    def get_feature(self, cls: Type[T]) -> T:
-        for feature in self.features:
-            if isinstance(feature, cls):
-                return feature
-        return cls.default()
 
     @property
     def text_content(self) -> str:

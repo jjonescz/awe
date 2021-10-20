@@ -3,6 +3,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Iterable, Type, TypeVar
 
+import torch
+
 if TYPE_CHECKING:
     from awe import awe_graph
 
@@ -33,62 +35,50 @@ class FeatureContext:
             self.add(feature)
 
 class Feature(ABC):
-    @classmethod
+    @property
     @abstractmethod
-    def apply_to(cls,
-        node: 'awe_graph.HtmlNode',
-        context: FeatureContext
-    ) -> bool:
-        pass
+    def result_len(self) -> int:
+        """Length of the resulting feature vector."""
 
-    @classmethod
-    def add_to(
-        cls: Type[T],
+    @abstractmethod
+    def create(self,
         node: 'awe_graph.HtmlNode',
-        context: FeatureContext
-    ) -> T:
-        feature = cls.apply_to(node, context)
-        if feature is not None:
-            node.features.append(feature)
-
-    @classmethod
-    def default(cls: Type[T]) -> T:
-        raise NotImplementedError()
+        context: FeatureContext) -> torch.FloatTensor:
+        """Computes feature vector for the given `node`."""
 
 @dataclass
 class Depth(Feature):
     """Relative depth of node in DOM tree."""
 
-    relative: float
+    @property
+    def result_len(self):
+        return 1
 
-    @classmethod
-    def apply_to(cls, node: 'awe_graph.HtmlNode', context: FeatureContext):
+    @staticmethod
+    def _get_max_depth(context: FeatureContext):
         max_depth = getattr(context, 'max_depth', None)
         if max_depth is None:
             max_depth = max(map(lambda n: n.depth, context.nodes))
             setattr(context, 'max_depth', max_depth)
-        return Depth(node.depth / max_depth)
+        return max_depth
+
+    def create(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
+        return torch.FloatTensor([node.depth / self._get_max_depth(context)])
 
 @dataclass
 class CharCategories(Feature):
-    """Numbers of different character categories."""
+    """Counts of different character categories."""
 
-    dollars: int
-    letters: int
-    digits: int
+    @property
+    def result_len(self):
+        return 3
 
-    @classmethod
-    def apply_to(cls, node: 'awe_graph.HtmlNode', _):
-        if node.is_text:
-            def count_pattern(pattern: str):
-                return len(re.findall(pattern, node.text))
-            return CharCategories(
-                dollars=node.text.count('$'),
-                letters=count_pattern(r'[a-zA-Z]'),
-                digits=count_pattern(r'\d')
-            )
-        return None
+    def create(self, node: 'awe_graph.HtmlNode', _):
+        def count_pattern(pattern: str):
+            return len(re.findall(pattern, node.text)) if node.is_text else 0
 
-    @classmethod
-    def default(cls):
-        return CharCategories(0, 0, 0)
+        return torch.FloatTensor([
+            count_pattern(r'[$]'),
+            count_pattern(r'[a-zA-Z]'),
+            count_pattern(r'\d')
+        ])
