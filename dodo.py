@@ -3,7 +3,7 @@
 import os
 import subprocess
 
-from awe.data import swde
+from awe.data import glove, swde
 
 DOIT_CONFIG = {
     'verbosity': 2
@@ -82,4 +82,13 @@ def task_extract_swde_7z():
         ],
         'file_dep': input_zips,
         'targets': output_dirs
+    }
+
+def task_download_glove():
+    """download pre-trained GloVe embeddings"""
+
+    return {
+        'actions': [glove.download_embeddings],
+        'targets': [glove.GLOVE_DIR],
+        'uptodate': [True]
     }

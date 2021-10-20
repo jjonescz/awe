@@ -18,3 +18,5 @@ torch-tb-profiler==0.2.1
 doit==0.33.1
 # Parsel (HTML parsing)
 parsel==1.6.0
+# Gensim (word embeddings)
+gensim==4.1.2
