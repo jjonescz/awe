@@ -63,5 +63,6 @@ class Dataset:
         self.data[name] = self._prepare_data(pages)
 
     @property
-    def feature_count(self):
-        return self.data['train'][0].x.shape[1]
+    def feature_dim(self):
+        """Feature vector total length."""
+        return sum(f.result_len for f in self.features)
