@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Optional, TypeVar
 import numpy as np
 import torch
 from gensim import models as gmodels
+from torchtext.data import utils as text_utils
 
 from awe.data import glove
 
@@ -81,7 +82,7 @@ class CharCategories(Feature):
         ])
 
 class WordEmbedding(Feature):
-    """Pre-trained GloVe embedding for each word"""
+    """Pre-trained GloVe embedding for each word -> averaged to one vector."""
 
     @property
     def labels(self):
@@ -94,16 +95,21 @@ class WordEmbedding(Feature):
             context.glove = glove.get_embeddings()
         return context.glove
 
-    def create(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
+    def _embed(self, text: str, context: FeatureContext):
         glove_model = self._get_glove(context)
-        if not node.is_text:
-            vector = None
-        else:
+        tokenizer = text_utils.get_tokenizer('basic_english')
+        for token in tokenizer(text):
             try:
-                # TODO: Works only for one-word nodes!
-                vector = glove_model[node.text]
+                yield glove_model[token]
             except KeyError:
-                vector = None
-        if vector is None:
-            vector = np.repeat(0, glove_model.vector_size)
-        return torch.FloatTensor(vector)
+                pass
+
+    def _get_vector(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
+        if node.is_text:
+            vectors = list(self._embed(node.text, context))
+            if len(vectors) != 0:
+                return np.mean(vectors, axis=0)
+        return np.repeat(0, self._get_glove(context).vector_size)
+
+    def create(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
+        return torch.FloatTensor(self._get_vector(node, context))
