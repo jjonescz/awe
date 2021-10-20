@@ -20,7 +20,8 @@ class FeatureContext:
     max_depth: Optional[int] = None
     """Maximum DOM tree depth; stored by `Depth`."""
 
-    embedding: Optional[gmodels.KeyedVectors] = None
+    glove: Optional[gmodels.KeyedVectors] = None
+    """Pre-trained GloVe weights; stored by `WordEmbedding`."""
 
     _nodes: list['awe_graph.HtmlNode'] = None
 
@@ -88,21 +89,21 @@ class WordEmbedding(Feature):
         return ['word_embedding']
 
     @staticmethod
-    def _get_embedding(context: FeatureContext):
-        if context.embedding is None:
-            context.embedding = glove.get_embeddings()
-        return context.embedding
+    def _get_glove(context: FeatureContext):
+        if context.glove is None:
+            context.glove = glove.get_embeddings()
+        return context.glove
 
     def create(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
-        embedding = self._get_embedding(context)
+        glove = self._get_glove(context)
         if not node.is_text:
             vector = None
         else:
             try:
                 # TODO: Works only for one-word nodes!
-                vector = embedding[node.text]
+                vector = glove[node.text]
             except KeyError:
                 vector = None
         if vector is None:
-            vector = np.repeat(0, embedding.vector_size)
+            vector = np.repeat(0, glove.vector_size)
         return torch.FloatTensor(vector)
