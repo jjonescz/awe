@@ -81,21 +81,14 @@ class CharCategories(Feature):
 class WordEmbedding(Feature):
     """Pre-trained GloVe embedding for each word -> averaged to one vector."""
 
-    _glove: Optional[gmodels.KeyedVectors] = None
-
     def __init__(self):
         self.tokenizer = text_utils.get_tokenizer('basic_english')
+        self.glove = glove.get_embeddings()
 
     @property
     def labels(self):
         # TODO: Doesn't match resulting dimensionality!
         return ['word_embedding']
-
-    @property
-    def glove(self):
-        if self._glove is None:
-            self._glove = glove.get_embeddings()
-        return self._glove
 
     def _embed(self, text: str):
         for token in self.tokenizer(text):
