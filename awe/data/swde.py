@@ -215,6 +215,10 @@ class Page(awe_graph.HtmlPage):
     def labels(self):
         return PageLabels(self)
 
+    @property
+    def fields(self):
+        return [field.name for field in self.site.groundtruth]
+
 class PageLabels(awe_graph.HtmlLabels):
     nodes: dict[str, list[str]]
     """Map label -> groundtruth XPaths."""
@@ -239,6 +243,7 @@ class GroundTruthEntry:
     field: GroundTruthField
     page: Page
     values: list[str] = utils.add_field()
+    """Values for the field as loaded from the groundtruth file."""
 
     @property
     def nodes(self):

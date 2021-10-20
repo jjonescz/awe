@@ -22,6 +22,10 @@ class Page(awe_graph.HtmlPage):
     def labels(self):
         return NO_LABELS
 
+    @property
+    def fields(self):
+        return []
+
     def _download_dom(self):
         text = requests.get(self.url).text
         return parsel.Selector(text)

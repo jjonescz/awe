@@ -1,4 +1,3 @@
-import collections
 from typing import Optional
 
 import joblib
@@ -9,19 +8,6 @@ from tqdm.auto import tqdm
 
 from awe import awe_graph, features
 
-
-def _new_label_id_counter():
-    counter = 0
-    def new_label_id():
-        nonlocal counter
-        counter += 1
-        return counter
-    return new_label_id
-
-def _create_label_map():
-    label_map = collections.defaultdict(_new_label_id_counter())
-    label_map[None] = 0
-    return label_map
 
 class Dataset:
     label_map: Optional[dict[Optional[str], int]] = None
@@ -56,10 +42,21 @@ class Dataset:
 
     def add(self, name: str, pages: list[awe_graph.HtmlPage]):
         if self.label_map is None:
-            self.label_map = _create_label_map()
+            # Create label map.
+            self.label_map = { None: 0 }
+            label_counter = 1
+            for page in pages:
+                for field in page.fields:
+                    if field not in self.label_map:
+                        self.label_map[field] = label_counter
+                        label_counter += 1
         else:
-            # Freeze label map.
-            self.label_map.default_factory = None
+            # Check label map.
+            for page in pages:
+                for field in page.fields:
+                    if field not in self.label_map:
+                        raise ValueError(f'Field {field} from page {page} ' +
+                            'not found in the label map.')
         self.pages[name] = pages
         self.data[name] = self._prepare_data(pages)
 

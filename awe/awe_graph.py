@@ -25,6 +25,11 @@ class HtmlPage(ABC):
         pass
 
     @property
+    @abstractmethod
+    def fields(self) -> list[str]:
+        """Names of labels recognized in this page."""
+
+    @property
     def root(self):
         # Prepare page DOM.
         page_dom = self.dom
