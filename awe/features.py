@@ -1,7 +1,7 @@
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Iterable, Type, TypeVar
+from typing import TYPE_CHECKING, Iterable, Optional, Type, TypeVar
 
 import torch
 
@@ -13,6 +13,9 @@ T = TypeVar('T', bound='Feature') # pylint: disable=invalid-name
 class FeatureContext:
     """Everything needed to compute a `HtmlNode`'s `Feature`s."""
     page: 'awe_graph.HtmlPage'
+
+    max_depth: Optional[int] = None
+    """Maximum DOM tree depth; stored by `Depth`."""
 
     _nodes: list['awe_graph.HtmlNode'] = None
 
@@ -56,11 +59,9 @@ class Depth(Feature):
 
     @staticmethod
     def _get_max_depth(context: FeatureContext):
-        max_depth = getattr(context, 'max_depth', None)
-        if max_depth is None:
-            max_depth = max(map(lambda n: n.depth, context.nodes))
-            setattr(context, 'max_depth', max_depth)
-        return max_depth
+        if context.max_depth is None:
+            context.max_depth = max(map(lambda n: n.depth, context.nodes))
+        return context.max_depth
 
     def create(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
         return torch.FloatTensor([node.depth / self._get_max_depth(context)])
