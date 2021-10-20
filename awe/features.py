@@ -21,9 +21,6 @@ class FeatureContext:
     max_depth: Optional[int] = None
     """Maximum DOM tree depth; stored by `Depth`."""
 
-    glove: Optional[gmodels.KeyedVectors] = None
-    """Pre-trained GloVe weights; stored by `WordEmbedding`."""
-
     _nodes: list['awe_graph.HtmlNode'] = None
 
     def __init__(self, page: 'awe_graph.HtmlPage'):
@@ -84,32 +81,35 @@ class CharCategories(Feature):
 class WordEmbedding(Feature):
     """Pre-trained GloVe embedding for each word -> averaged to one vector."""
 
+    _glove: Optional[gmodels.KeyedVectors] = None
+
+    def __init__(self):
+        self.tokenizer = text_utils.get_tokenizer('basic_english')
+
     @property
     def labels(self):
         # TODO: Doesn't match resulting dimensionality!
         return ['word_embedding']
 
-    @staticmethod
-    def _get_glove(context: FeatureContext):
-        if context.glove is None:
-            context.glove = glove.get_embeddings()
-        return context.glove
+    @property
+    def glove(self):
+        if self._glove is None:
+            self._glove = glove.get_embeddings()
+        return self._glove
 
-    def _embed(self, text: str, context: FeatureContext):
-        glove_model = self._get_glove(context)
-        tokenizer = text_utils.get_tokenizer('basic_english')
-        for token in tokenizer(text):
+    def _embed(self, text: str):
+        for token in self.tokenizer(text):
             try:
-                yield glove_model[token]
+                yield self.glove[token]
             except KeyError:
                 pass
 
-    def _get_vector(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
+    def _get_vector(self, node: 'awe_graph.HtmlNode'):
         if node.is_text:
-            vectors = list(self._embed(node.text, context))
+            vectors = list(self._embed(node.text))
             if len(vectors) != 0:
                 return np.mean(vectors, axis=0)
-        return np.repeat(0, self._get_glove(context).vector_size)
+        return np.repeat(0, self.glove.vector_size)
 
-    def create(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
-        return torch.FloatTensor(self._get_vector(node, context))
+    def create(self, node: 'awe_graph.HtmlNode', _):
+        return torch.FloatTensor(self._get_vector(node))
