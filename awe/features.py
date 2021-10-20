@@ -95,15 +95,15 @@ class WordEmbedding(Feature):
         return context.glove
 
     def create(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
-        glove = self._get_glove(context)
+        glove_model = self._get_glove(context)
         if not node.is_text:
             vector = None
         else:
             try:
                 # TODO: Works only for one-word nodes!
-                vector = glove[node.text]
+                vector = glove_model[node.text]
             except KeyError:
                 vector = None
         if vector is None:
-            vector = np.repeat(0, glove.vector_size)
+            vector = np.repeat(0, glove_model.vector_size)
         return torch.FloatTensor(vector)
