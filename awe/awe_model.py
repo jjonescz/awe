@@ -1,4 +1,5 @@
 import collections
+from dataclasses import dataclass
 from typing import Callable
 
 import numpy as np
@@ -9,6 +10,12 @@ from torch import nn
 from torch_geometric import data
 from torchmetrics import functional as metrics
 
+
+@dataclass
+class SwdeMetrics:
+    precision: float
+    recall: float
+    f1: float
 
 class AweModel(pl.LightningModule):
     def __init__(self, feature_count, label_count, label_weights):
@@ -45,7 +52,7 @@ class AweModel(pl.LightningModule):
             for label in range(self.label_count)
             if label != 0
         ]
-        swde_f1s = [m[2] for m in swde_metrics]
+        swde_f1s = [m.f1 for m in swde_metrics]
         swde_f1 = np.mean(swde_f1s)
 
         y = batch.y
@@ -130,4 +137,4 @@ class AweModel(pl.LightningModule):
             f1 = 0.0
         else:
             f1 = 2 * (precision * recall) / (precision + recall)
-        return precision, recall, f1
+        return SwdeMetrics(precision, recall, f1)
