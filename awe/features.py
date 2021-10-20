@@ -32,8 +32,8 @@ class FeatureContext:
 class Feature(ABC):
     @property
     @abstractmethod
-    def result_len(self) -> int:
-        """Length of the resulting feature vector."""
+    def labels(self) -> list[str]:
+        """Column names of the resulting feature vector."""
 
     @abstractmethod
     def create(self,
@@ -46,8 +46,8 @@ class Depth(Feature):
     """Relative depth of node in DOM tree."""
 
     @property
-    def result_len(self):
-        return 1
+    def labels(self):
+        return ['relative_depth']
 
     @staticmethod
     def _get_max_depth(context: FeatureContext):
@@ -63,8 +63,8 @@ class CharCategories(Feature):
     """Counts of different character categories."""
 
     @property
-    def result_len(self):
-        return 3
+    def labels(self):
+        return ['dollars', 'letters', 'digits']
 
     def create(self, node: 'awe_graph.HtmlNode', _):
         def count_pattern(pattern: str):
