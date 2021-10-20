@@ -1,8 +1,10 @@
 import collections
 from typing import Optional
 
+import joblib
 import torch
-from torch_geometric import loader, data as gdata
+from torch_geometric import data as gdata
+from torch_geometric import loader
 from tqdm.auto import tqdm
 
 from awe import awe_graph, features
@@ -49,7 +51,8 @@ class Dataset:
             y = torch.tensor(list(map(get_node_label, ctx.nodes)))
             return gdata.Data(x=x, y=y)
 
-        return list(map(prepare_page, tqdm(pages, desc='pages')))
+        return list(joblib.Parallel(n_jobs=-1)(
+            map(joblib.delayed(prepare_page), tqdm(pages, desc='pages'))))
 
     def add(self, name: str, pages: list[awe_graph.HtmlPage]):
         if self.label_map is None:
