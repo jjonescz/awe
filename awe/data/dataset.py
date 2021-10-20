@@ -3,6 +3,7 @@ from typing import Optional
 
 import torch
 from torch_geometric.data import Data
+from tqdm.auto import tqdm
 
 from awe import awe_graph, features
 
@@ -55,7 +56,7 @@ class Dataset:
             y = torch.tensor(list(map(get_node_label, ctx.nodes)))
             return Data(x=x, y=y)
 
-        return list(map(prepare_page, pages))
+        return list(map(prepare_page, tqdm(pages, desc='pages')))
 
     def add(self, name: str, pages: list[awe_graph.HtmlPage]):
         if self.label_map is None:
