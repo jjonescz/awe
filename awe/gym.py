@@ -30,7 +30,7 @@ class Gym:
 
     def get_checkpoint(self):
         if self.checkpoint is not None:
-            if self.checkpoint == False: # user-disabled checkpoint
+            if self.checkpoint is False: # user-disabled checkpoint
                 return None
             return self.checkpoint
 
