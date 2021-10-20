@@ -2,6 +2,7 @@ import collections
 from typing import Optional
 
 import torch
+from torch_geometric import loader
 from torch_geometric.data import Data
 from tqdm.auto import tqdm
 
@@ -22,14 +23,12 @@ def _create_label_map():
     return label_map
 
 class Dataset:
-    label_map: Optional[dict[Optional[str], int]]
-    data: dict[str, list[Data]]
-    pages: dict[str, list[awe_graph.HtmlPage]]
+    label_map: Optional[dict[Optional[str], int]] = None
+    data: dict[str, list[Data]] = {}
+    pages: dict[str, list[awe_graph.HtmlPage]] = {}
+    loaders: dict[str, loader.DataLoader] = {}
 
     def __init__(self, fs: list[features.Feature]):
-        self.label_map = None
-        self.data = {}
-        self.pages = {}
         self.features = fs
 
     def _prepare_data(self, pages: list[awe_graph.HtmlPage]):
