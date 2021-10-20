@@ -3,6 +3,7 @@ from typing import Any, Callable, Iterable, TypeVar
 
 
 def add_field(**kwargs):
+    """Additional field (not contributing to identity)."""
     return field(hash=False, compare=False, **kwargs)
 
 def ignore_field(**kwargs):
