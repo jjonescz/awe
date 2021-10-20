@@ -2,7 +2,11 @@ import re
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Optional, TypeVar
 
+import numpy as np
 import torch
+from gensim import models as gmodels
+
+from awe.data import glove
 
 if TYPE_CHECKING:
     from awe import awe_graph
@@ -15,6 +19,8 @@ class FeatureContext:
 
     max_depth: Optional[int] = None
     """Maximum DOM tree depth; stored by `Depth`."""
+
+    embedding: Optional[gmodels.KeyedVectors] = None
 
     _nodes: list['awe_graph.HtmlNode'] = None
 
@@ -72,3 +78,31 @@ class CharCategories(Feature):
             count_pattern(r'[a-zA-Z]'),
             count_pattern(r'\d')
         ])
+
+class WordEmbedding(Feature):
+    """Pre-trained GloVe embedding for each word"""
+
+    @property
+    def labels(self):
+        # TODO: Doesn't match resulting dimensionality!
+        return ['word_embedding']
+
+    @staticmethod
+    def _get_embedding(context: FeatureContext):
+        if context.embedding is None:
+            context.embedding = glove.get_embeddings()
+        return context.embedding
+
+    def create(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
+        embedding = self._get_embedding(context)
+        if not node.is_text:
+            vector = None
+        else:
+            try:
+                # TODO: Works only for one-word nodes!
+                vector = embedding[node.text]
+            except KeyError:
+                vector = None
+        if vector is None:
+            vector = np.repeat(0, embedding.vector_size)
+        return torch.FloatTensor(vector)
