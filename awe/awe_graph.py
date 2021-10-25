@@ -6,6 +6,8 @@ import parsel
 from lxml import etree
 
 from awe import html_utils, utils
+from awe.data.wayback import WaybackPage
+
 
 class HtmlLabels(ABC):
     @abstractmethod
@@ -13,6 +15,8 @@ class HtmlLabels(ABC):
         pass
 
 class HtmlPage(ABC):
+    archived: Optional[WaybackPage] = None
+
     @property
     @abstractmethod
     def dom(self) -> parsel.Selector:
