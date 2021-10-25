@@ -15,7 +15,7 @@ class HtmlLabels(ABC):
         pass
 
 class HtmlPage(ABC):
-    archived: Optional[WaybackPage] = None
+    archived: Optional[WaybackPage] = False
 
     @property
     @abstractmethod
