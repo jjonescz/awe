@@ -25,10 +25,10 @@ class AweModel(pl.LightningModule):
         self.save_hyperparameters()
 
         D = 16
-        self.conv1 = gnn.GCNConv(feature_count, D)
-        self.conv2 = gnn.GCNConv(D, D)
+        # self.conv1 = gnn.GCNConv(feature_count, D)
+        # self.conv2 = gnn.GCNConv(D, D)
         self.head = nn.Sequential(
-            nn.Linear(D, D),
+            nn.Linear(feature_count, D),
             nn.ReLU(),
             nn.Linear(D, D),
             nn.ReLU(),
@@ -41,10 +41,10 @@ class AweModel(pl.LightningModule):
     def forward(self, data: data.Data):
         x, edge_index = data.x, data.edge_index
 
-        x = self.conv1(x, edge_index)
-        x = F.relu(x)
-        x = F.dropout(x, training=self.training)
-        x = self.conv2(x, edge_index)
+        # x = self.conv1(x, edge_index)
+        # x = F.relu(x)
+        # x = F.dropout(x, training=self.training)
+        # x = self.conv2(x, edge_index)
         x = self.head(x)
 
         return x
