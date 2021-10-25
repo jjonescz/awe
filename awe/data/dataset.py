@@ -35,7 +35,21 @@ class Dataset:
 
             x = torch.vstack(list(map(get_node_features, ctx.nodes)))
             y = torch.tensor(list(map(get_node_label, ctx.nodes)))
-            return gdata.Data(x=x, y=y)
+
+            # Edges: parent-child relations.
+            child_edges = [
+                [node.deep_index, child.deep_index]
+                for node in ctx.nodes for child in node.children
+            ]
+            parent_edges = [
+                [node.deep_index, node.parent.deep_index]
+                for node in ctx.nodes
+                if node.parent is not None
+            ]
+            edge_index = torch.LongTensor(
+                child_edges + parent_edges).t().contiguous()
+
+            return gdata.Data(x=x, y=y, edge_index=edge_index)
 
         return list(joblib.Parallel(n_jobs=2)(
             map(joblib.delayed(prepare_page), tqdm(pages, desc='pages'))))
