@@ -39,6 +39,11 @@ class Feature(ABC):
     def labels(self) -> list[str]:
         """Column names of the resulting feature vector."""
 
+    @property
+    def dimension(self):
+        """Length of the feature vector."""
+        return len(self.labels)
+
     @abstractmethod
     def create(self,
         node: 'awe_graph.HtmlNode',
@@ -87,8 +92,11 @@ class WordEmbedding(Feature):
 
     @property
     def labels(self):
-        # TODO: Doesn't match resulting dimensionality!
         return ['word_embedding']
+
+    @property
+    def dimension(self):
+        return self.glove.vector_size
 
     def _embed(self, text: str):
         for token in self.tokenizer(text):
