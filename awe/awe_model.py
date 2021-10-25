@@ -6,6 +6,7 @@ import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
+import torch_geometric.nn as gnn
 from torch import nn
 from torch_geometric import data
 from torchmetrics import functional as metrics
@@ -23,22 +24,34 @@ class AweModel(pl.LightningModule):
 
         self.save_hyperparameters()
 
-        self.layers = nn.Sequential(
-            nn.Linear(feature_count, 32),
+        D = 16
+        self.conv1 = gnn.GCNConv(feature_count, D)
+        self.conv2 = gnn.GCNConv(D, D)
+        self.head = nn.Sequential(
+            nn.Linear(D, D),
             nn.ReLU(),
-            nn.Linear(32, 32),
+            nn.Linear(D, D),
             nn.ReLU(),
-            nn.Linear(32, label_count)
+            nn.Linear(D, label_count)
         )
+
         self.label_count = label_count
         self.label_weights = torch.FloatTensor(label_weights)
 
-    def forward(self, x: torch.Tensor):
-        return self.layers(x)
+    def forward(self, data: data.Data):
+        x, edge_index = data.x, data.edge_index
+
+        x = self.conv1(x, edge_index)
+        x = F.relu(x)
+        x = F.dropout(x, training=self.training)
+        x = self.conv2(x, edge_index)
+        x = self.head(x)
+
+        return x
 
     def training_step(self, batch: data.Batch, batch_idx: int):
         y = batch.y
-        z = self.forward(batch.x)
+        z = self.forward(batch)
         loss = self.criterion(z, y)
         self.log("train_loss", loss)
         return loss
@@ -59,7 +72,7 @@ class AweModel(pl.LightningModule):
         swde_f1 = np.mean(swde_f1s)
 
         y = batch.y
-        z = self.forward(batch.x)
+        z = self.forward(batch)
         loss = self.criterion(z, y)
         preds = torch.argmax(z, dim=1)
 
@@ -77,7 +90,7 @@ class AweModel(pl.LightningModule):
         return prefixed
 
     def predict_step(self, batch: data.Batch, batch_idx: int):
-        z = self.forward(batch.x)
+        z = self.forward(batch)
         preds = torch.argmax(z, dim=1)
         return preds
 
@@ -92,7 +105,7 @@ class AweModel(pl.LightningModule):
         """SWDE-inspired prediction computation: per-attribute, page-wide."""
 
         y = batch.y
-        z = self.forward(batch.x)
+        z = self.forward(batch)
         preds_conf, preds = torch.max(z, dim=1)
 
         for page in range(batch.num_graphs):

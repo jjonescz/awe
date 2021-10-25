@@ -44,7 +44,7 @@ class Checkpoint:
         return f'{self.version_path}/results-{dataset_name}.txt'
 
 class Gym:
-    checkpoint: Optional[Union[str, bool]] = None
+    restore_checkpoint: Optional[Union[str, bool]] = None
     trainer: Optional[pl.Trainer] = None
 
     def __init__(self,
@@ -83,10 +83,10 @@ class Gym:
         return utils.where_max(checkpoints, lambda c: c.keys)
 
     def get_last_checkpoint_path(self):
-        if self.checkpoint is not None:
-            if self.checkpoint is False: # user-disabled checkpoint
+        if self.restore_checkpoint is not None:
+            if self.restore_checkpoint is False: # user disabled checkpoint
                 return None
-            return self.checkpoint
+            return self.restore_checkpoint
 
         last_checkpoint = self.get_last_checkpoint()
         return last_checkpoint.path if last_checkpoint is not None else None
