@@ -33,6 +33,10 @@ class Checkpoint:
     def model_path(self):
         return f'{self.version_path}/model.pkl'
 
+    @property
+    def model_text_path(self):
+        return f'{self.version_path}/model.txt'
+
 class Gym:
     checkpoint: Optional[Union[str, bool]] = None
 
@@ -81,4 +85,10 @@ class Gym:
     def save_model(self):
         path = self.get_last_checkpoint().model_path
         torch.save(self.model, path)
+        return path
+
+    def save_model_text(self):
+        path = self.get_last_checkpoint().model_text_path
+        with open(path, mode='w', encoding='utf-8') as f:
+            f.write(str(self.model))
         return path
