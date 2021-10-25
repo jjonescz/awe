@@ -35,15 +35,19 @@ class Gym:
             for path, epoch, step in self.get_checkpoints(checkpoints_dir):
                 yield path, version, epoch, step
 
-    def get_checkpoint(self):
+    def get_last_checkpoint(self):
+        """Latest of `get_all_checkpoints`."""
+        checkpoints = list(self.get_all_checkpoints())
+        if len(checkpoints) == 0:
+            return None
+
+        return utils.where_max(checkpoints, lambda t: t[1:])
+
+    def get_checkpoint_path(self):
         if self.checkpoint is not None:
             if self.checkpoint is False: # user-disabled checkpoint
                 return None
             return self.checkpoint
 
-        checkpoints = list(self.get_all_checkpoints())
-        if len(checkpoints) == 0:
-            return None
-
-        last_checkpoint = utils.where_max(checkpoints, lambda t: t[1:])
-        return last_checkpoint[0]
+        last_checkpoint = self.get_last_checkpoint()
+        return last_checkpoint[0] if last_checkpoint is not None else None
