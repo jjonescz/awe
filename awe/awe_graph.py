@@ -1,12 +1,18 @@
+import dataclasses
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Union
+from typing import Callable, Union
 
 import parsel
 from lxml import etree
 
 from awe import html_utils, utils
 
+NodePredicate = Callable[['HtmlNode'], bool]
+
+def default_node_predicate(node: 'HtmlNode'):
+    """Ignores whitespace nodes."""
+    return not node.is_white_space
 
 class HtmlLabels(ABC):
     @abstractmethod
@@ -14,6 +20,8 @@ class HtmlLabels(ABC):
         pass
 
 class HtmlPage(ABC):
+    node_predicate: NodePredicate = staticmethod(default_node_predicate)
+
     @property
     @abstractmethod
     def dom(self) -> parsel.Selector:
@@ -94,13 +102,14 @@ class HtmlNode:
     def children(self):
         if self._children is None:
             child_depth = self.depth + 1
+            predicate = self.page.node_predicate
             self._children = [
-                HtmlNode(self.page, index, child_depth, child, self)
-                for index, child in enumerate(
-                    child for child in self._iterate_children()
-                    # Exclude whitespace nodes.
-                    if not isinstance(child, str) or not child.isspace()
+                dataclasses.replace(node, index=index)
+                for index, node in enumerate(
+                    HtmlNode(self.page, None, child_depth, child, self)
+                    for child in self._iterate_children()
                 )
+                if predicate(node)
             ]
         return self._children
 
@@ -141,3 +150,7 @@ class HtmlNode:
         if self.is_text:
             return self.text
         return self.element.text_content()
+
+    @property
+    def is_white_space(self):
+        return self.is_text and self.text.isspace()
