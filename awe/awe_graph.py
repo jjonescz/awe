@@ -57,7 +57,7 @@ class HtmlPage(ABC):
             node.deep_index = deep_index
             node._children = list(filter(node_predicate, node.children))
 
-            # Find groundtruth labels. Note that this needs `node.index`.
+            # Find groundtruth labels for the node.
             node.labels = page_labels.get_labels(node)
 
             yield node
@@ -82,6 +82,8 @@ class HtmlNode:
     element: Union[etree._Element, str]
     """Node or text fragment."""
 
+    original_xpath: str = field(init=False, default=None)
+
     parent: Union['HtmlNode', None] = field(repr=False, default=None)
 
     labels: list[str] = field(init=False, default_factory=list)
@@ -91,6 +93,9 @@ class HtmlNode:
     """
 
     _children: list['HtmlNode'] = utils.cache_field()
+
+    def __post_init__(self):
+        self.original_xpath = self.xpath
 
     @property
     def is_text(self):
