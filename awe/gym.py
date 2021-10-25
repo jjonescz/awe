@@ -4,6 +4,8 @@ import re
 from dataclasses import dataclass
 from typing import Optional, Union
 
+import torch
+
 from awe import awe_model, utils
 from awe.data import dataset
 
@@ -26,6 +28,10 @@ class Checkpoint:
     @property
     def version_path(self):
         return get_version_path(self.version)
+
+    @property
+    def model_path(self):
+        return f'{self.version_path}/model.pkl'
 
 class Gym:
     checkpoint: Optional[Union[str, bool]] = None
@@ -72,8 +78,7 @@ class Gym:
         last_checkpoint = self.get_last_checkpoint()
         return last_checkpoint.path if last_checkpoint is not None else None
 
-    def get_last_version_path(self):
-        last_checkpoint = self.get_last_checkpoint()
-        if last_checkpoint is None:
-            return None
-        return last_checkpoint.version_path
+    def save_model(self):
+        path = self.get_last_checkpoint().model_path
+        torch.save(self.model, path)
+        return path
