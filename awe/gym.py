@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Optional, Union
 
 import torch
+import pytorch_lightning as pl
 
 from awe import awe_model, utils
 from awe.data import dataset
@@ -37,8 +38,12 @@ class Checkpoint:
     def model_text_path(self):
         return f'{self.version_path}/model.txt'
 
+    def get_results_path(self, dataset_name):
+        return f'{self.version_path}/results-{dataset_name}.txt'
+
 class Gym:
     checkpoint: Optional[Union[str, bool]] = None
+    trainer: Optional[pl.Trainer] = None
 
     def __init__(self,
         ds: dataset.Dataset,
@@ -91,4 +96,15 @@ class Gym:
         path = self.get_last_checkpoint().model_text_path
         with open(path, mode='w', encoding='utf-8') as f:
             f.write(str(self.model))
+        return path
+
+    def save_results(self, dataset_name: str):
+        results = self.trainer.validate(
+            self.model,
+            self.ds.loaders[dataset_name]
+        )
+
+        path = self.get_last_checkpoint().get_results_path(dataset_name)
+        with open(path, mode='w', encoding='utf-8') as f:
+            f.write(str(results))
         return path
