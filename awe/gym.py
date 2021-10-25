@@ -1,11 +1,31 @@
+import dataclasses
 import os
 import re
+from dataclasses import dataclass
 from typing import Optional, Union
 
 from awe import awe_model, utils
 from awe.data import dataset
 
 LOG_DIR = 'lightning_logs'
+
+def get_version_path(version: int):
+    return f'{LOG_DIR}/version_{version}'
+
+@dataclass
+class Checkpoint:
+    path: str
+    version: int
+    epoch: int
+    step: int
+
+    @property
+    def keys(self):
+        return (self.version, self.epoch, self.step)
+
+    @property
+    def version_path(self):
+        return get_version_path(self.version)
 
 class Gym:
     checkpoint: Optional[Union[str, bool]] = None
@@ -26,14 +46,14 @@ class Gym:
             match = re.match(r'epoch=(\d+)-step=(\d+)\.ckpt', filename)
             epoch = int(match.group(1))
             step = int(match.group(2))
-            yield f'{base_path}/{filename}', epoch, step
+            yield Checkpoint(f'{base_path}/{filename}', None, epoch, step)
 
     def get_all_checkpoints(self):
         """Obtains checkpoints across all versions."""
         for version in self.get_versions():
-            checkpoints_dir = f'{LOG_DIR}/version_{version}/checkpoints'
-            for path, epoch, step in self.get_checkpoints(checkpoints_dir):
-                yield path, version, epoch, step
+            checkpoints_dir = f'{get_version_path(version)}/checkpoints'
+            for ckpt in self.get_checkpoints(checkpoints_dir):
+                yield dataclasses.replace(ckpt, version=version)
 
     def get_last_checkpoint(self):
         """Latest of `get_all_checkpoints`."""
@@ -41,13 +61,19 @@ class Gym:
         if len(checkpoints) == 0:
             return None
 
-        return utils.where_max(checkpoints, lambda t: t[1:])
+        return utils.where_max(checkpoints, lambda c: c.keys)
 
-    def get_checkpoint_path(self):
+    def get_last_checkpoint_path(self):
         if self.checkpoint is not None:
             if self.checkpoint is False: # user-disabled checkpoint
                 return None
             return self.checkpoint
 
         last_checkpoint = self.get_last_checkpoint()
-        return last_checkpoint[0] if last_checkpoint is not None else None
+        return last_checkpoint.path if last_checkpoint is not None else None
+
+    def get_last_version_path(self):
+        last_checkpoint = self.get_last_checkpoint()
+        if last_checkpoint is None:
+            return None
+        return last_checkpoint.version_path
