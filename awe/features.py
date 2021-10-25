@@ -66,6 +66,16 @@ class Depth(Feature):
     def create(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
         return torch.FloatTensor([node.depth / self._get_max_depth(context)])
 
+class IsLeaf(Feature):
+    """Whether node is leaf (text) node."""
+
+    @property
+    def labels(self):
+        return ['is_leaf']
+
+    def create(self, node: 'awe_graph.HtmlNode', _):
+        return torch.FloatTensor([node.is_text])
+
 class CharCategories(Feature):
     """Counts of different character categories."""
 
