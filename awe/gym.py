@@ -56,7 +56,9 @@ class Gym:
 
     def get_versions(self):
         for dirname in os.listdir(LOG_DIR):
-            yield int(re.match(r'version_(\d+)', dirname).group(1))
+            match = re.match(r'version_(\d+)', dirname)
+            if match is not None:
+                yield int(match.group(1))
 
     def get_checkpoints(self, base_path: str):
         for filename in os.listdir(base_path):
