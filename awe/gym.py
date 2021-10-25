@@ -1,12 +1,13 @@
 import dataclasses
+import datetime
 import os
 import re
+import shutil
 from dataclasses import dataclass
 from typing import Optional, Union
-import shutil
 
-import torch
 import pytorch_lightning as pl
+import torch
 
 from awe import awe_model, utils
 from awe.data import dataset
@@ -112,7 +113,8 @@ class Gym:
 
     def save_named_version(self, name: str):
         """Saves the last version with a name."""
-        version_path = f'{LOG_DIR}/{name}'
+        timestamp = datetime.datetime.now().isoformat()
+        version_path = f'{LOG_DIR}/{timestamp}-{name}'
         if os.path.isdir(version_path):
             raise RuntimeError(f'Directory already exists: {version_path}')
         return shutil.copytree(
