@@ -1,10 +1,9 @@
 import re
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Optional, TypeVar
+from typing import TYPE_CHECKING, Callable, Optional, TypeVar
 
 import numpy as np
 import torch
-from gensim import models as gmodels
 from torchtext.data import utils as text_utils
 
 from awe.data import glove
@@ -21,7 +20,7 @@ class FeatureContext:
     max_depth: Optional[int] = None
     """Maximum DOM tree depth; stored by `Depth`."""
 
-    node_predicate: 'awe_graph.NodePredicate' = None
+    node_predicate: Callable[['awe_graph.HtmlNode'], bool] = None
 
     _nodes: list['awe_graph.HtmlNode'] = None
 
@@ -33,10 +32,9 @@ class FeatureContext:
         """Cached list of `page.nodes`."""
         if self._nodes is None:
             if self.node_predicate is None:
-                nodes_iter = self.page.nodes
+                self._nodes = list(self.page.nodes)
             else:
-                nodes_iter = self.page.get_filtered_nodes(self.node_predicate)
-            self._nodes = list(nodes_iter)
+                self._nodes = list(filter(self.node_predicate, self.page.nodes))
         return self._nodes
 
 class Feature(ABC):

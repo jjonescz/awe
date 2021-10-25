@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Callable, Optional
 
 import joblib
 import torch
@@ -15,8 +15,7 @@ class Dataset:
     pages: dict[str, list[awe_graph.HtmlPage]] = {}
     loaders: dict[str, loader.DataLoader] = {}
     parallelize = 2
-    node_predicate: awe_graph.NodePredicate = staticmethod(
-        awe_graph.empty_node_predicate)
+    node_predicate: Callable[[awe_graph.HtmlNode], bool] = None
 
     def __init__(self, fs: list[features.Feature]):
         self.features = fs
@@ -40,13 +39,18 @@ class Dataset:
             x = torch.vstack(list(map(get_node_features, ctx.nodes)))
             y = torch.tensor(list(map(get_node_label, ctx.nodes)))
 
+            # Assign indices to nodes (different from `HtmlNode.index` as that
+            # one is from before filtering). This is needed to compute edges.
+            for index, node in enumerate(ctx.nodes):
+                node.dataset_index = index
+
             # Edges: parent-child relations.
             child_edges = [
-                [node.deep_index, child.deep_index]
+                [node.dataset_index, child.dataset_index]
                 for node in ctx.nodes for child in node.children
             ]
             parent_edges = [
-                [node.deep_index, node.parent.deep_index]
+                [node.dataset_index, node.parent.dataset_index]
                 for node in ctx.nodes
                 if (
                     node.parent is not None and
@@ -114,7 +118,11 @@ class Dataset:
                 page = self.pages[name][page_idx + page_offset]
                 if curr_page != page:
                     curr_page = page
-                    curr_nodes = list(page.nodes)
+                    if self.node_predicate is None:
+                        curr_nodes = list(page.nodes)
+                    else:
+                        curr_nodes = list(
+                            filter(self.node_predicate, page.nodes))
                 node = curr_nodes[node_idx + node_offset]
 
                 yield node, batch.x[node_idx], batch.y[node_idx]

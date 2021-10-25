@@ -1,16 +1,11 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Callable, Union
+from typing import Optional, Union
 
 import parsel
 from lxml import etree
 
 from awe import html_utils, utils
-
-NodePredicate = Callable[['HtmlNode'], bool]
-
-def empty_node_predicate(_):
-    return True
 
 class HtmlLabels(ABC):
     @abstractmethod
@@ -43,19 +38,10 @@ class HtmlPage(ABC):
 
     @property
     def nodes(self):
-        return self.get_filtered_nodes(empty_node_predicate)
-
-    def get_filtered_nodes(self, node_predicate: NodePredicate):
         page_labels = self.labels
         deep_index = 0
-        for node in filter(node_predicate, self.root.descendants):
-            # Node's index in parent is number of its previous siblings.
-            node.index = sum(1
-                for prev in node.prev_siblings
-                if node_predicate(prev)
-            )
+        for node in self.root.descendants:
             node.deep_index = deep_index
-            node._children = list(filter(node_predicate, node.children))
 
             # Find groundtruth labels for the node.
             node.labels = page_labels.get_labels(node)
@@ -67,24 +53,19 @@ class HtmlPage(ABC):
 class HtmlNode:
     page: HtmlPage = field(repr=False)
 
-    deep_index: Union[int, None] = field(init=False, default=None)
+    deep_index: Optional[int] = field(init=False, default=None)
     """Iteration index of the node inside the `page`."""
 
-    original_index: int
-    """Original index inside parent (with only whitespace nodes filtered)."""
-
-    index: int = field(init=False, default=None)
-    """Index inside `parent`. Can change after filtering."""
+    index: int
+    """Index inside `parent`."""
 
     depth: int
-    """Level of nesting. Can change after filtering."""
+    """Level of nesting."""
 
     element: Union[etree._Element, str]
     """Node or text fragment."""
 
-    original_xpath: str = field(init=False, default=None)
-
-    parent: Union['HtmlNode', None] = field(repr=False, default=None)
+    parent: Optional['HtmlNode'] = field(repr=False, default=None)
 
     labels: list[str] = field(init=False, default_factory=list)
     """
@@ -92,10 +73,10 @@ class HtmlNode:
     target attribute.
     """
 
-    _children: list['HtmlNode'] = utils.cache_field()
+    dataset_index: Optional[int] = field(init=False, default=None)
+    """Index set and used by `Dataset`."""
 
-    def __post_init__(self):
-        self.original_xpath = self.xpath
+    _children: list['HtmlNode'] = utils.cache_field()
 
     @property
     def is_text(self):
@@ -109,7 +90,7 @@ class HtmlNode:
     @property
     def xpath(self):
         if self.is_text:
-            return f'{self.parent.xpath}/text()[{self.original_index + 1}]'
+            return f'{self.parent.xpath}/text()[{self.index + 1}]'
         return html_utils.get_el_xpath(self.element)
 
     @property
@@ -152,13 +133,13 @@ class HtmlNode:
     def prev_siblings(self):
         if self.parent is None:
             return []
-        return self.parent.children[:self.original_index]
+        return self.parent.children[:self.index]
 
     @property
     def next_siblings(self):
         if self.parent is None:
             return []
-        return self.parent.children[self.original_index + 1:]
+        return self.parent.children[self.index + 1:]
 
     @property
     def siblings(self):
