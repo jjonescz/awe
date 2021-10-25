@@ -24,7 +24,7 @@ class AweModel(pl.LightningModule):
 
         self.save_hyperparameters()
 
-        D = 16
+        D = 32
         # self.conv1 = gnn.GCNConv(feature_count, D)
         # self.conv2 = gnn.GCNConv(D, D)
         self.head = nn.Sequential(
