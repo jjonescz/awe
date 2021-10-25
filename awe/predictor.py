@@ -19,8 +19,8 @@ class Predictor:
     def get_example(self, index: int):
         example_batch = next(itertools.islice(self.dataloader, index, None))
         example_page = self.ds.pages[self.name][index]
-        example_nodes = list(example_page.nodes)
-        return example_batch, example_nodes
+        example_ctx = self.ds.get_context(example_page)
+        return example_batch, example_ctx.nodes
 
     def evaluate_example(self, index: int, label: str):
         batch, _ = self.get_example(index)

@@ -20,10 +20,14 @@ class Dataset:
     def __init__(self, fs: list[features.Feature]):
         self.features = fs
 
+    def get_context(self, page: awe_graph.HtmlPage):
+        ctx = features.FeatureContext(page)
+        ctx.node_predicate = self.node_predicate
+        return ctx
+
     def _prepare_data(self, pages: list[awe_graph.HtmlPage]):
         def prepare_page(page: awe_graph.HtmlPage):
-            ctx = features.FeatureContext(page)
-            ctx.node_predicate = self.node_predicate
+            ctx = self.get_context(page)
 
             def get_node_features(node: awe_graph.HtmlNode):
                 return torch.hstack([
@@ -55,6 +59,7 @@ class Dataset:
                 if (
                     node.parent is not None and
                     # Ignore removed parents.
+                    self.node_predicate is not None and
                     self.node_predicate(node.parent)
                 )
             ]
