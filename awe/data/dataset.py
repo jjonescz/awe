@@ -14,6 +14,9 @@ class Dataset:
     data: dict[str, list[gdata.Data]] = {}
     pages: dict[str, list[awe_graph.HtmlPage]] = {}
     loaders: dict[str, loader.DataLoader] = {}
+    parallelize = 2
+    node_predicate: awe_graph.NodePredicate = staticmethod(
+        awe_graph.empty_node_predicate)
 
     def __init__(self, fs: list[features.Feature]):
         self.features = fs
@@ -21,6 +24,7 @@ class Dataset:
     def _prepare_data(self, pages: list[awe_graph.HtmlPage]):
         def prepare_page(page: awe_graph.HtmlPage):
             ctx = features.FeatureContext(page)
+            ctx.node_predicate = self.node_predicate
 
             def get_node_features(node: awe_graph.HtmlNode):
                 return torch.hstack([
@@ -44,15 +48,22 @@ class Dataset:
             parent_edges = [
                 [node.deep_index, node.parent.deep_index]
                 for node in ctx.nodes
-                if node.parent is not None
+                if (
+                    node.parent is not None and
+                    # Ignore removed parents.
+                    self.node_predicate(node.parent)
+                )
             ]
             edge_index = torch.LongTensor(
                 child_edges + parent_edges).t().contiguous()
 
             return gdata.Data(x=x, y=y, edge_index=edge_index)
 
-        return list(joblib.Parallel(n_jobs=2)(
-            map(joblib.delayed(prepare_page), tqdm(pages, desc='pages'))))
+        pages_with_progress =  tqdm(pages, desc='pages')
+        if self.parallelize is None:
+            return list(map(prepare_page, pages_with_progress))
+        return list(joblib.Parallel(n_jobs=self.parallelize)(
+            map(joblib.delayed(prepare_page), pages_with_progress)))
 
     def add(self, name: str, pages: list[awe_graph.HtmlPage]):
         if self.label_map is None:

@@ -55,6 +55,7 @@ class HtmlPage(ABC):
                 if node_predicate(prev)
             )
             node.deep_index = deep_index
+            node._children = list(filter(node_predicate, node.children))
 
             # Find groundtruth labels. Note that this needs `node.index`.
             node.labels = page_labels.get_labels(node)

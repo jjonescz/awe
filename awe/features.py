@@ -21,6 +21,8 @@ class FeatureContext:
     max_depth: Optional[int] = None
     """Maximum DOM tree depth; stored by `Depth`."""
 
+    node_predicate: 'awe_graph.NodePredicate' = None
+
     _nodes: list['awe_graph.HtmlNode'] = None
 
     def __init__(self, page: 'awe_graph.HtmlPage'):
@@ -30,7 +32,11 @@ class FeatureContext:
     def nodes(self):
         """Cached list of `page.nodes`."""
         if self._nodes is None:
-            self._nodes = list(self.page.nodes)
+            if self.node_predicate is None:
+                nodes_iter = self.page.nodes
+            else:
+                nodes_iter = self.page.get_filtered_nodes(self.node_predicate)
+            self._nodes = list(nodes_iter)
         return self._nodes
 
 class Feature(ABC):
