@@ -16,6 +16,10 @@ class HtmlLabels(ABC):
 
 class HtmlPage(ABC):
     archived: Optional[WaybackPage] = False
+    """
+    `False` means the WaybackMachine API was not called yet;
+    `None` means it was called and returned no snapshots.
+    """
 
     @property
     @abstractmethod
