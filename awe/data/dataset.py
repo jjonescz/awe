@@ -37,7 +37,7 @@ class Dataset:
             y = torch.tensor(list(map(get_node_label, ctx.nodes)))
             return gdata.Data(x=x, y=y)
 
-        return list(joblib.Parallel(n_jobs=-1)(
+        return list(joblib.Parallel(n_jobs=2)(
             map(joblib.delayed(prepare_page), tqdm(pages, desc='pages'))))
 
     def add(self, name: str, pages: list[awe_graph.HtmlPage]):
