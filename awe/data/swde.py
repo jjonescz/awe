@@ -320,9 +320,3 @@ def validate(*, verticals_skip=0):
             for groundtruth_field in tqdm(website.groundtruth, desc='fields', leave=False):
                 for entry in groundtruth_field.entries:
                     _ = entry.nodes
-
-def set_predicate(node_predicate: awe_graph.NodePredicate):
-    for vertical in VERTICALS:
-        for website in vertical.websites:
-            for page in website.pages:
-                page.node_predicate = node_predicate

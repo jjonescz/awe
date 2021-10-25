@@ -1,4 +1,3 @@
-import dataclasses
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Callable, Union
@@ -10,9 +9,8 @@ from awe import html_utils, utils
 
 NodePredicate = Callable[['HtmlNode'], bool]
 
-def default_node_predicate(node: 'HtmlNode'):
-    """Ignores whitespace nodes."""
-    return not node.is_white_space
+def empty_node_predicate(_):
+    return True
 
 class HtmlLabels(ABC):
     @abstractmethod
@@ -20,8 +18,6 @@ class HtmlLabels(ABC):
         pass
 
 class HtmlPage(ABC):
-    node_predicate: NodePredicate = staticmethod(default_node_predicate)
-
     @property
     @abstractmethod
     def dom(self) -> parsel.Selector:
@@ -47,12 +43,21 @@ class HtmlPage(ABC):
 
     @property
     def nodes(self):
+        return self.get_filtered_nodes(empty_node_predicate)
+
+    def get_filtered_nodes(self, node_predicate: NodePredicate):
         page_labels = self.labels
         deep_index = 0
-        for node in self.root.descendants:
-            # Create node representation.
-            node.labels = page_labels.get_labels(node)
+        for node in filter(node_predicate, self.root.descendants):
+            # Node's index in parent is number of its previous siblings.
+            node.index = sum(1
+                for prev in node.prev_siblings
+                if node_predicate(prev)
+            )
             node.deep_index = deep_index
+
+            # Find groundtruth labels. Note that this needs `node.index`.
+            node.labels = page_labels.get_labels(node)
 
             yield node
             deep_index += 1
@@ -64,11 +69,14 @@ class HtmlNode:
     deep_index: Union[int, None] = field(init=False, default=None)
     """Iteration index of the node inside the `page`."""
 
-    index: int
-    """Index inside `parent`."""
+    original_index: int
+    """Original index inside parent (with only whitespace nodes filtered)."""
+
+    index: int = field(init=False, default=None)
+    """Index inside `parent`. Can change after filtering."""
 
     depth: int
-    """Level of nesting."""
+    """Level of nesting. Can change after filtering."""
 
     element: Union[etree._Element, str]
     """Node or text fragment."""
@@ -95,21 +103,22 @@ class HtmlNode:
     @property
     def xpath(self):
         if self.is_text:
-            return f'{self.parent.xpath}/text()[{self.index + 1}]'
+            return f'{self.parent.xpath}/text()[{self.original_index + 1}]'
         return html_utils.get_el_xpath(self.element)
 
     @property
     def children(self):
         if self._children is None:
             child_depth = self.depth + 1
-            predicate = self.page.node_predicate
             self._children = [
-                dataclasses.replace(node, index=index)
-                for index, node in enumerate(
-                    HtmlNode(self.page, None, child_depth, child, self)
-                    for child in self._iterate_children()
+                HtmlNode(self.page, index, child_depth, child, self)
+                for index, child in enumerate(
+                    child for child in self._iterate_children()
+                    # HACK: Exclude whitespace nodes. Note that SWDE dataset
+                    # removes whitespace before matching groundtruth labels, so
+                    # this needs to be done for consistency.
+                    if not isinstance(child, str) or not child.isspace()
                 )
-                if predicate(node)
             ]
         return self._children
 
@@ -135,11 +144,15 @@ class HtmlNode:
 
     @property
     def prev_siblings(self):
-        return self.parent.children[:self.index]
+        if self.parent is None:
+            return []
+        return self.parent.children[:self.original_index]
 
     @property
     def next_siblings(self):
-        return self.parent.children[self.index + 1:]
+        if self.parent is None:
+            return []
+        return self.parent.children[self.original_index + 1:]
 
     @property
     def siblings(self):
