@@ -3,6 +3,7 @@ import os
 import re
 from dataclasses import dataclass
 from typing import Optional, Union
+import shutil
 
 import torch
 import pytorch_lightning as pl
@@ -108,3 +109,13 @@ class Gym:
         with open(path, mode='w', encoding='utf-8') as f:
             f.write(str(results))
         return path
+
+    def save_named_version(self, name: str):
+        """Saves the last version with a name."""
+        version_path = f'{LOG_DIR}/{name}'
+        if os.path.isdir(version_path):
+            raise RuntimeError(f'Directory already exists: {version_path}')
+        return shutil.copytree(
+            self.get_last_checkpoint().version_path,
+            version_path
+        )
