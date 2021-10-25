@@ -20,6 +20,9 @@ class SwdeMetrics:
 class AweModel(pl.LightningModule):
     def __init__(self, feature_count, label_count, label_weights):
         super().__init__()
+
+        self.save_hyperparameters()
+
         self.layers = nn.Sequential(
             nn.Linear(feature_count, 32),
             nn.ReLU(),
