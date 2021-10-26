@@ -14,4 +14,5 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
 
 # Install Node.js.
 ARG NODE_VERSION="17.0.1"
-RUN su vscode -c "umask 0002 && . /usr/local/share/nvm/nvm.sh && nvm install ${NODE_VERSION} 2>&1"
+RUN su vscode -c "umask 0002 && . /usr/local/share/nvm/nvm.sh && nvm install ${NODE_VERSION} 2>&1" \
+    && corepack enable
