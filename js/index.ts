@@ -14,18 +14,22 @@ import path from 'path';
   // Intercept requests.
   const page = await browser.newPage();
   page.setRequestInterception(true);
+  let currentPageUrl: string;
   page.on('request', request => {
-    console.log('request: ', request.url());
-    if (request.url().startsWith('file://'))
+    if (request.url() === currentPageUrl) {
+      console.log('request page: ', request.url());
       request.continue();
-    else
+    } else {
+      console.log('request aborted: ', request.url());
       request.abort();
+    }
   });
 
   // Open a page (hard-coded path for now).
   const fullPath = path.resolve('../data/swde/data/auto/auto-aol(2000)/0000.htm');
   console.log('goto: ', fullPath);
-  await page.goto(`file://${fullPath}`, {
+  currentPageUrl = `file://${fullPath}`
+  await page.goto(currentPageUrl, {
     waitUntil: 'networkidle2',
   });
 
