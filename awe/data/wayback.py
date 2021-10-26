@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from json.decoder import JSONDecodeError
 
 import requests
+from requests.exceptions import RequestException
 
 
 @dataclass
@@ -14,11 +15,19 @@ class WaybackPage:
 
     @staticmethod
     def get(url: str, timestamp: str):
-        response = requests.get('https://archive.org/wayback/available/',
-            params={
+        try:
+            response = requests.get('https://archive.org/wayback/available/',
+                params={
+                    'url': url,
+                    'timestamp': timestamp
+                })
+        except RequestException as error:
+            data = {
                 'url': url,
-                'timestamp': timestamp
-            })
+                'error': error
+            }
+            print(f'Request error: {data}')
+            return False # will try again next time
 
         try:
             data = response.json()
