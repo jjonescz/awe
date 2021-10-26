@@ -2,6 +2,7 @@ import puppeteer from 'puppeteer-core';
 import path from 'path';
 
 (async () => {
+  // Open browser.
   const browser = await puppeteer.launch({
     args: [
       // Allow running as root.
@@ -23,7 +24,19 @@ import path from 'path';
 
   // Open a page (hard-coded path for now).
   const fullPath = path.resolve('../data/swde/data/auto/auto-aol(2000)/0000.htm');
-  await page.goto(`file://${fullPath}`);
+  console.log('goto: ', fullPath);
+  await page.goto(`file://${fullPath}`, {
+    waitUntil: 'networkidle2',
+  });
+
+  // Take screenshot.
+  const screenshotPath = path.format({
+    ...path.parse(fullPath),
+    base: undefined,
+    ext: '.png'
+  });
+  console.log('screenshot: ', screenshotPath);
+  await page.screenshot({ path: screenshotPath });
 
   await browser.close();
 })();
