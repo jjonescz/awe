@@ -1,7 +1,8 @@
 import { readFile } from 'fs/promises';
 import puppeteer from 'puppeteer-core';
 
-const BASE_TAG_REGEX = /^<base href="([^\n]*)"\/>\w*\n(.*)/s;
+// First character is BOM marker.
+const BASE_TAG_REGEX = /^\uFEFF?<base href="([^\n]*)"\/>\w*\n(.*)/s;
 
 export class Scraper {
   private swdePage: SwdePage | null = null;
@@ -68,7 +69,7 @@ export class SwdePage {
     const contents = await readFile(fullPath, { encoding: 'utf-8' });
     // Extract original page URL from a `<base>` tag that is at the beginning of
     // every HTML file in SWDE.
-    const [_, url, html] = BASE_TAG_REGEX.exec(contents)!;
+    const [_, url, html] = contents.match(BASE_TAG_REGEX)!;
     return new SwdePage(fullPath, url, html);
   }
 }
