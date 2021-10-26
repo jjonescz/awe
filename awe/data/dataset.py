@@ -6,7 +6,7 @@ from torch_geometric import data as gdata
 from torch_geometric import loader
 from tqdm.auto import tqdm
 
-from awe import awe_graph, features
+from awe import awe_graph, features, utils
 
 
 class Dataset:
@@ -68,11 +68,7 @@ class Dataset:
 
             return gdata.Data(x=x, y=y, edge_index=edge_index)
 
-        pages_with_progress =  tqdm(pages, desc='pages')
-        if self.parallelize is None:
-            return list(map(prepare_page, pages_with_progress))
-        return list(joblib.Parallel(n_jobs=self.parallelize)(
-            map(joblib.delayed(prepare_page), pages_with_progress)))
+        return utils.parallelize(self.parallelize, prepare_page, pages, 'pages')
 
     def add(self, name: str, pages: list[awe_graph.HtmlPage]):
         if self.label_map is None:

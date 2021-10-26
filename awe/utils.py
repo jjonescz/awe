@@ -1,5 +1,8 @@
 from dataclasses import field
-from typing import Any, Callable, Iterable, TypeVar
+from typing import Any, Callable, Iterable, Optional, TypeVar
+
+import joblib
+from tqdm.auto import tqdm
 
 
 def add_field(**kwargs):
@@ -25,3 +28,15 @@ def where_max(items: Iterable[T], selector: Callable[[T], Any]):
             max_key = key
             max_item = item
     return max_item
+
+def parallelize(
+    num: Optional[int],
+    selector: Callable[[T], Any],
+    items: Iterable[T],
+    desc: str
+):
+    items_with_progress =  tqdm(items, desc=desc)
+    if num is None:
+        return list(map(selector, items_with_progress))
+    return list(joblib.Parallel(n_jobs=num)(
+        map(joblib.delayed(selector), items_with_progress)))
