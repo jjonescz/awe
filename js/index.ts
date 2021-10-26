@@ -36,7 +36,7 @@ import path from 'path';
     ext: '.png'
   });
   console.log('screenshot: ', screenshotPath);
-  await page.screenshot({ path: screenshotPath });
+  await page.screenshot({ path: screenshotPath, fullPage: true });
 
   await browser.close();
 })();
