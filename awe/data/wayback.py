@@ -22,7 +22,8 @@ class WaybackPage:
 
         try:
             data = response.json()
-        except JSONDecodeError:
+        except JSONDecodeError as e:
+            print(e)
             return False # will try again next time
 
         snapshots = data['archived_snapshots']
