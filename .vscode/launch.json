@@ -1,0 +1,15 @@
+// See https://go.microsoft.com/fwlink/?linkid=830387
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Node.js",
+            "skipFiles": ["<node_internals>/**"],
+            "runtimeArgs": ["-r", "ts-node/register/transpile-only"],
+            "program": "index.ts",
+            "cwd": "${workspaceFolder}/js"
+        }
+    ]
+}
