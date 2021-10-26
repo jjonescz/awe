@@ -1,37 +1,15 @@
-import puppeteer from 'puppeteer-core';
 import path from 'path';
+import { Scraper, SwdePage } from './lib/scraper';
 
 (async () => {
   // Open browser.
-  const browser = await puppeteer.launch({
-    args: [
-      // Allow running as root.
-      '--no-sandbox'
-    ],
-    executablePath: 'google-chrome-stable'
-  });
-
-  // Intercept requests.
-  const page = await browser.newPage();
-  page.setRequestInterception(true);
-  let currentPageUrl: string;
-  page.on('request', request => {
-    if (request.url() === currentPageUrl) {
-      console.log('request page: ', request.url());
-      request.continue();
-    } else {
-      console.log('request aborted: ', request.url());
-      request.abort();
-    }
-  });
+  const scraper = await Scraper.create();
 
   // Open a page (hard-coded path for now).
   const fullPath = path.resolve('../data/swde/data/auto/auto-aol(2000)/0000.htm');
+  const page = await SwdePage.parse(fullPath);
   console.log('goto: ', fullPath);
-  currentPageUrl = `file://${fullPath}`
-  await page.goto(currentPageUrl, {
-    waitUntil: 'networkidle2',
-  });
+  await scraper.go(page);
 
   // Take screenshot.
   const screenshotPath = path.format({
@@ -40,7 +18,7 @@ import path from 'path';
     ext: '.png'
   });
   console.log('screenshot: ', screenshotPath);
-  await page.screenshot({ path: screenshotPath, fullPage: true });
+  await scraper.page.screenshot({ path: screenshotPath, fullPage: true });
 
-  await browser.close();
+  await scraper.browser.close();
 })();
