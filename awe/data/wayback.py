@@ -22,14 +22,16 @@ class WaybackPage:
 
         try:
             data = response.json()
-        except JSONDecodeError as e:
+        except JSONDecodeError as error:
             data = {
                 'url': url,
                 'status': response.status_code,
-                'error': e,
+                'error': error,
                 'response': response.text
             }
             print(f'JSON error: {data}')
+            if 'Too Many Requests' in response.text:
+                raise RuntimeError('Too many requests.') from error
             return False # will try again next time
 
         snapshots = data['archived_snapshots']
