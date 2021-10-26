@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from json.decoder import JSONDecodeError
 
 import requests
 
@@ -18,7 +19,11 @@ class WaybackPage:
                 'url': url,
                 'timestamp': timestamp
             })
-        data = response.json()
+
+        try:
+            data = response.json()
+        except JSONDecodeError:
+            return False # will try again next time
 
         snapshots = data['archived_snapshots']
         if len(snapshots) == 0:
