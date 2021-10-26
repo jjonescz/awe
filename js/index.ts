@@ -19,7 +19,7 @@ import { Scraper, SwdePage } from './lib/scraper';
     base: undefined,
     ext: '.png',
   });
-  console.log('screenshot: ', screenshotPath);
+  console.log('screenshot:', screenshotPath);
   await scraper.page.screenshot({ path: screenshotPath, fullPage: true });
 
   await scraper.browser.close();

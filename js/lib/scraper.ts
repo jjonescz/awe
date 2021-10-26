@@ -34,9 +34,9 @@ export class Scraper {
     if (this.swdePage !== null && request.url() === this.swdePage.url) {
       // Replace request to SWDE page with its HTML content.
       console.log(
-        'request page: ',
+        'request page:',
         request.url(),
-        ' replaced with: ',
+        'replaced with:',
         this.swdePage.fullPath
       );
       request.respond({
@@ -44,7 +44,7 @@ export class Scraper {
       });
     } else {
       // Abort other requests for now.
-      console.log('request aborted: ', request.url());
+      console.log('request aborted:', request.url());
       request.abort();
     }
   }
