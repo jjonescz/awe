@@ -3,7 +3,14 @@
   "version": "1.0.0",
   "main": "index.ts",
   "author": "Jan Joneš",
+  "scripts": {
+    "start": "node index.ts"
+  },
   "dependencies": {
     "puppeteer": "10.4.0"
+  },
+  "devDependencies": {
+    "ts-node": "10.4.0",
+    "typescript": "4.4.4"
   }
 }
