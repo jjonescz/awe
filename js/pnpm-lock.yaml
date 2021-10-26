@@ -1,12 +1,12 @@
 lockfileVersion: 5.3
 
 specifiers:
-  puppeteer: 10.4.0
+  puppeteer-core: 10.4.0
   ts-node: 10.4.0
   typescript: 4.4.4
 
 dependencies:
-  puppeteer: 10.4.0
+  puppeteer-core: 10.4.0
 
 devDependencies:
   ts-node: 10.4.0_typescript@4.4.4
@@ -329,10 +329,9 @@ packages:
       once: 1.4.0
     dev: false
 
-  /puppeteer/10.4.0:
-    resolution: {integrity: sha512-2cP8mBoqnu5gzAVpbZ0fRaobBWZM8GEUF4I1F6WbgHrKV/rz7SX8PG2wMymZgD0wo0UBlg2FBPNxlF/xlqW6+w==}
+  /puppeteer-core/10.4.0:
+    resolution: {integrity: sha512-KU8zyb7AIOqNjLCN3wkrFXxh+EVaG+zrs2P03ATNjc3iwSxHsu5/EvZiREpQ/IJiT9xfQbDVgKcsvRuzLCxglQ==}
     engines: {node: '>=10.18.1'}
-    requiresBuild: true
     dependencies:
       debug: 4.3.1
       devtools-protocol: 0.0.901419
