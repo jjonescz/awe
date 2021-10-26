@@ -4,7 +4,7 @@
   "main": "index.ts",
   "author": "Jan Joneš",
   "scripts": {
-    "start": "node index.ts"
+    "start": "ts-node index.ts"
   },
   "dependencies": {
     "puppeteer": "10.4.0"
