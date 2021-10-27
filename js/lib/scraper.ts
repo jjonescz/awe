@@ -1,9 +1,12 @@
 import { readFile } from 'fs/promises';
-import puppeteer from 'puppeteer-core';
+import puppeteer, { HTTPRequest } from 'puppeteer-core';
 import { Archive } from './archive';
+import { SWDE_TIMESTAMP } from './constants';
 
 // First character is BOM marker.
 const BASE_TAG_REGEX = /^\uFEFF?<base href="([^\n]*)"\/>\w*\n(.*)/s;
+
+const ARCHIVE_URL_REGEX = /^https:\/\/web.archive.org\/web\/(\d{14})id_\/(.*)$/;
 
 /** Browser navigator intercepting requests. */
 export class Scraper {
@@ -49,14 +52,32 @@ export class Scraper {
         body: this.swdePage.html,
       });
     } else {
+      // Pass WaybackMachine redirects through.
+      const redirectUrl = this.isArchiveRedirect(request);
+      if (redirectUrl !== null) {
+        console.log('redirected:', request.url());
+        request.continue();
+        return;
+      }
+
       // Handle other requests from local archive if available or request them
       // from WaybackMachine if they are not stored yet.
       const response = await this.archive.getOrAdd(
         request.url(),
         async (url) => {
-          console.log('request resume:', url);
-          await request.continue();
-          const response = await this.page.waitForResponse(url);
+          const archiveUrl = this.getArchiveUrl(url);
+          console.log('live request:', archiveUrl);
+          await request.continue({ url: archiveUrl });
+          // Note that if WaybackMachine doesn't have the page archived at
+          // exactly the provided timestamp, it will redirect. That's detected
+          // by `isArchiveRedirect`.
+          const response = await this.page.waitForResponse((res) => {
+            if (res.url() === url) return true;
+            const redirectUrl = this.isArchiveRedirect(res.request());
+            if (redirectUrl === url) return true;
+            return false;
+          });
+          console.log('response for:', response.url());
           const body = await response.buffer();
           const headers = response.headers();
           return {
@@ -69,10 +90,27 @@ export class Scraper {
         }
       );
       if (request.response() === null) {
-        console.log('request handled:', request.url());
+        console.log('offline request:', request.url());
         request.respond(response);
       }
     }
+  }
+
+  private getArchiveUrl(url: string) {
+    // For URL scheme, see
+    // https://en.wikipedia.org/wiki/Help:Using_the_Wayback_Machine#Specific_archive_copy.
+    return `https://web.archive.org/web/${SWDE_TIMESTAMP}id_/${url}`;
+  }
+
+  private isArchiveRedirect(request: HTTPRequest) {
+    const match = request.url().match(ARCHIVE_URL_REGEX);
+    if (match === null) return null;
+    const [_full, _date, url] = match;
+    const chain = request.redirectChain();
+    if (chain.length !== 1) return null;
+    const prev = chain[0];
+    if (prev.url() !== url) return null;
+    return url;
   }
 
   public go(page: SwdePage) {
