@@ -1,5 +1,6 @@
 import { readFile } from 'fs/promises';
 import puppeteer from 'puppeteer-core';
+import { Archive } from './archive';
 
 // First character is BOM marker.
 const BASE_TAG_REGEX = /^\uFEFF?<base href="([^\n]*)"\/>\w*\n(.*)/s;
@@ -10,7 +11,8 @@ export class Scraper {
 
   private constructor(
     public readonly browser: puppeteer.Browser,
-    public readonly page: puppeteer.Page
+    public readonly page: puppeteer.Page,
+    public readonly archive: Archive
   ) {
     // Intercept requests.
     page.setRequestInterception(true);
@@ -28,10 +30,13 @@ export class Scraper {
     });
     const page = await browser.newPage();
 
-    return new Scraper(browser, page);
+    // Open file archive.
+    const archive = await Archive.create();
+
+    return new Scraper(browser, page, archive);
   }
 
-  private onRequest(request: puppeteer.HTTPRequest) {
+  private async onRequest(request: puppeteer.HTTPRequest) {
     if (this.swdePage !== null && request.url() === this.swdePage.url) {
       // Replace request to SWDE page with its HTML content.
       console.log(
@@ -44,9 +49,27 @@ export class Scraper {
         body: this.swdePage.html,
       });
     } else {
-      // Abort other requests for now.
-      console.log('request aborted:', request.url());
-      request.abort();
+      // Handle other requests from local archive if available or request them
+      // from WaybackMachine if they are not stored yet.
+      const response = await this.archive.getOrAdd(
+        request.url(),
+        async (url) => {
+          console.log('request resume:', url);
+          await request.continue();
+          const response = await this.page.waitForResponse(url);
+          const body = await response.buffer();
+          const headers = response.headers();
+          return {
+            url,
+            status: response.status(),
+            headers,
+            contentType: headers['Content-Type'],
+            body,
+          };
+        }
+      );
+      console.log('request handled:', request.url());
+      request.respond(response);
     }
   }
 

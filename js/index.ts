@@ -18,5 +18,6 @@ import { replaceExtension } from './lib/utils';
   console.log('screenshot:', screenshotPath);
   await scraper.page.screenshot({ path: screenshotPath, fullPage: true });
 
+  await scraper.archive.save();
   await scraper.browser.close();
 })();

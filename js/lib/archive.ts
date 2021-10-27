@@ -31,13 +31,13 @@ export class Archive {
 
   public async getOrAdd(
     url: string,
-    fileFactory: () => ResponseForRequest
+    fileFactory: (url: string) => Promise<ResponseForRequest>
   ): Promise<Partial<ResponseForRequest>> {
     const file = this.map.get(url);
 
     // If this hash doesn't exist, use `fileFactory` and store it.
     if (file === undefined) {
-      const response = fileFactory();
+      const response = await fileFactory(url);
 
       // Create hash of file contents.
       const hasher = createHash('sha256');
