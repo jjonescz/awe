@@ -47,13 +47,16 @@ export class Archive {
       hasher.update(response.body);
       const hash = hasher.digest('hex');
 
-      // Check this hash doesn't exist yet.
-      assert(!(hash in this.map), 'Hash already exists in map.');
-
       // Store file contents under the hash.
       const filePath = this.getPath(hash);
-      assert(!existsSync(filePath), 'File with the same hash already exists.');
-      await writeFile(filePath, response.body, { encoding: 'utf-8' });
+      if (existsSync(filePath)) {
+        // If the file already exists, check that it has the same contents.
+        const contents = response.body.toString('utf-8');
+        const existing = await readFile(filePath, { encoding: 'utf-8' });
+        if (contents !== existing) throw new Error(`Hash collision: ${hash}`);
+      } else {
+        await writeFile(filePath, response.body, { encoding: 'utf-8' });
+      }
 
       // Add file into the map.
       const { body, ...fileResponse } = response;
