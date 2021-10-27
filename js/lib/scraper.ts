@@ -4,6 +4,7 @@ import puppeteer from 'puppeteer-core';
 // First character is BOM marker.
 const BASE_TAG_REGEX = /^\uFEFF?<base href="([^\n]*)"\/>\w*\n(.*)/s;
 
+/** Browser navigator intercepting requests. */
 export class Scraper {
   private swdePage: SwdePage | null = null;
 
@@ -58,6 +59,7 @@ export class Scraper {
   }
 }
 
+/** Page from the SWDE dataset. */
 export class SwdePage {
   public constructor(
     public readonly fullPath: string,
