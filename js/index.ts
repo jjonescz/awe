@@ -8,7 +8,7 @@ import { replaceExtension } from './lib/utils';
   const scraper = await Scraper.create();
 
   // Enable offline mode.
-  scraper.allowLive = false;
+  // scraper.allowLive = false;
 
   try {
     // Open a page (hard-coded path for now).
@@ -18,8 +18,8 @@ import { replaceExtension } from './lib/utils';
     await scraper.go(page);
 
     // Wait for few more seconds.
-    console.log('waiting 5 seconds');
-    await new Promise((resolve) => setTimeout(resolve, 5_000));
+    // console.log('waiting 5 seconds');
+    // await new Promise((resolve) => setTimeout(resolve, 5_000));
 
     scraper.stop();
 
