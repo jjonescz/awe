@@ -8,6 +8,20 @@ const BASE_TAG_REGEX = /^\uFEFF?<base href="([^\n]*)"\/>\w*\n(.*)/s;
 
 const ARCHIVE_URL_REGEX = /^https:\/\/web.archive.org\/web\/(\d{14})id_\/(.*)$/;
 
+export const enum SpecialStatusCode {
+  Undefined = -1,
+  Aborted = -2,
+}
+
+export class ScrapingStats {
+  /** Map from status code to number of occurrences. */
+  public readonly status: Record<number, number> = {};
+
+  public increment(statusCode: number) {
+    this.status[statusCode] = (this.status[statusCode] ?? 0) + 1;
+  }
+}
+
 /** Browser navigator intercepting requests. */
 export class Scraper {
   private swdePage: SwdePage | null = null;
@@ -16,6 +30,7 @@ export class Scraper {
   public allowLive = true;
   /** Load and save requests locally (in {@link Archive})? */
   public allowOffline = true;
+  public readonly stats = new ScrapingStats();
 
   private constructor(
     public readonly browser: puppeteer.Browser,
@@ -82,6 +97,7 @@ export class Scraper {
           this.archive.getHash(request.url())
         );
         request.respond(offline);
+        this.addToStats(offline);
       } else {
         if (offline === null) {
           // This request didn't complete last time, abort it.
@@ -123,7 +139,7 @@ export class Scraper {
         console.log('response for:', response.url());
         const body = await response.buffer();
         const headers = response.headers();
-        const archived = {
+        const archived: puppeteer.ResponseForRequest = {
           status: response.status(),
           headers,
           contentType: headers['Content-Type'],
@@ -131,8 +147,13 @@ export class Scraper {
         };
         this.inProgress.delete(request.url());
         this.archive.add(request.url(), archived);
+        this.addToStats(archived);
       }
     }
+  }
+
+  private addToStats(response: Partial<puppeteer.ResponseForRequest>) {
+    this.stats.increment(response.status ?? SpecialStatusCode.Undefined);
   }
 
   private getArchiveUrl(url: string) {
@@ -173,6 +194,7 @@ export class Scraper {
 
       // Save as "aborted" for the next time.
       this.archive.add(url, null);
+      this.stats.increment(SpecialStatusCode.Aborted);
     }
   }
 
