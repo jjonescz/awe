@@ -1,7 +1,6 @@
-import { assert } from 'console';
 import { createHash } from 'crypto';
 import { existsSync } from 'fs';
-import { mkdir, readFile, stat, writeFile } from 'fs/promises';
+import { mkdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import { ResponseForRequest } from 'puppeteer-core';
 import { ARCHIVE_FOLDER } from './constants';
@@ -70,6 +69,10 @@ export class Archive {
     const body = await readFile(filePath);
     const { hash, ...response } = file;
     return { ...response, body };
+  }
+
+  public getHash(url: string) {
+    return this.map[url].hash;
   }
 
   /** Saves file map. */

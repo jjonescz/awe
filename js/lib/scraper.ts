@@ -90,7 +90,12 @@ export class Scraper {
         }
       );
       if (request.response() === null) {
-        console.log('offline request:', request.url());
+        console.log(
+          'offline request:',
+          request.url(),
+          'hash:',
+          this.archive.getHash(request.url())
+        );
         request.respond(response);
       }
     }
