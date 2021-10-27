@@ -80,6 +80,12 @@ export class Scraper {
       waitUntil: 'networkidle2',
     });
   }
+
+  public async dispose() {
+    console.log('saving archive');
+    await this.archive.save();
+    await this.browser.close();
+  }
 }
 
 /** Page from the SWDE dataset. */
