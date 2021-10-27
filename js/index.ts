@@ -7,7 +7,8 @@ import { replaceExtension } from './lib/utils';
   // Open browser.
   const scraper = await Scraper.create();
 
-  // TODO: Add offline mode.
+  // Enable offline mode.
+  scraper.allowLive = false;
 
   try {
     // Open a page (hard-coded path for now).

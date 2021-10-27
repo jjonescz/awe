@@ -12,6 +12,10 @@ const ARCHIVE_URL_REGEX = /^https:\/\/web.archive.org\/web\/(\d{14})id_\/(.*)$/;
 export class Scraper {
   private swdePage: SwdePage | null = null;
   private readonly inProgress: Set<string> = new Set();
+  /** Allow live (online) requests if needed? */
+  public allowLive = true;
+  /** Load and save requests locally (in {@link Archive})? */
+  public allowOffline = true;
 
   private constructor(
     public readonly browser: puppeteer.Browser,
@@ -67,7 +71,9 @@ export class Scraper {
 
       // Handle other requests from local archive if available or request them
       // from WaybackMachine if they are not stored yet.
-      const offline = await this.archive.get(request.url());
+      const offline = this.allowOffline
+        ? await this.archive.get(request.url())
+        : undefined;
       if (offline) {
         console.log(
           'offline request:',
@@ -77,8 +83,8 @@ export class Scraper {
         );
         request.respond(offline);
       } else {
-        if (offline === null) {
-          // This request was aborted last time.
+        // If `offline == null`, this request was aborted last time.
+        if (offline === null || !this.allowLive) {
           console.log('aborted:', request.url());
           request.abort();
           return;
