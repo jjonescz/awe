@@ -1,50 +1,65 @@
-import { BinaryLike, createHash } from 'crypto';
+import { createHash } from 'crypto';
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
+import { ResponseForRequest } from 'puppeteer-core';
 import { ARCHIVE_FOLDER } from './constants';
 
 const ARCHIVE_FILES_FOLDER = path.join(ARCHIVE_FOLDER, 'files');
 const ARCHIVE_MAP_PATH = path.join(ARCHIVE_FOLDER, 'map.json');
 
+/** In-memory variant of {@link ResponseForRequest}. */
+export interface FileResponse {
+  status?: number;
+  headers?: Record<string, unknown>;
+  contentType?: string;
+  hash: string;
+}
+
 export class Archive {
   private constructor(
-    /** Map from URL to file hash. */
-    private readonly map: Map<string, string>
+    /** Map from URL to {@link FileResponse}. */
+    private readonly map: Map<string, FileResponse>
   ) {}
 
-  public async create() {
+  public static async create() {
+    // Prepare storage.
     await mkdir(ARCHIVE_FILES_FOLDER, { recursive: true });
     const mapJson = await readFile(ARCHIVE_MAP_PATH, { encoding: 'utf-8' });
-    const map = new Map<string, string>(JSON.parse(mapJson));
+    const map = new Map<string, FileResponse>(JSON.parse(mapJson));
     return new Archive(map);
   }
 
-  public async getOrAdd(url: string, contentsFactory: () => BinaryLike) {
-    let hash = this.map.get(url);
+  public async getOrAdd(
+    url: string,
+    fileFactory: () => ResponseForRequest
+  ): Promise<Partial<ResponseForRequest>> {
+    const file = this.map.get(url);
 
-    // If this hash doesn't exist, use `contentsFactory` and store it.
-    if (hash === undefined) {
-      const contents = contentsFactory();
+    // If this hash doesn't exist, use `fileFactory` and store it.
+    if (file === undefined) {
+      const response = fileFactory();
 
       // Create hash of file contents.
       const hasher = createHash('sha256');
-      hasher.update(contents);
-      hash = hasher.digest('hex');
+      hasher.update(response.body);
+      const hash = hasher.digest('hex');
 
       // Store file contents under the hash.
       const filePath = this.getPath(hash);
-      await writeFile(filePath, contents, { encoding: 'utf-8' });
+      await writeFile(filePath, response.body, { encoding: 'utf-8' });
 
       // Add file into the map.
-      this.map.set(url, hash);
+      const { body, ...fileResponse } = response;
+      this.map.set(url, { ...fileResponse, hash });
 
-      // Return contents of the file.
-      return contents;
+      return response;
     }
 
     // Otherwise, read file contents.
-    const filePath = this.getPath(hash);
-    return await readFile(filePath);
+    const filePath = this.getPath(file.hash);
+    const body = await readFile(filePath);
+    const { hash, ...response } = file;
+    return { ...response, body };
   }
 
   /** Saves file map. */
