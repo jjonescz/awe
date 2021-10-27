@@ -20,7 +20,7 @@ export interface FileResponse {
 export class Archive {
   private constructor(
     /** Map from URL to {@link FileResponse}. */
-    private readonly map: Map<string, FileResponse>
+    private readonly map: Record<string, FileResponse>
   ) {}
 
   public static async create() {
@@ -29,15 +29,14 @@ export class Archive {
     const mapJson = existsSync(ARCHIVE_MAP_PATH)
       ? await readFile(ARCHIVE_MAP_PATH, { encoding: 'utf-8' })
       : '{}';
-    const map = new Map<string, FileResponse>(JSON.parse(mapJson));
-    return new Archive(map);
+    return new Archive(JSON.parse(mapJson));
   }
 
   public async getOrAdd(
     url: string,
     fileFactory: (url: string) => Promise<ResponseForRequest>
   ): Promise<Partial<ResponseForRequest>> {
-    const file = this.map.get(url);
+    const file = this.map[url];
 
     // If this hash doesn't exist, use `fileFactory` and store it.
     if (file === undefined) {
@@ -49,7 +48,7 @@ export class Archive {
       const hash = hasher.digest('hex');
 
       // Check this hash doesn't exist yet.
-      assert(!this.map.has(hash), 'Hash already exists in map.');
+      assert(!(hash in this.map), 'Hash already exists in map.');
 
       // Store file contents under the hash.
       const filePath = this.getPath(hash);
@@ -58,7 +57,7 @@ export class Archive {
 
       // Add file into the map.
       const { body, ...fileResponse } = response;
-      this.map.set(url, { ...fileResponse, hash });
+      this.map[url] = { ...fileResponse, hash };
 
       return response;
     }
