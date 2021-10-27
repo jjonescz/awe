@@ -68,8 +68,10 @@ export class Scraper {
           };
         }
       );
-      console.log('request handled:', request.url());
-      request.respond(response);
+      if (request.response() === null) {
+        console.log('request handled:', request.url());
+        request.respond(response);
+      }
     }
   }
 
