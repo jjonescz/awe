@@ -72,7 +72,7 @@ export class Scraper {
           // exactly the provided timestamp, it will redirect. That's detected
           // by `isArchiveRedirect`.
           const response = await this.page.waitForResponse((res) => {
-            if (res.url() === url) return true;
+            if (res.url() === url && res.status() !== 302) return true;
             const redirectUrl = this.isArchiveRedirect(res.request());
             if (redirectUrl === url) return true;
             return false;
