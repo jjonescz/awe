@@ -62,41 +62,38 @@ export class Scraper {
 
       // Handle other requests from local archive if available or request them
       // from WaybackMachine if they are not stored yet.
-      const response = await this.archive.getOrAdd(
-        request.url(),
-        async (url) => {
-          const archiveUrl = this.getArchiveUrl(url);
-          console.log('live request:', archiveUrl);
-          await request.continue({ url: archiveUrl });
-          // Note that if WaybackMachine doesn't have the page archived at
-          // exactly the provided timestamp, it will redirect. That's detected
-          // by `isArchiveRedirect`.
-          const response = await this.page.waitForResponse((res) => {
-            if (res.url() === url && res.status() !== 302) return true;
-            const redirectUrl = this.isArchiveRedirect(res.request());
-            if (redirectUrl === url) return true;
-            return false;
-          });
-          console.log('response for:', response.url());
-          const body = await response.buffer();
-          const headers = response.headers();
-          return {
-            url,
-            status: response.status(),
-            headers,
-            contentType: headers['Content-Type'],
-            body,
-          };
-        }
-      );
-      if (request.response() === null) {
+      const offline = await this.archive.get(request.url());
+      if (offline !== undefined) {
         console.log(
           'offline request:',
           request.url(),
           'hash:',
           this.archive.getHash(request.url())
         );
-        request.respond(response);
+        request.respond(offline);
+      } else {
+        const archiveUrl = this.getArchiveUrl(request.url());
+        console.log('live request:', archiveUrl);
+        await request.continue({ url: archiveUrl });
+        // Note that if WaybackMachine doesn't have the page archived at
+        // exactly the provided timestamp, it will redirect. That's detected
+        // by `isArchiveRedirect`.
+        const response = await this.page.waitForResponse((res) => {
+          if (res.url() === request.url() && res.status() !== 302) return true;
+          const redirectUrl = this.isArchiveRedirect(res.request());
+          if (redirectUrl === request.url()) return true;
+          return false;
+        });
+        console.log('response for:', response.url());
+        const body = await response.buffer();
+        const headers = response.headers();
+        const archived = {
+          status: response.status(),
+          headers,
+          contentType: headers['Content-Type'],
+          body,
+        };
+        this.archive.add(request.url(), archived);
       }
     }
   }

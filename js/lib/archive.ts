@@ -31,44 +31,39 @@ export class Archive {
     return new Archive(JSON.parse(mapJson));
   }
 
-  public async getOrAdd(
-    url: string,
-    fileFactory: (url: string) => Promise<ResponseForRequest>
-  ): Promise<Partial<ResponseForRequest>> {
+  public async get(
+    url: string
+  ): Promise<Partial<ResponseForRequest> | undefined> {
     const file = this.map[url];
+    if (file === undefined) return undefined;
 
-    // If this hash doesn't exist, use `fileFactory` and store it.
-    if (file === undefined) {
-      const response = await fileFactory(url);
-
-      // Create hash of file contents.
-      const hasher = createHash('sha256');
-      hasher.update(response.body);
-      const hash = hasher.digest('hex');
-
-      // Store file contents under the hash.
-      const filePath = this.getPath(hash);
-      if (existsSync(filePath)) {
-        // If the file already exists, check that it has the same contents.
-        const contents = response.body.toString('utf-8');
-        const existing = await readFile(filePath, { encoding: 'utf-8' });
-        if (contents !== existing) throw new Error(`Hash collision: ${hash}`);
-      } else {
-        await writeFile(filePath, response.body, { encoding: 'utf-8' });
-      }
-
-      // Add file into the map.
-      const { body, ...fileResponse } = response;
-      this.map[url] = { ...fileResponse, hash };
-
-      return response;
-    }
-
-    // Otherwise, read file contents.
+    // Read file contents.
     const filePath = this.getPath(file.hash);
     const body = await readFile(filePath);
     const { hash, ...response } = file;
     return { ...response, body };
+  }
+
+  public async add(url: string, value: ResponseForRequest) {
+    // Create hash of file contents.
+    const hasher = createHash('sha256');
+    hasher.update(value.body);
+    const hash = hasher.digest('hex');
+
+    // Store file contents under the hash.
+    const filePath = this.getPath(hash);
+    if (existsSync(filePath)) {
+      // If the file already exists, check that it has the same contents.
+      const contents = value.body.toString('utf-8');
+      const existing = await readFile(filePath, { encoding: 'utf-8' });
+      if (contents !== existing) throw new Error(`Hash collision: ${hash}`);
+    } else {
+      await writeFile(filePath, value.body, { encoding: 'utf-8' });
+    }
+
+    // Add file into the map.
+    const { body, ...fileResponse } = value;
+    this.map[url] = { ...fileResponse, hash };
   }
 
   public getHash(url: string) {
