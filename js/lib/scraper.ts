@@ -11,6 +11,7 @@ const ARCHIVE_URL_REGEX = /^https:\/\/web.archive.org\/web\/(\d{14})id_\/(.*)$/;
 /** Browser navigator intercepting requests. */
 export class Scraper {
   private swdePage: SwdePage | null = null;
+  private readonly inProgress: Set<string> = new Set();
 
   private constructor(
     public readonly browser: puppeteer.Browser,
@@ -20,6 +21,10 @@ export class Scraper {
     // Intercept requests.
     page.setRequestInterception(true);
     page.on('request', this.onRequest.bind(this));
+  }
+
+  public get numWaiting() {
+    return this.inProgress.size;
   }
 
   public static async create() {
@@ -63,11 +68,7 @@ export class Scraper {
       // Handle other requests from local archive if available or request them
       // from WaybackMachine if they are not stored yet.
       const offline = await this.archive.get(request.url());
-      if (offline === null) {
-        console.log('request in progress:', request.url());
-        // TODO: Wait for this request again!
-        request.abort();
-      } else if (offline !== undefined) {
+      if (offline) {
         console.log(
           'offline request:',
           request.url(),
@@ -76,13 +77,27 @@ export class Scraper {
         );
         request.respond(offline);
       } else {
-        // Save this request as "in progress".
-        this.archive.add(request.url(), null);
+        if (offline === null) {
+          // This request was aborted last time.
+          console.log('aborted:', request.url());
+          request.abort();
+          return;
+        }
 
-        // Redirect to `web.archive.org`.
-        const archiveUrl = this.getArchiveUrl(request.url());
-        console.log('live request:', archiveUrl);
-        await request.continue({ url: archiveUrl });
+        // Save this request as "in progress" if not already.
+        if (!this.inProgress.has(request.url())) {
+          this.inProgress.add(request.url());
+
+          // Also save it as "aborted" if it won't complete.
+          this.archive.add(request.url(), null);
+
+          // Redirect to `web.archive.org`.
+          const archiveUrl = this.getArchiveUrl(request.url());
+          console.log('live request:', archiveUrl);
+          await request.continue({ url: archiveUrl });
+        } else {
+          console.log('waiting:', request.url());
+        }
 
         // Note that if WaybackMachine doesn't have the page archived at
         // exactly the provided timestamp, it will redirect. That's detected
