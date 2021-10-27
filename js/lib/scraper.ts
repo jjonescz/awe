@@ -88,9 +88,6 @@ export class Scraper {
         if (!this.inProgress.has(request.url())) {
           this.inProgress.add(request.url());
 
-          // Also save it as "aborted" if it won't complete.
-          this.archive.add(request.url(), null);
-
           // Redirect to `web.archive.org`.
           const archiveUrl = this.getArchiveUrl(request.url());
           console.log('live request:', archiveUrl);
@@ -119,6 +116,7 @@ export class Scraper {
           contentType: headers['Content-Type'],
           body,
         };
+        this.inProgress.delete(request.url());
         this.archive.add(request.url(), archived);
       }
     }
@@ -147,6 +145,15 @@ export class Scraper {
     return this.page.goto(page.url, {
       waitUntil: 'networkidle2',
     });
+  }
+
+  public stop() {
+    for (const url of this.inProgress) {
+      console.log('unhandled:', url);
+
+      // Save as "aborted" for the next time.
+      this.archive.add(url, null);
+    }
   }
 
   public async dispose() {

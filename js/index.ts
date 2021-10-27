@@ -20,6 +20,8 @@ import { replaceExtension } from './lib/utils';
     console.log('waiting 5 seconds');
     await new Promise((resolve) => setTimeout(resolve, 5_000));
 
+    scraper.stop();
+
     // Take screenshot.
     const screenshotPath = replaceExtension(fullPath, '.png');
     console.log('screenshot:', screenshotPath);
