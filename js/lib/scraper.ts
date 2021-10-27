@@ -83,10 +83,17 @@ export class Scraper {
         );
         request.respond(offline);
       } else {
-        // If `offline == null`, this request was aborted last time.
-        if (offline === null || !this.allowLive) {
+        if (offline === null) {
+          // This request didn't complete last time, abort it.
           console.log('aborted:', request.url());
           request.abort();
+          return;
+        }
+
+        if (!this.allowLive) {
+          // In offline mode, act as if this endpoint was not available.
+          console.log('disabled:', request.url());
+          request.respond({ status: 404 });
           return;
         }
 
