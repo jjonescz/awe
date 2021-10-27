@@ -11,7 +11,7 @@ import { replaceExtension } from './lib/utils';
     // Open a page (hard-coded path for now).
     const fullPath = path.join(SWDE_FOLDER, 'auto/auto-aol(2000)/0000.htm');
     const page = await SwdePage.parse(fullPath);
-    console.log('goto: ', fullPath);
+    console.log('goto:', fullPath);
     await scraper.go(page);
 
     // Take screenshot.
