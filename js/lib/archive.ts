@@ -44,8 +44,12 @@ export class Archive {
     return { ...response, body };
   }
 
-  public async add(url: string, value: ResponseForRequest | null) {
-    if (this.map[url]) {
+  public async add(
+    url: string,
+    value: ResponseForRequest | null,
+    { force = false } = {}
+  ) {
+    if (this.map[url] && !force) {
       // Note that we don't want this error to be thrown when `this.map[url] ===
       // null` (then, we want to overwrite it).
       throw new Error(`URL already exists in the map: ${url}`);

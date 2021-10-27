@@ -10,9 +10,15 @@ import { replaceExtension } from './lib/utils';
   // Enable offline mode.
   // scraper.allowLive = false;
 
+  // Force refresh.
+  scraper.forceLive = true;
+
   try {
     // Open a page (hard-coded path for now).
-    const fullPath = path.join(SWDE_FOLDER, 'auto/auto-aol(2000)/0000.htm');
+    const fullPath = path.join(
+      SWDE_FOLDER,
+      'auto/auto-autobytel(2000)/0000.htm'
+    );
     const page = await SwdePage.parse(fullPath);
     console.log('goto:', fullPath);
     await scraper.go(page);

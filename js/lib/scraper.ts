@@ -29,6 +29,8 @@ export class Scraper {
   public allowLive = true;
   /** Load and save requests locally (in {@link Archive})? */
   public allowOffline = true;
+  /** Force retry of all live (online) requests. */
+  public forceLive = false;
   public readonly stats = new ScrapingStats();
 
   private constructor(
@@ -85,9 +87,10 @@ export class Scraper {
 
       // Handle other requests from local archive if available or request them
       // from WaybackMachine if they are not stored yet.
-      const offline = this.allowOffline
-        ? await this.archive.get(request.url())
-        : undefined;
+      const offline =
+        this.allowOffline && !this.forceLive
+          ? await this.archive.get(request.url())
+          : undefined;
       if (offline) {
         console.log(
           'offline request:',
@@ -99,7 +102,7 @@ export class Scraper {
         this.addToStats(offline);
         this.stats.offline++;
       } else {
-        if (offline === null) {
+        if (offline === null && !this.forceLive) {
           // This request didn't complete last time, abort it.
           console.log('aborted:', request.url());
           request.abort();
@@ -144,7 +147,8 @@ export class Scraper {
           body,
         };
         this.inProgress.delete(request.url());
-        this.archive.add(request.url(), archived);
+        if (this.allowOffline)
+          this.archive.add(request.url(), archived, { force: this.forceLive });
         this.addToStats(archived);
         this.stats.live++;
       }
