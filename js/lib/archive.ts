@@ -26,7 +26,9 @@ export class Archive {
   public static async create() {
     // Prepare storage.
     await mkdir(ARCHIVE_FILES_FOLDER, { recursive: true });
-    const mapJson = await readFile(ARCHIVE_MAP_PATH, { encoding: 'utf-8' });
+    const mapJson = existsSync(ARCHIVE_MAP_PATH)
+      ? await readFile(ARCHIVE_MAP_PATH, { encoding: 'utf-8' })
+      : '{}';
     const map = new Map<string, FileResponse>(JSON.parse(mapJson));
     return new Archive(map);
   }
