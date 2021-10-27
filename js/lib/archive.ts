@@ -1,5 +1,7 @@
+import { assert } from 'console';
 import { createHash } from 'crypto';
-import { mkdir, readFile, writeFile } from 'fs/promises';
+import { existsSync } from 'fs';
+import { mkdir, readFile, stat, writeFile } from 'fs/promises';
 import path from 'path';
 import { ResponseForRequest } from 'puppeteer-core';
 import { ARCHIVE_FOLDER } from './constants';
@@ -44,8 +46,12 @@ export class Archive {
       hasher.update(response.body);
       const hash = hasher.digest('hex');
 
+      // Check this hash doesn't exist yet.
+      assert(!this.map.has(hash), 'Hash already exists in map.');
+
       // Store file contents under the hash.
       const filePath = this.getPath(hash);
+      assert(!existsSync(filePath), 'File with the same hash already exists.');
       await writeFile(filePath, response.body, { encoding: 'utf-8' });
 
       // Add file into the map.
