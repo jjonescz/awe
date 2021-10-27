@@ -141,10 +141,17 @@ export class Scraper {
     return `https://web.archive.org/web/${SWDE_TIMESTAMP}id_/${url}`;
   }
 
-  private isArchiveRedirect(request: HTTPRequest) {
-    const match = request.url().match(ARCHIVE_URL_REGEX);
+  private parseArchiveUrl(url: string) {
+    const match = url.match(ARCHIVE_URL_REGEX);
     if (match === null) return null;
-    const [_full, _date, url] = match;
+    const [_full, date, pageUrl] = match;
+    return [date, pageUrl] as const;
+  }
+
+  private isArchiveRedirect(request: HTTPRequest) {
+    const archive = this.parseArchiveUrl(request.url());
+    if (archive == null) return null;
+    const [_date, url] = archive;
     const chain = request.redirectChain();
     if (chain.length !== 1) return null;
     const prev = chain[0];
