@@ -1,6 +1,7 @@
 import path from 'path';
 import { Scraper, SwdePage } from './lib/scraper';
 import { SWDE_FOLDER } from './lib/constants';
+import { replaceExtension } from './lib/utils';
 
 (async () => {
   // Open browser.
@@ -13,11 +14,7 @@ import { SWDE_FOLDER } from './lib/constants';
   await scraper.go(page);
 
   // Take screenshot.
-  const screenshotPath = path.format({
-    ...path.parse(fullPath),
-    base: undefined,
-    ext: '.png',
-  });
+  const screenshotPath = replaceExtension(fullPath, '.png');
   console.log('screenshot:', screenshotPath);
   await scraper.page.screenshot({ path: screenshotPath, fullPage: true });
 
