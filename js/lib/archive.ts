@@ -19,7 +19,7 @@ export interface FileResponse {
 export class Archive {
   private constructor(
     /** Map from URL to {@link FileResponse}. */
-    private readonly map: Record<string, FileResponse>
+    private readonly map: Record<string, FileResponse | null>
   ) {}
 
   public static async create() {
@@ -33,9 +33,9 @@ export class Archive {
 
   public async get(
     url: string
-  ): Promise<Partial<ResponseForRequest> | undefined> {
+  ): Promise<Partial<ResponseForRequest> | null | undefined> {
     const file = this.map[url];
-    if (file === undefined) return undefined;
+    if (file === undefined || file === null) return file;
 
     // Read file contents.
     const filePath = this.getPath(file.hash);
@@ -44,7 +44,19 @@ export class Archive {
     return { ...response, body };
   }
 
-  public async add(url: string, value: ResponseForRequest) {
+  public async add(url: string, value: ResponseForRequest | null) {
+    if (this.map[url]) {
+      // Note that we don't want this error to be thrown when `this.map[url] ===
+      // null` (then, we want to overwrite it).
+      throw new Error(`URL already exists in the map: ${url}`);
+    }
+
+    // Store `null` to indicate this request is "in progress".
+    if (value === null) {
+      this.map[url] = null;
+      return;
+    }
+
     // Create hash of file contents.
     const hasher = createHash('sha256');
     hasher.update(value.body);
@@ -67,7 +79,7 @@ export class Archive {
   }
 
   public getHash(url: string) {
-    return this.map[url].hash;
+    return this.map[url]?.hash;
   }
 
   /** Saves file map. */

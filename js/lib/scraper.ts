@@ -63,7 +63,11 @@ export class Scraper {
       // Handle other requests from local archive if available or request them
       // from WaybackMachine if they are not stored yet.
       const offline = await this.archive.get(request.url());
-      if (offline !== undefined) {
+      if (offline === null) {
+        console.log('request in progress:', request.url());
+        // TODO: Wait for this request again!
+        request.abort();
+      } else if (offline !== undefined) {
         console.log(
           'offline request:',
           request.url(),
@@ -72,9 +76,14 @@ export class Scraper {
         );
         request.respond(offline);
       } else {
+        // Save this request as "in progress".
+        this.archive.add(request.url(), null);
+
+        // Redirect to `web.archive.org`.
         const archiveUrl = this.getArchiveUrl(request.url());
         console.log('live request:', archiveUrl);
         await request.continue({ url: archiveUrl });
+
         // Note that if WaybackMachine doesn't have the page archived at
         // exactly the provided timestamp, it will redirect. That's detected
         // by `isArchiveRedirect`.
@@ -84,6 +93,8 @@ export class Scraper {
           if (redirectUrl === request.url()) return true;
           return false;
         });
+
+        // Handle response.
         console.log('response for:', response.url());
         const body = await response.buffer();
         const headers = response.headers();
