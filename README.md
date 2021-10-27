@@ -1,7 +1,11 @@
 # AI-based web extractor
 
 This repository contains source code for AI-based structured web data extractor.
-Python source code is contained in directory `awe`.
+
+## Directory structure
+
+- `awe`: Python source code (data loading and machine learning).
+- `js`: Node.js source code (headless browser for visual attribute extraction).
 
 ## Usage
 
