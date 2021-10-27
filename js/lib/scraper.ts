@@ -187,12 +187,21 @@ export class Scraper {
     return url;
   }
 
-  public go(page: SwdePage) {
+  public async go(page: SwdePage) {
     // Navigate to page's URL. This will be intercepted in `onRequest`.
     this.swdePage = page;
-    return this.page.goto(page.url, {
-      waitUntil: 'networkidle2',
-    });
+    try {
+      await this.page.goto(page.url, {
+        waitUntil: 'networkidle2',
+      });
+    } catch (e: any) {
+      if (e.name === 'TimeoutError') {
+        // Ignore timeouts.
+        console.log('timeout');
+      } else {
+        throw e;
+      }
+    }
   }
 
   public stop() {
