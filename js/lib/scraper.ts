@@ -8,14 +8,13 @@ const BASE_TAG_REGEX = /^\uFEFF?<base href="([^\n]*)"\/>\w*\n(.*)/s;
 
 const ARCHIVE_URL_REGEX = /^https:\/\/web.archive.org\/web\/(\d{14})id_\/(.*)$/;
 
-export const enum SpecialStatusCode {
-  Undefined = -1,
-  Aborted = -2,
-}
-
 export class ScrapingStats {
   /** Map from status code to number of occurrences. */
   public readonly status: Record<number, number> = {};
+  public undef = 0;
+  public aborted = 0;
+  public offline = 0;
+  public live = 0;
 
   public increment(statusCode: number) {
     this.status[statusCode] = (this.status[statusCode] ?? 0) + 1;
@@ -98,11 +97,13 @@ export class Scraper {
         );
         request.respond(offline);
         this.addToStats(offline);
+        this.stats.offline++;
       } else {
         if (offline === null) {
           // This request didn't complete last time, abort it.
           console.log('aborted:', request.url());
           request.abort();
+          this.stats.aborted++;
           return;
         }
 
@@ -110,6 +111,7 @@ export class Scraper {
           // In offline mode, act as if this endpoint was not available.
           console.log('disabled:', request.url());
           request.respond({ status: 404 });
+          this.stats.increment(404);
           return;
         }
 
@@ -148,12 +150,17 @@ export class Scraper {
         this.inProgress.delete(request.url());
         this.archive.add(request.url(), archived);
         this.addToStats(archived);
+        this.stats.live++;
       }
     }
   }
 
   private addToStats(response: Partial<puppeteer.ResponseForRequest>) {
-    this.stats.increment(response.status ?? SpecialStatusCode.Undefined);
+    if (response.status === undefined) {
+      this.stats.undef++;
+    } else {
+      this.stats.increment(response.status);
+    }
   }
 
   private getArchiveUrl(url: string) {
@@ -194,7 +201,7 @@ export class Scraper {
 
       // Save as "aborted" for the next time.
       this.archive.add(url, null);
-      this.stats.increment(SpecialStatusCode.Aborted);
+      this.stats.aborted++;
     }
   }
 

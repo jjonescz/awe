@@ -24,7 +24,7 @@ import { replaceExtension } from './lib/utils';
     scraper.stop();
 
     // Report stats.
-    console.log('stats:', scraper.stats.status);
+    console.log('stats:', scraper.stats);
 
     // Take screenshot.
     const screenshotPath = replaceExtension(fullPath, '.png');
