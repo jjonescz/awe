@@ -115,17 +115,13 @@ export class Scraper {
           return;
         }
 
-        // Save this request as "in progress" if not already.
-        if (!this.inProgress.has(request.url())) {
-          this.inProgress.add(request.url());
+        // Save this request as "in progress".
+        this.inProgress.add(request.url());
 
-          // Redirect to `web.archive.org`.
-          const archiveUrl = this.getArchiveUrl(request.url());
-          console.log('live request:', archiveUrl);
-          await request.continue({ url: archiveUrl });
-        } else {
-          console.log('waiting:', request.url());
-        }
+        // Redirect to `web.archive.org`.
+        const archiveUrl = this.getArchiveUrl(request.url());
+        console.log('live request:', archiveUrl);
+        await request.continue({ url: archiveUrl });
 
         // Note that if WaybackMachine doesn't have the page archived at
         // exactly the provided timestamp, it will redirect. That's detected
