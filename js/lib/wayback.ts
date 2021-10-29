@@ -1,9 +1,10 @@
 import { HTTPRequest } from 'puppeteer-core';
 import { writeFile } from 'fs/promises';
 import { WAYBACK_CLOSEST_FILE } from './constants';
-import { getHttps, tryReadFile } from './utils';
+import { getHttps, normalizeUrl, tryReadFile } from './utils';
 
-const ARCHIVE_URL_REGEX = /^https:\/\/web.archive.org\/web\/(\d{14})id_\/(.*)$/;
+const ARCHIVE_URL_REGEX =
+  /^https?:\/\/web.archive.org\/web\/(\d{14})(id_)?\/(.*)$/;
 
 /** Functionality related to WaybackMachine. */
 export class Wayback {
@@ -19,10 +20,11 @@ export class Wayback {
     return `https://web.archive.org/web/${timestamp}id_/${url}`;
   }
 
-  public parseArchiveUrl(url: string) {
+  public parseArchiveUrl(url: string, { variant = 'id_' } = {}) {
     const match = url.match(ARCHIVE_URL_REGEX);
     if (match === null) return null;
-    const [_full, date, pageUrl] = match;
+    const [_full, date, modifier, pageUrl] = match;
+    if (variant !== (modifier ?? '')) return null;
     return [date, pageUrl] as const;
   }
 
@@ -89,7 +91,7 @@ export class Wayback {
       return null;
     }
     const snapshot = snapshots['closest'];
-    if (snapshot['status'] !== 200) {
+    if (snapshot['status'] !== '200') {
       throw new Error(
         `Non-OK status (${snapshot['status']}) returned (${url}).`
       );
@@ -98,12 +100,12 @@ export class Wayback {
       throw new Error(`Snapshot not available (${url}).`);
     }
     const archiveUrl = snapshot['url'];
-    const parsedUrl = this.parseArchiveUrl(archiveUrl);
+    const parsedUrl = this.parseArchiveUrl(archiveUrl, { variant: '' });
     if (parsedUrl === null) {
       throw new Error(`Cannot parse Wayback URL (${archiveUrl}).`);
     }
     const [date, pageUrl] = parsedUrl;
-    if (pageUrl !== url) {
+    if (normalizeUrl(pageUrl) !== normalizeUrl(url)) {
       throw new Error(
         `Wayback URL (${archiveUrl}) inconsistent with requested URL (${url}).`
       );

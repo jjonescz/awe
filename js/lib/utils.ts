@@ -33,3 +33,8 @@ export function getHttps(url: string, query: Record<string, string>) {
     req.end();
   });
 }
+
+export function normalizeUrl(url: string) {
+  // This removes superfluous port numbers.
+  return new URL(url).toString();
+}
