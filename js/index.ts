@@ -11,7 +11,7 @@ import { replaceExtension } from './lib/utils';
   // scraper.allowLive = false;
 
   // Force refresh.
-  scraper.forceLive = true;
+  // scraper.forceLive = true;
 
   try {
     // Open a page (hard-coded path for now).
