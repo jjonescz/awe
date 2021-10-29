@@ -1,7 +1,7 @@
 import path from 'path';
-import { Scraper, SwdePage } from './lib/scraper';
+import { Scraper } from './lib/scraper';
 import { SWDE_FOLDER } from './lib/constants';
-import { replaceExtension } from './lib/utils';
+import { Controller } from './lib/controller';
 
 (async () => {
   // Open browser.
@@ -14,28 +14,13 @@ import { replaceExtension } from './lib/utils';
   // scraper.forceLive = true;
 
   try {
-    // Open a page (hard-coded path for now).
+    // Scrape a page (hard-coded path for now).
     const fullPath = path.join(
       SWDE_FOLDER,
       'auto/auto-autobytel(2000)/0000.htm'
     );
-    const page = await SwdePage.parse(fullPath);
-    console.log('goto:', fullPath);
-    await scraper.go(page);
-
-    // Wait for few more seconds.
-    // console.log('waiting 5 seconds');
-    // await new Promise((resolve) => setTimeout(resolve, 5_000));
-
-    scraper.stop();
-
-    // Report stats.
-    console.log('stats:', scraper.stats);
-
-    // Take screenshot.
-    const screenshotPath = replaceExtension(fullPath, '.png');
-    console.log('screenshot:', screenshotPath);
-    await scraper.page.screenshot({ path: screenshotPath, fullPage: true });
+    const controller = new Controller(scraper);
+    await controller.scrape(fullPath);
   } finally {
     await scraper.dispose();
   }

@@ -206,9 +206,13 @@ export class Scraper {
     }
   }
 
-  public async dispose() {
+  public async save() {
     console.log('saving archive');
     await this.archive.save();
+  }
+
+  public async dispose() {
+    await this.save();
     await this.browser.close();
   }
 }
