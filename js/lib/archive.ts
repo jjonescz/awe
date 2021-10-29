@@ -4,6 +4,7 @@ import { mkdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import { ResponseForRequest } from 'puppeteer-core';
 import { ARCHIVE_FOLDER } from './constants';
+import { tryReadFile } from './utils';
 
 const ARCHIVE_FILES_FOLDER = path.join(ARCHIVE_FOLDER, 'files');
 const ARCHIVE_MAP_PATH = path.join(ARCHIVE_FOLDER, 'map.json');
@@ -25,9 +26,7 @@ export class Archive {
   public static async create() {
     // Prepare storage.
     await mkdir(ARCHIVE_FILES_FOLDER, { recursive: true });
-    const mapJson = existsSync(ARCHIVE_MAP_PATH)
-      ? await readFile(ARCHIVE_MAP_PATH, { encoding: 'utf-8' })
-      : '{}';
+    const mapJson = await tryReadFile(ARCHIVE_MAP_PATH, '{}');
     return new Archive(JSON.parse(mapJson));
   }
 

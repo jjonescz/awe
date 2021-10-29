@@ -1,8 +1,7 @@
 import { HTTPRequest } from 'puppeteer-core';
-import { readFile, writeFile } from 'fs/promises';
+import { writeFile } from 'fs/promises';
 import { WAYBACK_CLOSEST_FILE } from './constants';
-import { existsSync } from 'fs';
-import { getHttps } from './utils';
+import { getHttps, tryReadFile } from './utils';
 
 const ARCHIVE_URL_REGEX = /^https:\/\/web.archive.org\/web\/(\d{14})id_\/(.*)$/;
 
@@ -40,11 +39,7 @@ export class Wayback {
 
   /** Loads {@link closestTimestamp} cache. */
   public async loadResponses() {
-    const responsesJson = existsSync(WAYBACK_CLOSEST_FILE)
-      ? await readFile(WAYBACK_CLOSEST_FILE, {
-          encoding: 'utf-8',
-        })
-      : '{}';
+    const responsesJson = await tryReadFile(WAYBACK_CLOSEST_FILE, '{}');
     this.responses = { ...this.responses, ...JSON.parse(responsesJson) };
   }
 
