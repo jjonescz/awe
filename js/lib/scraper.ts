@@ -65,16 +65,7 @@ export class Scraper {
 
   private async onRequest(request: puppeteer.HTTPRequest) {
     if (this.swdePage !== null && request.url() === this.swdePage.url) {
-      // Replace request to SWDE page with its HTML content.
-      console.log(
-        'request page:',
-        request.url(),
-        'replaced with:',
-        this.swdePage.fullPath
-      );
-      request.respond({
-        body: this.swdePage.html,
-      });
+      this.handleSwdePage(request, this.swdePage);
     } else {
       // Pass WaybackMachine redirects through.
       const redirectUrl = this.wayback.isArchiveRedirect(request);
@@ -91,15 +82,7 @@ export class Scraper {
           ? await this.archive.get(request.url())
           : undefined;
       if (offline) {
-        console.log(
-          'offline request:',
-          request.url(),
-          'hash:',
-          this.archive.getHash(request.url())
-        );
-        request.respond(offline);
-        this.addToStats(offline);
-        this.stats.offline++;
+        this.handleOfflineRequest(request, offline);
       } else {
         if (offline === null && !this.forceLive) {
           // This request didn't complete last time, abort it.
@@ -117,41 +100,75 @@ export class Scraper {
           return;
         }
 
-        // Save this request as "in progress".
-        this.inProgress.add(request.url());
-
-        // Redirect to `web.archive.org`.
-        const archiveUrl = this.wayback.getArchiveUrl(request.url());
-        console.log('live request:', archiveUrl);
-        await request.continue({ url: archiveUrl });
-
-        // Note that if WaybackMachine doesn't have the page archived at
-        // exactly the provided timestamp, it will redirect. That's detected
-        // by `isArchiveRedirect`.
-        const response = await this.page.waitForResponse((res) => {
-          if (res.url() === request.url() && res.status() !== 302) return true;
-          const redirectUrl = this.wayback.isArchiveRedirect(res.request());
-          if (redirectUrl === request.url()) return true;
-          return false;
-        });
-
-        // Handle response.
-        console.log('response for:', response.url());
-        const body = await response.buffer();
-        const headers = response.headers();
-        const archived: puppeteer.ResponseForRequest = {
-          status: response.status(),
-          headers,
-          contentType: headers['Content-Type'],
-          body,
-        };
-        this.inProgress.delete(request.url());
-        if (this.allowOffline)
-          this.archive.add(request.url(), archived, { force: this.forceLive });
-        this.addToStats(archived);
-        this.stats.live++;
+        await this.handleLiveRequest(request);
       }
     }
+  }
+
+  /** Replaces request to SWDE page with its HTML content. */
+  private handleSwdePage(request: puppeteer.HTTPRequest, page: SwdePage) {
+    console.log(
+      'request page:',
+      request.url(),
+      'replaced with:',
+      page.fullPath
+    );
+    request.respond({
+      body: page.html,
+    });
+  }
+
+  /** Handles request from local archive. */
+  private handleOfflineRequest(
+    request: puppeteer.HTTPRequest,
+    offline: Partial<puppeteer.ResponseForRequest>
+  ) {
+    console.log(
+      'offline request:',
+      request.url(),
+      'hash:',
+      this.archive.getHash(request.url())
+    );
+    request.respond(offline);
+    this.addToStats(offline);
+    this.stats.offline++;
+  }
+
+  /** Redirects request to WaybackMachine. */
+  private async handleLiveRequest(request: puppeteer.HTTPRequest) {
+    // Save this request as "in progress".
+    this.inProgress.add(request.url());
+
+    // Redirect to `web.archive.org`.
+    const archiveUrl = this.wayback.getArchiveUrl(request.url());
+    console.log('live request:', archiveUrl);
+    await request.continue({ url: archiveUrl });
+
+    // Note that if WaybackMachine doesn't have the page archived at
+    // exactly the provided timestamp, it will redirect. That's detected
+    // by `isArchiveRedirect`.
+    const response = await this.page.waitForResponse((res) => {
+      if (res.url() === request.url() && res.status() !== 302) return true;
+      const redirectUrl = this.wayback.isArchiveRedirect(res.request());
+      if (redirectUrl === request.url()) return true;
+      return false;
+    });
+
+    // Handle response.
+    console.log('response for:', response.url());
+    const body = await response.buffer();
+    const headers = response.headers();
+    const archived: puppeteer.ResponseForRequest = {
+      status: response.status(),
+      headers,
+      contentType: headers['Content-Type'],
+      body,
+    };
+    this.inProgress.delete(request.url());
+    if (this.allowOffline)
+      this.archive.add(request.url(), archived, { force: this.forceLive });
+    this.addToStats(archived);
+    this.stats.live++;
   }
 
   private addToStats(response: Partial<puppeteer.ResponseForRequest>) {
