@@ -20,7 +20,7 @@ import { Controller } from './lib/controller';
       'auto/auto-autobytel(2000)/0000.htm'
     );
     const controller = new Controller(scraper);
-    await controller.scrape(fullPath);
+    await controller.scrapeBoth(fullPath);
   } finally {
     await scraper.dispose();
   }

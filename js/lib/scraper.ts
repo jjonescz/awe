@@ -123,6 +123,7 @@ export class Scraper {
   private async handleSwdePage(request: puppeteer.HTTPRequest, page: SwdePage) {
     switch (this.swdeHandling) {
       case SwdeHandling.Offline:
+        page.timestamp = null;
         console.log(
           'request page:',
           request.url(),
@@ -136,6 +137,7 @@ export class Scraper {
 
       case SwdeHandling.Wayback:
         const timestamp = await this.wayback.closestTimestamp(request.url());
+        page.timestamp = timestamp;
         if (timestamp === null) {
           console.log('redirect not found:', request.url());
         } else {
@@ -251,6 +253,9 @@ export class Scraper {
 
 /** Page from the SWDE dataset. */
 export class SwdePage {
+  /** Timestamp used to scrape this page. */
+  public timestamp: string | null = null;
+
   public constructor(
     public readonly fullPath: string,
     public readonly url: string,
