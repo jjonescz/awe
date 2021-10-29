@@ -89,33 +89,7 @@ export class Scraper {
         return;
       }
 
-      // Handle other requests from local archive if available or request them
-      // from WaybackMachine if they are not stored yet.
-      const offline =
-        this.allowOffline && !this.forceLive
-          ? await this.archive.get(request.url())
-          : undefined;
-      if (offline) {
-        this.handleOfflineRequest(request, offline);
-      } else {
-        if (offline === null && !this.forceLive) {
-          // This request didn't complete last time, abort it.
-          console.log('aborted:', request.url());
-          request.abort();
-          this.stats.aborted++;
-          return;
-        }
-
-        if (!this.allowLive) {
-          // In offline mode, act as if this endpoint was not available.
-          console.log('disabled:', request.url());
-          request.respond({ status: 404 });
-          this.stats.increment(404);
-          return;
-        }
-
-        await this.handleLiveRequest(request);
-      }
+      await this.handleExternalRequest(request);
     }
   }
 
@@ -142,9 +116,43 @@ export class Scraper {
           console.log('redirect not found:', request.url());
         } else {
           console.log('redirect page:', request.url(), 'timestamp:', timestamp);
-          await this.handleLiveRequest(request, timestamp);
+          await this.handleExternalRequest(request, timestamp);
         }
         break;
+    }
+  }
+
+  /**
+   * Serves request either from local archive or redirects it to WaybackMachine.
+   */
+  private async handleExternalRequest(
+    request: puppeteer.HTTPRequest,
+    timestamp = SWDE_TIMESTAMP
+  ) {
+    const offline =
+      this.allowOffline && !this.forceLive
+        ? await this.archive.get(request.url())
+        : undefined;
+    if (offline) {
+      this.handleOfflineRequest(request, offline);
+    } else {
+      if (offline === null && !this.forceLive) {
+        // This request didn't complete last time, abort it.
+        console.log('aborted:', request.url());
+        request.abort();
+        this.stats.aborted++;
+        return;
+      }
+
+      if (!this.allowLive) {
+        // In offline mode, act as if this endpoint was not available.
+        console.log('disabled:', request.url());
+        request.respond({ status: 404 });
+        this.stats.increment(404);
+        return;
+      }
+
+      await this.handleLiveRequest(request, timestamp);
     }
   }
 
@@ -167,7 +175,7 @@ export class Scraper {
   /** Redirects request to WaybackMachine. */
   private async handleLiveRequest(
     request: puppeteer.HTTPRequest,
-    timestamp = SWDE_TIMESTAMP
+    timestamp: string
   ) {
     // Save this request as "in progress".
     this.inProgress.add(request.url());
