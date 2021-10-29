@@ -1,6 +1,7 @@
 import { readFile } from 'fs/promises';
 import puppeteer from 'puppeteer-core';
 import { Archive } from './archive';
+import { SWDE_TIMESTAMP } from './constants';
 import { Wayback } from './wayback';
 
 // First character is BOM marker.
@@ -135,12 +136,15 @@ export class Scraper {
   }
 
   /** Redirects request to WaybackMachine. */
-  private async handleLiveRequest(request: puppeteer.HTTPRequest) {
+  private async handleLiveRequest(
+    request: puppeteer.HTTPRequest,
+    timestamp = SWDE_TIMESTAMP
+  ) {
     // Save this request as "in progress".
     this.inProgress.add(request.url());
 
     // Redirect to `web.archive.org`.
-    const archiveUrl = this.wayback.getArchiveUrl(request.url());
+    const archiveUrl = this.wayback.getArchiveUrl(request.url(), timestamp);
     console.log('live request:', archiveUrl);
     await request.continue({ url: archiveUrl });
 
