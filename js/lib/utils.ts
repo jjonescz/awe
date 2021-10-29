@@ -1,6 +1,6 @@
 import path from 'path';
 import https from 'https';
-import { URLSearchParams } from 'url';
+import { URL, URLSearchParams } from 'url';
 import { existsSync } from 'fs';
 import { readFile } from 'fs/promises';
 
@@ -18,24 +18,18 @@ export async function tryReadFile(fullPath: string, defaultContents: string) {
 }
 
 /** Performs HTTPS request and returns response `string`. */
-export function getHttps(
-  host: string,
-  pathname: string,
-  query: Record<string, string>
-) {
+export function getHttps(url: string, query: Record<string, string>) {
+  const urlObject = new URL(url);
+  for (const [key, value] of Object.entries(query)) {
+    urlObject.searchParams.append(key, value);
+  }
+
   return new Promise<string>((resolve) => {
-    const req = https.request(
-      {
-        host,
-        pathname,
-        search: new URLSearchParams(query).toString(),
-      },
-      (res) => {
-        let data = '';
-        res.on('data', (chunk) => (data += chunk));
-        res.on('end', () => resolve(data));
-      }
-    );
+    const req = https.request(urlObject, (res) => {
+      let data = '';
+      res.on('data', (chunk) => (data += chunk));
+      res.on('end', () => resolve(data));
+    });
     req.end();
   });
 }

@@ -62,7 +62,7 @@ export class Wayback {
     }
 
     // Ask WaybackMachine API for the latest available version.
-    const response = await getHttps('archive.org', '/wayback/available/', {
+    const response = await getHttps('https://archive.org/wayback/available/', {
       url,
     });
 
