@@ -20,9 +20,16 @@ export class ScrapingStats {
   }
 }
 
+/** Method of handling request to SWDE page. */
+export const enum SwdeHandling {
+  /** Serves HTML content from the dataset. */
+  Offline,
+  /** Redirects to latest available version in the WaybackMachine. */
+  Wayback,
+}
+
 /** Browser navigator intercepting requests. */
 export class Scraper {
-  private readonly wayback = new Wayback();
   private swdePage: SwdePage | null = null;
   private readonly inProgress: Set<string> = new Set();
   /** Allow live (online) requests if needed? */
@@ -31,9 +38,11 @@ export class Scraper {
   public allowOffline = true;
   /** Force retry of all live (online) requests. */
   public forceLive = false;
+  public swdeHandling = SwdeHandling.Offline;
   public readonly stats = new ScrapingStats();
 
   private constructor(
+    private readonly wayback: Wayback,
     public readonly browser: puppeteer.Browser,
     public readonly page: puppeteer.Page,
     public readonly archive: Archive
@@ -61,7 +70,11 @@ export class Scraper {
     // Open file archive.
     const archive = await Archive.create();
 
-    return new Scraper(browser, page, archive);
+    // Load WaybackMachine API cache.
+    const wayback = new Wayback();
+    await wayback.loadResponses();
+
+    return new Scraper(wayback, browser, page, archive);
   }
 
   private async onRequest(request: puppeteer.HTTPRequest) {
@@ -106,17 +119,31 @@ export class Scraper {
     }
   }
 
-  /** Replaces request to SWDE page with its HTML content. */
-  private handleSwdePage(request: puppeteer.HTTPRequest, page: SwdePage) {
-    console.log(
-      'request page:',
-      request.url(),
-      'replaced with:',
-      page.fullPath
-    );
-    request.respond({
-      body: page.html,
-    });
+  /** Handles request to SWDE page. */
+  private async handleSwdePage(request: puppeteer.HTTPRequest, page: SwdePage) {
+    switch (this.swdeHandling) {
+      case SwdeHandling.Offline:
+        console.log(
+          'request page:',
+          request.url(),
+          'replaced with:',
+          page.fullPath
+        );
+        request.respond({
+          body: page.html,
+        });
+        break;
+
+      case SwdeHandling.Wayback:
+        const timestamp = await this.wayback.closestTimestamp(request.url());
+        if (timestamp === null) {
+          console.log('redirect not found:', request.url());
+        } else {
+          console.log('redirect page:', request.url(), 'timestamp:', timestamp);
+          await this.handleLiveRequest(request, timestamp);
+        }
+        break;
+    }
   }
 
   /** Handles request from local archive. */
@@ -211,8 +238,9 @@ export class Scraper {
   }
 
   public async save() {
-    console.log('saving archive');
+    console.log('saving data');
     await this.archive.save();
+    await this.wayback.saveResponses();
   }
 
   public async dispose() {
