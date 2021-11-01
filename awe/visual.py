@@ -29,7 +29,7 @@ class DomData:
         # TODO: Load `node_data` into `node`.
 
     def find(self, xpath: str):
-        elements = xpath.split('/')
+        elements = xpath.split('/')[1:]
         current_data = self.data
         for index, element in enumerate(elements):
             current_data = current_data.get(f'/{element}')
