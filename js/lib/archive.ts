@@ -1,4 +1,4 @@
-import { createHash } from 'crypto';
+import { BinaryLike, createHash } from 'crypto';
 import { existsSync } from 'fs';
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
@@ -65,9 +65,7 @@ export class Archive {
     }
 
     // Create hash of file contents.
-    const hasher = createHash('sha512');
-    hasher.update(value.body);
-    const hash = hasher.digest('hex');
+    const hash = this.computeHash(value.body);
 
     // Store file contents under the hash.
     const filePath = this.getPath(hash);
@@ -75,7 +73,10 @@ export class Archive {
       // If the file already exists, check that it has the same contents.
       const contents = value.body.toString('utf-8');
       const existing = await readFile(filePath, { encoding: 'utf-8' });
-      if (contents !== existing) {
+      if (this.computeHash(existing) !== hash) {
+        // Ignore if the file has wrong hash. It will be overwritten.
+        console.log('file invalid:', hash);
+      } else if (contents !== existing) {
         throw new Error(`Hash collision (${hash}): ${timestamp}:${url}`);
       }
     } else {
@@ -90,6 +91,12 @@ export class Archive {
   public getHash(url: string, timestamp: string) {
     const key = this.stringifyKey(url, timestamp);
     return this.map[key]?.hash;
+  }
+
+  private computeHash(contents: BinaryLike) {
+    const hasher = createHash('sha256');
+    hasher.update(contents);
+    return hasher.digest('hex');
   }
 
   /** Saves file map. */
