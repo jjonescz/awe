@@ -1,5 +1,5 @@
 import { writeFile } from 'fs/promises';
-import { BoundingBox, ElementHandle, Page } from 'puppeteer-core';
+import { ElementHandle, Page } from 'puppeteer-core';
 import { logger } from './logging';
 import { SwdePage } from './scraper';
 import { replaceExtension } from './utils';
