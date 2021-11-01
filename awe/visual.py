@@ -31,6 +31,9 @@ class DomData:
     def find(self, xpath: str):
         elements = xpath.split('/')
         current_data = self.data
-        for element in elements:
-            current_data = current_data[f'/{element}']
+        for index, element in enumerate(elements):
+            current_data = current_data.get(f'/{element}')
+            if current_data is None:
+                current_xpath = '/'.join(elements[:index + 1])
+                raise RuntimeError(f'Cannot find element at /{current_xpath}')
         return current_data
