@@ -55,6 +55,7 @@ export class Scraper {
 
     // Ignore some errors that would prevent WaybackMachine redirection.
     page.setBypassCSP(true);
+    page.setDefaultNavigationTimeout(10_000); // 10 seconds
   }
 
   public get numWaiting() {
