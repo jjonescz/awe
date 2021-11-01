@@ -114,7 +114,7 @@ export class Scraper {
       const redirectUrl = this.wayback.isArchiveRedirect(request);
       if (redirectUrl !== null) {
         console.log('redirected:', request.url());
-        request.continue();
+        await request.continue();
         return;
       }
 
@@ -133,7 +133,7 @@ export class Scraper {
           'replaced with:',
           page.fullPath
         );
-        request.respond({
+        await request.respond({
           body: page.html,
         });
         break;
@@ -163,12 +163,12 @@ export class Scraper {
         ? await this.archive.get(request.url(), timestamp)
         : undefined;
     if (offline) {
-      this.handleOfflineRequest(request, timestamp, offline);
+      await this.handleOfflineRequest(request, timestamp, offline);
     } else {
       if (offline === null && !this.forceLive) {
         // This request didn't complete last time, abort it.
         console.log('aborted:', request.url());
-        request.abort();
+        await request.abort();
         this.stats.aborted++;
         return;
       }
@@ -176,7 +176,7 @@ export class Scraper {
       if (!this.allowLive) {
         // In offline mode, act as if this endpoint was not available.
         console.log('disabled:', request.url());
-        request.respond({ status: 404 });
+        await request.respond({ status: 404 });
         this.stats.increment(404);
         return;
       }
@@ -186,7 +186,7 @@ export class Scraper {
   }
 
   /** Handles request from local archive. */
-  private handleOfflineRequest(
+  private async handleOfflineRequest(
     request: puppeteer.HTTPRequest,
     timestamp: string,
     offline: Partial<puppeteer.ResponseForRequest>
@@ -197,7 +197,7 @@ export class Scraper {
       'hash:',
       this.archive.getHash(request.url(), timestamp)
     );
-    request.respond(offline);
+    await request.respond(offline);
     this.addToStats(offline);
     this.stats.offline++;
   }
@@ -240,7 +240,7 @@ export class Scraper {
       body,
     };
     if (!this.inProgress.delete(inProgressEntry))
-      throw new Error(`Failed to delete ${request.url} (${timestamp})`);
+      throw new Error(`Failed to delete ${request.url()} (${timestamp})`);
     if (this.allowOffline)
       await this.archive.add(request.url(), timestamp, archived, {
         force: this.forceLive,
