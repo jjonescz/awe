@@ -77,6 +77,10 @@ export class Scraper {
         '--disable-setuid-sandbox',
         '--disable-accelerated-2d-canvas',
         '--disable-gpu',
+        '--disable-web-security',
+        '--disable-features=IsolateOrigins',
+        '--disable-site-isolation-trials',
+        '--disable-features=BlockInsecurePrivateNetworkRequests',
       ],
       executablePath: 'google-chrome-stable',
     });
