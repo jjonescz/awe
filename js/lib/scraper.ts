@@ -31,7 +31,7 @@ export const enum SwdeHandling {
 /** Browser navigator intercepting requests. */
 export class Scraper {
   private swdePage: SwdePage | null = null;
-  private readonly inProgress: Set<string> = new Set();
+  private readonly inProgress: Set<readonly [string, string]> = new Set();
   /** Allow live (online) requests if needed? */
   public allowLive = true;
   /** Load and save requests locally (in {@link Archive})? */
@@ -142,10 +142,10 @@ export class Scraper {
   ) {
     const offline =
       this.allowOffline && !this.forceLive
-        ? await this.archive.get(request.url())
+        ? await this.archive.get(request.url(), timestamp)
         : undefined;
     if (offline) {
-      this.handleOfflineRequest(request, offline);
+      this.handleOfflineRequest(request, timestamp, offline);
     } else {
       if (offline === null && !this.forceLive) {
         // This request didn't complete last time, abort it.
@@ -170,13 +170,14 @@ export class Scraper {
   /** Handles request from local archive. */
   private handleOfflineRequest(
     request: puppeteer.HTTPRequest,
+    timestamp: string,
     offline: Partial<puppeteer.ResponseForRequest>
   ) {
     console.log(
       'offline request:',
       request.url(),
       'hash:',
-      this.archive.getHash(request.url())
+      this.archive.getHash(request.url(), timestamp)
     );
     request.respond(offline);
     this.addToStats(offline);
@@ -189,7 +190,8 @@ export class Scraper {
     timestamp: string
   ) {
     // Save this request as "in progress".
-    this.inProgress.add(request.url());
+    const inProgressEntry = [request.url(), timestamp] as const;
+    this.inProgress.add(inProgressEntry);
 
     // Redirect to `web.archive.org`.
     const archiveUrl = this.wayback.getArchiveUrl(request.url(), timestamp);
@@ -216,9 +218,12 @@ export class Scraper {
       contentType: headers['Content-Type'],
       body,
     };
-    this.inProgress.delete(request.url());
+    if (!this.inProgress.delete(inProgressEntry))
+      throw new Error(`Failed to delete ${request.url} (${timestamp})`);
     if (this.allowOffline)
-      this.archive.add(request.url(), archived, { force: this.forceLive });
+      this.archive.add(request.url(), timestamp, archived, {
+        force: this.forceLive,
+      });
     this.addToStats(archived);
     this.stats.live++;
   }
@@ -249,11 +254,11 @@ export class Scraper {
   }
 
   public stop() {
-    for (const url of this.inProgress) {
-      console.log('unhandled:', url);
+    for (const [url, timestamp] of this.inProgress) {
+      console.log('unhandled:', url, 'timestamp:', timestamp);
 
       // Save as "aborted" for the next time.
-      this.archive.add(url, null);
+      this.archive.add(url, timestamp, null);
       this.stats.aborted++;
     }
   }

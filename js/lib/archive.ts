@@ -31,9 +31,11 @@ export class Archive {
   }
 
   public async get(
-    url: string
+    url: string,
+    timestamp: string
   ): Promise<Partial<ResponseForRequest> | null | undefined> {
-    const file = this.map[url];
+    const key = this.stringifyKey(url, timestamp);
+    const file = this.map[key];
     if (file === undefined || file === null) return file;
 
     // Read file contents.
@@ -45,18 +47,20 @@ export class Archive {
 
   public async add(
     url: string,
+    timestamp: string,
     value: ResponseForRequest | null,
     { force = false } = {}
   ) {
-    if (this.map[url] && !force) {
+    const key = this.stringifyKey(url, timestamp);
+    if (this.map[key] && !force) {
       // Note that we don't want this error to be thrown when `this.map[url] ===
       // null` (then, we want to overwrite it).
-      throw new Error(`URL already exists in the map: ${url}`);
+      throw new Error(`URL already exists in the map: ${url} (${timestamp})`);
     }
 
     // Store `null` to indicate this request is "in progress".
     if (value === null) {
-      this.map[url] = null;
+      this.map[key] = null;
       return;
     }
 
@@ -78,11 +82,12 @@ export class Archive {
 
     // Add file into the map.
     const { body, ...fileResponse } = value;
-    this.map[url] = { ...fileResponse, hash };
+    this.map[key] = { ...fileResponse, hash };
   }
 
-  public getHash(url: string) {
-    return this.map[url]?.hash;
+  public getHash(url: string, timestamp: string) {
+    const key = this.stringifyKey(url, timestamp);
+    return this.map[key]?.hash;
   }
 
   /** Saves file map. */
@@ -93,5 +98,9 @@ export class Archive {
 
   private getPath(hash: string) {
     return path.join(ARCHIVE_FILES_FOLDER, hash);
+  }
+
+  private stringifyKey(url: string, timestamp: string) {
+    return `${timestamp}:${url}`;
   }
 }
