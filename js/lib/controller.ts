@@ -32,10 +32,10 @@ export class Controller {
   ) {
     // Configure scraper.
     this.scraper.swdeHandling = scrapeVersionToSwdeHandling(version);
-    this.scraper.wayback.variant =
-      // If we are getting the HTML from archive.org, we can let them rewrite
-      // URLs (that's what `if_` variant does).
-      version === ScrapeVersion.Latest ? 'if_' : 'id_';
+    // this.scraper.wayback.variant =
+    //   // If we are getting the HTML from archive.org, we can let them rewrite
+    //   // URLs (that's what `if_` variant does).
+    //   version === ScrapeVersion.Latest ? 'if_' : 'id_';
 
     // Navigate to the page.
     const page = await SwdePage.parse(fullPath);
@@ -78,6 +78,6 @@ export class Controller {
   /** Scrapes old and new versions of {@link SwdePage} at {@link fullPath}. */
   public async scrapeBoth(fullPath: string) {
     await this.scrape(fullPath, { version: ScrapeVersion.Exact });
-    await this.scrape(fullPath, { version: ScrapeVersion.Latest });
+    //await this.scrape(fullPath, { version: ScrapeVersion.Latest });
   }
 }
