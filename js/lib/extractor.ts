@@ -10,12 +10,14 @@ type TreeData = {
 };
 
 /** Visual attributes for one DOM node. */
-type NodeData = TreeData & {
+type ElementData = {
   /** Bounding box (x, y, width, height). */
   box?: readonly [number, number, number, number];
 };
 
-type ElementInfo = NodeData & {
+type NodeData = TreeData & ElementData;
+
+type ElementInfo = ElementData & {
   tagName: string;
 };
 
@@ -46,7 +48,7 @@ export class Extractor {
       const { tagName, ...info } = await this.extractFor(element);
 
       // Append this element's data to parent `DomData`.
-      const container: NodeData = info;
+      const container: NodeData = { ...info };
       const key = `/${tagName}` as const;
       const indexedKey = (i: number) => `${key}[${i}]` as const;
       let finalKey = key;
