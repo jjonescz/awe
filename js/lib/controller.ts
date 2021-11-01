@@ -48,17 +48,25 @@ export class Controller {
       return;
     }
 
+    // Save local archive.
+    await this.scraper.save();
+
     // Take screenshot.
     const suffix = version === ScrapeVersion.Latest ? `-${page.timestamp}` : '';
     const screenshotPath = replaceExtension(fullPath, `${suffix}.png`);
+    await this.screenshot(screenshotPath, { fullPage: false });
+    await this.screenshot(screenshotPath, { fullPage: true });
+  }
+
+  private async screenshot(path: string, { fullPage = true } = {}) {
+    const screenshotPath = fullPage
+      ? path
+      : replaceExtension(path, `-preview.png`);
     console.log('screenshot:', screenshotPath);
     await this.scraper.page.screenshot({
       path: screenshotPath,
-      fullPage: true,
+      fullPage: fullPage,
     });
-
-    // Save local archive.
-    await this.scraper.save();
   }
 
   /** Scrapes old and new versions of {@link SwdePage} at {@link fullPath}. */
