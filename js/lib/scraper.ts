@@ -63,7 +63,7 @@ export class Scraper {
 
     // Ignore some errors that would prevent WaybackMachine redirection.
     await this.page.setBypassCSP(true);
-    this.page.setDefaultNavigationTimeout(10_000); // 10 seconds
+    this.page.setDefaultTimeout(0); // disable timeout
   }
 
   public static async create() {
