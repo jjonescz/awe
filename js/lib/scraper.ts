@@ -57,6 +57,15 @@ export class Scraper {
     return this.inProgress.size;
   }
 
+  private async initialize() {
+    // Intercept requests.
+    await this.page.setRequestInterception(true);
+
+    // Ignore some errors that would prevent WaybackMachine redirection.
+    await this.page.setBypassCSP(true);
+    this.page.setDefaultNavigationTimeout(10_000); // 10 seconds
+  }
+
   public static async create() {
     // Open browser.
     const browser = await puppeteer.launch({
@@ -73,13 +82,6 @@ export class Scraper {
     });
     const page = await browser.newPage();
 
-    // Intercept requests.
-    await page.setRequestInterception(true);
-
-    // Ignore some errors that would prevent WaybackMachine redirection.
-    await page.setBypassCSP(true);
-    page.setDefaultNavigationTimeout(10_000); // 10 seconds
-
     // Open file archive.
     const archive = await Archive.create();
 
@@ -87,7 +89,9 @@ export class Scraper {
     const wayback = new Wayback();
     await wayback.loadResponses();
 
-    return new Scraper(wayback, browser, page, archive);
+    const scraper = new Scraper(wayback, browser, page, archive);
+    await scraper.initialize();
+    return scraper;
   }
 
   private async onRequest(request: puppeteer.HTTPRequest) {
