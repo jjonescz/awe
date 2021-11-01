@@ -89,6 +89,14 @@ export class Scraper {
   }
 
   private async onRequest(request: puppeteer.HTTPRequest) {
+    try {
+      await this.handleRequest(request);
+    } catch (e) {
+      console.error('request handling:', request.url(), 'error:', e);
+    }
+  }
+
+  private async handleRequest(request: puppeteer.HTTPRequest) {
     if (this.swdePage !== null && request.url() === this.swdePage.url) {
       await this.handleSwdePage(request, this.swdePage);
     } else {
