@@ -207,8 +207,11 @@ export class Scraper {
     const inProgressEntry = [request.url(), timestamp] as const;
     this.inProgress.add(inProgressEntry);
 
-    // Redirect to `web.archive.org`.
-    const archiveUrl = this.wayback.getArchiveUrl(request.url(), timestamp);
+    // Redirect to `web.archive.org` unless it's already directed there.
+    const archiveUrl =
+      this.wayback.parseArchiveUrl(request.url()) !== null
+        ? request.url()
+        : this.wayback.getArchiveUrl(request.url(), timestamp);
     console.log('live request:', archiveUrl);
     await request.continue({ url: archiveUrl });
 

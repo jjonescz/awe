@@ -4,7 +4,7 @@ import { WAYBACK_CLOSEST_FILE } from './constants';
 import { getHttps, normalizeUrl, tryReadFile } from './utils';
 
 const ARCHIVE_URL_REGEX =
-  /^https?:\/\/web.archive.org\/web\/(\d{14})(i[df]_)?\/(.*)$/;
+  /^https?:\/\/web.archive.org\/web\/(\d{14})([a-z]{2}_)?\/(.*)$/;
 
 /** Functionality related to WaybackMachine. */
 export class Wayback {
