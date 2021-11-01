@@ -51,6 +51,7 @@ export class Scraper {
     page.setRequestInterception(true);
     page.on('request', this.onRequest.bind(this));
     page.on('error', (e) => console.log('page error:', e));
+    page.on('console', (m) => console.log('page console:', m.text()));
   }
 
   public get numWaiting() {
