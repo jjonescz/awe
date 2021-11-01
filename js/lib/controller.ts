@@ -1,3 +1,4 @@
+import { Extractor } from './extractor';
 import { logger } from './logging';
 import { Scraper, SwdeHandling, SwdePage } from './scraper';
 import { replaceExtension } from './utils';
@@ -56,6 +57,9 @@ export class Controller {
 
     // Save local archive.
     await this.scraper.save();
+
+    // Extract visual attributes.
+    await new Extractor(this.scraper.page).extract();
 
     // Take screenshot.
     const suffix =
