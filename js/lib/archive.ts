@@ -65,7 +65,7 @@ export class Archive {
     }
 
     // Create hash of file contents.
-    const hasher = createHash('sha256');
+    const hasher = createHash('sha512');
     hasher.update(value.body);
     const hash = hasher.digest('hex');
 
@@ -75,7 +75,9 @@ export class Archive {
       // If the file already exists, check that it has the same contents.
       const contents = value.body.toString('utf-8');
       const existing = await readFile(filePath, { encoding: 'utf-8' });
-      if (contents !== existing) throw new Error(`Hash collision: ${hash}`);
+      if (contents !== existing) {
+        throw new Error(`Hash collision (${hash}): ${timestamp}:${url}`);
+      }
     } else {
       await writeFile(filePath, value.body, { encoding: 'utf-8' });
     }
