@@ -272,7 +272,7 @@ export class Scraper {
       console.log('unhandled:', url, 'timestamp:', timestamp);
 
       // Save as "aborted" for the next time.
-      this.archive.add(url, timestamp, null);
+      this.archive.add(url, timestamp, null, { force: this.forceLive });
       this.stats.aborted++;
     }
   }
