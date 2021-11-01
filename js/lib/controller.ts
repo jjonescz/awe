@@ -59,7 +59,9 @@ export class Controller {
     await this.scraper.save();
 
     // Extract visual attributes.
-    await new Extractor(this.scraper.page).extract();
+    const extractor = new Extractor(this.scraper.page, page);
+    await extractor.extract();
+    await extractor.save();
 
     // Take screenshot.
     const suffix =
