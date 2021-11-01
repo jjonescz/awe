@@ -79,7 +79,7 @@ export class Scraper {
 
   private async onRequest(request: puppeteer.HTTPRequest) {
     if (this.swdePage !== null && request.url() === this.swdePage.url) {
-      this.handleSwdePage(request, this.swdePage);
+      await this.handleSwdePage(request, this.swdePage);
     } else {
       // Pass WaybackMachine redirects through.
       const redirectUrl = this.wayback.isArchiveRedirect(request);
