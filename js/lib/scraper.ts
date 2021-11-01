@@ -242,7 +242,7 @@ export class Scraper {
     if (!this.inProgress.delete(inProgressEntry))
       throw new Error(`Failed to delete ${request.url} (${timestamp})`);
     if (this.allowOffline)
-      this.archive.add(request.url(), timestamp, archived, {
+      await this.archive.add(request.url(), timestamp, archived, {
         force: this.forceLive,
       });
     this.addToStats(archived);
@@ -274,12 +274,12 @@ export class Scraper {
     }
   }
 
-  public stop() {
+  public async stop() {
     for (const [url, timestamp] of this.inProgress) {
       console.log('unhandled:', url, 'timestamp:', timestamp);
 
       // Save as "aborted" for the next time.
-      this.archive.add(url, timestamp, null, { force: this.forceLive });
+      await this.archive.add(url, timestamp, null, { force: this.forceLive });
       this.stats.aborted++;
     }
   }

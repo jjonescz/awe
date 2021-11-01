@@ -43,7 +43,7 @@ export class Controller {
     await this.scraper.go(page);
 
     // Abort remaining requests.
-    this.scraper.stop();
+    await this.scraper.stop();
 
     // Report stats.
     console.log('stats:', this.scraper.stats);
