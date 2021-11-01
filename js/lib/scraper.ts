@@ -47,15 +47,10 @@ export class Scraper {
     public readonly page: puppeteer.Page,
     public readonly archive: Archive
   ) {
-    // Intercept requests.
-    page.setRequestInterception(true);
+    // Handle events..
     page.on('request', this.onRequest.bind(this));
     page.on('error', (e) => console.log('page error:', e));
     page.on('console', (m) => console.log('page console:', m.text()));
-
-    // Ignore some errors that would prevent WaybackMachine redirection.
-    page.setBypassCSP(true);
-    page.setDefaultNavigationTimeout(10_000); // 10 seconds
   }
 
   public get numWaiting() {
@@ -77,6 +72,13 @@ export class Scraper {
       executablePath: 'google-chrome-stable',
     });
     const page = await browser.newPage();
+
+    // Intercept requests.
+    await page.setRequestInterception(true);
+
+    // Ignore some errors that would prevent WaybackMachine redirection.
+    await page.setBypassCSP(true);
+    page.setDefaultNavigationTimeout(10_000); // 10 seconds
 
     // Open file archive.
     const archive = await Archive.create();
