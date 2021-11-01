@@ -1,5 +1,5 @@
 import { writeFile } from 'fs/promises';
-import { Page } from 'puppeteer-core';
+import { ElementHandle, Page } from 'puppeteer-core';
 import { logger } from './logging';
 import { SwdePage } from './scraper';
 import { replaceExtension } from './utils';
@@ -35,17 +35,24 @@ export class Extractor {
     while (queue.length !== 0) {
       const { element, parent } = queue.pop()!;
 
-      // Evaluate info for an element.
-      const info = await element.evaluate((e) => {
-        return { tagName: e.tagName.toLowerCase() };
-      });
+      // Extract data for an element.
+      const info = await this.extractFor(element);
 
       // Append this element's data to parent `DomData`.
       const container: DomData = {};
       parent[`/${info.tagName}`] = container;
+
+      // Add children to the queue.
       const children = await element.$x('*');
       queue.push(...children.map((e) => ({ element: e, parent: container })));
     }
+  }
+
+  /** Extracts visual attributes for one {@link element}. */
+  public async extractFor(element: ElementHandle<Element>) {
+    return await element.evaluate((e) => {
+      return { tagName: e.tagName.toLowerCase() };
+    });
   }
 
   public get filePath() {
