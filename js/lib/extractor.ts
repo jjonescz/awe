@@ -11,7 +11,8 @@ type TreeData = {
 
 /** Visual attributes for one DOM node. */
 type NodeData = TreeData & {
-  box: BoundingBox | null;
+  /** Bounding box (x, y, width, height). */
+  box?: readonly [number, number, number, number];
 };
 
 type ElementInfo = NodeData & {
@@ -79,7 +80,10 @@ export class Extractor {
       return { tagName: e.tagName.toLowerCase() };
     });
     const box = await element.boundingBox();
-    return { ...evaluated, box };
+    return {
+      ...evaluated,
+      box: box === null ? undefined : [box.x, box.y, box.width, box.height],
+    };
   }
 
   public get filePath() {
