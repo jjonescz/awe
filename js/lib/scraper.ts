@@ -50,6 +50,7 @@ export class Scraper {
     // Intercept requests.
     page.setRequestInterception(true);
     page.on('request', this.onRequest.bind(this));
+    page.on('error', (e) => console.log('page error:', e));
   }
 
   public get numWaiting() {
@@ -62,6 +63,11 @@ export class Scraper {
       args: [
         // Allow running as root.
         '--no-sandbox',
+        // Improve headless running.
+        '--ignore-certificate-errors',
+        '--disable-setuid-sandbox',
+        '--disable-accelerated-2d-canvas',
+        '--disable-gpu',
       ],
       executablePath: 'google-chrome-stable',
     });
@@ -225,7 +231,7 @@ export class Scraper {
     this.swdePage = page;
     try {
       await this.page.goto(page.url, {
-        waitUntil: 'networkidle2',
+        waitUntil: 'networkidle0',
       });
     } catch (e: any) {
       if (e.name === 'TimeoutError') {
