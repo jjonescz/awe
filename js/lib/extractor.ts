@@ -1,22 +1,28 @@
 import { writeFile } from 'fs/promises';
-import { ElementHandle, Page } from 'puppeteer-core';
+import { BoundingBox, ElementHandle, Page } from 'puppeteer-core';
 import { logger } from './logging';
 import { SwdePage } from './scraper';
 import { replaceExtension } from './utils';
+
+type TreeData = {
+  /** Data for child element. */
+  [key: `/${string}`]: NodeData;
+};
+
+/** Visual attributes for one DOM node. */
+type NodeData = TreeData & {
+  box: BoundingBox | null;
+};
+
+type ElementInfo = NodeData & {
+  tagName: string;
+};
 
 /**
  * Structure in which extracted visual attributes are stored for an element and
  * its descendants.
  */
-type DomData = {
-  /**
-   * @param key {@link key} starting with `/` denotes child with rest of the key
-   * being its tag name and value being {@link DomData} for that element.
-   *
-   * Other {@link key}s denote extracted visual attributes.
-   */
-  [key: string]: string | DomData;
-};
+type DomData = TreeData;
 
 /** Can extract visual attributes from a Puppeteer-controlled page. */
 export class Extractor {
@@ -36,12 +42,12 @@ export class Extractor {
       const { element, parent } = queue.pop()!;
 
       // Extract data for an element.
-      const info = await this.extractFor(element);
+      const { tagName, ...info } = await this.extractFor(element);
 
       // Append this element's data to parent `DomData`.
-      const container: DomData = {};
-      const key = `/${info.tagName}`;
-      const indexedKey = (i: number) => `${key}[${i}]`;
+      const container: NodeData = info;
+      const key = `/${tagName}` as const;
+      const indexedKey = (i: number) => `${key}[${i}]` as const;
       let finalKey = key;
       // If parent already contains this child, we have to add indices.
       if (parent[key] !== undefined) {
@@ -66,10 +72,14 @@ export class Extractor {
   }
 
   /** Extracts visual attributes for one {@link element}. */
-  public async extractFor(element: ElementHandle<Element>) {
-    return await element.evaluate((e) => {
+  public async extractFor(
+    element: ElementHandle<Element>
+  ): Promise<ElementInfo> {
+    const evaluated = await element.evaluate((e) => {
       return { tagName: e.tagName.toLowerCase() };
     });
+    const box = await element.boundingBox();
+    return { ...evaluated, box };
   }
 
   public get filePath() {
