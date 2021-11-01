@@ -139,9 +139,10 @@ class Website:
 
     def _iterate_pages(self):
         for file in sorted(os.listdir(f'{self.dir_path}')):
-            page = Page(self, file)
-            assert page.file_name == file
-            yield page
+            page = Page.try_create(self, file)
+            if page is not None:
+                assert page.file_name == file
+                yield page
 
     @property
     def dir_name(self):
@@ -173,10 +174,10 @@ class Page(awe_graph.HtmlPage):
     site: Website
     index: int
 
-    def __init__(self, site: Website, file_name: str):
+    @classmethod
+    def try_create(cls, site: Website, file_name: str):
         match = re.search(PAGE_REGEX, file_name)
-        self.site = site
-        self.index = int(match.group(1))
+        return Page(site, int(match.group(1))) if match is not None else None
 
     @property
     def file_name(self):
