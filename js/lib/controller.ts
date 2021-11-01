@@ -1,3 +1,4 @@
+import { logger } from './logging';
 import { Scraper, SwdeHandling, SwdePage } from './scraper';
 import { replaceExtension } from './utils';
 
@@ -39,14 +40,14 @@ export class Controller {
 
     // Navigate to the page.
     const page = await SwdePage.parse(fullPath);
-    console.log('goto:', fullPath);
+    logger.info('goto', { fullPath });
     await this.scraper.go(page);
 
     // Abort remaining requests.
     await this.scraper.stop();
 
     // Report stats.
-    console.log('stats:', this.scraper.stats);
+    logger.info('stats', this.scraper.stats);
 
     if (version === ScrapeVersion.Latest && page.timestamp === null) {
       // Couldn't find snapshot of this page in the archive, abort early.
@@ -68,7 +69,7 @@ export class Controller {
     const screenshotPath = fullPage
       ? path
       : replaceExtension(path, `-preview.png`);
-    console.log('screenshot:', screenshotPath);
+    logger.info('screenshot', { screenshotPath });
     await this.scraper.page.screenshot({
       path: screenshotPath,
       fullPage: fullPage,

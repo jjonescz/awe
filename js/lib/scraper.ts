@@ -2,6 +2,7 @@ import { readFile } from 'fs/promises';
 import puppeteer from 'puppeteer-core';
 import { Archive } from './archive';
 import { SWDE_TIMESTAMP } from './constants';
+import { logger } from './logging';
 import { Wayback } from './wayback';
 
 // First character is BOM marker.
@@ -49,8 +50,8 @@ export class Scraper {
   ) {
     // Handle events..
     page.on('request', this.onRequest.bind(this));
-    page.on('error', (e) => console.log('page error:', e));
-    page.on('console', (m) => console.log('page console:', m.text()));
+    page.on('error', (e) => logger.error('page error', { e }));
+    page.on('console', (m) => logger.debug('page console', { text: m.text() }));
   }
 
   public get numWaiting() {
@@ -118,7 +119,7 @@ export class Scraper {
       // Pass WaybackMachine redirects through.
       const redirectUrl = this.wayback.isArchiveRedirect(request);
       if (redirectUrl !== null) {
-        console.log('redirected:', request.url());
+        logger.debug('redirected:', { url: request.url() });
         await request.continue();
         return;
       }
@@ -132,12 +133,10 @@ export class Scraper {
     switch (this.swdeHandling) {
       case SwdeHandling.Offline:
         page.timestamp = null;
-        console.log(
-          'request page:',
-          request.url(),
-          'replaced with:',
-          page.fullPath
-        );
+        logger.info('request page replaced', {
+          url: request.url(),
+          path: page.fullPath,
+        });
         await request.respond({
           body: page.html,
         });
@@ -147,9 +146,9 @@ export class Scraper {
         const timestamp = await this.wayback.closestTimestamp(request.url());
         page.timestamp = timestamp;
         if (timestamp === null) {
-          console.log('redirect not found:', request.url());
+          logger.error('redirect not found', { url: request.url() });
         } else {
-          console.log('redirect page:', request.url(), 'timestamp:', timestamp);
+          logger.info('redirect page', { url: request.url(), timestamp });
           await this.handleExternalRequest(request, timestamp);
         }
         break;
@@ -172,7 +171,7 @@ export class Scraper {
     } else {
       if (offline === null && !this.forceLive) {
         // This request didn't complete last time, abort it.
-        console.log('aborted:', request.url());
+        logger.debug('aborted', { url: request.url() });
         await request.abort();
         this.stats.aborted++;
         return;
@@ -180,7 +179,7 @@ export class Scraper {
 
       if (!this.allowLive) {
         // In offline mode, act as if this endpoint was not available.
-        console.log('disabled:', request.url());
+        logger.debug('disabled', { url: request.url() });
         await request.respond({ status: 404 });
         this.stats.increment(404);
         return;
@@ -196,12 +195,10 @@ export class Scraper {
     timestamp: string,
     offline: Partial<puppeteer.ResponseForRequest>
   ) {
-    console.log(
-      'offline request:',
-      request.url(),
-      'hash:',
-      this.archive.getHash(request.url(), timestamp)
-    );
+    logger.debug('offline request', {
+      url: request.url(),
+      hash: this.archive.getHash(request.url(), timestamp),
+    });
     await request.respond(offline);
     this.addToStats(offline);
     this.stats.offline++;
@@ -221,7 +218,7 @@ export class Scraper {
       this.wayback.parseArchiveUrl(request.url()) !== null
         ? request.url()
         : this.wayback.getArchiveUrl(request.url(), timestamp);
-    console.log('live request:', archiveUrl);
+    logger.debug('live request', { archiveUrl });
     await request.continue({ url: archiveUrl });
 
     // Note that if WaybackMachine doesn't have the page archived at
@@ -235,7 +232,7 @@ export class Scraper {
     });
 
     // Handle response.
-    console.log('response for:', response.url());
+    logger.debug('response', { url: response.url() });
     const body = await response.buffer();
     const headers = response.headers();
     const archived: puppeteer.ResponseForRequest = {
@@ -272,7 +269,7 @@ export class Scraper {
     } catch (e: any) {
       if (e.name === 'TimeoutError') {
         // Ignore timeouts.
-        console.log('timeout');
+        logger.error('timeout');
       } else {
         throw e;
       }
@@ -281,7 +278,7 @@ export class Scraper {
 
   public async stop() {
     for (const [url, timestamp] of this.inProgress) {
-      console.log('unhandled:', url, 'timestamp:', timestamp);
+      logger.debug('unhandled', { url, timestamp });
 
       // Save as "aborted" for the next time.
       await this.archive.add(url, timestamp, null, { force: this.forceLive });
@@ -290,7 +287,7 @@ export class Scraper {
   }
 
   public async save() {
-    console.log('saving data');
+    logger.debug('saving data');
     await this.archive.save();
     await this.wayback.saveResponses();
   }

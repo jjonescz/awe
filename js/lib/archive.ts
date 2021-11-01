@@ -4,6 +4,7 @@ import { mkdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import { ResponseForRequest } from 'puppeteer-core';
 import { ARCHIVE_FOLDER } from './constants';
+import { logger } from './logging';
 import { tryReadFile } from './utils';
 
 const ARCHIVE_FILES_FOLDER = path.join(ARCHIVE_FOLDER, 'files');
@@ -75,7 +76,7 @@ export class Archive {
       const existing = await readFile(filePath, { encoding: 'utf-8' });
       if (this.computeHash(existing) !== hash) {
         // Ignore if the file has wrong hash. It will be overwritten.
-        console.log('file invalid:', hash);
+        logger.debug('file invalid', { hash });
       } else if (contents !== existing) {
         throw new Error(`Hash collision (${hash}): ${timestamp}:${url}`);
       }
