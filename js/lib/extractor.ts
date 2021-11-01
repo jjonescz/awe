@@ -40,7 +40,24 @@ export class Extractor {
 
       // Append this element's data to parent `DomData`.
       const container: DomData = {};
-      parent[`/${info.tagName}`] = container;
+      const key = `/${info.tagName}`;
+      const indexedKey = (i: number) => `${key}[${i}]`;
+      let finalKey = key;
+      // If parent already contains this child, we have to add indices.
+      if (parent[key] !== undefined) {
+        parent[indexedKey(0)] = parent[key];
+        delete parent[key];
+      }
+      // If parent already contains an indexed child, find new available index.
+      if (parent[indexedKey(0)] !== undefined) {
+        for (let i = 1; ; i++) {
+          if (parent[indexedKey(i)] === undefined) {
+            finalKey = indexedKey(i);
+            break;
+          }
+        }
+      }
+      parent[finalKey] = container;
 
       // Add children to the queue.
       const children = await element.$x('*');
