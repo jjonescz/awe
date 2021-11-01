@@ -42,7 +42,7 @@ export class Scraper {
   public readonly stats = new ScrapingStats();
 
   private constructor(
-    private readonly wayback: Wayback,
+    public readonly wayback: Wayback,
     public readonly browser: puppeteer.Browser,
     public readonly page: puppeteer.Page,
     public readonly archive: Archive

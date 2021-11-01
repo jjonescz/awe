@@ -4,7 +4,7 @@ import { WAYBACK_CLOSEST_FILE } from './constants';
 import { getHttps, normalizeUrl, tryReadFile } from './utils';
 
 const ARCHIVE_URL_REGEX =
-  /^https?:\/\/web.archive.org\/web\/(\d{14})(id_)?\/(.*)$/;
+  /^https?:\/\/web.archive.org\/web\/(\d{14})(i[df]_)?\/(.*)$/;
 
 /** Functionality related to WaybackMachine. */
 export class Wayback {
@@ -14,17 +14,18 @@ export class Wayback {
    */
   private responses: Record<string, string | null> = {};
 
+  public variant = 'id_';
+
   public getArchiveUrl(url: string, timestamp: string) {
     // For URL scheme, see
     // https://en.wikipedia.org/wiki/Help:Using_the_Wayback_Machine#Specific_archive_copy.
-    return `https://web.archive.org/web/${timestamp}id_/${url}`;
+    return `https://web.archive.org/web/${timestamp}${this.variant}/${url}`;
   }
 
-  public parseArchiveUrl(url: string, { variant = 'id_' } = {}) {
+  public parseArchiveUrl(url: string) {
     const match = url.match(ARCHIVE_URL_REGEX);
     if (match === null) return null;
-    const [_full, date, modifier, pageUrl] = match;
-    if (variant !== (modifier ?? '')) return null;
+    const [_full, date, _modifier, pageUrl] = match;
     return [date, pageUrl] as const;
   }
 
@@ -100,7 +101,7 @@ export class Wayback {
       throw new Error(`Snapshot not available (${url}).`);
     }
     const archiveUrl = snapshot['url'];
-    const parsedUrl = this.parseArchiveUrl(archiveUrl, { variant: '' });
+    const parsedUrl = this.parseArchiveUrl(archiveUrl);
     if (parsedUrl === null) {
       throw new Error(`Cannot parse Wayback URL (${archiveUrl}).`);
     }

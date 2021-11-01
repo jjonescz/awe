@@ -30,7 +30,12 @@ export class Controller {
     fullPath: string,
     { version = ScrapeVersion.Exact } = {}
   ) {
+    // Configure scraper.
     this.scraper.swdeHandling = scrapeVersionToSwdeHandling(version);
+    this.scraper.wayback.variant =
+      // If we are getting the HTML from archive.org, we can let them rewrite
+      // URLs (that's what `if_` variant does).
+      version === ScrapeVersion.Latest ? 'if_' : 'id_';
 
     // Navigate to the page.
     const page = await SwdePage.parse(fullPath);
