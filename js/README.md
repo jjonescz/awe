@@ -11,4 +11,6 @@ This folder contains code for extracting visual attributes from SWDE dataset.
    These requests are intercepted and replaced with links to WaybackMachine if
    necessary. Responses are stored offline so they don't need to be requested
    again later.
-4. Visual attributes are computed and saved.
+4. Visual attributes are computed for each element in the page and saved
+   alongside each page to a JSON file which is later loaded by the Python
+   machine learning code.
