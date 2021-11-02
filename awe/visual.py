@@ -26,6 +26,14 @@ class DomData:
 
     def load_one(self, node: awe_graph.HtmlNode):
         node_data = self.find(node.xpath)
+
+        # Check that IDs match.
+        if not node.is_text:
+            real_id = node.element.attrib.get('id')
+            extracted_id = node_data.get('id')
+            assert real_id == extracted_id, f'IDs of {node.xpath} do not ' + \
+                f'match ("{real_id}" vs "{extracted_id}").'
+
         # TODO: Load `node_data` into `node`.
 
     def find(self, xpath: str):
