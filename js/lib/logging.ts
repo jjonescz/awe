@@ -1,8 +1,9 @@
 import path from 'path';
 import winston from 'winston';
-import { DATA_DIR } from './constants';
+import { SCRAPING_LOG_DIR } from './constants';
 
-const logFile = path.join(DATA_DIR, 'scraping-logs.txt');
+const timestamp = new Date().toISOString();
+const logFile = path.join(SCRAPING_LOG_DIR, `${timestamp}.txt`);
 
 export const logger = winston.createLogger({
   level: 'info',
@@ -14,8 +15,6 @@ export const logger = winston.createLogger({
     new winston.transports.File({
       filename: logFile,
       level: 'debug',
-      // Truncate the file before every run.
-      options: { flags: 'w' },
     }),
     new winston.transports.Console({ format: winston.format.simple() }),
   ],
