@@ -58,12 +58,12 @@ export class Extractor {
       let finalKey = key;
       // If parent already contains this child, we have to add indices.
       if (parent[key] !== undefined) {
-        parent[indexedKey(0)] = parent[key];
+        parent[indexedKey(1)] = parent[key];
         delete parent[key];
       }
       // If parent already contains an indexed child, find new available index.
-      if (parent[indexedKey(0)] !== undefined) {
-        for (let i = 1; ; i++) {
+      if (parent[indexedKey(1)] !== undefined) {
+        for (let i = 2; ; i++) {
           if (parent[indexedKey(i)] === undefined) {
             finalKey = indexedKey(i);
             break;
