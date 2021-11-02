@@ -27,6 +27,8 @@ type ElementInfo = ElementData & {
  */
 type DomData = TreeData;
 
+const CHILD_SELECTOR = '*';
+
 /** Can extract visual attributes from a Puppeteer-controlled page. */
 export class Extractor {
   public readonly data: DomData = {};
@@ -36,13 +38,13 @@ export class Extractor {
   /** Extracts visual attributes for all DOM nodes in the {@link page}. */
   public async extract() {
     // Start a queue with root elements.
-    const rootElements = await this.page.$x('*');
+    const rootElements = await this.page.$x(CHILD_SELECTOR);
     const queue = rootElements.map((e) => ({
       element: e,
       parent: this.data,
     }));
     while (queue.length !== 0) {
-      const { element, parent } = queue.pop()!;
+      const { element, parent } = queue.shift()!;
 
       // Extract data for an element.
       const { tagName, ...info } = await this.extractFor(element);
@@ -69,7 +71,7 @@ export class Extractor {
       parent[finalKey] = container;
 
       // Add children to the queue.
-      const children = await element.$x('*');
+      const children = await element.$x(CHILD_SELECTOR);
       queue.push(...children.map((e) => ({ element: e, parent: container })));
     }
   }
@@ -79,7 +81,9 @@ export class Extractor {
     element: ElementHandle<Element>
   ): Promise<ElementInfo> {
     const evaluated = await element.evaluate((e) => {
-      return { tagName: e.tagName.toLowerCase() };
+      return <ElementInfo>{
+        tagName: e.nodeName.toLowerCase(),
+      };
     });
     const box = await element.boundingBox();
     return {
