@@ -1,5 +1,4 @@
 import progress from 'cli-progress';
-import glob from 'fast-glob';
 import { Extractor } from './extractor';
 import { logger } from './logging';
 import { Scraper, SwdeHandling, SwdePage } from './scraper';
@@ -100,17 +99,14 @@ export class Controller {
     //await this.scrape(fullPath, { version: ScrapeVersion.Latest });
   }
 
-  /** Scrapes all SWDE page files matching {@link globPattern}. */
-  public async scrapeAll(globPattern: string) {
+  /** Scrapes all SWDE page {@link files}. */
+  public async scrapeAll(files: string[]) {
     // Prepare progress bar.
     const bar = new progress.SingleBar({
       format:
         'progress [{bar}] {percentage}% | ETA: {eta_formatted} | ' +
         '{value}/{total} | live {live} | offline {offline} | {file}',
     });
-
-    // Find pages to process.
-    const files = await glob(globPattern);
     bar.start(files.length, 0);
 
     // Scrape every page.

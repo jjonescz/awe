@@ -1,4 +1,5 @@
 import { Command, flags } from '@oclif/command';
+import glob from 'fast-glob';
 import path from 'path';
 import { SWDE_DIR } from './lib/constants';
 import { Controller } from './lib/controller';
@@ -41,6 +42,10 @@ class Program extends Command {
       char: 's',
       description: 'take screenshot of each page',
     }),
+    maxNumber: flags.integer({
+      char: 'm',
+      description: 'maximum number of pages to process (the rest is skipped)',
+    }),
   };
 
   async run() {
@@ -54,15 +59,19 @@ class Program extends Command {
     const scraper = await Scraper.create();
     const controller = new Controller(scraper);
 
+    // Find pages to process.
+    const fullGlob = path.join(SWDE_DIR, flags.globPattern);
+    const allFiles = await glob(fullGlob);
+    const files = allFiles.slice(0, flags.maxNumber);
+
     // Apply CLI flags.
     if (flags.offlineMode) scraper.allowLive = false;
     if (flags.forceRefresh) scraper.forceLive = true;
     controller.takeScreenshot = flags.screenshot;
 
+    // Scrape pages.
     try {
-      // Scrape pages.
-      const fullGlob = path.join(SWDE_DIR, flags.globPattern);
-      await controller.scrapeAll(fullGlob);
+      await controller.scrapeAll(files);
     } finally {
       await scraper.dispose();
     }
