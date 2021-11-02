@@ -135,22 +135,34 @@ class Website:
     @property
     def pages(self):
         if self._pages is None:
-            self._pages = list(self._iterate_pages())
-            # Ignore page count when suffix is present.
-            # TODO: Remove when visual attribute extraction is complete.
-            if self.vertical.dataset.suffix is None:
-                assert len(self._pages) == self.page_count, 'Page count ' + \
-                    f'inconsistent (found {len(self._pages)}, expected ' + \
-                    f'{self.page_count}).'
+            self._pages = self._get_pages()
+            assert len(self._pages) == self.page_count, 'Page count ' + \
+                f'inconsistent (found {len(self._pages)}, expected ' + \
+                f'{self.page_count}).'
         return self._pages
 
-    def _iterate_pages(self):
+    def _get_pages(self):
+        result: list[Optional[Page]] = [None] * self.page_count
         for file in sorted(os.listdir(f'{self.dir_path}')):
             page = Page.try_create(self, file)
+            if page is None and self.vertical.dataset.suffix is not None:
+                # If suffix is specified and page with that suffix doesn't
+                # exist, load page without suffix as fallback.
+                # TODO: Remove when attribute extraction is complete.
+                page = Page.try_create(self, file, no_suffix=True)
+                if page is not None and result[page.index] is not None:
+                    # Ignore if this page has already been loaded (with suffix).
+                    assert result[page.index].suffix == \
+                        self.vertical.dataset.suffix, 'Page should have ' + \
+                        f'been loaded with suffix ({page.index}).'
+                    continue
             if page is not None:
                 assert page.file_name == file, 'Page name inconsistent ' + \
                     f'(computed {page.file_name}, actual {file}).'
-                yield page
+                assert result[page.index] is None, \
+                    f'Page already loaded ({page.index}).'
+                result[page.index] = page
+        return result
 
     @property
     def dir_name(self):
@@ -181,17 +193,19 @@ class Website:
 class Page(awe_graph.HtmlPage):
     site: Website
     index: int
+    suffix: Optional[str]
 
     @classmethod
-    def try_create(cls, site: Website, file_name: str):
+    def try_create(cls, site: Website, file_name: str, no_suffix: bool = False):
         match = re.search(PAGE_REGEX, file_name)
-        if match is None or match.group(2) != site.vertical.dataset.suffix:
+        suffix = None if no_suffix else site.vertical.dataset.suffix
+        if match is None or match.group(2) != suffix:
             return None
-        return Page(site, int(match.group(1)))
+        return Page(site, int(match.group(1)), suffix)
 
     @property
     def file_name(self):
-        return f'{self.index:04}{self.site.vertical.dataset.suffix or ""}.htm'
+        return f'{self.index:04}{self.suffix or ""}.htm'
 
     @property
     def file_path(self):
