@@ -1,4 +1,5 @@
 import progress from 'cli-progress';
+import path from 'path';
 import { Extractor } from './extractor';
 import { PageScraper, SwdeHandling } from './page-scraper';
 import { Scraper } from './scraper';
@@ -25,74 +26,77 @@ export function scrapeVersionToSwdeHandling(version: ScrapeVersion) {
   }
 }
 
-/** {@link Scraper} controller to scrape one {@link SwdePage}. */
-export class Controller {
-  /** Take screenshot of each page. */
-  public takeScreenshot = true;
+/** {@link PageScraper} controller to scrape one {@link SwdePage}. */
+export class PageController {
+  private constructor(
+    private readonly controller: Controller,
+    private readonly page: SwdePage,
+    private readonly pageScraper: PageScraper
+  ) {}
 
-  public constructor(public readonly scraper: Scraper) {}
+  public static async create(controller: Controller, fullPath: string) {
+    const page = await SwdePage.parse(fullPath);
+    const pageScraper = await controller.scraper.for(page);
+    return new PageController(controller, page, pageScraper);
+  }
 
   /** Scrapes {@link SwdePage} determined by {@link fullPath}. */
   public async scrape(
     fullPath: string,
     { version = ScrapeVersion.Exact } = {}
   ) {
-    // Create page scraper.
-    const page = await SwdePage.parse(fullPath);
-    const pageScraper = await this.scraper.for(page);
-    pageScraper.swdeHandling = scrapeVersionToSwdeHandling(version);
+    // Configure page scraper.
+    this.pageScraper.swdeHandling = scrapeVersionToSwdeHandling(version);
 
     // Navigate to the page.
-    pageScraper.logger.verbose('goto', { fullPath });
-    await pageScraper.start();
+    this.pageScraper.logger.verbose('goto', { fullPath });
+    await this.pageScraper.start();
 
     // Abort remaining requests.
-    await pageScraper.stop();
+    await this.pageScraper.stop();
 
     // Save page HTML (can be different from original due to JavaScript
     // dynamically updating the DOM).
     const suffix =
-      version === ScrapeVersion.Latest ? `-${page.timestamp}` : '-exact';
-    const html = await pageScraper.page.content();
+      version === ScrapeVersion.Latest ? `-${this.page.timestamp}` : '-exact';
+    const html = await this.pageScraper.page.content();
     const htmlPath = addSuffix(fullPath, suffix);
-    await page.withHtml(html).saveAs(htmlPath);
+    await this.page.withHtml(html).saveAs(htmlPath);
 
     // Report stats.
-    pageScraper.logger.verbose('stats', { stats: this.scraper.stats });
+    this.pageScraper.logger.verbose('stats', {
+      stats: this.controller.scraper.stats,
+    });
 
     // Save local archive.
-    await this.scraper.save();
+    await this.controller.scraper.save();
 
-    if (version === ScrapeVersion.Latest && page.timestamp === null) {
+    if (version === ScrapeVersion.Latest && this.page.timestamp === null) {
       // Couldn't find snapshot of this page in the archive, abort early.
       return;
     }
 
     // Extract visual attributes.
-    const extractor = new Extractor(pageScraper.page, page);
+    const extractor = new Extractor(this.pageScraper.page, this.page);
     await extractor.extract();
     await extractor.save({ suffix });
 
     // Take screenshot.
-    if (this.takeScreenshot) {
+    if (this.controller.takeScreenshot) {
       const screenshotPath = replaceExtension(fullPath, `${suffix}.png`);
-      await this.screenshot(pageScraper, screenshotPath, { fullPage: false });
-      await this.screenshot(pageScraper, screenshotPath, { fullPage: true });
+      await this.screenshot(screenshotPath, { fullPage: false });
+      await this.screenshot(screenshotPath, { fullPage: true });
     }
 
     // Release memory.
-    await pageScraper.page.close();
+    await this.pageScraper.page.close();
   }
 
-  private async screenshot(
-    pageScraper: PageScraper,
-    fullPath: string,
-    { fullPage = true } = {}
-  ) {
+  private async screenshot(fullPath: string, { fullPage = true } = {}) {
     const suffix = fullPage ? '-full' : '-preview';
     const screenshotPath = addSuffix(fullPath, suffix);
-    pageScraper.logger.verbose('screenshot', { screenshotPath });
-    await pageScraper.page.screenshot({
+    this.pageScraper.logger.verbose('screenshot', { screenshotPath });
+    await this.pageScraper.page.screenshot({
       path: screenshotPath,
       fullPage: fullPage,
     });
@@ -102,6 +106,18 @@ export class Controller {
   public async scrapeBoth(fullPath: string) {
     await this.scrape(fullPath, { version: ScrapeVersion.Exact });
     //await this.scrape(fullPath, { version: ScrapeVersion.Latest });
+  }
+}
+
+/** Container for multiple {@link PageController}s. */
+export class Controller {
+  /** Take screenshot of each page. */
+  public takeScreenshot = true;
+
+  public constructor(public readonly scraper: Scraper) {}
+
+  public async for(fullPath: string) {
+    return await PageController.create(this, fullPath);
   }
 
   /** Scrapes all SWDE page {@link files}. */
@@ -121,7 +137,12 @@ export class Controller {
       // Show stats.
       bar?.update({ file, stats: this.scraper.stats.toString() });
 
-      await this.scrapeBoth(file);
+      // Execute `PageController`.
+      const fullPath = path.resolve(file);
+      const pageController = await this.for(fullPath);
+      await pageController.scrapeBoth(file);
+
+      // Update progress bar.
       bar?.increment();
     }
     bar?.stop();
