@@ -4,6 +4,8 @@ import https from 'https';
 import path from 'path';
 import { URL } from 'url';
 
+export type Writable<T> = { -readonly [P in keyof T]: T[P] };
+
 export function replaceExtension(fullPath: string, ext: string) {
   return path.format({
     ...path.parse(fullPath),

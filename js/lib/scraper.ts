@@ -1,11 +1,12 @@
-import { readFile } from 'fs/promises';
+import { readFile, writeFile } from 'fs/promises';
 import puppeteer from 'puppeteer-core';
 import { Archive } from './archive';
 import { SWDE_TIMESTAMP } from './constants';
 import { logger } from './logging';
+import { Writable } from './utils';
 import { Wayback } from './wayback';
 
-// First character is BOM marker.
+// First character is UTF-8 BOM marker.
 const BASE_TAG_REGEX = /^\uFEFF?<base href="([^\n]*)"\/>\w*\n(.*)/s;
 
 export class ScrapingStats {
@@ -318,5 +319,21 @@ export class SwdePage {
     // every HTML file in SWDE.
     const [_, url, html] = contents.match(BASE_TAG_REGEX)!;
     return new SwdePage(fullPath, url, html);
+  }
+
+  public withHtml(html: string) {
+    const clone = Object.create(this) as Writable<SwdePage>;
+    clone.html = html;
+    return clone as SwdePage;
+  }
+
+  public stringify() {
+    // First character is UTF-8 BOM marker.
+    return `\uFEFF<base href="${this.url}"/>\n${this.html}`;
+  }
+
+  public async saveAs(fullPath: string) {
+    const contents = this.stringify();
+    await writeFile(fullPath, contents, { encoding: 'utf-8' });
   }
 }

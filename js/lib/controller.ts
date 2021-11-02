@@ -53,7 +53,8 @@ export class Controller {
     const suffix =
       version === ScrapeVersion.Latest ? `-${page.timestamp}` : '-exact';
     const html = await this.scraper.page.content();
-    await writeFile(addSuffix(fullPath, suffix), html);
+    const htmlPath = addSuffix(fullPath, suffix);
+    await page.withHtml(html).saveAs(htmlPath);
 
     // Report stats.
     logger.info('stats', { stats: this.scraper.stats });
