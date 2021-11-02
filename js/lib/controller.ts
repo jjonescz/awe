@@ -69,7 +69,7 @@ export class Controller {
     // Extract visual attributes.
     const extractor = new Extractor(this.scraper.page, page);
     await extractor.extract();
-    await extractor.save();
+    await extractor.save({ suffix });
 
     // Take screenshot.
     const screenshotPath = replaceExtension(fullPath, `${suffix}.png`);

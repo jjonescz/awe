@@ -2,7 +2,7 @@ import { writeFile } from 'fs/promises';
 import { ElementHandle, Page } from 'puppeteer-core';
 import { logger } from './logging';
 import { SwdePage } from './scraper';
-import { replaceExtension } from './utils';
+import { addSuffix, replaceExtension } from './utils';
 
 type TreeData = {
   /** Data for child element. */
@@ -99,9 +99,10 @@ export class Extractor {
     return replaceExtension(this.swdePage.fullPath, '.json');
   }
 
-  public async save() {
-    logger.info('data', { path: this.filePath });
+  public async save({ suffix = '' } = {}) {
+    const fullPath = addSuffix(this.filePath, suffix);
+    logger.info('data', { path: fullPath });
     const json = JSON.stringify(this.data, null, 1);
-    await writeFile(this.filePath, json, { encoding: 'utf-8' });
+    await writeFile(fullPath, json, { encoding: 'utf-8' });
   }
 }
