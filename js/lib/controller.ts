@@ -105,15 +105,14 @@ export class Controller {
     const bar = new progress.SingleBar({
       format:
         'progress [{bar}] {percentage}% | ETA: {eta_formatted} | ' +
-        '{value}/{total} | live {live} | offline {offline} | {file}',
+        '{value}/{total} | {stats} | {file}',
     });
     bar.start(files.length, 0);
 
     // Scrape every page.
     for (const file of files) {
       // Show stats.
-      const { offline, live } = this.scraper.stats;
-      bar.update({ file, offline, live });
+      bar.update({ file, stats: this.scraper.stats.toString() });
 
       await this.scrapeBoth(file);
       bar.increment();

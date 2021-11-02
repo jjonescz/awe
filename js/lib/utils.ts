@@ -6,6 +6,10 @@ import { URL } from 'url';
 
 export type Writable<T> = { -readonly [P in keyof T]: T[P] };
 
+export function nameOf<T>(name: Extract<keyof T, string>): string {
+  return name;
+}
+
 export function replaceExtension(fullPath: string, ext: string) {
   return path.format({
     ...path.parse(fullPath),

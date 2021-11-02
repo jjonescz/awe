@@ -3,7 +3,7 @@ import puppeteer from 'puppeteer-core';
 import { Archive } from './archive';
 import { SWDE_TIMESTAMP } from './constants';
 import { logger } from './logging';
-import { Writable } from './utils';
+import { nameOf, Writable } from './utils';
 import { Wayback } from './wayback';
 
 // First character is UTF-8 BOM marker.
@@ -19,6 +19,22 @@ export class ScrapingStats {
 
   public increment(statusCode: number) {
     this.status[statusCode] = (this.status[statusCode] ?? 0) + 1;
+  }
+
+  public *iterateStrings() {
+    for (const key in this) {
+      if (key !== nameOf<ScrapingStats>('status')) {
+        yield `${key}: ${this[key]}`;
+      }
+    }
+
+    for (const code in this.status) {
+      yield `${code}: ${this.status[code]}`;
+    }
+  }
+
+  public toString() {
+    return [...this.iterateStrings()].join(', ');
   }
 }
 
