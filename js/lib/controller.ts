@@ -62,13 +62,13 @@ export class Controller {
     // Report stats.
     logger.verbose('stats', { stats: this.scraper.stats });
 
+    // Save local archive.
+    await this.scraper.save();
+
     if (version === ScrapeVersion.Latest && page.timestamp === null) {
       // Couldn't find snapshot of this page in the archive, abort early.
       return;
     }
-
-    // Save local archive.
-    await this.scraper.save();
 
     // Extract visual attributes.
     const extractor = new Extractor(this.scraper.page, page);
@@ -81,6 +81,9 @@ export class Controller {
       await this.screenshot(screenshotPath, { fullPage: false });
       await this.screenshot(screenshotPath, { fullPage: true });
     }
+
+    // Release memory.
+    await this.scraper.page.close();
   }
 
   private async screenshot(fullPath: string, { fullPage = true } = {}) {
