@@ -85,9 +85,6 @@ export class PageController {
       await this.screenshot(screenshotPath, { fullPage: false });
       await this.screenshot(screenshotPath, { fullPage: true });
     }
-
-    // Release memory.
-    await this.pageScraper.page.close();
   }
 
   private async screenshot(fullPath: string, { fullPage = true } = {}) {
@@ -104,5 +101,9 @@ export class PageController {
   public async scrapeBoth(fullPath: string) {
     await this.scrape(fullPath, { version: ScrapeVersion.Exact });
     //await this.scrape(fullPath, { version: ScrapeVersion.Latest });
+  }
+
+  public async close() {
+    await this.pageScraper.page.close();
   }
 }

@@ -34,7 +34,11 @@ export class Controller {
       // Execute `PageController`.
       const fullPath = path.resolve(file);
       const pageController = await this.for(fullPath);
-      await pageController.scrapeBoth(file);
+      try {
+        await pageController.scrapeBoth(file);
+      } finally {
+        await pageController.close();
+      }
 
       // Update progress bar.
       bar?.increment();
