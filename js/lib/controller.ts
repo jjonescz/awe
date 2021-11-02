@@ -27,6 +27,9 @@ export function scrapeVersionToSwdeHandling(version: ScrapeVersion) {
 
 /** {@link Scraper} controller to scrape one {@link SwdePage}. */
 export class Controller {
+  /** Take screenshot of each page. */
+  public takeScreenshot = true;
+
   public constructor(public readonly scraper: Scraper) {}
 
   /** Scrapes {@link SwdePage} determined by {@link fullPath}. */
@@ -74,9 +77,11 @@ export class Controller {
     await extractor.save({ suffix });
 
     // Take screenshot.
-    const screenshotPath = replaceExtension(fullPath, `${suffix}.png`);
-    await this.screenshot(screenshotPath, { fullPage: false });
-    await this.screenshot(screenshotPath, { fullPage: true });
+    if (this.takeScreenshot) {
+      const screenshotPath = replaceExtension(fullPath, `${suffix}.png`);
+      await this.screenshot(screenshotPath, { fullPage: false });
+      await this.screenshot(screenshotPath, { fullPage: true });
+    }
   }
 
   private async screenshot(fullPath: string, { fullPage = true } = {}) {

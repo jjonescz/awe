@@ -37,6 +37,10 @@ class Program extends Command {
       description: 'files to process',
       default: '**/????.htm',
     }),
+    screenshot: flags.boolean({
+      char: 's',
+      description: 'take screenshot of each page',
+    }),
   };
 
   async run() {
@@ -48,15 +52,16 @@ class Program extends Command {
 
     // Open browser.
     const scraper = await Scraper.create();
+    const controller = new Controller(scraper);
 
     // Apply CLI flags.
     if (flags.offlineMode) scraper.allowLive = false;
     if (flags.forceRefresh) scraper.forceLive = true;
+    controller.takeScreenshot = flags.screenshot;
 
     try {
       // Scrape pages.
       const fullGlob = path.join(SWDE_DIR, flags.globPattern);
-      const controller = new Controller(scraper);
       await controller.scrapeAll(fullGlob);
     } finally {
       await scraper.dispose();
