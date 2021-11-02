@@ -48,7 +48,7 @@ export class Controller {
     await this.scraper.stop();
 
     // Report stats.
-    logger.info('stats', this.scraper.stats);
+    logger.info('stats', { stats: this.scraper.stats });
 
     if (version === ScrapeVersion.Latest && page.timestamp === null) {
       // Couldn't find snapshot of this page in the archive, abort early.
