@@ -2,11 +2,12 @@ import glob
 import os
 import re
 from dataclasses import dataclass
+from typing import Optional
 
 import parsel
 from tqdm.auto import tqdm
 
-from awe import awe_graph, html_utils, utils
+from awe import awe_graph, html_utils, utils, visual
 from awe.data import constants
 
 URL = 'https://codeplexarchive.blob.core.windows.net/archive/projects/swde/swde.zip'
@@ -18,7 +19,7 @@ GROUND_TRUTH = 'groundtruth'
 NBSP = html_utils.unescape('&nbsp;')
 
 WEBSITE_REGEX = r'^(\w+)-(\w+)\((\d+)\)$'
-PAGE_REGEX = r'^(\d{4})\.htm$'
+PAGE_REGEX = r'^(\d{4})(-.*)?\.htm$'
 BASE_TAG_REGEX = r'^<base href="([^\n]*)"/>\w*\n(.*)'
 GROUNDTRUTH_REGEX = r'^(\w+)-(\w+)-(\w+)\.txt$'
 
@@ -135,14 +136,17 @@ class Website:
     def pages(self):
         if self._pages is None:
             self._pages = list(self._iterate_pages())
-            assert len(self._pages) == self.page_count
+            assert len(self._pages) == self.page_count, 'Page count ' + \
+                f'inconsistent (found {len(self._pages)}, expected ' + \
+                f'{self.page_count}).'
         return self._pages
 
     def _iterate_pages(self):
         for file in sorted(os.listdir(f'{self.dir_path}')):
             page = Page.try_create(self, file)
             if page is not None:
-                assert page.file_name == file
+                assert page.file_name == file, 'Page name inconsistent ' + \
+                    f'(computed {page.file_name}, actual {file}).'
                 yield page
 
     @property
@@ -178,15 +182,22 @@ class Page(awe_graph.HtmlPage):
     @classmethod
     def try_create(cls, site: Website, file_name: str):
         match = re.search(PAGE_REGEX, file_name)
-        return Page(site, int(match.group(1))) if match is not None else None
+        if match is None or match.group(2) != site.vertical.dataset.suffix:
+            return None
+        return Page(site, int(match.group(1)))
 
     @property
     def file_name(self):
-        return f'{self.index:04}.htm'
+        return f'{self.index:04}{self.site.vertical.dataset.suffix or ""}.htm'
 
     @property
     def file_path(self):
         return f'{self.site.dir_path}/{self.file_name}'
+
+    @property
+    def dom_data(self):
+        json_path = self.file_path.removesuffix('.htm') + '.json'
+        return visual.DomData(json_path)
 
     @property
     def contents(self):
@@ -317,7 +328,7 @@ VERTICAL_NAMES = [
 ]
 
 class Dataset:
-    def __init__(self, suffix: str = ''):
+    def __init__(self, suffix: Optional[str] = None):
         self.suffix = suffix
         self.verticals = [Vertical(self, name) for name in VERTICAL_NAMES]
 
