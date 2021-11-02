@@ -15,7 +15,7 @@ import { Controller } from './lib/controller';
 
   try {
     // Scrape a page (hard-coded path for now).
-    const fullPath = path.join(SWDE_FOLDER, 'auto/auto-aol(2000)/0001.htm');
+    const fullPath = path.join(SWDE_FOLDER, 'auto/auto-aol(2000)/0000.htm');
     const controller = new Controller(scraper);
     await controller.scrapeBoth(fullPath);
   } finally {

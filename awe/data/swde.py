@@ -136,9 +136,12 @@ class Website:
     def pages(self):
         if self._pages is None:
             self._pages = list(self._iterate_pages())
-            assert len(self._pages) == self.page_count, 'Page count ' + \
-                f'inconsistent (found {len(self._pages)}, expected ' + \
-                f'{self.page_count}).'
+            # Ignore page count when suffix is present.
+            # TODO: Remove when visual attribute extraction is complete.
+            if self.vertical.dataset.suffix is None:
+                assert len(self._pages) == self.page_count, 'Page count ' + \
+                    f'inconsistent (found {len(self._pages)}, expected ' + \
+                    f'{self.page_count}).'
         return self._pages
 
     def _iterate_pages(self):
