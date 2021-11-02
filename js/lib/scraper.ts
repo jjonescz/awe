@@ -1,5 +1,6 @@
 import { readFile, writeFile } from 'fs/promises';
 import puppeteer from 'puppeteer-core';
+import winston from 'winston';
 import { Archive } from './archive';
 import { SWDE_TIMESTAMP } from './constants';
 import { ignoreUrl } from './ignore';
@@ -120,11 +121,12 @@ export class PageScraper {
   public swdeHandling = SwdeHandling.Offline;
 
   constructor(
+    public readonly logger: winston.Logger,
     private readonly scraper: Scraper,
     private readonly swdePage: SwdePage,
     public readonly page: puppeteer.Page
   ) {
-    // Handle events..
+    // Handle events.
     page.on('request', this.onRequest.bind(this));
     page.on('error', (e) => logger.error('page error', { e }));
     page.on('console', (m) => logger.debug('page console', { text: m.text() }));
@@ -136,8 +138,8 @@ export class PageScraper {
 
   public static async create(scraper: Scraper, swdePage: SwdePage) {
     const page = await scraper.browser.newPage();
-
-    const pageScraper = new PageScraper(scraper, swdePage, page);
+    const pageLogger = logger.child({ page: swdePage.fullPath });
+    const pageScraper = new PageScraper(pageLogger, scraper, swdePage, page);
     await pageScraper.initialize();
     return pageScraper;
   }
@@ -155,7 +157,7 @@ export class PageScraper {
     try {
       await this.handleRequest(request);
     } catch (e) {
-      logger.error('request error', {
+      this.logger.error('request error', {
         url: request.url(),
         error: (e as puppeteer.CustomError)?.message,
       });
@@ -169,7 +171,7 @@ export class PageScraper {
       // Pass WaybackMachine redirects through.
       const redirectUrl = this.scraper.wayback.isArchiveRedirect(request);
       if (redirectUrl !== null) {
-        logger.debug('redirected:', { url: request.url() });
+        this.logger.debug('redirected:', { url: request.url() });
         await request.continue();
         return;
       }
@@ -183,7 +185,7 @@ export class PageScraper {
     switch (this.swdeHandling) {
       case SwdeHandling.Offline:
         page.timestamp = null;
-        logger.verbose('request page replaced', {
+        this.logger.verbose('request page replaced', {
           url: request.url(),
           path: page.fullPath,
         });
@@ -198,9 +200,12 @@ export class PageScraper {
         );
         page.timestamp = timestamp;
         if (timestamp === null) {
-          logger.error('redirect not found', { url: request.url() });
+          this.logger.error('redirect not found', { url: request.url() });
         } else {
-          logger.verbose('redirect page', { url: request.url(), timestamp });
+          this.logger.verbose('redirect page', {
+            url: request.url(),
+            timestamp,
+          });
           await this.handleExternalRequest(request, timestamp);
         }
         break;
@@ -223,7 +228,7 @@ export class PageScraper {
     } else {
       if (offline === null && !this.scraper.forceLive) {
         // This request didn't complete last time, abort it.
-        logger.debug('aborted', { url: request.url() });
+        this.logger.debug('aborted', { url: request.url() });
         await request.abort();
         this.scraper.stats.aborted++;
         return;
@@ -231,7 +236,7 @@ export class PageScraper {
 
       if (!this.scraper.allowLive) {
         // In offline mode, act as if this endpoint was not available.
-        logger.debug('disabled', { url: request.url() });
+        this.logger.debug('disabled', { url: request.url() });
         await request.respond({ status: 404 });
         this.scraper.stats.increment(404);
         return;
@@ -239,7 +244,7 @@ export class PageScraper {
 
       // Ignore requests matching specified patterns.
       if (ignoreUrl(request.url())) {
-        logger.debug('ignored', { url: request.url() });
+        this.logger.debug('ignored', { url: request.url() });
         await request.abort();
         this.scraper.stats.ignored++;
         return;
@@ -255,7 +260,7 @@ export class PageScraper {
     timestamp: string,
     offline: Partial<puppeteer.ResponseForRequest>
   ) {
-    logger.debug('offline request', {
+    this.logger.debug('offline request', {
       url: request.url(),
       hash: this.scraper.archive.getHash(request.url(), timestamp),
     });
@@ -278,7 +283,7 @@ export class PageScraper {
       this.scraper.wayback.parseArchiveUrl(request.url()) !== null
         ? request.url()
         : this.scraper.wayback.getArchiveUrl(request.url(), timestamp);
-    logger.debug('live request', { archiveUrl });
+    this.logger.debug('live request', { archiveUrl });
     await request.continue({ url: archiveUrl });
 
     // Note that if WaybackMachine doesn't have the page archived at
@@ -292,7 +297,7 @@ export class PageScraper {
     });
 
     // Handle response.
-    logger.debug('response', { url: response.url() });
+    this.logger.debug('response', { url: response.url() });
     const body = await response.buffer();
     const headers = response.headers();
     const archived: puppeteer.ResponseForRequest = {
@@ -328,7 +333,7 @@ export class PageScraper {
     } catch (e: any) {
       if (e.name === 'TimeoutError') {
         // Ignore timeouts.
-        logger.error('timeout');
+        this.logger.error('timeout');
       } else {
         throw e;
       }
@@ -340,7 +345,7 @@ export class PageScraper {
     await this.page.setOfflineMode(true);
 
     for (const [url, timestamp] of this.inProgress) {
-      logger.debug('unhandled', { url, timestamp });
+      this.logger.debug('unhandled', { url, timestamp });
 
       // Save as "aborted" for the next time.
       await this.scraper.archive.add(url, timestamp, null, {

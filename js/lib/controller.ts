@@ -1,8 +1,6 @@
 import progress from 'cli-progress';
-import puppeteer from 'puppeteer-core';
 import { Extractor } from './extractor';
-import { logger } from './logging';
-import { Scraper, SwdeHandling, SwdePage } from './scraper';
+import { PageScraper, Scraper, SwdeHandling, SwdePage } from './scraper';
 import { addSuffix, replaceExtension } from './utils';
 
 export const enum ScrapeVersion {
@@ -43,7 +41,7 @@ export class Controller {
     pageScraper.swdeHandling = scrapeVersionToSwdeHandling(version);
 
     // Navigate to the page.
-    logger.verbose('goto', { fullPath });
+    pageScraper.logger.verbose('goto', { fullPath });
     await pageScraper.start();
 
     // Abort remaining requests.
@@ -58,7 +56,7 @@ export class Controller {
     await page.withHtml(html).saveAs(htmlPath);
 
     // Report stats.
-    logger.verbose('stats', { stats: this.scraper.stats });
+    pageScraper.logger.verbose('stats', { stats: this.scraper.stats });
 
     // Save local archive.
     await this.scraper.save();
@@ -76,12 +74,8 @@ export class Controller {
     // Take screenshot.
     if (this.takeScreenshot) {
       const screenshotPath = replaceExtension(fullPath, `${suffix}.png`);
-      await this.screenshot(pageScraper.page, screenshotPath, {
-        fullPage: false,
-      });
-      await this.screenshot(pageScraper.page, screenshotPath, {
-        fullPage: true,
-      });
+      await this.screenshot(pageScraper, screenshotPath, { fullPage: false });
+      await this.screenshot(pageScraper, screenshotPath, { fullPage: true });
     }
 
     // Release memory.
@@ -89,14 +83,14 @@ export class Controller {
   }
 
   private async screenshot(
-    page: puppeteer.Page,
+    pageScraper: PageScraper,
     fullPath: string,
     { fullPage = true } = {}
   ) {
     const suffix = fullPage ? '-full' : '-preview';
     const screenshotPath = addSuffix(fullPath, suffix);
-    logger.verbose('screenshot', { screenshotPath });
-    await page.screenshot({
+    pageScraper.logger.verbose('screenshot', { screenshotPath });
+    await pageScraper.page.screenshot({
       path: screenshotPath,
       fullPage: fullPage,
     });
