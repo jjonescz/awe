@@ -24,12 +24,17 @@ export class ScrapingStats {
   public *iterateStrings() {
     for (const key in this) {
       if (key !== nameOf<ScrapingStats>('status')) {
-        yield `${key}: ${this[key]}`;
+        const value = this[key] as unknown as number;
+        if (value !== 0) {
+          yield `${key}: ${value}`;
+        }
       }
     }
 
-    for (const code in this.status) {
-      yield `${code}: ${this.status[code]}`;
+    for (const [code, count] of Object.entries(this.status)) {
+      if (count !== 0) {
+        yield `${code}: ${count}`;
+      }
     }
   }
 
