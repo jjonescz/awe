@@ -1,7 +1,7 @@
 import { writeFile } from 'fs/promises';
 import { ElementHandle, Page } from 'puppeteer-core';
 import { logger } from './logging';
-import { SwdePage } from './scraper';
+import { SwdePage } from './swde-page';
 import { addSuffix, replaceExtension } from './utils';
 
 type TreeData = {

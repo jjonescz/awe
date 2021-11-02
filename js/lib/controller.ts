@@ -1,6 +1,7 @@
 import progress from 'cli-progress';
 import { Extractor } from './extractor';
-import { PageScraper, Scraper, SwdeHandling, SwdePage } from './scraper';
+import { PageScraper, Scraper, SwdeHandling } from './scraper';
+import { SwdePage } from './swde-page';
 import { addSuffix, replaceExtension } from './utils';
 
 export const enum ScrapeVersion {

@@ -1,51 +1,12 @@
-import { readFile, writeFile } from 'fs/promises';
-import path from 'path/posix';
 import puppeteer from 'puppeteer-core';
 import winston from 'winston';
 import { Archive } from './archive';
-import { SWDE_DIR, SWDE_TIMESTAMP } from './constants';
+import { SWDE_TIMESTAMP } from './constants';
 import { ignoreUrl } from './ignore';
 import { logger } from './logging';
-import { nameOf, Writable } from './utils';
+import { ScrapingStats } from './scraping-stats';
+import { SwdePage } from './swde-page';
 import { Wayback } from './wayback';
-
-// First character is UTF-8 BOM marker.
-const BASE_TAG_REGEX = /^\uFEFF?<base href="([^\n]*)"\/>\w*\n(.*)/s;
-
-export class ScrapingStats {
-  /** Map from status code to number of occurrences. */
-  public readonly status: Record<number, number> = {};
-  public undef = 0;
-  public aborted = 0;
-  public offline = 0;
-  public live = 0;
-  public ignored = 0;
-
-  public increment(statusCode: number) {
-    this.status[statusCode] = (this.status[statusCode] ?? 0) + 1;
-  }
-
-  public *iterateStrings() {
-    for (const key in this) {
-      if (key !== nameOf<ScrapingStats>('status')) {
-        const value = this[key] as unknown as number;
-        if (value !== 0) {
-          yield `${key}: ${value}`;
-        }
-      }
-    }
-
-    for (const [code, count] of Object.entries(this.status)) {
-      if (count !== 0) {
-        yield `${code}: ${count}`;
-      }
-    }
-  }
-
-  public toString() {
-    return [...this.iterateStrings()].join(', ');
-  }
-}
 
 /** Method of handling request to SWDE page. */
 export const enum SwdeHandling {
@@ -354,45 +315,5 @@ export class PageScraper {
       });
       this.scraper.stats.aborted++;
     }
-  }
-}
-
-/** Page from the SWDE dataset. */
-export class SwdePage {
-  /** Timestamp used to scrape this page. */
-  public timestamp: string | null = null;
-
-  public constructor(
-    public readonly fullPath: string,
-    public readonly url: string,
-    public readonly html: string
-  ) {}
-
-  public get id() {
-    return path.relative(SWDE_DIR, this.fullPath);
-  }
-
-  public static async parse(fullPath: string) {
-    const contents = await readFile(fullPath, { encoding: 'utf-8' });
-    // Extract original page URL from a `<base>` tag that is at the beginning of
-    // every HTML file in SWDE.
-    const [_, url, html] = contents.match(BASE_TAG_REGEX)!;
-    return new SwdePage(fullPath, url, html);
-  }
-
-  public withHtml(html: string) {
-    const clone = Object.create(this) as Writable<SwdePage>;
-    clone.html = html;
-    return clone as SwdePage;
-  }
-
-  public stringify() {
-    // First character is UTF-8 BOM marker.
-    return `\uFEFF<base href="${this.url}"/>\n${this.html}`;
-  }
-
-  public async saveAs(fullPath: string) {
-    const contents = this.stringify();
-    await writeFile(fullPath, contents, { encoding: 'utf-8' });
   }
 }
