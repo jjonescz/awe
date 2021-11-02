@@ -58,6 +58,13 @@ class HtmlPage(ABC):
             deep_index += 1
 
 @dataclass
+class BoundingBox:
+    x: int
+    y: int
+    width: int
+    height: int
+
+@dataclass
 class HtmlNode:
     page: HtmlPage = field(repr=False)
 
@@ -83,6 +90,8 @@ class HtmlNode:
 
     dataset_index: Optional[int] = utils.lazy_field()
     """Index set and used by `Dataset`."""
+
+    box: Optional[BoundingBox] = utils.lazy_field()
 
     _children: list['HtmlNode'] = utils.cache_field()
 

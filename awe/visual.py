@@ -38,7 +38,10 @@ class DomData:
             assert real_id == extracted_id, f'IDs of {node.xpath} do not ' + \
                 f'match ("{real_id}" vs "{extracted_id}").'
 
-        # TODO: Load `node_data` into `node`.
+        # Load `node_data` into `node`.
+        box = node_data.get('box')
+        if box is not None:
+            node.box = awe_graph.BoundingBox(box[0], box[1], box[2], box[3])
         return True
 
     def find(self, xpath: str):
