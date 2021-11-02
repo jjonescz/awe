@@ -36,7 +36,7 @@ class Program extends Command {
     globPattern: flags.string({
       char: 'g',
       description: 'files to process',
-      default: '**/????.htm',
+      default: path.relative('.', path.join(SWDE_DIR, '**/????.htm')),
     }),
     screenshot: flags.boolean({
       char: 's',
@@ -60,7 +60,7 @@ class Program extends Command {
     const controller = new Controller(scraper);
 
     // Find pages to process.
-    const fullGlob = path.join(SWDE_DIR, flags.globPattern);
+    const fullGlob = path.resolve('.', flags.globPattern);
     const allFiles = await glob(fullGlob);
     const files = allFiles.slice(0, flags.maxNumber);
 
