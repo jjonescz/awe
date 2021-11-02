@@ -53,43 +53,21 @@ export const enum SwdeHandling {
   Wayback,
 }
 
-/** Browser navigator intercepting requests. */
+/** Common dependencies of all {@link PageScraper}s. */
 export class Scraper {
-  private swdePage: SwdePage | null = null;
-  private readonly inProgress: Set<readonly [string, string]> = new Set();
   /** Allow live (online) requests if needed? */
   public allowLive = true;
   /** Load and save requests locally (in {@link Archive})? */
   public allowOffline = true;
   /** Force retry of all live (online) requests. */
   public forceLive = false;
-  public swdeHandling = SwdeHandling.Offline;
   public readonly stats = new ScrapingStats();
 
   private constructor(
     public readonly wayback: Wayback,
     public readonly browser: puppeteer.Browser,
-    public readonly page: puppeteer.Page,
     public readonly archive: Archive
-  ) {
-    // Handle events..
-    page.on('request', this.onRequest.bind(this));
-    page.on('error', (e) => logger.error('page error', { e }));
-    page.on('console', (m) => logger.debug('page console', { text: m.text() }));
-  }
-
-  public get numWaiting() {
-    return this.inProgress.size;
-  }
-
-  private async initialize() {
-    // Intercept requests.
-    await this.page.setRequestInterception(true);
-
-    // Ignore some errors that would prevent WaybackMachine redirection.
-    await this.page.setBypassCSP(true);
-    this.page.setDefaultTimeout(0); // disable timeout
-  }
+  ) {}
 
   public static async create() {
     // Open browser.
@@ -109,7 +87,6 @@ export class Scraper {
       ],
       executablePath: 'google-chrome-stable',
     });
-    const page = await browser.newPage();
 
     // Open file archive.
     const archive = await Archive.create();
@@ -118,9 +95,60 @@ export class Scraper {
     const wayback = new Wayback();
     await wayback.loadResponses();
 
-    const scraper = new Scraper(wayback, browser, page, archive);
-    await scraper.initialize();
-    return scraper;
+    return new Scraper(wayback, browser, archive);
+  }
+
+  public async for(swdePage: SwdePage) {
+    return await PageScraper.create(this, swdePage);
+  }
+
+  public async save() {
+    logger.debug('saving data');
+    await this.archive.save();
+    await this.wayback.saveResponses();
+  }
+
+  public async dispose() {
+    await this.save();
+    await this.browser.close();
+  }
+}
+
+/** Browser navigator intercepting requests. */
+export class PageScraper {
+  private readonly inProgress: Set<readonly [string, string]> = new Set();
+  public swdeHandling = SwdeHandling.Offline;
+
+  constructor(
+    private readonly scraper: Scraper,
+    private readonly swdePage: SwdePage,
+    public readonly page: puppeteer.Page
+  ) {
+    // Handle events..
+    page.on('request', this.onRequest.bind(this));
+    page.on('error', (e) => logger.error('page error', { e }));
+    page.on('console', (m) => logger.debug('page console', { text: m.text() }));
+  }
+
+  public get numWaiting() {
+    return this.inProgress.size;
+  }
+
+  public static async create(scraper: Scraper, swdePage: SwdePage) {
+    const page = await scraper.browser.newPage();
+
+    const pageScraper = new PageScraper(scraper, swdePage, page);
+    await pageScraper.initialize();
+    return pageScraper;
+  }
+
+  private async initialize() {
+    // Intercept requests.
+    await this.page.setRequestInterception(true);
+
+    // Ignore some errors that would prevent WaybackMachine redirection.
+    await this.page.setBypassCSP(true);
+    this.page.setDefaultTimeout(0); // disable timeout
   }
 
   private async onRequest(request: puppeteer.HTTPRequest) {
@@ -139,7 +167,7 @@ export class Scraper {
       await this.handleSwdePage(request, this.swdePage);
     } else {
       // Pass WaybackMachine redirects through.
-      const redirectUrl = this.wayback.isArchiveRedirect(request);
+      const redirectUrl = this.scraper.wayback.isArchiveRedirect(request);
       if (redirectUrl !== null) {
         logger.debug('redirected:', { url: request.url() });
         await request.continue();
@@ -165,7 +193,9 @@ export class Scraper {
         break;
 
       case SwdeHandling.Wayback:
-        const timestamp = await this.wayback.closestTimestamp(request.url());
+        const timestamp = await this.scraper.wayback.closestTimestamp(
+          request.url()
+        );
         page.timestamp = timestamp;
         if (timestamp === null) {
           logger.error('redirect not found', { url: request.url() });
@@ -185,25 +215,25 @@ export class Scraper {
     timestamp = SWDE_TIMESTAMP
   ) {
     const offline =
-      this.allowOffline && !this.forceLive
-        ? await this.archive.get(request.url(), timestamp)
+      this.scraper.allowOffline && !this.scraper.forceLive
+        ? await this.scraper.archive.get(request.url(), timestamp)
         : undefined;
     if (offline) {
       await this.handleOfflineRequest(request, timestamp, offline);
     } else {
-      if (offline === null && !this.forceLive) {
+      if (offline === null && !this.scraper.forceLive) {
         // This request didn't complete last time, abort it.
         logger.debug('aborted', { url: request.url() });
         await request.abort();
-        this.stats.aborted++;
+        this.scraper.stats.aborted++;
         return;
       }
 
-      if (!this.allowLive) {
+      if (!this.scraper.allowLive) {
         // In offline mode, act as if this endpoint was not available.
         logger.debug('disabled', { url: request.url() });
         await request.respond({ status: 404 });
-        this.stats.increment(404);
+        this.scraper.stats.increment(404);
         return;
       }
 
@@ -211,7 +241,7 @@ export class Scraper {
       if (ignoreUrl(request.url())) {
         logger.debug('ignored', { url: request.url() });
         await request.abort();
-        this.stats.ignored++;
+        this.scraper.stats.ignored++;
         return;
       }
 
@@ -227,11 +257,11 @@ export class Scraper {
   ) {
     logger.debug('offline request', {
       url: request.url(),
-      hash: this.archive.getHash(request.url(), timestamp),
+      hash: this.scraper.archive.getHash(request.url(), timestamp),
     });
     await request.respond(offline);
     this.addToStats(offline);
-    this.stats.offline++;
+    this.scraper.stats.offline++;
   }
 
   /** Redirects request to WaybackMachine. */
@@ -245,9 +275,9 @@ export class Scraper {
 
     // Redirect to `web.archive.org` unless it's already directed there.
     const archiveUrl =
-      this.wayback.parseArchiveUrl(request.url()) !== null
+      this.scraper.wayback.parseArchiveUrl(request.url()) !== null
         ? request.url()
-        : this.wayback.getArchiveUrl(request.url(), timestamp);
+        : this.scraper.wayback.getArchiveUrl(request.url(), timestamp);
     logger.debug('live request', { archiveUrl });
     await request.continue({ url: archiveUrl });
 
@@ -256,7 +286,7 @@ export class Scraper {
     // by `isArchiveRedirect`.
     const response = await this.page.waitForResponse((res) => {
       if (res.url() === request.url() && res.status() !== 302) return true;
-      const redirectUrl = this.wayback.isArchiveRedirect(res.request());
+      const redirectUrl = this.scraper.wayback.isArchiveRedirect(res.request());
       if (redirectUrl === request.url()) return true;
       return false;
     });
@@ -273,30 +303,26 @@ export class Scraper {
     };
     if (!this.inProgress.delete(inProgressEntry))
       throw new Error(`Failed to delete ${request.url()} (${timestamp})`);
-    if (this.allowOffline)
-      await this.archive.add(request.url(), timestamp, archived, {
-        force: this.forceLive,
+    if (this.scraper.allowOffline)
+      await this.scraper.archive.add(request.url(), timestamp, archived, {
+        force: this.scraper.forceLive,
       });
     this.addToStats(archived);
-    this.stats.live++;
+    this.scraper.stats.live++;
   }
 
   private addToStats(response: Partial<puppeteer.ResponseForRequest>) {
     if (response.status === undefined) {
-      this.stats.undef++;
+      this.scraper.stats.undef++;
     } else {
-      this.stats.increment(response.status);
+      this.scraper.stats.increment(response.status);
     }
   }
 
-  public async go(page: SwdePage) {
-    // Undo effect of method `stop`.
-    await this.page.setOfflineMode(false);
-
+  public async start() {
     // Navigate to page's URL. This will be intercepted in `onRequest`.
-    this.swdePage = page;
     try {
-      await this.page.goto(page.url, {
+      await this.page.goto(this.swdePage.url, {
         waitUntil: 'networkidle0',
       });
     } catch (e: any) {
@@ -317,20 +343,11 @@ export class Scraper {
       logger.debug('unhandled', { url, timestamp });
 
       // Save as "aborted" for the next time.
-      await this.archive.add(url, timestamp, null, { force: this.forceLive });
-      this.stats.aborted++;
+      await this.scraper.archive.add(url, timestamp, null, {
+        force: this.scraper.forceLive,
+      });
+      this.scraper.stats.aborted++;
     }
-  }
-
-  public async save() {
-    logger.debug('saving data');
-    await this.archive.save();
-    await this.wayback.saveResponses();
-  }
-
-  public async dispose() {
-    await this.save();
-    await this.browser.close();
   }
 }
 

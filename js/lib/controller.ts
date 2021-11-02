@@ -1,4 +1,5 @@
 import progress from 'cli-progress';
+import puppeteer from 'puppeteer-core';
 import { Extractor } from './extractor';
 import { logger } from './logging';
 import { Scraper, SwdeHandling, SwdePage } from './scraper';
@@ -36,26 +37,23 @@ export class Controller {
     fullPath: string,
     { version = ScrapeVersion.Exact } = {}
   ) {
-    // Configure scraper.
-    this.scraper.swdeHandling = scrapeVersionToSwdeHandling(version);
-    // this.scraper.wayback.variant =
-    //   // If we are getting the HTML from archive.org, we can let them rewrite
-    //   // URLs (that's what `if_` variant does).
-    //   version === ScrapeVersion.Latest ? 'if_' : 'id_';
+    // Create page scraper.
+    const page = await SwdePage.parse(fullPath);
+    const pageScraper = await this.scraper.for(page);
+    pageScraper.swdeHandling = scrapeVersionToSwdeHandling(version);
 
     // Navigate to the page.
-    const page = await SwdePage.parse(fullPath);
     logger.verbose('goto', { fullPath });
-    await this.scraper.go(page);
+    await pageScraper.start();
 
     // Abort remaining requests.
-    await this.scraper.stop();
+    await pageScraper.stop();
 
     // Save page HTML (can be different from original due to JavaScript
     // dynamically updating the DOM).
     const suffix =
       version === ScrapeVersion.Latest ? `-${page.timestamp}` : '-exact';
-    const html = await this.scraper.page.content();
+    const html = await pageScraper.page.content();
     const htmlPath = addSuffix(fullPath, suffix);
     await page.withHtml(html).saveAs(htmlPath);
 
@@ -71,26 +69,34 @@ export class Controller {
     }
 
     // Extract visual attributes.
-    const extractor = new Extractor(this.scraper.page, page);
+    const extractor = new Extractor(pageScraper.page, page);
     await extractor.extract();
     await extractor.save({ suffix });
 
     // Take screenshot.
     if (this.takeScreenshot) {
       const screenshotPath = replaceExtension(fullPath, `${suffix}.png`);
-      await this.screenshot(screenshotPath, { fullPage: false });
-      await this.screenshot(screenshotPath, { fullPage: true });
+      await this.screenshot(pageScraper.page, screenshotPath, {
+        fullPage: false,
+      });
+      await this.screenshot(pageScraper.page, screenshotPath, {
+        fullPage: true,
+      });
     }
 
     // Release memory.
-    await this.scraper.page.close();
+    await pageScraper.page.close();
   }
 
-  private async screenshot(fullPath: string, { fullPage = true } = {}) {
+  private async screenshot(
+    page: puppeteer.Page,
+    fullPath: string,
+    { fullPage = true } = {}
+  ) {
     const suffix = fullPage ? '-full' : '-preview';
     const screenshotPath = addSuffix(fullPath, suffix);
     logger.verbose('screenshot', { screenshotPath });
-    await this.scraper.page.screenshot({
+    await page.screenshot({
       path: screenshotPath,
       fullPage: fullPage,
     });
