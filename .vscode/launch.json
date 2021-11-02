@@ -9,7 +9,8 @@
             "skipFiles": ["<node_internals>/**"],
             "runtimeArgs": ["-r", "ts-node/register/transpile-only"],
             "program": "index.ts",
-            "cwd": "${workspaceFolder}/js"
+            "cwd": "${workspaceFolder}/js",
+            "outputCapture": "std"
         }
     ]
 }
