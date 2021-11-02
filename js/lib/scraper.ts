@@ -277,6 +277,9 @@ export class Scraper {
   }
 
   public async stop() {
+    // Go offline.
+    await this.page.setOfflineMode(true);
+
     for (const [url, timestamp] of this.inProgress) {
       logger.debug('unhandled', { url, timestamp });
 
