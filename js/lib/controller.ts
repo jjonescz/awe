@@ -1,6 +1,7 @@
 import progress from 'cli-progress';
 import { Extractor } from './extractor';
-import { PageScraper, Scraper, SwdeHandling } from './scraper';
+import { PageScraper, SwdeHandling } from './page-scraper';
+import { Scraper } from './scraper';
 import { SwdePage } from './swde-page';
 import { addSuffix, replaceExtension } from './utils';
 
