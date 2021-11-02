@@ -46,6 +46,10 @@ class Program extends Command {
       char: 'm',
       description: 'maximum number of pages to process (the rest is skipped)',
     }),
+    noProgress: flags.boolean({
+      char: 'p',
+      description: 'disable progress bar',
+    }),
   };
 
   async run() {
@@ -71,7 +75,9 @@ class Program extends Command {
 
     // Scrape pages.
     try {
-      await controller.scrapeAll(files);
+      await controller.scrapeAll(files, {
+        showProgressBar: !flags.noProgress,
+      });
     } finally {
       await scraper.dispose();
     }

@@ -103,23 +103,25 @@ export class Controller {
   }
 
   /** Scrapes all SWDE page {@link files}. */
-  public async scrapeAll(files: string[]) {
+  public async scrapeAll(files: string[], { showProgressBar = true } = {}) {
     // Prepare progress bar.
-    const bar = new progress.SingleBar({
-      format:
-        'progress [{bar}] {percentage}% | ETA: {eta_formatted} | ' +
-        '{value}/{total} | {stats} | {file}',
-    });
-    bar.start(files.length, 0);
+    const bar = showProgressBar
+      ? new progress.SingleBar({
+          format:
+            'progress [{bar}] {percentage}% | ETA: {eta_formatted} | ' +
+            '{value}/{total} | {stats} | {file}',
+        })
+      : null;
+    bar?.start(files.length, 0);
 
     // Scrape every page.
     for (const file of files) {
       // Show stats.
-      bar.update({ file, stats: this.scraper.stats.toString() });
+      bar?.update({ file, stats: this.scraper.stats.toString() });
 
       await this.scrapeBoth(file);
-      bar.increment();
+      bar?.increment();
     }
-    bar.stop();
+    bar?.stop();
   }
 }
