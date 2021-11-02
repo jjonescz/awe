@@ -101,7 +101,7 @@ export class Controller {
     const bar = new progress.SingleBar({
       format:
         'progress [{bar}] {percentage}% | ETA: {eta_formatted} | ' +
-        '{value}/{total} | {file}',
+        '{value}/{total} | live {live} | offline {offline} | {file}',
     });
 
     // Find pages to process.
@@ -110,7 +110,10 @@ export class Controller {
 
     // Scrape every page.
     for (const file of files) {
-      bar.update({ file });
+      // Show stats.
+      const { offline, live } = this.scraper.stats;
+      bar.update({ file, offline, live });
+
       await this.scrapeBoth(file);
       bar.increment();
     }
