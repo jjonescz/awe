@@ -1,3 +1,4 @@
+import { writeFile } from 'fs/promises';
 import { Extractor } from './extractor';
 import { logger } from './logging';
 import { Scraper, SwdeHandling, SwdePage } from './scraper';
@@ -47,6 +48,13 @@ export class Controller {
     // Abort remaining requests.
     await this.scraper.stop();
 
+    // Save page HTML (can be different from original due to JavaScript
+    // dynamically updating the DOM).
+    const suffix =
+      version === ScrapeVersion.Latest ? `-${page.timestamp}` : '-exact';
+    const html = await this.scraper.page.content();
+    await writeFile(addSuffix(fullPath, suffix), html);
+
     // Report stats.
     logger.info('stats', { stats: this.scraper.stats });
 
@@ -64,8 +72,6 @@ export class Controller {
     await extractor.save();
 
     // Take screenshot.
-    const suffix =
-      version === ScrapeVersion.Latest ? `-${page.timestamp}` : '-exact';
     const screenshotPath = replaceExtension(fullPath, `${suffix}.png`);
     await this.screenshot(screenshotPath, { fullPage: false });
     await this.screenshot(screenshotPath, { fullPage: true });
