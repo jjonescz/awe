@@ -2,6 +2,7 @@ import { Command, flags } from '@oclif/command';
 import path from 'path';
 import { SWDE_DIR } from './lib/constants';
 import { Controller } from './lib/controller';
+import { logFile, logger } from './lib/logging';
 import { Scraper } from './lib/scraper';
 
 class Program extends Command {
@@ -20,6 +21,7 @@ class Program extends Command {
 
   async run() {
     const { flags } = this.parse(Program);
+    logger.info('starting', { logFile, flags });
 
     // Open browser.
     const scraper = await Scraper.create();

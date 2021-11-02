@@ -3,7 +3,7 @@ import winston from 'winston';
 import { SCRAPING_LOG_DIR } from './constants';
 
 const timestamp = new Date().toISOString();
-const logFile = path.join(SCRAPING_LOG_DIR, `${timestamp}.txt`);
+export const logFile = path.join(SCRAPING_LOG_DIR, `${timestamp}.txt`);
 
 export const logger = winston.createLogger({
   level: 'info',
