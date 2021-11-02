@@ -1,5 +1,6 @@
 import progress from 'cli-progress';
 import path from 'path';
+import { from, lastValueFrom, mergeMap } from 'rxjs';
 import { PageController } from './page-controller';
 import { Scraper } from './scraper';
 
@@ -27,22 +28,29 @@ export class Controller {
     bar?.start(files.length, 0);
 
     // Scrape every page.
-    for (const file of files) {
-      // Show stats.
-      bar?.update({ file, stats: this.scraper.stats.toString() });
+    const observable = from(files).pipe(
+      mergeMap(
+        async (file) => {
+          // Show stats.
+          bar?.update({ file, stats: this.scraper.stats.toString() });
 
-      // Execute `PageController`.
-      const fullPath = path.resolve(file);
-      const pageController = await this.for(fullPath);
-      try {
-        await pageController.scrapeBoth(file);
-      } finally {
-        await pageController.close();
-      }
+          // Execute `PageController`.
+          const fullPath = path.resolve(file);
+          const pageController = await this.for(fullPath);
+          try {
+            await pageController.scrapeBoth(file);
+          } finally {
+            await pageController.close();
+          }
 
-      // Update progress bar.
-      bar?.increment();
-    }
+          // Update progress bar.
+          bar?.increment();
+        },
+        // Run this number of scrapers in parallel.
+        3
+      )
+    );
+    await lastValueFrom(observable, { defaultValue: null });
     bar?.stop();
   }
 }
