@@ -32,6 +32,11 @@ class Program extends Command {
       description: 'equivalent of `--logLevel=verbose`',
       exclusive: ['logLevel'],
     }),
+    globPattern: flags.string({
+      char: 'g',
+      description: 'files to process',
+      default: '**/????.htm',
+    }),
   };
 
   async run() {
@@ -49,10 +54,10 @@ class Program extends Command {
     if (flags.forceRefresh) scraper.forceLive = true;
 
     try {
-      // Scrape a page (hard-coded path for now).
-      const fullPath = path.join(SWDE_DIR, 'auto/auto-aol(2000)/0000.htm');
+      // Scrape pages.
+      const fullGlob = path.join(SWDE_DIR, flags.globPattern);
       const controller = new Controller(scraper);
-      await controller.scrapeBoth(fullPath);
+      await controller.scrapeAll(fullGlob);
     } finally {
       await scraper.dispose();
     }

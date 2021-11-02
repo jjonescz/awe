@@ -2,7 +2,10 @@ lockfileVersion: 5.3
 
 specifiers:
   '@oclif/command': 1.8.0
+  '@types/cli-progress': 3.9.2
   '@types/node': 16.11.6
+  cli-progress: 3.9.1
+  fast-glob: 3.2.7
   puppeteer-core: 10.4.0
   ts-node: 10.4.0
   typescript: 4.4.4
@@ -13,7 +16,10 @@ dependencies:
 
 devDependencies:
   '@oclif/command': 1.8.0
+  '@types/cli-progress': 3.9.2
   '@types/node': 16.11.6
+  cli-progress: 3.9.1
+  fast-glob: 3.2.7
   ts-node: 10.4.0_0cb88d80cb04d25b21fa3ec194608c65
   typescript: 4.4.4
   winston: 3.3.3
@@ -146,6 +152,12 @@ packages:
 
   /@tsconfig/node16/1.0.2:
     resolution: {integrity: sha512-eZxlbI8GZscaGS7kkc/trHTT5xgrjH3/1n2JDwusC9iahPKWMRvRjJSAN5mCXviuTGQ/lHnhvv8Q1YTpnfz9gA==}
+    dev: true
+
+  /@types/cli-progress/3.9.2:
+    resolution: {integrity: sha512-VO5/X5Ij+oVgEVjg5u0IXVe3JQSKJX+Ev8C5x+0hPy0AuWyW+bF8tbajR7cPFnDGhs7pidztcac+ccrDtk5teA==}
+    dependencies:
+      '@types/node': 16.11.6
     dev: true
 
   /@types/node/16.11.6:
@@ -282,6 +294,14 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       escape-string-regexp: 4.0.0
+    dev: true
+
+  /cli-progress/3.9.1:
+    resolution: {integrity: sha512-AXxiCe2a0Lm0VN+9L0jzmfQSkcZm5EYspfqXKaSIQKqIk+0hnkZ3/v1E9B39mkD6vYhKih3c/RPsJBSwq9O99Q==}
+    engines: {node: '>=4'}
+    dependencies:
+      colors: 1.4.0
+      string-width: 4.2.3
     dev: true
 
   /color-convert/1.9.3:

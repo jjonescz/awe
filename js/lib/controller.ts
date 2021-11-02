@@ -1,4 +1,5 @@
-import { writeFile } from 'fs/promises';
+import progress from 'cli-progress';
+import glob from 'fast-glob';
 import { Extractor } from './extractor';
 import { logger } from './logging';
 import { Scraper, SwdeHandling, SwdePage } from './scraper';
@@ -92,5 +93,21 @@ export class Controller {
   public async scrapeBoth(fullPath: string) {
     await this.scrape(fullPath, { version: ScrapeVersion.Exact });
     //await this.scrape(fullPath, { version: ScrapeVersion.Latest });
+  }
+
+  public async scrapeAll(globPattern: string) {
+    const bar = new progress.SingleBar({
+      format:
+        'progress [{bar}] {percentage}% | ETA: {eta}s | {value}/{total} | ' +
+        '{file}',
+    });
+    const files = await glob(globPattern);
+    bar.start(files.length, 0);
+    for (const file of files) {
+      bar.update({ file });
+      await this.scrapeBoth(file);
+      bar.increment();
+    }
+    bar.stop();
   }
 }
