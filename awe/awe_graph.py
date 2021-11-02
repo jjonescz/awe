@@ -61,9 +61,6 @@ class HtmlPage(ABC):
 class HtmlNode:
     page: HtmlPage = field(repr=False)
 
-    deep_index: Optional[int] = field(init=False, default=None)
-    """Iteration index of the node inside the `page`."""
-
     index: int
     """Index inside `parent`."""
 
@@ -81,7 +78,10 @@ class HtmlNode:
     target attribute.
     """
 
-    dataset_index: Optional[int] = field(init=False, default=None)
+    deep_index: Optional[int] = utils.lazy_field()
+    """Iteration index of the node inside the `page`."""
+
+    dataset_index: Optional[int] = utils.lazy_field()
     """Index set and used by `Dataset`."""
 
     _children: list['HtmlNode'] = utils.cache_field()

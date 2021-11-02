@@ -15,6 +15,10 @@ def ignore_field(**kwargs):
 def cache_field(**kwargs):
     return ignore_field(default=None, **kwargs)
 
+def lazy_field(**kwargs):
+    """Field initialized lazily (later during instance lifetime)."""
+    return field(init=False, default=None, **kwargs)
+
 T = TypeVar('T')
 def where_max(items: Iterable[T], selector: Callable[[T], Any]):
     max_key = None
