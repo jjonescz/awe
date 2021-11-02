@@ -6,7 +6,6 @@ const timestamp = new Date().toISOString();
 export const logFile = path.join(SCRAPING_LOG_DIR, `${timestamp}.txt`);
 
 export const logger = winston.createLogger({
-  level: 'info',
   format: winston.format.combine(
     winston.format.timestamp(),
     winston.format.json()
