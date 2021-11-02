@@ -2,6 +2,7 @@ import { readFile, writeFile } from 'fs/promises';
 import puppeteer from 'puppeteer-core';
 import { Archive } from './archive';
 import { SWDE_TIMESTAMP } from './constants';
+import { ignoreUrl } from './ignore';
 import { logger } from './logging';
 import { nameOf, Writable } from './utils';
 import { Wayback } from './wayback';
@@ -16,6 +17,7 @@ export class ScrapingStats {
   public aborted = 0;
   public offline = 0;
   public live = 0;
+  public ignored = 0;
 
   public increment(statusCode: number) {
     this.status[statusCode] = (this.status[statusCode] ?? 0) + 1;
@@ -204,6 +206,14 @@ export class Scraper {
         logger.debug('disabled', { url: request.url() });
         await request.respond({ status: 404 });
         this.stats.increment(404);
+        return;
+      }
+
+      // Ignore requests matching specified patterns.
+      if (ignoreUrl(request.url())) {
+        logger.debug('ignored', { url: request.url() });
+        await request.abort();
+        this.stats.ignored++;
         return;
       }
 
