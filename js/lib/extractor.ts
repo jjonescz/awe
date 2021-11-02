@@ -101,7 +101,7 @@ export class Extractor {
 
   public async save({ suffix = '' } = {}) {
     const fullPath = addSuffix(this.filePath, suffix);
-    logger.info('data', { path: fullPath });
+    logger.verbose('data', { path: fullPath });
     const json = JSON.stringify(this.data, null, 1);
     await writeFile(fullPath, json, { encoding: 'utf-8' });
   }

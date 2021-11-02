@@ -134,7 +134,7 @@ export class Scraper {
     switch (this.swdeHandling) {
       case SwdeHandling.Offline:
         page.timestamp = null;
-        logger.info('request page replaced', {
+        logger.verbose('request page replaced', {
           url: request.url(),
           path: page.fullPath,
         });
@@ -149,7 +149,7 @@ export class Scraper {
         if (timestamp === null) {
           logger.error('redirect not found', { url: request.url() });
         } else {
-          logger.info('redirect page', { url: request.url(), timestamp });
+          logger.verbose('redirect page', { url: request.url(), timestamp });
           await this.handleExternalRequest(request, timestamp);
         }
         break;

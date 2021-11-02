@@ -42,7 +42,7 @@ export class Controller {
 
     // Navigate to the page.
     const page = await SwdePage.parse(fullPath);
-    logger.info('goto', { fullPath });
+    logger.verbose('goto', { fullPath });
     await this.scraper.go(page);
 
     // Abort remaining requests.
@@ -57,7 +57,7 @@ export class Controller {
     await page.withHtml(html).saveAs(htmlPath);
 
     // Report stats.
-    logger.info('stats', { stats: this.scraper.stats });
+    logger.verbose('stats', { stats: this.scraper.stats });
 
     if (version === ScrapeVersion.Latest && page.timestamp === null) {
       // Couldn't find snapshot of this page in the archive, abort early.
@@ -81,7 +81,7 @@ export class Controller {
   private async screenshot(fullPath: string, { fullPage = true } = {}) {
     const suffix = fullPage ? '-full' : '-preview';
     const screenshotPath = addSuffix(fullPath, suffix);
-    logger.info('screenshot', { screenshotPath });
+    logger.verbose('screenshot', { screenshotPath });
     await this.scraper.page.screenshot({
       path: screenshotPath,
       fullPage: fullPage,
