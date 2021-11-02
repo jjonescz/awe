@@ -127,12 +127,10 @@ export class Scraper {
     try {
       await this.handleRequest(request);
     } catch (e) {
-      console.error(
-        'request handling:',
-        request.url(),
-        'error:',
-        (e as puppeteer.CustomError)?.message
-      );
+      logger.error('request error', {
+        url: request.url(),
+        error: (e as puppeteer.CustomError)?.message,
+      });
     }
   }
 
