@@ -65,7 +65,7 @@ export class Controller {
 
     // Take screenshot.
     const suffix =
-      version === ScrapeVersion.Latest ? `-${page.timestamp}` : '-swde';
+      version === ScrapeVersion.Latest ? `-${page.timestamp}` : '-exact';
     const screenshotPath = replaceExtension(fullPath, `${suffix}.png`);
     await this.screenshot(screenshotPath, { fullPage: false });
     await this.screenshot(screenshotPath, { fullPage: true });
