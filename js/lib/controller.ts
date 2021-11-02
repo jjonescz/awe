@@ -98,8 +98,8 @@ export class Controller {
   public async scrapeAll(globPattern: string) {
     const bar = new progress.SingleBar({
       format:
-        'progress [{bar}] {percentage}% | ETA: {eta}s | {value}/{total} | ' +
-        '{file}',
+        'progress [{bar}] {percentage}% | ETA: {eta_formatted} | ' +
+        '{value}/{total} | {file}',
     });
     const files = await glob(globPattern);
     bar.start(files.length, 0);
