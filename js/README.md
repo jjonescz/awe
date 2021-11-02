@@ -1,6 +1,11 @@
 # JavaScript
 
-This folder contains code for extracting visual attributes from SWDE dataset.
+This folder contains code for extracting visual attributes from SWDE dataset. To
+get started, execute:
+
+```bash
+pnpm start -- --help
+```
 
 ## Architecture
 

@@ -6,10 +6,14 @@
   "scripts": {
     "start": "ts-node index.ts"
   },
+  "files": [
+    "lib/**/*.ts"
+  ],
   "dependencies": {
     "puppeteer-core": "10.4.0"
   },
   "devDependencies": {
+    "@oclif/command": "1.8.0",
     "@types/node": "16.11.6",
     "ts-node": "10.4.0",
     "typescript": "4.4.4",
