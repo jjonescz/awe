@@ -95,14 +95,20 @@ export class Controller {
     //await this.scrape(fullPath, { version: ScrapeVersion.Latest });
   }
 
+  /** Scrapes all SWDE page files matching {@link globPattern}. */
   public async scrapeAll(globPattern: string) {
+    // Prepare progress bar.
     const bar = new progress.SingleBar({
       format:
         'progress [{bar}] {percentage}% | ETA: {eta_formatted} | ' +
         '{value}/{total} | {file}',
     });
+
+    // Find pages to process.
     const files = await glob(globPattern);
     bar.start(files.length, 0);
+
+    // Scrape every page.
     for (const file of files) {
       bar.update({ file });
       await this.scrapeBoth(file);
