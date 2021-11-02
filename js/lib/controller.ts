@@ -1,7 +1,7 @@
 import { Extractor } from './extractor';
 import { logger } from './logging';
 import { Scraper, SwdeHandling, SwdePage } from './scraper';
-import { replaceExtension } from './utils';
+import { addSuffix, replaceExtension } from './utils';
 
 export const enum ScrapeVersion {
   /** Scrapes version that preserves HTML from the SWDE dataset. */
@@ -72,9 +72,7 @@ export class Controller {
   }
 
   private async screenshot(path: string, { fullPage = true } = {}) {
-    const screenshotPath = fullPage
-      ? path
-      : replaceExtension(path, `-preview.png`);
+    const screenshotPath = fullPage ? path : addSuffix(path, '-preview');
     logger.info('screenshot', { screenshotPath });
     await this.scraper.page.screenshot({
       path: screenshotPath,

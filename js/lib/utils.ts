@@ -1,14 +1,23 @@
-import path from 'path';
-import https from 'https';
-import { URL, URLSearchParams } from 'url';
 import { existsSync } from 'fs';
 import { readFile } from 'fs/promises';
+import https from 'https';
+import path from 'path';
+import { URL } from 'url';
 
 export function replaceExtension(fullPath: string, ext: string) {
   return path.format({
     ...path.parse(fullPath),
     base: undefined,
     ext: ext,
+  });
+}
+
+export function addSuffix(fullPath: string, suffix: string) {
+  const parsed = path.parse(fullPath);
+  return path.format({
+    ...parsed,
+    base: undefined,
+    name: `${parsed.name}${suffix}`,
   });
 }
 
