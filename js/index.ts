@@ -8,17 +8,25 @@ class Program extends Command {
   static flags = {
     version: flags.version(),
     help: flags.help(),
+    offlineMode: flags.boolean({
+      char: 'o',
+      description: 'disable online requests (use only cached)',
+    }),
+    forceRefresh: flags.boolean({
+      char: 'f',
+      description: 'force online requests (even if cached)',
+    }),
   };
 
   async run() {
+    const { flags } = this.parse(Program);
+
     // Open browser.
     const scraper = await Scraper.create();
 
-    // Enable offline mode.
-    // scraper.allowLive = false;
-
-    // Force refresh.
-    // scraper.forceLive = true;
+    // Apply CLI flags.
+    if (flags.offlineMode) scraper.allowLive = false;
+    if (flags.forceRefresh) scraper.forceLive = true;
 
     try {
       // Scrape a page (hard-coded path for now).
