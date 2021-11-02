@@ -1,8 +1,8 @@
 import path from 'path';
 import winston from 'winston';
-import { DATA_FOLDER } from './constants';
+import { DATA_DIR } from './constants';
 
-const logFile = path.join(DATA_FOLDER, 'scraping-logs.txt');
+const logFile = path.join(DATA_DIR, 'scraping-logs.txt');
 
 export const logger = winston.createLogger({
   level: 'info',

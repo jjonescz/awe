@@ -1,6 +1,6 @@
 import path from 'path';
 import { Scraper } from './lib/scraper';
-import { SWDE_FOLDER } from './lib/constants';
+import { SWDE_DIR } from './lib/constants';
 import { Controller } from './lib/controller';
 
 (async () => {
@@ -15,7 +15,7 @@ import { Controller } from './lib/controller';
 
   try {
     // Scrape a page (hard-coded path for now).
-    const fullPath = path.join(SWDE_FOLDER, 'auto/auto-aol(2000)/0000.htm');
+    const fullPath = path.join(SWDE_DIR, 'auto/auto-aol(2000)/0000.htm');
     const controller = new Controller(scraper);
     await controller.scrapeBoth(fullPath);
   } finally {

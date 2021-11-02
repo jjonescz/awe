@@ -3,12 +3,12 @@ import { existsSync } from 'fs';
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import { ResponseForRequest } from 'puppeteer-core';
-import { ARCHIVE_FOLDER } from './constants';
+import { ARCHIVE_DIR } from './constants';
 import { logger } from './logging';
 import { tryReadFile } from './utils';
 
-const ARCHIVE_FILES_FOLDER = path.join(ARCHIVE_FOLDER, 'files');
-const ARCHIVE_MAP_PATH = path.join(ARCHIVE_FOLDER, 'map.json');
+const ARCHIVE_FILES_FOLDER = path.join(ARCHIVE_DIR, 'files');
+const ARCHIVE_MAP_PATH = path.join(ARCHIVE_DIR, 'map.json');
 
 /** In-memory variant of {@link ResponseForRequest}. */
 export interface FileResponse {
