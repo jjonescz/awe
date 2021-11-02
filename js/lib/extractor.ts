@@ -13,6 +13,8 @@ type TreeData = {
 type ElementData = {
   /** Bounding box (x, y, width, height). */
   box?: readonly [number, number, number, number];
+  /** Value of `id` attribute (for debugging purposes). */
+  id?: string;
 };
 
 type NodeData = TreeData & ElementData;
@@ -81,7 +83,8 @@ export class Extractor {
     element: ElementHandle<Element>
   ): Promise<ElementInfo> {
     const evaluated = await element.evaluate((e) => {
-      return <ElementInfo>{
+      return {
+        id: e.getAttribute('id') ?? undefined,
         tagName: e.nodeName.toLowerCase(),
       };
     });
