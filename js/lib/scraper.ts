@@ -1,8 +1,9 @@
 import { readFile, writeFile } from 'fs/promises';
+import path from 'path/posix';
 import puppeteer from 'puppeteer-core';
 import winston from 'winston';
 import { Archive } from './archive';
-import { SWDE_TIMESTAMP } from './constants';
+import { SWDE_DIR, SWDE_TIMESTAMP } from './constants';
 import { ignoreUrl } from './ignore';
 import { logger } from './logging';
 import { nameOf, Writable } from './utils';
@@ -138,7 +139,7 @@ export class PageScraper {
 
   public static async create(scraper: Scraper, swdePage: SwdePage) {
     const page = await scraper.browser.newPage();
-    const pageLogger = logger.child({ page: swdePage.fullPath });
+    const pageLogger = logger.child({ page: swdePage.id });
     const pageScraper = new PageScraper(pageLogger, scraper, swdePage, page);
     await pageScraper.initialize();
     return pageScraper;
@@ -366,6 +367,10 @@ export class SwdePage {
     public readonly url: string,
     public readonly html: string
   ) {}
+
+  public get id() {
+    return path.relative(SWDE_DIR, this.fullPath);
+  }
 
   public static async parse(fullPath: string) {
     const contents = await readFile(fullPath, { encoding: 'utf-8' });
