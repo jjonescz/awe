@@ -67,7 +67,7 @@ def task_extract_swde_7z():
     """extract SWDE 7z archives"""
 
     input_dir = f'{swde.DIR}/src'
-    names = [v.name for v in swde.VERTICALS] + [swde.GROUND_TRUTH]
+    names = [v for v in swde.VERTICAL_NAMES] + [swde.GROUND_TRUTH]
     input_zips = [f'{input_dir}/{n}.7z' for n in names]
     output_dir = swde.DATA_DIR
     output_dirs = [f'{output_dir}/{n}' for n in names]

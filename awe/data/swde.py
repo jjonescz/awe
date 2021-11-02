@@ -27,6 +27,7 @@ WHITESPACE_REGEX = r'([^\S\r\n]|[\u200b])'
 
 @dataclass
 class Vertical:
+    dataset: 'Dataset'
     name: str
     _websites: list['Website'] = utils.cache_field()
 
@@ -299,25 +300,30 @@ class GroundTruthEntry:
             for node in match:
                 yield html_utils.get_xpath(node, page_dom, **args)
 
-VERTICALS = [
-    Vertical('auto'),
-    Vertical('book'),
-    Vertical('camera'),
-    Vertical('job'),
+VERTICAL_NAMES = [
+    'auto',
+    'book',
+    'camera',
+    'job',
     # HACK: Skip movie vertical as there are multiple bugs in the dataset:
     # - MPAA rating is only first character (e.g., "P" in the groundtruth but
     #   "PG13" in the HTML),
     # - director is not complete (e.g., "Roy Hill" in the groundtruth but
     #   "Geogre Roy Hill" in the HTML).
-    #Vertical('movie'),
-    Vertical('nbaplayer'),
-    Vertical('restaurant'),
-    Vertical('university')
+    #'movie',
+    'nbaplayer',
+    'restaurant',
+    'university'
 ]
 
-def validate(*, verticals_skip=0):
-    for vertical in tqdm(VERTICALS[verticals_skip:], desc='verticals'):
-        for website in tqdm(vertical.websites, desc='websites', leave=False):
-            for groundtruth_field in tqdm(website.groundtruth, desc='fields', leave=False):
-                for entry in groundtruth_field.entries:
-                    _ = entry.nodes
+class Dataset:
+    def __init__(self, suffix: str = ''):
+        self.suffix = suffix
+        self.verticals = [Vertical(self, name) for name in VERTICAL_NAMES]
+
+    def validate(self, *, verticals_skip=0):
+        for vertical in tqdm(self.verticals[verticals_skip:], desc='verticals'):
+            for website in tqdm(vertical.websites, desc='websites', leave=False):
+                for groundtruth_field in tqdm(website.groundtruth, desc='fields', leave=False):
+                    for entry in groundtruth_field.entries:
+                        _ = entry.nodes
