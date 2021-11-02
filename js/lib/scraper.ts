@@ -261,6 +261,9 @@ export class Scraper {
   }
 
   public async go(page: SwdePage) {
+    // Undo effect of method `stop`.
+    await this.page.setOfflineMode(false);
+
     // Navigate to page's URL. This will be intercepted in `onRequest`.
     this.swdePage = page;
     try {
