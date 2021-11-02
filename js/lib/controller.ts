@@ -71,8 +71,9 @@ export class Controller {
     await this.screenshot(screenshotPath, { fullPage: true });
   }
 
-  private async screenshot(path: string, { fullPage = true } = {}) {
-    const screenshotPath = fullPage ? path : addSuffix(path, '-preview');
+  private async screenshot(fullPath: string, { fullPage = true } = {}) {
+    const suffix = fullPage ? '-full' : '-preview';
+    const screenshotPath = addSuffix(fullPath, suffix);
     logger.info('screenshot', { screenshotPath });
     await this.scraper.page.screenshot({
       path: screenshotPath,
