@@ -86,8 +86,15 @@ export class Extractor {
     const evaluated = await element.evaluate((e) => {
       // Note that we cannot reference outside functions easily, hence we define
       // them here.
-      const unless = <T>(value: T, defaultValue: T) =>
-        value === defaultValue ? undefined : value;
+      const unless = <T>(value: T, defaultValue: T) => {
+        if (value === defaultValue) return undefined;
+        if (value === undefined)
+          throw new Error(
+            `Ambiguous attribute value undefined (already used for default ` +
+              `value '${defaultValue}').`
+          );
+        return value;
+      };
 
       // Pick some properties from element's computed style.
       const style = getComputedStyle(e);
