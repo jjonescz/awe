@@ -31,8 +31,6 @@ type DomData = TreeData;
 
 const CHILD_SELECTOR = '*';
 
-const ALL_SIDES = ['Left', 'Top', 'Right', 'Bottom'] as const;
-
 /** Computed style properties to extract for each element. */
 const STYLE_KEYS: (keyof CSSStyleDeclaration)[] = [
   'fontFamily',
@@ -43,9 +41,7 @@ const STYLE_KEYS: (keyof CSSStyleDeclaration)[] = [
   'textDecoration',
   'color',
   'backgroundColor',
-  ...ALL_SIDES.map((s) => `border${s}Width` as const),
-  ...ALL_SIDES.map((s) => `border${s}Style` as const),
-  ...ALL_SIDES.map((s) => `border${s}Color` as const),
+  'border',
 ];
 
 /** Can extract visual attributes from a Puppeteer-controlled page. */
