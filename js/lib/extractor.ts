@@ -86,29 +86,36 @@ export class Extractor {
     const evaluated = await element.evaluate((e) => {
       // Note that we cannot reference outside functions easily, hence we define
       // them here.
-      const unless = <T>(value: T, defaultValue: T) => {
-        if (value === defaultValue) return undefined;
+      const check = <T>(value: T) => {
         if (value === undefined)
-          throw new Error(
-            `Ambiguous attribute value undefined (already used for default ` +
-              `value '${defaultValue}').`
-          );
+          throw new Error('Ambiguous attribute value undefined.');
         return value;
+      };
+      const except = <T>(value: T, defaultValue: T) => {
+        if (value === defaultValue) return undefined;
+        return check(value);
+      };
+      const unless = <T>(value: T, condition: boolean) => {
+        if (condition) return undefined;
+        return check(value);
       };
 
       // Pick some properties from element's computed style.
       const style = getComputedStyle(e);
       const picked = {
         fontFamily: style.fontFamily,
-        fontSize: style.fontSize,
-        fontWeight: style.fontWeight,
-        fontStyle: unless(style.fontStyle, 'normal'),
-        textAlign: style.textAlign,
-        textDecoration: style.textDecoration,
+        fontSize: except(style.fontSize, '16px'),
+        fontWeight: except(style.fontWeight, '400'),
+        fontStyle: except(style.fontStyle, 'normal'),
+        textAlign: except(style.textAlign, 'start'),
+        textDecoration: unless(
+          style.textDecoration,
+          style.textDecorationStyle === 'none'
+        ),
         color: style.color,
-        backgroundColor: style.backgroundColor,
-        backgroundImage: unless(style.backgroundImage, 'none'),
-        border: style.border,
+        backgroundColor: except(style.backgroundColor, 'rgba(0, 0, 0, 0)'),
+        backgroundImage: except(style.backgroundImage, 'none'),
+        border: unless(style.border, style.borderStyle === 'none'),
       };
 
       // Construct `ElementInfo`.
