@@ -16,6 +16,8 @@ type ElementData = {
   box?: readonly [number, number, number, number];
   /** Value of `id` attribute (for debugging purposes). */
   id?: string;
+  /** Font size in pixels. @default 16 */
+  fontSize?: number;
 };
 
 type NodeData = TreeData & ElementData;
@@ -140,12 +142,18 @@ export class Extractor {
       const except = <T>(value: T, defaultValue: T) => {
         return unless(value, value === defaultValue);
       };
+      const pixels = (value: string) => {
+        const match = value.match(/^(.+)(px)?$/);
+        if (match === null)
+          throw new Error(`Cannot convert to pixels: '${value}'`);
+        return parseInt(match[1]);
+      };
 
       // Pick some properties from element's computed style.
       const style = getComputedStyle(e);
       const picked = {
         fontFamily: style.fontFamily,
-        fontSize: except(style.fontSize, '16px'),
+        fontSize: except(pixels(style.fontSize), 16),
         fontWeight: except(style.fontWeight, '400'),
         fontStyle: except(style.fontStyle, 'normal'),
         textAlign: except(style.textAlign, 'start'),
