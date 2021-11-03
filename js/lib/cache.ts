@@ -50,14 +50,15 @@ export class Cache {
   public async add(
     url: string,
     timestamp: string,
-    value: ResponseForRequest | null,
-    { force = false } = {}
+    value: ResponseForRequest | null
   ) {
     const key = this.stringifyKey(url, timestamp);
-    if (this.map[key] && !force) {
-      // Note that we don't want this error to be thrown when `this.map[url] ===
-      // null` (then, we want to overwrite it).
-      throw new Error(`URL already exists in the cache: ${url} (${timestamp})`);
+
+    // Check that this entry doesn't exist yet (although we allow it for
+    // parallel scraping to work). Note that we definitely want to overwrite
+    // when `this.map[url] === null` (so we don't log that case).
+    if (this.map[key]) {
+      logger.debug('URL overwritten', { url, timestamp });
     }
 
     // Store `null` to indicate this request is "in progress".

@@ -212,9 +212,7 @@ export class PageScraper {
     if (!this.inProgress.delete(inProgressEntry))
       throw new Error(`Failed to delete ${request.url()} (${timestamp})`);
     if (this.scraper.allowOffline)
-      await this.scraper.cache.add(request.url(), timestamp, cached, {
-        force: this.scraper.forceLive,
-      });
+      await this.scraper.cache.add(request.url(), timestamp, cached);
     this.addToStats(cached);
     this.scraper.stats.live++;
   }
@@ -257,9 +255,7 @@ export class PageScraper {
       this.logger.debug('unhandled', { url, timestamp });
 
       // Save as "aborted" for the next time.
-      await this.scraper.cache.add(url, timestamp, null, {
-        force: this.scraper.forceLive,
-      });
+      await this.scraper.cache.add(url, timestamp, null);
       this.scraper.stats.aborted++;
     }
   }
