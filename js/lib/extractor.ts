@@ -86,18 +86,14 @@ export class Extractor {
     const evaluated = await element.evaluate((e) => {
       // Note that we cannot reference outside functions easily, hence we define
       // them here.
-      const check = <T>(value: T) => {
+      const unless = <T>(value: T, condition: boolean) => {
+        if (condition) return undefined;
         if (value === undefined)
           throw new Error('Ambiguous attribute value undefined.');
         return value;
       };
       const except = <T>(value: T, defaultValue: T) => {
-        if (value === defaultValue) return undefined;
-        return check(value);
-      };
-      const unless = <T>(value: T, condition: boolean) => {
-        if (condition) return undefined;
-        return check(value);
+        return unless(value, value === defaultValue);
       };
 
       // Pick some properties from element's computed style.
@@ -110,12 +106,24 @@ export class Extractor {
         textAlign: except(style.textAlign, 'start'),
         textDecoration: unless(
           style.textDecoration,
-          style.textDecorationStyle === 'none'
+          style.textDecorationLine === 'none'
         ),
         color: style.color,
         backgroundColor: except(style.backgroundColor, 'rgba(0, 0, 0, 0)'),
         backgroundImage: except(style.backgroundImage, 'none'),
         border: unless(style.border, style.borderStyle === 'none'),
+        boxShadow: except(style.boxShadow, 'none'),
+        cursor: except(style.cursor, 'auto'),
+        letterSpacing: except(style.letterSpacing, 'normal'),
+        lineHeight: except(style.lineHeight, 'normal'),
+        opacity: except(style.opacity, '1'),
+        outline: unless(style.outline, style.outlineStyle === 'none'),
+        overflow: except(style.overflow, 'visible'),
+        pointerEvents: except(style.pointerEvents, 'auto'),
+        textShadow: except(style.textShadow, 'none'),
+        textOverflow: except(style.textOverflow, 'clip'),
+        textTransform: except(style.textTransform, 'none'),
+        zIndex: except(style.zIndex, 'auto'),
       };
 
       // Construct `ElementInfo`.
