@@ -39,8 +39,13 @@ class Program extends Command {
       default: path.relative('.', path.join(SWDE_DIR, '**/????.htm')),
     }),
     screenshot: flags.boolean({
-      char: 's',
+      char: 't',
       description: 'take screenshot of each page',
+    }),
+    skip: flags.integer({
+      char: 's',
+      description: 'how many pages to skip',
+      default: 0,
     }),
     maxNumber: flags.integer({
       char: 'm',
@@ -71,7 +76,10 @@ class Program extends Command {
     // Find pages to process.
     const fullGlob = path.resolve('.', flags.globPattern);
     const allFiles = await glob(fullGlob);
-    const files = allFiles.slice(0, flags.maxNumber);
+    const files = allFiles.slice(
+      flags.skip,
+      flags.maxNumber === undefined ? undefined : flags.skip + flags.maxNumber
+    );
 
     // Apply CLI flags.
     if (flags.offlineMode) scraper.allowLive = false;
