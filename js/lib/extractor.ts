@@ -182,6 +182,13 @@ export class Extractor {
         return `#${rh}${gh}${bh}${ah}` as const;
       };
 
+      /** Parses CSS color, but returns `undefined` if it's transparent. */
+      const visibleColor = (value: string) => {
+        const parsed = color(value);
+        if (parsed.endsWith('00')) return undefined;
+        return parsed;
+      };
+
       /** Parses one border property. */
       const borderProp = <T>(
         style: CSSStyleDeclaration,
@@ -205,15 +212,21 @@ export class Extractor {
           (x) => x,
           'none'
         );
-        const borderColor = borderProp(style, `${prefix}-color`, color);
+        const borderColor = borderProp(style, `${prefix}-color`, visibleColor);
 
         // Ignore invisible borders.
-        if (borderWidth === null || borderStyle === null) return {};
+        if (
+          borderWidth === null ||
+          borderStyle === null ||
+          borderColor === null
+        ) {
+          return {};
+        }
 
         return {
           ...(borderWidth ?? {}),
           ...(borderStyle ?? {}),
-          ...borderColor,
+          ...(borderColor ?? {}),
         };
       };
 
@@ -240,7 +253,7 @@ export class Extractor {
           style.textDecorationLine === 'none'
         ),
         color: color(style.color),
-        backgroundColor: except(color(style.backgroundColor), '#00000000'),
+        backgroundColor: visibleColor(style.backgroundColor),
         backgroundImage: except(style.backgroundImage, 'none'),
         ...border(style),
         boxShadow: except(style.boxShadow, 'none'),
