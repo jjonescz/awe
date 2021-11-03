@@ -53,14 +53,6 @@ export class PageController {
     // Abort remaining requests.
     await this.pageScraper.stop();
 
-    // Save page HTML (can be different from original due to JavaScript
-    // dynamically updating the DOM).
-    const suffix =
-      version === ScrapeVersion.Latest ? `-${this.page.timestamp}` : '-exact';
-    const html = await this.pageScraper.page.content();
-    const htmlPath = addSuffix(fullPath, suffix);
-    await this.page.withHtml(html).saveAs(htmlPath);
-
     // Report stats.
     this.pageScraper.logger.verbose('stats', {
       stats: this.controller.scraper.stats,
@@ -73,6 +65,14 @@ export class PageController {
       // Couldn't find snapshot of this page in the WaybackMachine, abort early.
       return;
     }
+
+    // Save page HTML (can be different from original due to JavaScript
+    // dynamically updating the DOM).
+    const suffix =
+      version === ScrapeVersion.Latest ? `-${this.page.timestamp}` : '-exact';
+    const html = await this.pageScraper.page.content();
+    const htmlPath = addSuffix(fullPath, suffix);
+    await this.page.withHtml(html).saveAs(htmlPath);
 
     // Extract visual attributes.
     const extractor = new Extractor(this.pageScraper.page, this.page);
