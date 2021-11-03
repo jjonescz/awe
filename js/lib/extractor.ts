@@ -152,7 +152,9 @@ export class Extractor {
       };
 
       /** Parses CSS pixels. */
-      const pixels = (value: string) => {
+      const pixels = (value?: string) => {
+        if (value === undefined) return undefined;
+
         const match = value.match(/^(.+)(px)?$/);
         if (match === null) throw new Error(`Cannot parse pixels: '${value}'`);
         return parseInt(match[1]);
@@ -198,8 +200,8 @@ export class Extractor {
         border: unless(style.border, style.borderStyle === 'none'),
         boxShadow: except(style.boxShadow, 'none'),
         cursor: except(style.cursor, 'auto'),
-        letterSpacing: except(style.letterSpacing, 'normal'),
-        lineHeight: except(style.lineHeight, 'normal'),
+        letterSpacing: pixels(except(style.letterSpacing, 'normal')),
+        lineHeight: pixels(except(style.lineHeight, 'normal')),
         opacity: except(style.opacity, '1'),
         outline: unless(style.outline, style.outlineStyle === 'none'),
         overflow: except(style.overflow, 'visible'),
