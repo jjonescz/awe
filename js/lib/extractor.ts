@@ -1,5 +1,6 @@
 import { writeFile } from 'fs/promises';
 import { ElementHandle, Page } from 'puppeteer-core';
+import winston from 'winston';
 import { logger } from './logging';
 import { SwdePage } from './swde-page';
 import { addSuffix, replaceExtension } from './utils';
@@ -31,11 +32,41 @@ type DomData = TreeData;
 
 const CHILD_SELECTOR = '*';
 
+async function tryGetXPath(element: ElementHandle<Element>) {
+  try {
+    return await element.evaluate((e) => {
+      // Inspired by https://stackoverflow.com/a/30227178.
+      const getPathTo = (element: Element): string => {
+        let ix = 0;
+        const parent = element.parentNode;
+        const tagName = element.tagName.toLowerCase();
+        if (parent === null || !(parent instanceof Element))
+          return `/${tagName}`;
+        const siblings = parent.childNodes;
+        for (let i = 0; i < siblings.length; i++) {
+          const sibling = siblings[i];
+          if (sibling === element)
+            return `${getPathTo(parent)}/${tagName}[${ix + 1}]`;
+          if ((sibling as Element)?.tagName === element.tagName) ix++;
+        }
+        return `invalid(${tagName})`;
+      };
+      return getPathTo(e);
+    });
+  } catch (e) {
+    return `error(${(e as Error)?.message})`;
+  }
+}
+
 /** Can extract visual attributes from a Puppeteer-controlled page. */
 export class Extractor {
   public readonly data: DomData = {};
 
-  constructor(public readonly page: Page, public readonly swdePage: SwdePage) {}
+  constructor(
+    public readonly page: Page,
+    public readonly swdePage: SwdePage,
+    public readonly logger: winston.Logger
+  ) {}
 
   /** Extracts visual attributes for all DOM nodes in the {@link page}. */
   public async extract() {
@@ -49,7 +80,9 @@ export class Extractor {
       const { element, parent } = queue.shift()!;
 
       // Extract data for an element.
-      const { tagName, ...info } = await this.extractFor(element);
+      const result = await this.tryExtractFor(element);
+      if (result === null) continue;
+      const { tagName, ...info } = result;
 
       // Append this element's data to parent `DomData`.
       const container: NodeData = { ...info };
@@ -75,6 +108,18 @@ export class Extractor {
       // Add children to the queue.
       const children = await element.$x(CHILD_SELECTOR);
       queue.push(...children.map((e) => ({ element: e, parent: container })));
+    }
+  }
+
+  public async tryExtractFor(element: ElementHandle<Element>) {
+    try {
+      return await this.extractFor(element);
+    } catch (e) {
+      this.logger.error('extract failed', {
+        error: (e as Error)?.message,
+        element: await tryGetXPath(element),
+      });
+      return null;
     }
   }
 

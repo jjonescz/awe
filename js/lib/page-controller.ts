@@ -75,7 +75,11 @@ export class PageController {
     await this.page.withHtml(html).saveAs(htmlPath);
 
     // Extract visual attributes.
-    const extractor = new Extractor(this.pageScraper.page, this.page);
+    const extractor = new Extractor(
+      this.pageScraper.page,
+      this.page,
+      this.pageScraper.logger
+    );
     await extractor.extract();
     await extractor.save({ suffix });
 
