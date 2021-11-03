@@ -16,6 +16,7 @@ export const enum SwdeHandling {
 
 /** Browser navigator intercepting requests. */
 export class PageScraper {
+  private stopped = false;
   private readonly inProgress: Set<readonly [string, string]> = new Set();
   public swdeHandling = SwdeHandling.Offline;
 
@@ -56,9 +57,12 @@ export class PageScraper {
     try {
       await this.handleRequest(request);
     } catch (e) {
-      this.logger.error('request error', {
+      const message = (e as puppeteer.CustomError)?.message;
+      // Ignore aborted requests after `stop()` has been called.
+      const ignore = message === 'Target closed' && this.stopped;
+      this.logger.log(ignore ? 'debug' : 'error', 'request error', {
         url: request.url(),
-        error: (e as puppeteer.CustomError)?.message,
+        error: message,
       });
     }
   }
@@ -224,6 +228,10 @@ export class PageScraper {
   }
 
   public async start() {
+    if (this.stopped) {
+      throw new Error('Cannot start page scraper once stopped.');
+    }
+
     // Navigate to page's URL. This will be intercepted in `onRequest`.
     try {
       await this.page.goto(this.swdePage.url, {
@@ -240,6 +248,8 @@ export class PageScraper {
   }
 
   public async stop() {
+    this.stopped = true;
+
     // Go offline.
     await this.page.setOfflineMode(true);
 
