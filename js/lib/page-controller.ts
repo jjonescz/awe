@@ -66,11 +66,11 @@ export class PageController {
       stats: this.controller.scraper.stats,
     });
 
-    // Save local archive.
+    // Save local cache.
     await this.controller.scraper.save();
 
     if (version === ScrapeVersion.Latest && this.page.timestamp === null) {
-      // Couldn't find snapshot of this page in the archive, abort early.
+      // Couldn't find snapshot of this page in the WaybackMachine, abort early.
       return;
     }
 

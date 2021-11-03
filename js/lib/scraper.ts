@@ -1,5 +1,5 @@
 import puppeteer from 'puppeteer-core';
-import { Archive } from './archive';
+import { Cache } from './cache';
 import { logger } from './logging';
 import { PageScraper } from './page-scraper';
 import { ScrapingStats } from './scraping-stats';
@@ -10,7 +10,7 @@ import { Wayback } from './wayback';
 export class Scraper {
   /** Allow live (online) requests if needed? */
   public allowLive = true;
-  /** Load and save requests locally (in {@link Archive})? */
+  /** Load and save requests locally (in {@link Cache})? */
   public allowOffline = true;
   /** Force retry of all live (online) requests. */
   public forceLive = false;
@@ -19,7 +19,7 @@ export class Scraper {
   private constructor(
     public readonly wayback: Wayback,
     public readonly browser: puppeteer.Browser,
-    public readonly archive: Archive
+    public readonly cache: Cache
   ) {}
 
   public static async create() {
@@ -41,14 +41,14 @@ export class Scraper {
       executablePath: 'google-chrome-stable',
     });
 
-    // Open file archive.
-    const archive = await Archive.create();
+    // Open local cache.
+    const cache = await Cache.create();
 
     // Load WaybackMachine API cache.
     const wayback = new Wayback();
     await wayback.loadResponses();
 
-    return new Scraper(wayback, browser, archive);
+    return new Scraper(wayback, browser, cache);
   }
 
   public async for(swdePage: SwdePage) {
@@ -57,7 +57,7 @@ export class Scraper {
 
   public async save() {
     logger.debug('saving data');
-    await this.archive.save();
+    await this.cache.save();
     await this.wayback.saveResponses();
   }
 

@@ -112,7 +112,7 @@ export class PageScraper {
   }
 
   /**
-   * Serves request either from local archive or redirects it to WaybackMachine.
+   * Serves request either from local cache or redirects it to WaybackMachine.
    */
   private async handleExternalRequest(
     request: puppeteer.HTTPRequest,
@@ -120,7 +120,7 @@ export class PageScraper {
   ) {
     const offline =
       this.scraper.allowOffline && !this.scraper.forceLive
-        ? await this.scraper.archive.get(request.url(), timestamp)
+        ? await this.scraper.cache.get(request.url(), timestamp)
         : undefined;
     if (offline) {
       await this.handleOfflineRequest(request, timestamp, offline);
@@ -153,7 +153,7 @@ export class PageScraper {
     }
   }
 
-  /** Handles request from local archive. */
+  /** Handles request from local cache. */
   private async handleOfflineRequest(
     request: puppeteer.HTTPRequest,
     timestamp: string,
@@ -161,7 +161,7 @@ export class PageScraper {
   ) {
     this.logger.debug('offline request', {
       url: request.url(),
-      hash: this.scraper.archive.getHash(request.url(), timestamp),
+      hash: this.scraper.cache.getHash(request.url(), timestamp),
     });
     await request.respond(offline);
     this.addToStats(offline);
@@ -199,7 +199,7 @@ export class PageScraper {
     this.logger.debug('response', { url: response.url() });
     const body = await response.buffer();
     const headers = response.headers();
-    const archived: puppeteer.ResponseForRequest = {
+    const cached: puppeteer.ResponseForRequest = {
       status: response.status(),
       headers,
       contentType: headers['Content-Type'],
@@ -208,10 +208,10 @@ export class PageScraper {
     if (!this.inProgress.delete(inProgressEntry))
       throw new Error(`Failed to delete ${request.url()} (${timestamp})`);
     if (this.scraper.allowOffline)
-      await this.scraper.archive.add(request.url(), timestamp, archived, {
+      await this.scraper.cache.add(request.url(), timestamp, cached, {
         force: this.scraper.forceLive,
       });
-    this.addToStats(archived);
+    this.addToStats(cached);
     this.scraper.stats.live++;
   }
 
@@ -247,7 +247,7 @@ export class PageScraper {
       this.logger.debug('unhandled', { url, timestamp });
 
       // Save as "aborted" for the next time.
-      await this.scraper.archive.add(url, timestamp, null, {
+      await this.scraper.cache.add(url, timestamp, null, {
         force: this.scraper.forceLive,
       });
       this.scraper.stats.aborted++;

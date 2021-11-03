@@ -3,12 +3,12 @@ import { existsSync } from 'fs';
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import { ResponseForRequest } from 'puppeteer-core';
-import { ARCHIVE_DIR } from './constants';
+import { CACHE_DIR } from './constants';
 import { logger } from './logging';
 import { tryReadFile } from './utils';
 
-const ARCHIVE_FILES_FOLDER = path.join(ARCHIVE_DIR, 'files');
-const ARCHIVE_MAP_PATH = path.join(ARCHIVE_DIR, 'map.json');
+const CACHE_FILES_FOLDER = path.join(CACHE_DIR, 'files');
+const CACHE_MAP_PATH = path.join(CACHE_DIR, 'map.json');
 
 /** In-memory variant of {@link ResponseForRequest}. */
 export interface FileResponse {
@@ -18,7 +18,8 @@ export interface FileResponse {
   hash: string;
 }
 
-export class Archive {
+/** Cache of responses for URLs. */
+export class Cache {
   private constructor(
     /** Map from URL to {@link FileResponse}. */
     private readonly map: Record<string, FileResponse | null>
@@ -26,9 +27,9 @@ export class Archive {
 
   public static async create() {
     // Prepare storage.
-    await mkdir(ARCHIVE_FILES_FOLDER, { recursive: true });
-    const mapJson = await tryReadFile(ARCHIVE_MAP_PATH, '{}');
-    return new Archive(JSON.parse(mapJson));
+    await mkdir(CACHE_FILES_FOLDER, { recursive: true });
+    const mapJson = await tryReadFile(CACHE_MAP_PATH, '{}');
+    return new Cache(JSON.parse(mapJson));
   }
 
   public async get(
@@ -56,7 +57,7 @@ export class Archive {
     if (this.map[key] && !force) {
       // Note that we don't want this error to be thrown when `this.map[url] ===
       // null` (then, we want to overwrite it).
-      throw new Error(`URL already exists in the map: ${url} (${timestamp})`);
+      throw new Error(`URL already exists in the cache: ${url} (${timestamp})`);
     }
 
     // Store `null` to indicate this request is "in progress".
@@ -103,11 +104,11 @@ export class Archive {
   /** Saves file map. */
   public async save() {
     const mapJson = JSON.stringify(this.map);
-    await writeFile(ARCHIVE_MAP_PATH, mapJson, { encoding: 'utf-8' });
+    await writeFile(CACHE_MAP_PATH, mapJson, { encoding: 'utf-8' });
   }
 
   private getPath(hash: string) {
-    return path.join(ARCHIVE_FILES_FOLDER, hash);
+    return path.join(CACHE_FILES_FOLDER, hash);
   }
 
   private stringifyKey(url: string, timestamp: string) {
