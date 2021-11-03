@@ -1,6 +1,7 @@
 import progress from 'cli-progress';
 import path from 'path';
 import { from, lastValueFrom, mergeMap } from 'rxjs';
+import { SWDE_DIR } from './constants';
 import { PageController } from './page-controller';
 import { Scraper } from './scraper';
 
@@ -35,7 +36,10 @@ export class Controller {
       mergeMap(
         async (file) => {
           // Show stats.
-          bar?.update({ file, stats: this.scraper.stats.toString() });
+          bar?.update({
+            file: path.relative(SWDE_DIR, file),
+            stats: this.scraper.stats.toString(),
+          });
 
           // Execute `PageController`.
           const fullPath = path.resolve(file);
