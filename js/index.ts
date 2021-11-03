@@ -76,10 +76,12 @@ class Program extends Command {
     // Find pages to process.
     const fullGlob = path.resolve('.', flags.globPattern);
     const allFiles = await glob(fullGlob);
-    const files = allFiles.slice(
-      flags.skip,
-      flags.maxNumber === undefined ? undefined : flags.skip + flags.maxNumber
-    );
+    const files = allFiles
+      .sort()
+      .slice(
+        flags.skip,
+        flags.maxNumber === undefined ? undefined : flags.skip + flags.maxNumber
+      );
 
     // Apply CLI flags.
     if (flags.offlineMode) scraper.allowLive = false;
