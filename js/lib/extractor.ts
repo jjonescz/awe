@@ -31,6 +31,23 @@ type DomData = TreeData;
 
 const CHILD_SELECTOR = '*';
 
+const ALL_SIDES = ['Left', 'Top', 'Right', 'Bottom'] as const;
+
+/** Computed style properties to extract for each element. */
+const STYLE_KEYS: (keyof CSSStyleDeclaration)[] = [
+  'fontFamily',
+  'fontSize',
+  'fontWeight',
+  'fontStyle',
+  'textAlign',
+  'textDecoration',
+  'color',
+  'backgroundColor',
+  ...ALL_SIDES.map((s) => `border${s}Width` as const),
+  ...ALL_SIDES.map((s) => `border${s}Style` as const),
+  ...ALL_SIDES.map((s) => `border${s}Color` as const),
+];
+
 /** Can extract visual attributes from a Puppeteer-controlled page. */
 export class Extractor {
   public readonly data: DomData = {};
@@ -82,13 +99,27 @@ export class Extractor {
   public async extractFor(
     element: ElementHandle<Element>
   ): Promise<ElementInfo> {
-    const evaluated = await element.evaluate((e) => {
+    // Run code in browser to get element's attributes.
+    const evaluated = await element.evaluate((e, style_keys) => {
+      // Pick `STYLE_KEYS` from element's computed style. Note that we cannot
+      // reference outside functions easily, hence we define them here.
+      const style = getComputedStyle(e);
+      const pick = <T>(obj: T, ...keys: (keyof T)[]) =>
+        Object.fromEntries(keys.map((key) => [key, obj[key]]));
+      const picked = pick(style, ...style_keys);
+
+      // Construct `ElementInfo`.
       return {
         id: e.getAttribute('id') ?? undefined,
         tagName: e.nodeName.toLowerCase(),
+        ...picked,
       };
-    });
+    }, STYLE_KEYS);
+
+    // Get other attributes that don't directly need browser context.
     const box = await element.boundingBox();
+
+    // Combine all element attributes together.
     return {
       ...evaluated,
       box: box === null ? undefined : [box.x, box.y, box.width, box.height],
