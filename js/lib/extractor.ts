@@ -197,7 +197,10 @@ export class Extractor {
         color: color(style.color),
         backgroundColor: except(color(style.backgroundColor), '#00000000'),
         backgroundImage: except(style.backgroundImage, 'none'),
-        border: unless(style.border, style.borderStyle === 'none'),
+        border: unless(
+          style.border,
+          style.borderStyle === 'none' || style.borderWidth === '0px'
+        ),
         boxShadow: except(style.boxShadow, 'none'),
         cursor: except(style.cursor, 'auto'),
         letterSpacing: pixels(except(style.letterSpacing, 'normal')),
