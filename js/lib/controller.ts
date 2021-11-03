@@ -24,7 +24,7 @@ export class Controller {
     const bar = showProgressBar
       ? new progress.SingleBar({
           format:
-            'progress [{bar}] {percentage}% | ETA: {eta_formatted} | ' +
+            '[{bar}] {percentage}% | ETA: {eta_formatted} | ' +
             '{value}/{total} | {stats} | {file}',
         })
       : null;
