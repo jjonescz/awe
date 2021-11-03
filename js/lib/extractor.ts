@@ -10,6 +10,9 @@ type TreeData = {
   [key: `/${string}`]: NodeData;
 };
 
+/** A-RGB color. */
+type Color = `#${number}${number}${number}${number}`;
+
 /** Visual attributes for one DOM node. */
 type ElementData = {
   /** Bounding box (x, y, width, height). */
@@ -18,6 +21,7 @@ type ElementData = {
   id?: string;
   /** Font size in pixels. @default 16 */
   fontSize?: number;
+  backgroundColor?: Color;
 };
 
 type NodeData = TreeData & ElementData;
@@ -133,20 +137,47 @@ export class Extractor {
     const evaluated = await element.evaluate((e) => {
       // Note that we cannot reference outside functions easily, hence we define
       // them here.
+
+      /** Omits {@link value} if {@link condition} is met. */
       const unless = <T>(value: T, condition: boolean) => {
         if (condition) return undefined;
         if (value === undefined)
           throw new Error('Ambiguous attribute value undefined.');
         return value;
       };
+
+      /** Omits {@link value} if it's equal to {@link defaultValue}. */
       const except = <T>(value: T, defaultValue: T) => {
         return unless(value, value === defaultValue);
       };
+
+      /** Parses CSS pixels. */
       const pixels = (value: string) => {
         const match = value.match(/^(.+)(px)?$/);
-        if (match === null)
-          throw new Error(`Cannot convert to pixels: '${value}'`);
+        if (match === null) throw new Error(`Cannot parse pixels: '${value}'`);
         return parseInt(match[1]);
+      };
+
+      const toHex = (value: number) => {
+        return value.toString(16).padStart(2, '0') as `${number}`;
+      };
+
+      /** Parses CSS color. */
+      const color = (value: string) => {
+        // Remove whitespace.
+        value = value.replaceAll(/\s+/g, '');
+
+        // Parse `rgb(r,g,b)` and `rgba(r,g,b,a)` patterns.
+        const match = value.match(/^rgba?\((\d+),(\d+),(\d+)(,([0-9.]+))?\)$/);
+        if (match === null) throw new Error(`Cannot parse color: '${value}'`);
+        const [_full, r, g, b, _last, a] = match;
+
+        // Stringify color to common hex format.
+        const rh = toHex(parseInt(r));
+        const gh = toHex(parseInt(g));
+        const bh = toHex(parseInt(b));
+        const ah = toHex(255 * parseFloat(a ?? '1'));
+        return `#${rh}${gh}${bh}${ah}` as const;
       };
 
       // Pick some properties from element's computed style.
@@ -161,8 +192,8 @@ export class Extractor {
           style.textDecoration,
           style.textDecorationLine === 'none'
         ),
-        color: style.color,
-        backgroundColor: except(style.backgroundColor, 'rgba(0, 0, 0, 0)'),
+        color: color(style.color),
+        backgroundColor: except(color(style.backgroundColor), '#00000000'),
         backgroundImage: except(style.backgroundImage, 'none'),
         border: unless(style.border, style.borderStyle === 'none'),
         boxShadow: except(style.boxShadow, 'none'),
