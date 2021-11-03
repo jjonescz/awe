@@ -182,6 +182,51 @@ export class Extractor {
         return `#${rh}${gh}${bh}${ah}` as const;
       };
 
+      /** Parses one border property. */
+      const borderProp = <T>(
+        style: CSSStyleDeclaration,
+        name: string,
+        selector: (value: string) => T,
+        defaultValue?: T
+      ) => {
+        const value = selector(style.getPropertyValue(name));
+        if (value === defaultValue) return null;
+        return {
+          [name]: value,
+        };
+      };
+
+      /** Parses one side of a border. */
+      const borderSide = (style: CSSStyleDeclaration, prefix: string) => {
+        const borderWidth = borderProp(style, `${prefix}-width`, pixels, 0);
+        const borderStyle = borderProp(
+          style,
+          `${prefix}-style`,
+          (x) => x,
+          'none'
+        );
+        const borderColor = borderProp(style, `${prefix}-color`, color);
+
+        // Ignore invisible borders.
+        if (borderWidth === null || borderStyle === null) return {};
+
+        return {
+          ...(borderWidth ?? {}),
+          ...(borderStyle ?? {}),
+          ...borderColor,
+        };
+      };
+
+      /** Parses border. */
+      const border = (style: CSSStyleDeclaration, prefix = 'border') => {
+        return {
+          ...borderSide(style, `${prefix}-left`),
+          ...borderSide(style, `${prefix}-top`),
+          ...borderSide(style, `${prefix}-right`),
+          ...borderSide(style, `${prefix}-bottom`),
+        };
+      };
+
       // Pick some properties from element's computed style.
       const style = getComputedStyle(e);
       const picked = {
@@ -197,10 +242,7 @@ export class Extractor {
         color: color(style.color),
         backgroundColor: except(color(style.backgroundColor), '#00000000'),
         backgroundImage: except(style.backgroundImage, 'none'),
-        border: unless(
-          style.border,
-          style.borderStyle === 'none' || style.borderWidth === '0px'
-        ),
+        ...border(style),
         boxShadow: except(style.boxShadow, 'none'),
         cursor: except(style.cursor, 'auto'),
         letterSpacing: pixels(except(style.letterSpacing, 'normal')),
