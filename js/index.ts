@@ -1,5 +1,4 @@
 import { Command, flags } from '@oclif/command';
-import { handle } from '@oclif/errors';
 import glob from 'fast-glob';
 import path from 'path';
 import { SWDE_DIR } from './lib/constants';
@@ -91,4 +90,4 @@ class Program extends Command {
   }
 }
 
-Program.run().then(null, handle);
+Program.run();
