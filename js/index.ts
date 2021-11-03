@@ -51,6 +51,11 @@ class Program extends Command {
       char: 'p',
       description: 'disable progress bar',
     }),
+    jobs: flags.integer({
+      char: 'j',
+      description: 'number of jobs to run in parallel',
+      default: 1,
+    }),
   };
 
   async run() {
@@ -78,6 +83,7 @@ class Program extends Command {
     try {
       await controller.scrapeAll(files, {
         showProgressBar: !flags.noProgress,
+        jobs: flags.jobs,
       });
     } finally {
       await scraper.dispose();

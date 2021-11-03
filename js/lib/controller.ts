@@ -16,7 +16,10 @@ export class Controller {
   }
 
   /** Scrapes all SWDE page {@link files}. */
-  public async scrapeAll(files: string[], { showProgressBar = true } = {}) {
+  public async scrapeAll(
+    files: string[],
+    { showProgressBar = true, jobs = 1 } = {}
+  ) {
     // Prepare progress bar.
     const bar = showProgressBar
       ? new progress.SingleBar({
@@ -47,7 +50,7 @@ export class Controller {
           bar?.increment();
         },
         // Run this number of scrapers in parallel.
-        3
+        jobs
       )
     );
     await lastValueFrom(observable, { defaultValue: null });
