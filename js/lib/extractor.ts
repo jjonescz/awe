@@ -31,19 +31,6 @@ type DomData = TreeData;
 
 const CHILD_SELECTOR = '*';
 
-/** Computed style properties to extract for each element. */
-const STYLE_KEYS: (keyof CSSStyleDeclaration)[] = [
-  'fontFamily',
-  'fontSize',
-  'fontWeight',
-  'fontStyle',
-  'textAlign',
-  'textDecoration',
-  'color',
-  'backgroundColor',
-  'border',
-];
-
 /** Can extract visual attributes from a Puppeteer-controlled page. */
 export class Extractor {
   public readonly data: DomData = {};
@@ -96,13 +83,26 @@ export class Extractor {
     element: ElementHandle<Element>
   ): Promise<ElementInfo> {
     // Run code in browser to get element's attributes.
-    const evaluated = await element.evaluate((e, style_keys) => {
-      // Pick `STYLE_KEYS` from element's computed style. Note that we cannot
-      // reference outside functions easily, hence we define them here.
+    const evaluated = await element.evaluate((e) => {
+      // Note that we cannot reference outside functions easily, hence we define
+      // them here.
+      const unless = <T>(value: T, defaultValue: T) =>
+        value === defaultValue ? undefined : value;
+
+      // Pick some properties from element's computed style.
       const style = getComputedStyle(e);
-      const pick = <T>(obj: T, ...keys: (keyof T)[]) =>
-        Object.fromEntries(keys.map((key) => [key, obj[key]]));
-      const picked = pick(style, ...style_keys);
+      const picked = {
+        fontFamily: style.fontFamily,
+        fontSize: style.fontSize,
+        fontWeight: style.fontWeight,
+        fontStyle: unless(style.fontStyle, 'normal'),
+        textAlign: style.textAlign,
+        textDecoration: style.textDecoration,
+        color: style.color,
+        backgroundColor: style.backgroundColor,
+        backgroundImage: unless(style.backgroundImage, 'none'),
+        border: style.border,
+      };
 
       // Construct `ElementInfo`.
       return {
@@ -110,7 +110,7 @@ export class Extractor {
         tagName: e.nodeName.toLowerCase(),
         ...picked,
       };
-    }, STYLE_KEYS);
+    });
 
     // Get other attributes that don't directly need browser context.
     const box = await element.boundingBox();
