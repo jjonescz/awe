@@ -34,10 +34,16 @@ class Program extends Command {
       description: 'equivalent of `--logLevel=verbose`',
       exclusive: ['logLevel'],
     }),
+    baseDir: flags.string({
+      char: 'd',
+      description: 'base directory for `--globPattern`',
+      default: path.relative('.', SWDE_DIR),
+    }),
     globPattern: flags.string({
       char: 'g',
       description: 'files to process',
-      default: path.relative('.', path.join(SWDE_DIR, '**/????.htm')),
+      default: '**/????.htm',
+      dependsOn: ['baseDir'],
     }),
     screenshot: flags.boolean({
       char: 't',
@@ -75,7 +81,8 @@ class Program extends Command {
     const controller = new Controller(scraper);
 
     // Find pages to process.
-    const fullGlob = path.resolve('.', flags.globPattern);
+    const fullPattern = path.join(flags.baseDir, flags.globPattern);
+    const fullGlob = path.resolve('.', fullPattern);
     const allFiles = await glob(fullGlob);
     const files = allFiles
       .sort()
