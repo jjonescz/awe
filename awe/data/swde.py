@@ -10,7 +10,8 @@ from tqdm.auto import tqdm
 from awe import awe_graph, html_utils, utils, visual
 from awe.data import constants
 
-URL = 'https://codeplexarchive.blob.core.windows.net/archive/projects/swde/swde.zip'
+URL = 'https://web.archive.org/web/20210630013015id_/' + \
+'https://codeplexarchive.blob.core.windows.net/archive/projects/swde/swde.zip'
 ZIP = f'{constants.DATA_DIR}/swde.zip'
 DIR = f'{constants.DATA_DIR}/swde'
 DATA_DIR = f'{DIR}/data'
