@@ -1,4 +1,5 @@
 import json
+from typing import Callable, Optional, TypeVar
 
 from awe import awe_graph
 
@@ -38,15 +39,19 @@ class DomData:
             assert real_id == extracted_id, f'IDs of {node.xpath} do not ' + \
                 f'match ("{real_id}" vs "{extracted_id}").'
 
-        def load_attribute(snake_case: str, camel_case: str):
-            val = node_data.get(camel_case)
-            if val is not None:
-                setattr(node, snake_case, val)
-
         # Load `node_data` into `node`.
-        box = node_data.get('box')
-        if box is not None:
-            node.box = awe_graph.BoundingBox(box[0], box[1], box[2], box[3])
+        T = TypeVar('T')
+        def load_attribute(
+            snake_case: str,
+            camel_case: Optional[str] = None,
+            selector: Callable[[str], T] = lambda x: x
+        ):
+            val = node_data.get(camel_case or snake_case)
+            if val is not None:
+                setattr(node, snake_case, selector(val))
+
+        load_attribute('box',
+            selector=lambda b: awe_graph.BoundingBox(b[0], b[1], b[2], b[3]))
         load_attribute('font_family', 'fontFamily')
         return True
 
