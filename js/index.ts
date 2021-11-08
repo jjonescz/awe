@@ -1,4 +1,5 @@
 import { Command, flags } from '@oclif/command';
+import { ExitError } from '@oclif/errors/lib/errors/exit';
 import glob from 'fast-glob';
 import path from 'path';
 import { SWDE_DIR } from './lib/constants';
@@ -100,4 +101,14 @@ class Program extends Command {
   }
 }
 
-Program.run();
+(async () => {
+  try {
+    await Program.run();
+  } catch (e) {
+    if (e instanceof ExitError) {
+      process.exit(e.oclif.exit);
+    } else {
+      throw e;
+    }
+  }
+})();
