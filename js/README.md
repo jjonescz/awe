@@ -19,3 +19,12 @@ pnpm start -- --help
 4. Visual attributes are computed for each element in the page and saved
    alongside each page to a JSON file which is later loaded by the Python
    machine learning code.
+
+## Development
+
+To debug with parameters, open JavaScript Debug Terminal in Visual Studio Code
+and start your command with:
+
+```bash
+node -r ts-node/register/transpile-only index.ts
+```
