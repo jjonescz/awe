@@ -58,5 +58,6 @@ class DomData:
             current_data = current_data.get(f'/{element}')
             if current_data is None:
                 current_xpath = '/'.join(elements[:index + 1])
-                raise RuntimeError(f'Cannot find element at /{current_xpath}')
+                raise RuntimeError(
+                    f'Cannot find visual attributes for /{current_xpath}')
         return current_data
