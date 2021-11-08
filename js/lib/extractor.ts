@@ -198,7 +198,11 @@ export class Extractor {
       };
 
       /** Parses one side of a border. */
-      const borderSide = (style: CSSStyleDeclaration, prefix: string) => {
+      const borderSide = (
+        style: CSSStyleDeclaration,
+        prefix: string,
+        name = prefix
+      ) => {
         if (
           style.getPropertyValue(`${prefix}-width`) === '0px' ||
           style.getPropertyValue(`${prefix}-style`) === 'none' ||
@@ -208,7 +212,7 @@ export class Extractor {
           return {};
         }
         return {
-          [prefix]: style.getPropertyValue(prefix),
+          [name]: style.getPropertyValue(prefix),
         };
       };
 
@@ -222,10 +226,10 @@ export class Extractor {
         // Otherwise, `border` will be empty string and we must process each
         // side separately.
         return {
-          ...borderSide(style, `${prefix}-left`),
-          ...borderSide(style, `${prefix}-top`),
-          ...borderSide(style, `${prefix}-right`),
-          ...borderSide(style, `${prefix}-bottom`),
+          ...borderSide(style, `${prefix}-left`, `${prefix}Left`),
+          ...borderSide(style, `${prefix}-top`, `${prefix}Top`),
+          ...borderSide(style, `${prefix}-right`, `${prefix}Right`),
+          ...borderSide(style, `${prefix}-bottom`, `${prefix}Bottom`),
         };
       };
 
