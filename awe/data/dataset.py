@@ -1,10 +1,8 @@
 from typing import Callable, Optional
 
-import joblib
 import torch
 from torch_geometric import data as gdata
 from torch_geometric import loader
-from tqdm.auto import tqdm
 
 from awe import awe_graph, features, utils
 
@@ -15,7 +13,7 @@ class Dataset:
     pages: dict[str, list[awe_graph.HtmlPage]] = {}
     loaders: dict[str, loader.DataLoader] = {}
     parallelize = 2
-    node_predicate: Callable[[awe_graph.HtmlNode], bool] = None
+    node_predicate: Optional[Callable[[awe_graph.HtmlNode], bool]] = None
 
     def __init__(self, fs: list[features.Feature]):
         self.features = fs
