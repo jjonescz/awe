@@ -45,7 +45,7 @@ async function tryGetXPath(element: ElementHandle<Element>) {
       const getPathTo = (element: Element): string => {
         let ix = 0;
         const parent = element.parentNode;
-        const tagName = element.tagName.toLowerCase();
+        const tagName = element.nodeName.toLowerCase();
         if (parent === null || !(parent instanceof Element))
           return `/${tagName}`;
         const siblings = parent.childNodes;
