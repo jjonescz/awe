@@ -57,12 +57,12 @@ export class PageScraper {
     try {
       await this.handleRequest(request);
     } catch (e) {
-      const message = (e as puppeteer.CustomError)?.message;
+      const error = e as Error;
       // Ignore aborted requests after `stop()` has been called.
-      const ignore = message === 'Target closed' && this.stopped;
+      const ignore = error?.message === 'Target closed' && this.stopped;
       this.logger.log(ignore ? 'debug' : 'error', 'request error', {
         url: request.url(),
-        error: message,
+        error: error?.stack,
       });
     }
   }
