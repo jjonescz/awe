@@ -182,56 +182,45 @@ export class Extractor {
         return `#${rh}${gh}${bh}${ah}` as const;
       };
 
+      const isTransparent = (value: string) => {
+        return isTransparentHex(color(value));
+      };
+
+      const isTransparentHex = (value: Color) => {
+        return value.endsWith('00');
+      };
+
       /** Parses CSS color, but returns `undefined` if it's transparent. */
       const visibleColor = (value: string) => {
         const parsed = color(value);
-        if (parsed.endsWith('00')) return undefined;
+        if (isTransparentHex(parsed)) return undefined;
         return parsed;
-      };
-
-      /** Parses one border property. */
-      const borderProp = <T>(
-        style: CSSStyleDeclaration,
-        name: string,
-        selector: (value: string) => T,
-        defaultValue?: T
-      ) => {
-        const value = selector(style.getPropertyValue(name));
-        if (value === defaultValue) return null;
-        return {
-          [name]: value,
-        };
       };
 
       /** Parses one side of a border. */
       const borderSide = (style: CSSStyleDeclaration, prefix: string) => {
-        const borderWidth = borderProp(style, `${prefix}-width`, pixels, 0);
-        const borderStyle = borderProp(
-          style,
-          `${prefix}-style`,
-          (x) => x,
-          'none'
-        );
-        const borderColor = borderProp(style, `${prefix}-color`, visibleColor);
-
-        // Ignore invisible borders.
         if (
-          borderWidth === null ||
-          borderStyle === null ||
-          borderColor === null
+          style.getPropertyValue(`${prefix}-width`) === '0px' ||
+          style.getPropertyValue(`${prefix}-style`) === 'none' ||
+          isTransparent(style.getPropertyValue(`${prefix}-color`))
         ) {
+          // Ignore invisible borders.
           return {};
         }
-
         return {
-          ...(borderWidth ?? {}),
-          ...(borderStyle ?? {}),
-          ...(borderColor ?? {}),
+          [prefix]: style.getPropertyValue(prefix),
         };
       };
 
       /** Parses border. */
       const border = (style: CSSStyleDeclaration, prefix = 'border') => {
+        // If the border is same on each side, it will be in `border` property.
+        if (style.getPropertyValue(prefix) !== '') {
+          return borderSide(style, prefix);
+        }
+
+        // Otherwise, `border` will be empty string and we must process each
+        // side separately.
         return {
           ...borderSide(style, `${prefix}-left`),
           ...borderSide(style, `${prefix}-top`),
