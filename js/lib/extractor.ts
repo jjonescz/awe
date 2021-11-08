@@ -11,7 +11,7 @@ type TreeData = {
 };
 
 /** A-RGB color. */
-type Color = `#${number}${number}${number}${number}`;
+type Color = `#${string}${string}${string}${string}`;
 
 /** Visual attributes for one DOM node. */
 type ElementData = {
@@ -161,7 +161,7 @@ export class Extractor {
       };
 
       const toHex = (value: number) => {
-        return value.toString(16).padStart(2, '0') as `${number}`;
+        return value.toString(16).padStart(2, '0') as `${string}`;
       };
 
       /** Parses CSS color. */
@@ -243,7 +243,7 @@ export class Extractor {
       // Pick some properties from element's computed style.
       const style = getComputedStyle(e);
       const picked = {
-        fontFamily: style.fontFamily,
+        fontFamily: except(style.fontFamily, '"Times New Roman"'),
         fontSize: except(pixels(style.fontSize), 16),
         fontWeight: except(style.fontWeight, '400'),
         fontStyle: except(style.fontStyle, 'normal'),
@@ -252,7 +252,7 @@ export class Extractor {
           style.textDecoration,
           style.textDecorationLine === 'none'
         ),
-        color: color(style.color),
+        color: except(color(style.color), '#000000ff'),
         backgroundColor: visibleColor(style.backgroundColor),
         backgroundImage: except(style.backgroundImage, 'none'),
         ...border(style),
