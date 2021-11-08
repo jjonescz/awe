@@ -31,6 +31,11 @@ export class Controller {
         })
       : null;
     bar?.start(files.length, 0, { details: 'starting...' });
+    const showStats = (...stats: string[]) => {
+      bar?.update({
+        details: stats.filter((s) => s?.length).join(' | '),
+      });
+    };
 
     // Scrape every page.
     const startTime = process.hrtime();
@@ -38,14 +43,10 @@ export class Controller {
       mergeMap(
         async (file) => {
           // Show stats.
-          bar?.update({
-            details: [
-              this.scraper.stats.toString(),
-              path.relative(SWDE_DIR, file),
-            ]
-              .filter((s) => s?.length)
-              .join(' | '),
-          });
+          showStats(
+            this.scraper.stats.toString(),
+            path.relative(SWDE_DIR, file)
+          );
 
           // Execute `PageController`.
           const fullPath = path.resolve(file);
@@ -67,12 +68,7 @@ export class Controller {
 
     // Show final stats.
     const duration = process.hrtime(startTime);
-    bar?.update({
-      details: [
-        this.scraper.stats.toString(),
-        secondsToTimeString(duration[0]),
-      ].join(' | '),
-    });
+    showStats(this.scraper.stats.toString(), secondsToTimeString(duration[0]));
 
     bar?.stop();
   }
