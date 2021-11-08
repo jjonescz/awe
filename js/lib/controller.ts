@@ -2,6 +2,7 @@ import progress from 'cli-progress';
 import path from 'path';
 import { from, lastValueFrom, mergeMap } from 'rxjs';
 import { SWDE_DIR } from './constants';
+import { logger } from './logging';
 import { PageController } from './page-controller';
 import { Scraper } from './scraper';
 import { secondsToTimeString } from './utils';
@@ -20,7 +21,7 @@ export class Controller {
   /** Scrapes all SWDE page {@link files}. */
   public async scrapeAll(
     files: string[],
-    { showProgressBar = true, jobs = 1 } = {}
+    { showProgressBar = true, jobs = 1, continueOnError = false } = {}
   ) {
     // Prepare progress bar.
     const bar = showProgressBar
@@ -49,12 +50,23 @@ export class Controller {
           );
 
           // Execute `PageController`.
-          const fullPath = path.resolve(file);
-          const pageController = await this.for(fullPath);
           try {
-            await pageController.scrapeBoth(file);
-          } finally {
-            await pageController.close();
+            const fullPath = path.resolve(file);
+            const pageController = await this.for(fullPath);
+            try {
+              await pageController.scrapeBoth(file);
+            } finally {
+              await pageController.close();
+            }
+          } catch (e) {
+            if (continueOnError) {
+              logger.error('ignoring page controller error', {
+                file,
+                error: (e as Error)?.stack,
+              });
+            } else {
+              throw e;
+            }
           }
 
           // Update progress bar.

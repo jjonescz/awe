@@ -67,6 +67,10 @@ class Program extends Command {
       description: 'number of jobs to run in parallel',
       default: 1,
     }),
+    continueOnError: flags.boolean({
+      char: 'c',
+      description: 'log errors but continue with other pages if possible',
+    }),
   };
 
   async run() {
@@ -101,6 +105,7 @@ class Program extends Command {
       await controller.scrapeAll(files, {
         showProgressBar: !flags.noProgress,
         jobs: flags.jobs,
+        continueOnError: flags.continueOnError,
       });
     } finally {
       await scraper.dispose();
