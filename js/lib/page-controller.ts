@@ -39,10 +39,7 @@ export class PageController {
   }
 
   /** Scrapes {@link SwdePage} determined by {@link fullPath}. */
-  public async scrape(
-    fullPath: string,
-    { version = ScrapeVersion.Exact } = {}
-  ) {
+  public async scrape(fullPath: string, version: ScrapeVersion) {
     // Configure page scraper.
     this.pageScraper.swdeHandling = scrapeVersionToSwdeHandling(version);
 
@@ -99,12 +96,6 @@ export class PageController {
       path: screenshotPath,
       fullPage: fullPage,
     });
-  }
-
-  /** Scrapes old and new versions of {@link SwdePage} at {@link fullPath}. */
-  public async scrapeBoth(fullPath: string) {
-    await this.scrape(fullPath, { version: ScrapeVersion.Exact });
-    //await this.scrape(fullPath, { version: ScrapeVersion.Latest });
   }
 
   public async close() {

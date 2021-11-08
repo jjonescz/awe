@@ -3,7 +3,7 @@ import path from 'path';
 import { from, lastValueFrom, mergeMap } from 'rxjs';
 import { SWDE_DIR } from './constants';
 import { logger } from './logging';
-import { PageController } from './page-controller';
+import { PageController, ScrapeVersion } from './page-controller';
 import { Scraper } from './scraper';
 import { secondsToTimeString } from './utils';
 
@@ -52,11 +52,13 @@ export class Controller {
           // Execute `PageController`.
           try {
             const fullPath = path.resolve(file);
-            const pageController = await this.for(fullPath);
-            try {
-              await pageController.scrapeBoth(file);
-            } finally {
-              await pageController.close();
+            for (const version of [ScrapeVersion.Exact, ScrapeVersion.Latest]) {
+              const pageController = await this.for(fullPath);
+              try {
+                await pageController.scrape(file, version);
+              } finally {
+                await pageController.close();
+              }
             }
           } catch (e) {
             if (continueOnError) {
