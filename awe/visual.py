@@ -7,7 +7,7 @@ from awe import awe_graph
 class DomData:
     """Can load visual attributes saved by `extractor.ts`."""
 
-    data = {}
+    data: dict[str, Any] = {}
 
     def __init__(self, path: str):
         self.path = path
@@ -25,8 +25,33 @@ class DomData:
         for node in nodes:
             self.load_one(node)
 
+        # Check that all extracted data were used.
+        queue = [(self.data, '', None)]
+        def get_xpath(tag_name: str, parent, suffix = ''):
+            """Utility for reconstructing XPath in case of error."""
+            xpath = f'{tag_name}{suffix}'
+            if parent is not None:
+                return get_xpath(parent[1], parent[2], xpath)
+            return xpath
+        while len(queue) > 0:
+            item = queue.pop()
+            node_data, tag_name, parent = item
+
+            # Check this entry has node attached to it (so `load_one` was called
+            # on it).
+            node = node_data.get('_node')
+            if node is None and tag_name != '':
+                raise RuntimeError('Unused visual attributes for ' + \
+                    f'{get_xpath(tag_name, parent)}')
+
+            # Add children to queue.
+            for child_name, child_data in node_data.items():
+                if child_name.startswith('/'):
+                    queue.insert(0, (child_data, child_name, item))
+
     def load_one(self, node: awe_graph.HtmlNode):
         node_data = self.find(node.xpath)
+        node_data['_node'] = node
 
         # Check that IDs match.
         if not node.is_text:
