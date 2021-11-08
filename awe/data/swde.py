@@ -266,7 +266,7 @@ class PageLabels(awe_graph.HtmlLabels):
 
     def _iter_labels(self, node: awe_graph.HtmlNode):
         for label, xpaths in self.nodes.items():
-            if node.xpath in xpaths:
+            if node.xpath_swde in xpaths:
                 yield label
 
 @dataclass

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Optional, Union
+from typing import Callable, Optional, Union
 
 import parsel
 from lxml import etree
@@ -109,19 +109,32 @@ class HtmlNode:
         assert self.is_text
         return self.element
 
-    @property
-    def xpath(self):
+    def _get_xpath(self,
+        node_filter: Callable[['HtmlNode'], bool] = lambda _: True
+    ):
         if self.is_text:
             xpath = f'{self.parent.xpath}/text()'
-            num_text_siblings = sum(map(lambda _: 1,
-                filter(lambda n: n.is_text, self.parent.children)))
+            num_text_siblings = sum(map(lambda _: 1, filter(
+                lambda n: n.is_text and node_filter(n), self.parent.children)))
             if num_text_siblings > 1:
                 # Append index only if there are multiple text nodes.
-                num_text_prev_siblings = sum(map(lambda _: 1,
-                    filter(lambda n: n.is_text, self.prev_siblings)))
+                num_text_prev_siblings = sum(map(lambda _: 1, filter(
+                    lambda n: n.is_text and node_filter(n),
+                    self.prev_siblings
+                )))
                 xpath += f'[{num_text_prev_siblings + 1}]'
             return xpath
         return html_utils.get_el_xpath(self.element)
+
+    @property
+    def xpath_swde(self):
+        """XPath without white-space-only text fragments."""
+        # See AWE-1.
+        return self._get_xpath(lambda n: not n.element.isspace())
+
+    @property
+    def xpath(self):
+        return self._get_xpath()
 
     @property
     def children(self):
@@ -129,11 +142,7 @@ class HtmlNode:
             child_depth = self.depth + 1
             self._children = [
                 HtmlNode(self.page, index, child_depth, child, self)
-                for index, child in enumerate(
-                    child for child in self._iterate_children()
-                    # HACK: See AWE-1.
-                    if not isinstance(child, str) or not child.isspace()
-                )
+                for index, child in enumerate(self._iterate_children())
             ]
         return self._children
 
