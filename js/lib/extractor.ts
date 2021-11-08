@@ -250,7 +250,7 @@ export class Extractor {
         letterSpacing: pixels(except(style.letterSpacing, 'normal')),
         lineHeight: pixels(except(style.lineHeight, 'normal')),
         opacity: except(style.opacity, '1'),
-        outline: unless(style.outline, style.outlineStyle === 'none'),
+        ...borderSide(style, 'outline'),
         overflow: except(style.overflow, 'visible'),
         pointerEvents: except(style.pointerEvents, 'auto'),
         textShadow: except(style.textShadow, 'none'),
