@@ -134,7 +134,21 @@ export class Extractor {
     element: ElementHandle<Element>
   ): Promise<ElementInfo> {
     // Run code in browser to get element's attributes.
-    const evaluated = await element.evaluate((e) => {
+    const evaluated = await this.evaluate(element);
+
+    // Get other attributes that don't directly need browser context.
+    const box = await element.boundingBox();
+
+    // Combine all element attributes together.
+    return {
+      ...evaluated,
+      box: box === null ? undefined : [box.x, box.y, box.width, box.height],
+    };
+  }
+
+  /** Runs code inside browser for an {@link element}. */
+  public evaluate(element: ElementHandle<Element>) {
+    return element.evaluate((e) => {
       // Note that we cannot reference outside functions easily, hence we define
       // them here.
 
@@ -270,15 +284,6 @@ export class Extractor {
         ...picked,
       };
     });
-
-    // Get other attributes that don't directly need browser context.
-    const box = await element.boundingBox();
-
-    // Combine all element attributes together.
-    return {
-      ...evaluated,
-      box: box === null ? undefined : [box.x, box.y, box.width, box.height],
-    };
   }
 
   public get filePath() {
