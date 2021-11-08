@@ -1,5 +1,5 @@
 import json
-from typing import Callable, Optional, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 from awe import awe_graph
 
@@ -40,11 +40,10 @@ class DomData:
                 f'match ("{real_id}" vs "{extracted_id}").'
 
         # Load `node_data` into `node`.
-        T = TypeVar('T')
         def load_attribute(
             snake_case: str,
             camel_case: Optional[str] = None,
-            selector: Callable[[str], T] = lambda x: x
+            selector: Callable[[Any], Any] = lambda x: x
         ):
             val = node_data.get(camel_case or snake_case)
             if val is not None:
@@ -53,6 +52,7 @@ class DomData:
         load_attribute('box',
             selector=lambda b: awe_graph.BoundingBox(b[0], b[1], b[2], b[3]))
         load_attribute('font_family', 'fontFamily')
+        load_attribute('font_size', 'fontSize')
         return True
 
     def find(self, xpath: str):

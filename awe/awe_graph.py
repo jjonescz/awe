@@ -95,6 +95,9 @@ class HtmlNode:
 
     font_family: Optional[str] = utils.lazy_field()
 
+    font_size: Optional[int] = utils.lazy_field()
+    """In pixels."""
+
     _children: list['HtmlNode'] = utils.cache_field()
 
     @property
