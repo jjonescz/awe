@@ -28,6 +28,8 @@ type NodeData = TreeData & ElementData;
 
 type ElementInfo = ElementData & {
   tagName: string;
+  /** Whether this text element is only white-space. */
+  whiteSpace?: true;
 };
 
 /**
@@ -150,7 +152,14 @@ export class Extractor {
   public evaluate(element: ElementHandle<Element>) {
     return element.evaluate((e) => {
       // Ignore text fragments, they don't have computed style.
-      if (e.nodeName === '#text') return { tagName: 'text()' };
+      if (e.nodeName === '#text') {
+        return {
+          tagName: 'text()',
+          whiteSpace: /^\s*$/.test(e.textContent ?? '')
+            ? (true as const)
+            : undefined,
+        };
+      }
 
       // Note that we cannot reference outside functions easily, hence we define
       // them here.
