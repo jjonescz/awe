@@ -211,8 +211,12 @@ export class PageScraper {
     };
     if (!this.inProgress.delete(inProgressEntry))
       throw new Error(`Failed to delete ${request.url()} (${timestamp})`);
-    if (this.scraper.allowOffline)
+    if (this.scraper.allowOffline) {
+      // HACK: This header causes error in Puppeteer, remove it.
+      delete cached.headers['x-archive-orig-set-cookie'];
+
       await this.scraper.cache.add(request.url(), timestamp, cached);
+    }
     this.addToStats(cached);
     this.scraper.stats.live++;
   }
