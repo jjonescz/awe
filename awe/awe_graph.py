@@ -131,9 +131,7 @@ class HtmlNode:
                 HtmlNode(self.page, index, child_depth, child, self)
                 for index, child in enumerate(
                     child for child in self._iterate_children()
-                    # HACK: Exclude whitespace nodes. Note that SWDE dataset
-                    # removes whitespace before matching groundtruth labels, so
-                    # this needs to be done for consistency.
+                    # HACK: See AWE-1.
                     if not isinstance(child, str) or not child.isspace()
                 )
             ]

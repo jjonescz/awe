@@ -291,7 +291,7 @@ class GroundTruthEntry:
         # they are preserved in the groundtruth. If they're there as plain
         # Unicode characters (not HTML-encoded), they're not preserved. This is
         # a bug/inconsistency in the dataset. Therefore, we remove these
-        # characters before matching.
+        # characters before matching. See AWE-1.
         page_html = re.sub(WHITESPACE_REGEX, ' ', page_html)
 
         page_dom = parsel.Selector(page_html)
