@@ -1,5 +1,5 @@
 import json
-from typing import Any, Callable, Optional, TypeVar
+from typing import Any, Callable, Optional
 
 from awe import awe_graph
 
