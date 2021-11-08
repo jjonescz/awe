@@ -38,11 +38,7 @@ class HtmlPage(ABC):
 
     @property
     def root(self):
-        # Prepare page DOM.
-        page_dom = self.dom
-        html_utils.clean(page_dom)
-
-        return HtmlNode(self, 0, 0, page_dom.root)
+        return HtmlNode(self, 0, 0, self.dom.root)
 
     @property
     def nodes(self):

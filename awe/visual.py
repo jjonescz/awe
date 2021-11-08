@@ -84,5 +84,6 @@ class DomData:
             if current_data is None:
                 current_xpath = '/'.join(elements[:index + 1])
                 raise RuntimeError(
-                    f'Cannot find visual attributes for /{current_xpath}')
+                    f'Cannot find visual attributes for /{current_xpath} ' + \
+                    f'while searching for {xpath}')
         return current_data

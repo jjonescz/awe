@@ -4,14 +4,6 @@ import parsel
 from lxml import etree
 
 
-def clean(page: parsel.Selector):
-    # Remove non-visual elements. This includes `noscript` since its content
-    # won't be present (we use Puppeteer with JavaScript enabled).
-    page.css('script, style, noscript').remove()
-    # Note that root elements cannot be removed, hence the `/*` prefix.
-    page.xpath('/*//comment()').remove()
-    return page
-
 def unescape(text: str):
     # HACK: Process invalid characters as they are, so that it works with XPath.
     if not getattr(html, '_hacked', False):

@@ -20,21 +20,29 @@ class FeatureContext:
     max_depth: Optional[int] = None
     """Maximum DOM tree depth; stored by `Depth`."""
 
-    node_predicate: Callable[['awe_graph.HtmlNode'], bool] = None
-
     _nodes: list['awe_graph.HtmlNode'] = None
 
-    def __init__(self, page: 'awe_graph.HtmlPage'):
+    def __init__(self,
+        page: 'awe_graph.HtmlPage',
+        node_predicate: Callable[['awe_graph.HtmlNode'], bool]
+    ):
         self.page = page
+        self.node_predicate = node_predicate
+
+    def include_node(self, node: 'awe_graph.HtmlNode'):
+        # Check if node or any of its parent was removed.
+        parent = node
+        while parent is not None:
+            if not self.node_predicate(parent):
+                return False
+            parent = parent.parent
+        return True
 
     @property
     def nodes(self):
         """Cached list of `page.nodes`."""
         if self._nodes is None:
-            if self.node_predicate is None:
-                self._nodes = list(self.page.nodes)
-            else:
-                self._nodes = list(filter(self.node_predicate, self.page.nodes))
+            self._nodes = list(filter(self.include_node, self.page.nodes))
         return self._nodes
 
 class Feature(ABC):

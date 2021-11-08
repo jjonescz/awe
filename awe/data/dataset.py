@@ -1,6 +1,7 @@
 from typing import Callable, Optional
 
 import torch
+from lxml import etree
 from torch_geometric import data as gdata
 from torch_geometric import loader
 
@@ -8,19 +9,23 @@ from awe import awe_graph, features, utils
 
 
 class Dataset:
+    @staticmethod
+    def default_node_predicate(node: awe_graph.HtmlNode):
+        return node.is_text or not (
+            node.element.tag is etree.Comment or
+            node.element.tag in ['script', 'style', 'noscript']
+        )
+
+    features: list['features.Feature'] = []
     label_map: Optional[dict[Optional[str], int]] = None
     data: dict[str, list[gdata.Data]] = {}
     pages: dict[str, list[awe_graph.HtmlPage]] = {}
     loaders: dict[str, loader.DataLoader] = {}
     parallelize = 2
-    node_predicate: Optional[Callable[[awe_graph.HtmlNode], bool]] = None
-
-    def __init__(self, fs: list[features.Feature]):
-        self.features = fs
+    node_predicate: Callable[[awe_graph.HtmlNode], bool] = default_node_predicate
 
     def get_context(self, page: awe_graph.HtmlPage):
-        ctx = features.FeatureContext(page)
-        ctx.node_predicate = self.node_predicate
+        ctx = features.FeatureContext(page, self.node_predicate)
         return ctx
 
     def _prepare_data(self, pages: list[awe_graph.HtmlPage]):
@@ -57,7 +62,6 @@ class Dataset:
                 if (
                     node.parent is not None and
                     # Ignore removed parents.
-                    self.node_predicate is not None and
                     self.node_predicate(node.parent)
                 )
             ]
