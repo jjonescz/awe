@@ -26,7 +26,7 @@ export class Controller {
       ? new progress.SingleBar({
           format:
             '[{bar}] {percentage}% | ETA: {eta_formatted} | ' +
-            '{value}/{total} | {stats} | {file}',
+            '{value}/{total} | {details}',
         })
       : null;
     bar?.start(files.length, 0);
@@ -37,8 +37,12 @@ export class Controller {
         async (file) => {
           // Show stats.
           bar?.update({
-            file: path.relative(SWDE_DIR, file),
-            stats: this.scraper.stats.toString(),
+            details: [
+              this.scraper.stats.toString(),
+              path.relative(SWDE_DIR, file),
+            ]
+              .filter((s) => s?.length)
+              .join(' | '),
           });
 
           // Execute `PageController`.
