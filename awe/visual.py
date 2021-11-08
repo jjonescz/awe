@@ -1,8 +1,15 @@
 import json
+import re
 from typing import Any, Callable, Optional
 
 from awe import awe_graph
+from awe.data import dataset
 
+
+XPATH_ELEMENT_REGEX = r'^/(.*?)(\[\d+\])?$'
+
+def get_tag_name(xpath_element: str):
+    return re.match(XPATH_ELEMENT_REGEX, xpath_element).group(1)
 
 class DomData:
     """Can load visual attributes saved by `extractor.ts`."""
@@ -46,7 +53,11 @@ class DomData:
 
             # Add children to queue.
             for child_name, child_data in node_data.items():
-                if child_name.startswith('/'):
+                if (
+                    child_name.startswith('/') and
+                    # Ignore filtered tags.
+                    get_tag_name(child_name) not in dataset.IGNORED_TAG_NAMES
+                ):
                     queue.insert(0, (child_data, child_name, item))
 
     def load_one(self, node: awe_graph.HtmlNode):

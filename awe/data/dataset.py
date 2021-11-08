@@ -8,12 +8,14 @@ from torch_geometric import loader
 from awe import awe_graph, features, utils
 
 
+IGNORED_TAG_NAMES = ['script', 'style', 'noscript']
+
 class Dataset:
     @staticmethod
     def default_node_predicate(node: awe_graph.HtmlNode):
         return node.is_text or not (
             node.element.tag is etree.Comment or
-            node.element.tag in ['script', 'style', 'noscript']
+            node.element.tag in IGNORED_TAG_NAMES
         )
 
     features: list['features.Feature'] = []
