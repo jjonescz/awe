@@ -36,22 +36,21 @@ class HtmlPage(ABC):
     def fields(self) -> list[str]:
         """Names of labels recognized in this page."""
 
-    @property
-    def root(self):
+    def create_root(self):
         return HtmlNode(self, 0, 0, self.dom.root)
 
-    @property
-    def nodes(self):
+    def initialize_tree(self):
+        root = self.create_root()
         page_labels = self.labels
         deep_index = 0
-        for node in self.root.descendants:
+        for node in root.descendants:
             node.deep_index = deep_index
 
             # Find groundtruth labels for the node.
             node.labels = page_labels.get_labels(node)
 
-            yield node
             deep_index += 1
+        return root
 
 @dataclass
 class BoundingBox:
@@ -154,13 +153,17 @@ class HtmlNode:
                 if child.tail is not None:
                     yield child.tail
 
-    @property
-    def descendants(self):
+    def iterate_descendants(self, predicate: Callable[['HtmlNode'], bool]):
         stack = [self]
         while len(stack) != 0:
             node = stack.pop()
-            yield node
-            stack.extend(node.children)
+            if predicate(node):
+                yield node
+                stack.extend(node.children)
+
+    @property
+    def descendants(self):
+        return self.iterate_descendants(lambda _: True)
 
     @property
     def prev_siblings(self):

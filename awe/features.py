@@ -29,20 +29,12 @@ class FeatureContext:
         self.page = page
         self.node_predicate = node_predicate
 
-    def include_node(self, node: 'awe_graph.HtmlNode'):
-        # Check if node or any of its parent was removed.
-        parent = node
-        while parent is not None:
-            if not self.node_predicate(parent):
-                return False
-            parent = parent.parent
-        return True
-
     @property
     def nodes(self):
         """Cached list of `page.nodes`."""
         if self._nodes is None:
-            self._nodes = list(filter(self.include_node, self.page.nodes))
+            root = self.page.initialize_tree()
+            self._nodes = list(root.iterate_descendants(self.node_predicate))
         return self._nodes
 
 class Feature(ABC):
