@@ -26,10 +26,6 @@ class DomData:
             self.load_one(node)
 
     def load_one(self, node: awe_graph.HtmlNode):
-        # Ignore text fragments (only nodes are extracted).
-        if node.is_text:
-            return False
-
         node_data = self.find(node.xpath)
 
         # Check that IDs match.
