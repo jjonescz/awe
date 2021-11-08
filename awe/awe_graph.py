@@ -110,9 +110,17 @@ class HtmlNode:
         return self.element
 
     @property
+    def num_text_children(self):
+        return sum(map(lambda _: 1, filter(lambda n: n.is_text, self.children)))
+
+    @property
     def xpath(self):
         if self.is_text:
-            return f'{self.parent.xpath}/text()[{self.index + 1}]'
+            xpath = f'{self.parent.xpath}/text()'
+            if self.parent.num_text_children > 1:
+                # Append index only if there are multiple text nodes.
+                xpath += f'[{self.index + 1}]'
+            return xpath
         return html_utils.get_el_xpath(self.element)
 
     @property

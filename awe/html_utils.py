@@ -28,10 +28,11 @@ def get_el_xpath(node: etree._Element) -> str:
 def find_fragment_index(parents: parsel.SelectorList, text_fragment: str):
     for parent in parents:
         parent: parsel.Selector
-        for index, fragment in enumerate(parent.xpath('text()')):
+        children = list(enumerate(parent.xpath('text()')))
+        for index, fragment in children:
             fragment: parsel.Selector
             if fragment.get() == text_fragment:
-                return index, parent
+                return index, parent, len(children)
     raise LookupError()
 
 def get_xpath(
@@ -44,8 +45,12 @@ def get_xpath(
         # String nodes are complicated.
         # pylint: disable-next=protected-access
         parents = root.xpath(f'{node._expr}/..', **kwargs)
-        index, parent = find_fragment_index(parents, node.get())
-        return f'{get_xpath(parent)}/text()[{index + 1}]'
+        index, parent, count = find_fragment_index(parents, node.get())
+        xpath = f'{get_xpath(parent)}/text()'
+        if count > 1:
+            # Append index only if there are multiple text nodes.
+            xpath += f'[{index + 1}]'
+        return xpath
     return get_el_xpath(node.root)
 
 def get_parent_xpath(xpath: str):
