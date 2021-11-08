@@ -36,7 +36,7 @@ type ElementInfo = ElementData & {
  */
 type DomData = TreeData;
 
-const CHILD_SELECTOR = '*';
+const CHILD_SELECTOR = '* | text()';
 
 async function tryGetXPath(element: ElementHandle<Element>) {
   try {
@@ -149,6 +149,9 @@ export class Extractor {
   /** Runs code inside browser for an {@link element}. */
   public evaluate(element: ElementHandle<Element>) {
     return element.evaluate((e) => {
+      // Ignore text fragments, they don't have computed style.
+      if (e.nodeName === '#text') return { tagName: 'text()' };
+
       // Note that we cannot reference outside functions easily, hence we define
       // them here.
 
