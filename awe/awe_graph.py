@@ -93,6 +93,8 @@ class HtmlNode:
 
     box: Optional[BoundingBox] = utils.lazy_field()
 
+    font_family: Optional[str] = utils.lazy_field()
+
     _children: list['HtmlNode'] = utils.cache_field()
 
     @property
