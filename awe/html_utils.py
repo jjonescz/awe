@@ -5,7 +5,9 @@ from lxml import etree
 
 
 def clean(page: parsel.Selector):
-    page.css('script, style').remove()
+    # Remove non-visual elements. This includes `noscript` since its content
+    # won't be present (we use Puppeteer with JavaScript enabled).
+    page.css('script, style, noscript').remove()
     # Note that root elements cannot be removed, hence the `/*` prefix.
     page.xpath('/*//comment()').remove()
     return page
