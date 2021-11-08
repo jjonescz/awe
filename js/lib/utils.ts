@@ -32,6 +32,19 @@ export async function tryReadFile(fullPath: string, defaultContents: string) {
   return await readFile(fullPath, { encoding: 'utf-8' });
 }
 
+/** Inspired by https://stackoverflow.com/a/25279399. */
+export function secondsToTimeString(seconds: number) {
+  // Get time in format HH:MM:SS.
+  const date = new Date(0);
+  date.setSeconds(seconds);
+  const time = date.toISOString().substr(11, 8);
+
+  // Append number of days if necessary.
+  const days = Math.floor(seconds / 86_400);
+  if (days > 0) return `${days}d ${time}`;
+  return time;
+}
+
 /** Performs HTTPS request and returns response `string`. */
 export function getHttps(url: string, query: Record<string, string>) {
   const urlObject = new URL(url);

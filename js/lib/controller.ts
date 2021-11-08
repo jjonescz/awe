@@ -4,6 +4,7 @@ import { from, lastValueFrom, mergeMap } from 'rxjs';
 import { SWDE_DIR } from './constants';
 import { PageController } from './page-controller';
 import { Scraper } from './scraper';
+import { secondsToTimeString } from './utils';
 
 /** Container for multiple {@link PageController}s. */
 export class Controller {
@@ -29,9 +30,10 @@ export class Controller {
             '{value}/{total} | {details}',
         })
       : null;
-    bar?.start(files.length, 0);
+    bar?.start(files.length, 0, { details: 'starting...' });
 
     // Scrape every page.
+    const startTime = process.hrtime();
     const observable = from(files).pipe(
       mergeMap(
         async (file) => {
@@ -62,6 +64,16 @@ export class Controller {
       )
     );
     await lastValueFrom(observable, { defaultValue: null });
+
+    // Show final stats.
+    const duration = process.hrtime(startTime);
+    bar?.update({
+      details: [
+        this.scraper.stats.toString(),
+        secondsToTimeString(duration[0]),
+      ].join(' | '),
+    });
+
     bar?.stop();
   }
 }
