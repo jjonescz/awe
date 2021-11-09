@@ -2,10 +2,11 @@ import html
 
 import parsel
 from lxml import etree
+from lxml.html import soupparser
 
 
 def parse_html(html: str):
-    return parsel.Selector(html)
+    return parsel.Selector(root=soupparser.fromstring(html))
 
 def unescape(text: str):
     # HACK: Process invalid characters as they are, so that it works with XPath.
