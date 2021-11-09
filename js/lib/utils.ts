@@ -32,6 +32,10 @@ export async function tryReadFile(fullPath: string, defaultContents: string) {
   return await readFile(fullPath, { encoding: 'utf-8' });
 }
 
+export function escapeFilePath(filePath: string) {
+  return filePath.replace(/[`$^*+?()[\]]/g, '\\$&');
+}
+
 /** Inspired by https://stackoverflow.com/a/25279399. */
 export function secondsToTimeString(seconds: number) {
   // Get time in format HH:MM:SS.

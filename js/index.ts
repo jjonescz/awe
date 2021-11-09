@@ -1,11 +1,13 @@
 import { Command, flags } from '@oclif/command';
 import { ExitError } from '@oclif/errors/lib/errors/exit';
 import glob from 'fast-glob';
+import { unlink } from 'fs/promises';
 import path from 'path';
 import { SWDE_DIR } from './lib/constants';
 import { Controller } from './lib/controller';
 import { logFile, logger } from './lib/logging';
 import { Scraper } from './lib/scraper';
+import { escapeFilePath, replaceExtension } from './lib/utils';
 
 function* getLogLevelNames() {
   for (const name in logger.levels) yield name;
@@ -68,8 +70,16 @@ class Program extends Command {
       default: 1,
     }),
     continueOnError: flags.boolean({
-      char: 'c',
+      char: 'e',
       description: 'log errors but continue with other pages if possible',
+    }),
+    clean: flags.boolean({
+      description: 'clean files from previous runs and exit',
+    }),
+    dryMode: flags.boolean({
+      char: 'n',
+      description: 'do not actually remove any files, just list them',
+      dependsOn: ['clean'],
     }),
   };
 
@@ -79,10 +89,6 @@ class Program extends Command {
     // Configure logger.
     logger.level = flags.verbose ? 'verbose' : flags.logLevel;
     logger.info('starting', { logFile, flags });
-
-    // Open browser.
-    const scraper = await Scraper.create();
-    const controller = new Controller(scraper);
 
     // Find pages to process.
     const fullPattern = path.join(flags.baseDir, flags.globPattern);
@@ -94,6 +100,36 @@ class Program extends Command {
         flags.skip,
         flags.maxNumber === undefined ? undefined : flags.skip + flags.maxNumber
       );
+
+    // Clean files if asked.
+    if (flags.clean) {
+      // Detect files for cleaning.
+      const toClean = [];
+      for (const file of files) {
+        // Generated files have some suffix after dash and any file extension.
+        const pattern = replaceExtension(escapeFilePath(file), '-*.*');
+        const siblings = await glob(pattern);
+        toClean.push(...siblings);
+      }
+
+      // Delete files.
+      logger.info('to clean', { numFiles: toClean.length });
+      for (const file of toClean) {
+        if (flags.dryMode) {
+          logger.verbose('would clean', { file });
+        } else {
+          logger.verbose('cleaning', { file });
+          await unlink(file);
+        }
+      }
+
+      // Exit.
+      return;
+    }
+
+    // Open browser.
+    const scraper = await Scraper.create();
+    const controller = new Controller(scraper);
 
     // Apply CLI flags.
     if (flags.offlineMode) scraper.allowLive = false;
