@@ -70,3 +70,7 @@ export function normalizeUrl(url: string) {
   // This removes superfluous port numbers.
   return new URL(url).toString();
 }
+
+export function urlsEqual(a: string, b: string) {
+  return normalizeUrl(a) === normalizeUrl(b);
+}

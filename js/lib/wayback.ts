@@ -1,7 +1,7 @@
-import { HTTPRequest } from 'puppeteer-core';
 import { writeFile } from 'fs/promises';
+import { HTTPRequest } from 'puppeteer-core';
 import { WAYBACK_CLOSEST_FILE } from './constants';
-import { getHttps, normalizeUrl, tryReadFile } from './utils';
+import { getHttps, tryReadFile, urlsEqual } from './utils';
 
 const ARCHIVE_URL_REGEX =
   /^https?:\/\/web.archive.org\/web\/(\d{14})([a-z]{2}_)?\/(.*)$/;
@@ -106,7 +106,7 @@ export class Wayback {
       throw new Error(`Cannot parse Wayback URL (${archiveUrl}).`);
     }
     const [date, pageUrl] = parsedUrl;
-    if (normalizeUrl(pageUrl) !== normalizeUrl(url)) {
+    if (urlsEqual(pageUrl, url)) {
       throw new Error(
         `Wayback URL (${archiveUrl}) inconsistent with requested URL (${url}).`
       );
