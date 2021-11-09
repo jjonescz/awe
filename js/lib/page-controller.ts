@@ -1,3 +1,4 @@
+import { existsSync } from 'fs';
 import { Controller } from './controller';
 import { Extractor } from './extractor';
 import { PageScraper, SwdeHandling } from './page-scraper';
@@ -49,6 +50,34 @@ export class PageController {
 
   /** Scrapes {@link SwdePage} determined by {@link fullPath}. */
   public async scrape(fullPath: string, version: ScrapeVersion) {
+    // Prepare dependencies.
+    const suffix = `-${scrapeVersionToString(version)}`;
+    const htmlPath = addSuffix(fullPath, suffix);
+    const extractor = new Extractor(
+      this.pageScraper.page,
+      this.page,
+      this.pageScraper.logger
+    );
+
+    // Check if not already scraped.
+    if (this.controller.skipExisting) {
+      const jsonPath = addSuffix(extractor.filePath, suffix);
+      const jsonExists = existsSync(jsonPath);
+      const htmlExists = existsSync(htmlPath);
+      const metadata = {
+        jsonExists,
+        jsonPath,
+        htmlExists,
+        htmlPath,
+      };
+      if (jsonExists && htmlExists) {
+        this.pageScraper.logger.verbose('skipping', metadata);
+        return;
+      } else {
+        this.pageScraper.logger.debug('not skipping', metadata);
+      }
+    }
+
     // Configure page scraper.
     this.pageScraper.swdeHandling = scrapeVersionToSwdeHandling(version);
 
@@ -74,17 +103,10 @@ export class PageController {
 
     // Save page HTML (can be different from original due to JavaScript
     // dynamically updating the DOM).
-    const suffix = `-${scrapeVersionToString(version)}`;
     const html = await this.pageScraper.page.content();
-    const htmlPath = addSuffix(fullPath, suffix);
     await this.page.withHtml(html).saveAs(htmlPath);
 
     // Extract visual attributes.
-    const extractor = new Extractor(
-      this.pageScraper.page,
-      this.page,
-      this.pageScraper.logger
-    );
     await extractor.extract();
     await extractor.save({ suffix });
 

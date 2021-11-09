@@ -90,6 +90,10 @@ class Program extends Command {
       description: 'scrape exact version from the dataset',
       default: true,
     }),
+    skipExisting: flags.boolean({
+      char: 'x',
+      description: 'skip already-scraped pages',
+    }),
   };
 
   async run() {
@@ -142,6 +146,7 @@ class Program extends Command {
     if (flags.offlineMode) scraper.allowLive = false;
     if (flags.forceRefresh) scraper.forceLive = true;
     controller.takeScreenshot = flags.screenshot;
+    controller.skipExisting = flags.skipExisting;
 
     // Scrape pages.
     try {

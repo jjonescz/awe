@@ -11,6 +11,8 @@ import { secondsToTimeString } from './utils';
 export class Controller {
   /** Take screenshot of each page. */
   public takeScreenshot = true;
+  /** Skip already-scraped pages. */
+  public skipExisting = false;
 
   public constructor(public readonly scraper: Scraper) {}
 
