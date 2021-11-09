@@ -13,7 +13,10 @@ IGNORED_TAG_NAMES = ['script', 'style', 'noscript']
 class Dataset:
     @staticmethod
     def default_node_predicate(node: awe_graph.HtmlNode):
-        return node.is_text or not (
+        # IMPORTANT: Keep consistent with filtering in `visual.py`.
+        if node.is_text:
+            return not node.text.isspace()
+        return not (
             node.element.tag is etree.Comment or
             node.element.tag in IGNORED_TAG_NAMES
         )

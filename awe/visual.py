@@ -55,6 +55,12 @@ class DomData:
             for child_name, child_data in node_data.items():
                 if (
                     child_name.startswith('/') and
+
+                    # IMPORTANT: Keep following conditions consistent with
+                    # `Dataset.default_node_predicate`.
+
+                    # Ignore whitespace-only nodes.
+                    child_data.get('whiteSpace') is not True and
                     # Ignore filtered tags.
                     get_tag_name(child_name) not in dataset.IGNORED_TAG_NAMES
                 ):
