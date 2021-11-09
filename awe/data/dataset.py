@@ -1,33 +1,20 @@
-from typing import Callable, Optional
+from typing import Optional
 
 import torch
-from lxml import etree
 from torch_geometric import data as gdata
 from torch_geometric import loader
 
-from awe import awe_graph, features, utils
+from awe import awe_graph, features, filtering, utils
 
-
-IGNORED_TAG_NAMES = ['script', 'style', 'noscript']
 
 class Dataset:
-    @staticmethod
-    def default_node_predicate(node: awe_graph.HtmlNode):
-        # IMPORTANT: Keep consistent with filtering in `visual.py`.
-        if node.is_text:
-            return not node.text.isspace()
-        return not (
-            node.element.tag is etree.Comment or
-            node.element.tag in IGNORED_TAG_NAMES
-        )
-
     features: list['features.Feature'] = []
     label_map: Optional[dict[Optional[str], int]] = None
     data: dict[str, list[gdata.Data]] = {}
     pages: dict[str, list[awe_graph.HtmlPage]] = {}
     loaders: dict[str, loader.DataLoader] = {}
     parallelize = 2
-    node_predicate: Callable[[awe_graph.HtmlNode], bool] = default_node_predicate
+    node_predicate: filtering.NodePredicate = filtering.DefaultNodePredicate()
 
     def get_context(self, page: awe_graph.HtmlPage):
         ctx = features.FeatureContext(page, self.node_predicate)
@@ -67,7 +54,7 @@ class Dataset:
                 if (
                     node.parent is not None and
                     # Ignore removed parents.
-                    self.node_predicate(node.parent)
+                    self.node_predicate.include_node(node.parent)
                 )
             ]
             edge_index = torch.LongTensor(

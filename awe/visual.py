@@ -2,9 +2,7 @@ import json
 import re
 from typing import Any, Callable, Optional
 
-from awe import awe_graph
-from awe.data import dataset
-
+from awe import awe_graph, features
 
 XPATH_ELEMENT_REGEX = r'^/(.*?)(\[\d+\])?$'
 
@@ -28,8 +26,8 @@ class DomData:
         """Reads DOM data from JSON."""
         self.data = json.loads(self.contents)
 
-    def load_all(self, nodes: list[awe_graph.HtmlNode]):
-        for node in nodes:
+    def load_all(self, ctx: features.FeatureContext):
+        for node in ctx.nodes:
             self.load_one(node)
 
         # Check that all extracted data were used.
@@ -55,14 +53,7 @@ class DomData:
             for child_name, child_data in node_data.items():
                 if (
                     child_name.startswith('/') and
-
-                    # IMPORTANT: Keep following conditions consistent with
-                    # `Dataset.default_node_predicate`.
-
-                    # Ignore whitespace-only nodes.
-                    child_data.get('whiteSpace') is not True and
-                    # Ignore filtered tags.
-                    get_tag_name(child_name) not in dataset.IGNORED_TAG_NAMES
+                    ctx.node_predicate.include_visual(child_data, child_name)
                 ):
                     queue.insert(0, (child_data, child_name, item))
 

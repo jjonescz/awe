@@ -1,11 +1,12 @@
 import re
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Callable, Optional, TypeVar
+from typing import TYPE_CHECKING, Optional, TypeVar
 
 import numpy as np
 import torch
 from torchtext.data import utils as text_utils
 
+from awe import filtering
 from awe.data import glove
 
 if TYPE_CHECKING:
@@ -24,7 +25,7 @@ class FeatureContext:
 
     def __init__(self,
         page: 'awe_graph.HtmlPage',
-        node_predicate: Callable[['awe_graph.HtmlNode'], bool]
+        node_predicate: filtering.NodePredicate
     ):
         self.page = page
         self.node_predicate = node_predicate
@@ -34,7 +35,8 @@ class FeatureContext:
         """Cached list of `page.nodes`."""
         if self._nodes is None:
             root = self.page.initialize_tree()
-            self._nodes = list(root.iterate_descendants(self.node_predicate))
+            self._nodes = list(root.iterate_descendants(
+                self.node_predicate.include_node))
         return self._nodes
 
 class Feature(ABC):
