@@ -4,11 +4,13 @@ import torch
 from torch_geometric import data as gdata
 from torch_geometric import loader
 
-from awe import awe_graph, features, filtering, utils
+from awe import awe_graph
+from awe import features as f
+from awe import filtering, utils
 
 
 class Dataset:
-    features: list['features.Feature'] = []
+    features: list[f.Feature] = []
     label_map: Optional[dict[Optional[str], int]] = None
     data: dict[str, list[gdata.Data]] = {}
     pages: dict[str, list[awe_graph.HtmlPage]] = {}
@@ -17,7 +19,7 @@ class Dataset:
     node_predicate: filtering.NodePredicate = filtering.DefaultNodePredicate()
 
     def get_context(self, page: awe_graph.HtmlPage):
-        ctx = features.FeatureContext(page, self.node_predicate)
+        ctx = f.FeatureContext(page, self.node_predicate)
         return ctx
 
     def _prepare_data(self, pages: list[awe_graph.HtmlPage]):
