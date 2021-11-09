@@ -1,12 +1,15 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Callable, Optional, Union
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 import parsel
 from lxml import etree
 
-from awe import features, html_utils, utils
+from awe import html_utils, utils
 from awe.data.wayback import WaybackPage
+
+if TYPE_CHECKING:
+    from awe import features
 
 
 class HtmlLabels(ABC):
@@ -52,7 +55,7 @@ class HtmlPage(ABC):
             deep_index += 1
         return root
 
-    def prepare(self, ctx: features.FeatureContext):
+    def prepare(self, ctx: 'features.FeatureContext'):
         """Prepare page features."""
 
 @dataclass

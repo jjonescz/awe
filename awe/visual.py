@@ -1,8 +1,11 @@
 import json
 import re
-from typing import Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
-from awe import awe_graph, features
+from awe import awe_graph
+
+if TYPE_CHECKING:
+    from awe import features
 
 XPATH_ELEMENT_REGEX = r'^/(.*?)(\[\d+\])?$'
 
@@ -26,7 +29,7 @@ class DomData:
         """Reads DOM data from JSON."""
         self.data = json.loads(self.contents)
 
-    def load_all(self, ctx: features.FeatureContext):
+    def load_all(self, ctx: 'features.FeatureContext'):
         for node in ctx.nodes:
             self.load_one(node)
 
