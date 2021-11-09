@@ -1,3 +1,4 @@
+import os
 from typing import Optional
 
 import torch
@@ -76,9 +77,11 @@ class Dataset:
         data = gdata.Data(x=x, y=y, edge_index=edge_index)
         torch.save(data, page.data_point_path)
 
-    def prepare(self):
-        utils.parallelize(
-            self.parallelize, self.prepare_page, self.pages, 'pages')
+    def prepare(self, skip_existing=False):
+        def prepare_one(page: awe_graph.HtmlPage):
+            if not skip_existing or not os.path.exists(page.data_point_path):
+                self.prepare_page(page)
+        utils.parallelize(self.parallelize, prepare_one, self.pages, 'pages')
         return len(self.pages)
 
     def _prepare_label_map(self):
