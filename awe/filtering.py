@@ -17,7 +17,7 @@ class NodePredicate(ABC):
 class DefaultNodePredicate(NodePredicate):
     """Ignores whitespace-only nodes, comments and script/style tags."""
 
-    ignored_tag_names = ['script', 'style', 'noscript']
+    ignored_tag_names = ['script', 'style', 'noscript', 'iframe']
 
     def include_node(self, node: awe_graph.HtmlNode) -> bool:
         if node.is_text:
