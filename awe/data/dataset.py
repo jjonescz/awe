@@ -20,6 +20,7 @@ class Dataset:
 
     def get_context(self, page: awe_graph.HtmlPage):
         ctx = f.FeatureContext(page, self.node_predicate)
+        page.prepare(ctx)
         return ctx
 
     def _prepare_data(self, pages: list[awe_graph.HtmlPage]):

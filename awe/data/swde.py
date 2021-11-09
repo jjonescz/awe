@@ -7,7 +7,7 @@ from typing import Optional
 import parsel
 from tqdm.auto import tqdm
 
-from awe import awe_graph, html_utils, utils, visual
+from awe import awe_graph, features, html_utils, utils, visual
 from awe.data import constants
 
 URL = 'https://web.archive.org/web/20210630013015id_/' + \
@@ -249,6 +249,11 @@ class Page(awe_graph.HtmlPage):
     @property
     def fields(self):
         return [field.name for field in self.site.groundtruth]
+
+    def prepare(self, ctx: features.FeatureContext):
+        dom_data = self.dom_data
+        dom_data.read()
+        dom_data.load_all(ctx)
 
 class PageLabels(awe_graph.HtmlLabels):
     nodes: dict[str, list[str]]

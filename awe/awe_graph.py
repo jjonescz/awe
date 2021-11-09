@@ -5,7 +5,7 @@ from typing import Callable, Optional, Union
 import parsel
 from lxml import etree
 
-from awe import html_utils, utils
+from awe import features, html_utils, utils
 from awe.data.wayback import WaybackPage
 
 
@@ -51,6 +51,9 @@ class HtmlPage(ABC):
 
             deep_index += 1
         return root
+
+    def prepare(self, ctx: features.FeatureContext):
+        """Prepare page features."""
 
 @dataclass
 class BoundingBox:
