@@ -11,19 +11,21 @@ from awe import filtering, utils
 
 class Dataset:
     label_map: Optional[dict[Optional[str], int]] = None
-    pages: list[awe_graph.HtmlPage] = {}
     loader: Optional[gloader.DataLoader] = None
     parallelize: Optional[int] = None
 
     def __init__(self,
         name: str,
         parent: 'DatasetCollection',
+        pages: list[awe_graph.HtmlPage],
         other: Optional['Dataset'] = None
     ):
         self.name = name
         self.parent = parent
+        self.pages = pages
         if other is not None:
             self.label_map = other.label_map
+        self._prepare_label_map()
 
     def __getitem__(self, idx: int):
         page = self.pages[idx]
@@ -71,28 +73,28 @@ class Dataset:
         data = gdata.Data(x=x, y=y, edge_index=edge_index)
         torch.save(data, page.data_point_path)
 
-    def prepare(self, pages: list[awe_graph.HtmlPage]):
-        utils.parallelize(self.parallelize, self.prepare_page, pages, 'pages')
-        return len(pages)
+    def prepare(self):
+        utils.parallelize(
+            self.parallelize, self.prepare_page, self.pages, 'pages')
+        return len(self.pages)
 
-    def add(self, name: str, pages: list[awe_graph.HtmlPage]):
+    def _prepare_label_map(self):
         if self.label_map is None:
             # Create label map.
             self.label_map = { None: 0 }
             label_counter = 1
-            for page in pages:
+            for page in self.pages:
                 for field in page.fields:
                     if field not in self.label_map:
                         self.label_map[field] = label_counter
                         label_counter += 1
         else:
             # Check label map.
-            for page in pages:
+            for page in self.pages:
                 for field in page.fields:
                     if field not in self.label_map:
                         raise ValueError(f'Field {field} from page {page} ' +
                             'not found in the label map.')
-        self.pages[name] = pages
 
     def iterate_data(self):
         """Iterates `HtmlNode`s along with their feature vectors and labels."""
@@ -126,12 +128,13 @@ class DatasetCollection:
     datasets: dict[str, Dataset] = {}
 
     def __getitem__(self, name: str):
-        ds = self.datasets.get(name)
-        if ds is None:
-            ds = Dataset(name, self, self.first_dataset)
-            self.datasets[name] = ds
-            if self.first_dataset is None:
-                self.first_dataset = ds
+        return self.datasets[name]
+
+    def create(self, name: str, pages: list[awe_graph.HtmlPage]):
+        ds = Dataset(name, self, pages, self.first_dataset)
+        self.datasets[name] = ds
+        if self.first_dataset is None:
+            self.first_dataset = ds
         return ds
 
     def create_context(self, page: awe_graph.HtmlPage):
