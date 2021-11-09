@@ -98,6 +98,7 @@ export class PageController {
 
     if (this.page.timestamp === null) {
       // Couldn't find snapshot of this page in the WaybackMachine, abort early.
+      this.pageScraper.logger.error('page not reached');
       return;
     }
 
