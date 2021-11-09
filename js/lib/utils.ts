@@ -1,5 +1,5 @@
 import { existsSync } from 'fs';
-import { readFile } from 'fs/promises';
+import { readFile, rename, writeFile } from 'fs/promises';
 import https from 'https';
 import path from 'path';
 import { URL } from 'url';
@@ -30,6 +30,16 @@ export function addSuffix(fullPath: string, suffix: string) {
 export async function tryReadFile(fullPath: string, defaultContents: string) {
   if (!existsSync(fullPath)) return defaultContents;
   return await readFile(fullPath, { encoding: 'utf-8' });
+}
+
+/**
+ * Saves {@link data} through a temporary file, so that this operation can
+ * survive an interruption without losing the original {@link file}.
+ */
+export async function writeFileSafe(file: string, data: string) {
+  const tempFile = `${file}.temp`;
+  await writeFile(tempFile, data, { encoding: 'utf-8' });
+  await rename(tempFile, file);
 }
 
 export function escapeFilePath(filePath: string) {

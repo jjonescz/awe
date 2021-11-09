@@ -5,7 +5,7 @@ import path from 'path';
 import { ResponseForRequest } from 'puppeteer-core';
 import { CACHE_DIR } from './constants';
 import { logger } from './logging';
-import { tryReadFile } from './utils';
+import { tryReadFile, writeFileSafe } from './utils';
 
 const CACHE_FILES_FOLDER = path.join(CACHE_DIR, 'files');
 const CACHE_MAP_PATH = path.join(CACHE_DIR, 'map.json');
@@ -105,7 +105,7 @@ export class Cache {
   /** Saves file map. */
   public async save() {
     const mapJson = JSON.stringify(this.map);
-    await writeFile(CACHE_MAP_PATH, mapJson, { encoding: 'utf-8' });
+    await writeFileSafe(CACHE_MAP_PATH, mapJson);
   }
 
   private getPath(hash: string) {
