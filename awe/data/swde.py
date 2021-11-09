@@ -255,9 +255,12 @@ class Page(awe_graph.HtmlPage):
         return [field.name for field in self.site.groundtruth]
 
     def prepare(self, ctx: features.FeatureContext):
-        dom_data = self.dom_data
-        dom_data.read()
-        dom_data.load_all(ctx)
+        try:
+            dom_data = self.dom_data
+            dom_data.read()
+            dom_data.load_all(ctx)
+        except Exception as e:
+            raise RuntimeError(f'Cannot prepare page {self.file_path}') from e
 
 class PageLabels(awe_graph.HtmlLabels):
     nodes: dict[str, list[str]]
