@@ -73,6 +73,7 @@ class Dataset:
 
     def prepare(self, pages: list[awe_graph.HtmlPage]):
         utils.parallelize(self.parallelize, self.prepare_page, pages, 'pages')
+        return len(pages)
 
     def add(self, name: str, pages: list[awe_graph.HtmlPage]):
         if self.label_map is None:
