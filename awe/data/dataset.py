@@ -2,7 +2,7 @@ from typing import Optional
 
 import torch
 from torch_geometric import data as gdata
-from torch_geometric import loader
+from torch_geometric import loader as gloader
 
 from awe import awe_graph
 from awe import features as f
@@ -10,62 +10,69 @@ from awe import filtering, utils
 
 
 class Dataset:
-    features: list[f.Feature] = []
     label_map: Optional[dict[Optional[str], int]] = None
-    data: dict[str, list[gdata.Data]] = {}
-    pages: dict[str, list[awe_graph.HtmlPage]] = {}
-    loaders: dict[str, loader.DataLoader] = {}
-    parallelize = 2
-    node_predicate: filtering.NodePredicate = filtering.DefaultNodePredicate()
+    pages: list[awe_graph.HtmlPage] = {}
+    loader: Optional[gloader.DataLoader] = None
+    parallelize: Optional[int] = None
 
-    def get_context(self, page: awe_graph.HtmlPage):
-        ctx = f.FeatureContext(page, self.node_predicate)
-        page.prepare(ctx)
-        return ctx
+    def __init__(self,
+        name: str,
+        parent: 'DatasetCollection',
+        other: Optional['Dataset'] = None
+    ):
+        self.name = name
+        self.parent = parent
+        if other is not None:
+            self.label_map = other.label_map
 
-    def _prepare_data(self, pages: list[awe_graph.HtmlPage]):
-        def prepare_page(page: awe_graph.HtmlPage):
-            ctx = self.get_context(page)
+    def __getitem__(self, idx: int):
+        page = self.pages[idx]
+        return torch.load(page.data_point_path)
 
-            def get_node_features(node: awe_graph.HtmlNode):
-                return torch.hstack([
-                    feature.create(node, ctx)
-                    for feature in self.features
-                ])
+    def prepare_page(self, page: awe_graph.HtmlPage):
+        ctx = self.parent.create_context(page)
 
-            def get_node_label(node: awe_graph.HtmlNode):
-                # Only the first label for now.
-                label = None if len(node.labels) == 0 else node.labels[0]
-                return self.label_map[label]
+        def get_node_features(node: awe_graph.HtmlNode):
+            return torch.hstack([
+                feature.create(node, ctx)
+                for feature in self.parent.features
+            ])
 
-            x = torch.vstack(list(map(get_node_features, ctx.nodes)))
-            y = torch.tensor(list(map(get_node_label, ctx.nodes)))
+        def get_node_label(node: awe_graph.HtmlNode):
+            # Only the first label for now.
+            label = None if len(node.labels) == 0 else node.labels[0]
+            return self.label_map[label]
 
-            # Assign indices to nodes (different from `HtmlNode.index` as that
-            # one is from before filtering). This is needed to compute edges.
-            for index, node in enumerate(ctx.nodes):
-                node.dataset_index = index
+        x = torch.vstack(list(map(get_node_features, ctx.nodes)))
+        y = torch.tensor(list(map(get_node_label, ctx.nodes)))
 
-            # Edges: parent-child relations.
-            child_edges = [
-                [node.dataset_index, child.dataset_index]
-                for node in ctx.nodes for child in node.children
-            ]
-            parent_edges = [
-                [node.dataset_index, node.parent.dataset_index]
-                for node in ctx.nodes
-                if (
-                    node.parent is not None and
-                    # Ignore removed parents.
-                    self.node_predicate.include_node(node.parent)
-                )
-            ]
-            edge_index = torch.LongTensor(
-                child_edges + parent_edges).t().contiguous()
+        # Assign indices to nodes (different from `HtmlNode.index` as that
+        # one is from before filtering). This is needed to compute edges.
+        for index, node in enumerate(ctx.nodes):
+            node.dataset_index = index
 
-            return gdata.Data(x=x, y=y, edge_index=edge_index)
+        # Edges: parent-child relations.
+        child_edges = [
+            [node.dataset_index, child.dataset_index]
+            for node in ctx.nodes for child in node.children
+        ]
+        parent_edges = [
+            [node.dataset_index, node.parent.dataset_index]
+            for node in ctx.nodes
+            if (
+                node.parent is not None and
+                # Ignore removed parents.
+                self.parent.node_predicate.include_node(node.parent)
+            )
+        ]
+        edge_index = torch.LongTensor(
+            child_edges + parent_edges).t().contiguous()
 
-        return utils.parallelize(self.parallelize, prepare_page, pages, 'pages')
+        data = gdata.Data(x=x, y=y, edge_index=edge_index)
+        torch.save(data, page.data_point_path)
+
+    def prepare(self, pages: list[awe_graph.HtmlPage]):
+        utils.parallelize(self.parallelize, self.prepare_page, pages, 'pages')
 
     def add(self, name: str, pages: list[awe_graph.HtmlPage]):
         if self.label_map is None:
@@ -85,24 +92,13 @@ class Dataset:
                         raise ValueError(f'Field {field} from page {page} ' +
                             'not found in the label map.')
         self.pages[name] = pages
-        self.data[name] = self._prepare_data(pages)
 
-    @property
-    def feature_dim(self):
-        """Feature vector total length."""
-        return sum(f.dimension for f in self.features)
-
-    @property
-    def feature_labels(self):
-        """Description of each feature vector column."""
-        return [label for f in self.features for label in f.labels]
-
-    def iterate_data(self, name: str):
+    def iterate_data(self):
         """Iterates `HtmlNode`s along with their feature vectors and labels."""
         page_idx = 0
-        for batch in self.loaders[name]:
+        for batch in self.loader or []:
             curr_page = None
-            curr_nodes = None
+            curr_ctx = None
             node_offset = 0
             prev_page = 0
             for node_idx in range(batch.num_nodes):
@@ -113,15 +109,41 @@ class Dataset:
                     prev_page = page_offset
                     node_offset = -node_idx
 
-                page = self.pages[name][page_idx + page_offset]
+                page = self.pages[page_idx + page_offset]
                 if curr_page != page:
                     curr_page = page
-                    if self.node_predicate is None:
-                        curr_nodes = list(page.nodes)
-                    else:
-                        curr_nodes = list(
-                            filter(self.node_predicate, page.nodes))
-                node = curr_nodes[node_idx + node_offset]
+                    curr_ctx = self.parent.create_context(page)
+                node = curr_ctx.nodes[node_idx + node_offset]
 
                 yield node, batch.x[node_idx], batch.y[node_idx]
             page_idx += batch.num_graphs
+
+class DatasetCollection:
+    features: list[f.Feature] = []
+    node_predicate: filtering.NodePredicate = filtering.DefaultNodePredicate()
+    first_dataset: Optional[Dataset] = None
+    datasets: dict[str, Dataset] = {}
+
+    def __getitem__(self, name: str):
+        ds = self.datasets.get(name)
+        if ds is None:
+            ds = Dataset(name, self, self.first_dataset)
+            self.datasets[name] = ds
+            if self.first_dataset is None:
+                self.first_dataset = ds
+        return ds
+
+    def create_context(self, page: awe_graph.HtmlPage):
+        ctx = f.FeatureContext(page, self.node_predicate)
+        page.prepare(ctx)
+        return ctx
+
+    @property
+    def feature_dim(self):
+        """Feature vector total length."""
+        return sum(f.dimension for f in self.features)
+
+    @property
+    def feature_labels(self):
+        """Description of each feature vector column."""
+        return [label for f in self.features for label in f.labels]

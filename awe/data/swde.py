@@ -213,6 +213,10 @@ class Page(awe_graph.HtmlPage):
         return f'{self.site.dir_path}/{self.file_name}'
 
     @property
+    def data_point_path(self):
+        return self.file_path.removesuffix('.htm') + '.pt'
+
+    @property
     def dom_data(self):
         json_path = self.file_path.removesuffix('.htm') + '.json'
         return visual.DomData(json_path)
