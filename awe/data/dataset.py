@@ -32,6 +32,7 @@ class Dataset:
         return torch.load(page.data_point_path)
 
     def prepare_page(self, page: awe_graph.HtmlPage):
+        """Computes features for `page` and persists them on disk."""
         ctx = self.parent.create_context(page)
 
         def get_node_features(node: awe_graph.HtmlNode):
