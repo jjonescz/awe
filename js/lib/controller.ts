@@ -21,7 +21,12 @@ export class Controller {
   /** Scrapes all SWDE page {@link files}. */
   public async scrapeAll(
     files: string[],
-    { showProgressBar = true, jobs = 1, continueOnError = false } = {}
+    {
+      showProgressBar = true,
+      jobs = 1,
+      continueOnError = false,
+      versions = [ScrapeVersion.Exact, ScrapeVersion.Latest],
+    } = {}
   ) {
     // Prepare progress bar.
     const bar = showProgressBar
@@ -52,7 +57,7 @@ export class Controller {
           // Execute `PageController`.
           try {
             const fullPath = path.resolve(file);
-            for (const version of [ScrapeVersion.Exact, ScrapeVersion.Latest]) {
+            for (const version of versions) {
               const pageController = await this.for(fullPath);
               try {
                 await pageController.scrape(file, version);

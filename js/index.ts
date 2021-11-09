@@ -6,6 +6,7 @@ import path from 'path';
 import { SWDE_DIR } from './lib/constants';
 import { Controller } from './lib/controller';
 import { logFile, logger } from './lib/logging';
+import { ScrapeVersion } from './lib/page-controller';
 import { Scraper } from './lib/scraper';
 import { escapeFilePath, replaceExtension } from './lib/utils';
 
@@ -81,6 +82,14 @@ class Program extends Command {
       description: 'do not actually remove any files, just list them',
       dependsOn: ['clean'],
     }),
+    latest: flags.boolean({
+      char: 'L',
+      description: 'scrape latest version from WaybackMachine',
+    }),
+    exact: flags.boolean({
+      description: 'scrape exact version from the dataset',
+      default: true,
+    }),
   };
 
   async run() {
@@ -140,6 +149,10 @@ class Program extends Command {
         showProgressBar: !flags.noProgress,
         jobs: flags.jobs,
         continueOnError: flags.continueOnError,
+        versions: [
+          ...(flags.latest ? [ScrapeVersion.Latest] : []),
+          ...(flags.exact ? [ScrapeVersion.Exact] : []),
+        ],
       });
     } finally {
       await scraper.dispose();
