@@ -82,7 +82,7 @@ export class PageController {
     this.pageScraper.swdeHandling = scrapeVersionToSwdeHandling(version);
 
     // Navigate to the page.
-    this.pageScraper.logger.verbose('goto', { fullPath });
+    this.pageScraper.logger.verbose('goto', { fullPath, suffix });
     await this.pageScraper.start();
 
     // Abort remaining requests.
