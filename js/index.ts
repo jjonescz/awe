@@ -104,13 +104,11 @@ class Program extends Command {
     // Clean files if asked.
     if (flags.clean) {
       // Detect files for cleaning.
-      const toClean = [];
-      for (const file of files) {
+      const patterns = files.map((f) => {
         // Generated files have some suffix after dash and any file extension.
-        const pattern = replaceExtension(escapeFilePath(file), '-*.*');
-        const siblings = await glob(pattern);
-        toClean.push(...siblings);
-      }
+        return replaceExtension(escapeFilePath(f), '-*.*');
+      });
+      const toClean = await glob(patterns);
 
       // Delete files.
       logger.info('to clean', { numFiles: toClean.length });
