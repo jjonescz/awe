@@ -36,7 +36,10 @@ type ElementInfo = ElementData & {
  * Structure in which extracted visual attributes are stored for an element and
  * its descendants.
  */
-type DomData = TreeData;
+type DomData = TreeData & {
+  /** From {@link SwdePage.timestamp}. */
+  timestamp: string;
+};
 
 const CHILD_SELECTOR = '* | text()';
 
@@ -68,13 +71,17 @@ async function tryGetXPath(element: ElementHandle<Element>) {
 
 /** Can extract visual attributes from a Puppeteer-controlled page. */
 export class Extractor {
-  public readonly data: DomData = {};
+  public readonly data: DomData;
 
   constructor(
     public readonly page: Page,
     public readonly swdePage: SwdePage,
     public readonly logger: winston.Logger
-  ) {}
+  ) {
+    this.data = {
+      timestamp: swdePage.timestamp!,
+    };
+  }
 
   /** Extracts visual attributes for all DOM nodes in the {@link page}. */
   public async extract() {
@@ -82,7 +89,7 @@ export class Extractor {
     const rootElements = await this.page.$x(CHILD_SELECTOR);
     const queue = rootElements.map((e) => ({
       element: e,
-      parent: this.data,
+      parent: <TreeData>this.data,
     }));
     while (queue.length !== 0) {
       const { element, parent } = queue.shift()!;

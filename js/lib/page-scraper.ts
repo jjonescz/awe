@@ -87,7 +87,7 @@ export class PageScraper {
   private async handleSwdePage(request: puppeteer.HTTPRequest, page: SwdePage) {
     switch (this.swdeHandling) {
       case SwdeHandling.Offline:
-        page.timestamp = null;
+        page.timestamp = 'offline';
         this.logger.verbose('request page replaced', {
           url: request.url(),
           path: page.fullPath,

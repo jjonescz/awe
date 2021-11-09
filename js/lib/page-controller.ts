@@ -24,6 +24,15 @@ export function scrapeVersionToSwdeHandling(version: ScrapeVersion) {
   }
 }
 
+export function scrapeVersionToString(version: ScrapeVersion) {
+  switch (version) {
+    case ScrapeVersion.Exact:
+      return 'exact';
+    case ScrapeVersion.Latest:
+      return 'latest';
+  }
+}
+
 /** {@link PageScraper} controller to scrape one {@link SwdePage}. */
 export class PageController {
   private constructor(
@@ -58,15 +67,14 @@ export class PageController {
     // Save local cache.
     await this.controller.scraper.save();
 
-    if (version === ScrapeVersion.Latest && this.page.timestamp === null) {
+    if (this.page.timestamp === null) {
       // Couldn't find snapshot of this page in the WaybackMachine, abort early.
       return;
     }
 
     // Save page HTML (can be different from original due to JavaScript
     // dynamically updating the DOM).
-    const suffix =
-      version === ScrapeVersion.Latest ? `-${this.page.timestamp}` : '-exact';
+    const suffix = `-${scrapeVersionToString(version)}`;
     const html = await this.pageScraper.page.content();
     const htmlPath = addSuffix(fullPath, suffix);
     await this.page.withHtml(html).saveAs(htmlPath);
