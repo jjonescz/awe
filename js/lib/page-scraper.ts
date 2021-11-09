@@ -5,6 +5,7 @@ import { ignoreUrl } from './ignore';
 import { logger } from './logging';
 import { Scraper } from './scraper';
 import { SwdePage } from './swde-page';
+import { urlsEqual } from './utils';
 
 /** Method of handling request to SWDE page. */
 export const enum SwdeHandling {
@@ -68,7 +69,7 @@ export class PageScraper {
   }
 
   private async handleRequest(request: puppeteer.HTTPRequest) {
-    if (this.swdePage !== null && request.url() === this.swdePage.url) {
+    if (this.swdePage !== null && urlsEqual(request.url(), this.swdePage.url)) {
       await this.handleSwdePage(request, this.swdePage);
     } else {
       // Pass WaybackMachine redirects through.
