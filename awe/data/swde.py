@@ -4,7 +4,6 @@ import re
 from dataclasses import dataclass
 from typing import Optional
 
-import parsel
 from tqdm.auto import tqdm
 
 from awe import awe_graph, features, html_utils, utils, visual
@@ -244,7 +243,7 @@ class Page(awe_graph.HtmlPage):
 
     @property
     def dom(self):
-        return parsel.Selector(self.html)
+        return html_utils.parse_html(self.html)
 
     @property
     def labels(self):
@@ -306,7 +305,7 @@ class GroundTruthEntry:
         # characters before matching. See AWE-1.
         page_html = re.sub(WHITESPACE_REGEX, ' ', page_html)
 
-        page_dom = parsel.Selector(page_html)
+        page_dom = html_utils.parse_html(page_html)
 
         for value in self.values:
             # Note that this XPath is written so that it finds text fragments X,

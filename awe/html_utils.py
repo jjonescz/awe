@@ -4,6 +4,9 @@ import parsel
 from lxml import etree
 
 
+def parse_html(html: str):
+    return parsel.Selector(html)
+
 def unescape(text: str):
     # HACK: Process invalid characters as they are, so that it works with XPath.
     if not getattr(html, '_hacked', False):

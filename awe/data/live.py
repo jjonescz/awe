@@ -4,7 +4,7 @@ from typing import Optional
 import parsel
 import requests
 
-from awe import awe_graph, utils
+from awe import awe_graph, html_utils, utils
 
 
 @dataclass
@@ -28,7 +28,7 @@ class Page(awe_graph.HtmlPage):
 
     def _download_dom(self):
         text = requests.get(self.url).text
-        return parsel.Selector(text)
+        return html_utils.parse_html(text)
 
 class PageLabels(awe_graph.HtmlLabels):
     def get_labels(self, _: awe_graph.HtmlNode):
