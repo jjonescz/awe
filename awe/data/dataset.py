@@ -58,6 +58,8 @@ class Dataset:
         child_edges = [
             [node.dataset_index, child.dataset_index]
             for node in ctx.nodes for child in node.children
+            # Ignore removed children.
+            if self.parent.node_predicate.include_node(child)
         ]
         parent_edges = [
             [node.dataset_index, node.parent.dataset_index]
