@@ -10,6 +10,8 @@ from awe import features as f
 from awe import filtering, utils
 
 
+# Implements PyG dataset API, see
+# https://pytorch-geometric.readthedocs.io/en/2.0.1/notes/create_dataset.html.
 class Dataset:
     label_map: Optional[dict[Optional[str], int]] = None
     loader: Optional[gloader.DataLoader] = None
