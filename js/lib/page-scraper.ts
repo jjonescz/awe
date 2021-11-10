@@ -19,6 +19,8 @@ export const enum SwdeHandling {
 export class PageScraper {
   private stopped = false;
   private readonly inProgress: Set<readonly [string, string]> = new Set();
+  private readonly handled: Map<string, number> = new Map();
+  private totalHandled = 0;
   public swdeHandling = SwdeHandling.Offline;
 
   constructor(
@@ -69,6 +71,25 @@ export class PageScraper {
   }
 
   private async handleRequest(request: puppeteer.HTTPRequest) {
+    // Check for infinite loops.
+    const url = normalizeUrl(request.url());
+    const numHandled = this.handled.get(url) ?? 0;
+    if (numHandled >= 10) {
+      await this.page.close();
+      throw new Error(
+        `One URL handled too many times (${numHandled}): ${request.url()}`
+      );
+    }
+    this.handled.set(url, numHandled + 1);
+    if (this.totalHandled >= 1000) {
+      await this.page.close();
+      throw new Error(
+        `Too many requests (${this.totalHandled}) for one page: ` +
+          `${this.swdePage.url}`
+      );
+    }
+    this.totalHandled++;
+
     if (this.swdePage !== null && urlsEqual(request.url(), this.swdePage.url)) {
       await this.handleSwdePage(request, this.swdePage);
     } else {
@@ -242,12 +263,13 @@ export class PageScraper {
       await this.page.goto(this.swdePage.url, {
         waitUntil: 'networkidle0',
       });
-    } catch (e: any) {
-      if (e.name === 'TimeoutError') {
+    } catch (e) {
+      const error = e as Error;
+      if (error?.name === 'TimeoutError') {
         // Ignore timeouts.
         this.logger.error('timeout');
       } else {
-        throw e;
+        this.logger.error('goto failed', { error: error?.stack });
       }
     }
   }
@@ -256,7 +278,11 @@ export class PageScraper {
     this.stopped = true;
 
     // Go offline.
-    await this.page.setOfflineMode(true);
+    try {
+      await this.page.setOfflineMode(true);
+    } catch (e) {
+      this.logger.error('stopping failed', { error: (e as Error)?.stack });
+    }
 
     for (const [url, timestamp] of this.inProgress) {
       this.logger.debug('unhandled', { url, timestamp });

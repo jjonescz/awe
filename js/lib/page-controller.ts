@@ -132,6 +132,12 @@ export class PageController {
   }
 
   public async close() {
-    await this.pageScraper.page.close();
+    try {
+      await this.pageScraper.page.close();
+    } catch (e: any) {
+      this.pageScraper.logger.error('closing failed', {
+        error: (e as Error)?.stack,
+      });
+    }
   }
 }
