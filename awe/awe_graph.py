@@ -40,9 +40,13 @@ class HtmlPage(ABC):
         """Names of labels recognized in this page."""
 
     @property
-    @abstractmethod
-    def data_point_path(self) -> str:
-        """Path to a file with stored Pytorch Geometric datapoints."""
+    def data_point_path(self) -> Optional[str]:
+        """
+        Path to a file with stored Pytorch Geometric datapoints.
+
+        If `None`, the data will be stored in memory.
+        """
+        return None
 
     def create_root(self):
         return HtmlNode(self, 0, 0, self.dom.root)

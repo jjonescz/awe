@@ -16,6 +16,7 @@ class Dataset:
     label_map: Optional[dict[Optional[str], int]] = None
     loader: Optional[gloader.DataLoader] = None
     parallelize: Optional[int] = None
+    in_memory_data: dict[int, gdata.Data] = {}
 
     def __init__(self,
         name: str,
@@ -30,15 +31,19 @@ class Dataset:
             self.label_map = other.label_map
         self._prepare_label_map()
 
-    def __getitem__(self, idx: int):
+    def __getitem__(self, idx: int) -> gdata.Data:
         page = self.pages[idx]
-        return torch.load(page.data_point_path)
+        if page.data_point_path is None:
+            return self.in_memory_data[idx]
+        else:
+            return torch.load(page.data_point_path)
 
     def __len__(self):
         return len(self.pages)
 
-    def prepare_page(self, page: awe_graph.HtmlPage):
-        """Computes features for `page` and persists them on disk."""
+    def prepare_page(self, idx: int):
+        """Computes features for page at `idx` and persists them on disk."""
+        page = self.pages[idx]
         ctx = self.parent.create_context(page)
 
         def get_node_features(node: awe_graph.HtmlNode):
@@ -80,14 +85,21 @@ class Dataset:
             child_edges + parent_edges).t().contiguous()
 
         data = gdata.Data(x=x, y=y, edge_index=edge_index)
-        torch.save(data, page.data_point_path)
+        if page.data_point_path is None:
+            self.in_memory_data[idx] = data
+        else:
+            torch.save(data, page.data_point_path)
 
     def prepare(self, skip_existing=False):
-        def prepare_one(page: awe_graph.HtmlPage):
-            if not skip_existing or not os.path.exists(page.data_point_path):
-                self.prepare_page(page)
-        utils.parallelize(self.parallelize, prepare_one, self.pages, 'pages')
-        return len(self.pages)
+        def prepare_one(idx: int):
+            if (
+                not skip_existing or
+                not os.path.exists(self.pages[idx].data_point_path)
+            ):
+                self.prepare_page(idx)
+        utils.parallelize(
+            self.parallelize, prepare_one, range(len(self)), 'pages')
+        return len(self)
 
     def _prepare_label_map(self):
         if self.label_map is None:
