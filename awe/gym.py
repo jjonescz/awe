@@ -7,12 +7,13 @@ from dataclasses import dataclass
 from typing import Optional, Union
 
 import pytorch_lightning as pl
+from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 import torch
 
 from awe import awe_model, utils
 from awe.data import dataset
 
-LOG_DIR = 'lightning_logs'
+LOG_DIR = 'logs'
 
 def get_version_path(version: int):
     return f'{LOG_DIR}/version_{version}'
@@ -123,3 +124,6 @@ class Gym:
             self.get_last_checkpoint().version_path,
             version_path
         )
+
+    def create_logger(self):
+        return TensorBoardLogger(save_dir=os.getcwd(), name=LOG_DIR)

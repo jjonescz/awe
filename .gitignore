@@ -1,11 +1,12 @@
-# Python
+# Python compilation.
 __pycache__/
 
-# Python package `doit`
+# Python package `doit`. See `dodo.py`.
 .doit.db
 
-# Data downloaded by `dodo.py`
+# Data downloaded by `dodo.py` and cached by Python and Node.js code.
+# See `DATA_DIR` in `constants.py` and `constants.ts`.
 /data/
 
-# PyTorch
-/lightning_logs/
+# PyTorch machine learning. See `LOG_DIR` in `gym.py`.
+/logs/
