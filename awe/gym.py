@@ -95,6 +95,17 @@ class Gym:
         last_checkpoint = self.get_last_checkpoint()
         return last_checkpoint.path if last_checkpoint is not None else None
 
+    def get_last_checkpoint_version(self):
+        if self.restore_checkpoint is False: # user disabled checkpoint
+            return None
+
+        if self.restore_checkpoint is not None:
+            # Specific checkpoint restored, but unknown version.
+            return None
+
+        last_checkpoint = self.get_last_checkpoint()
+        return last_checkpoint.version if last_checkpoint is not None else None
+
     def save_model(self):
         path = self.get_last_checkpoint().model_path
         torch.save(self.model, path)
@@ -136,4 +147,8 @@ class Gym:
         )
 
     def create_logger(self):
-        return TensorBoardLogger(save_dir=os.getcwd(), name=LOG_DIR)
+        return TensorBoardLogger(
+            save_dir=os.getcwd(),
+            name=LOG_DIR,
+            version=self.get_last_checkpoint_version()
+        )
