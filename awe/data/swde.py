@@ -270,6 +270,7 @@ class PageLabels(awe_graph.HtmlLabels):
     """Map label -> groundtruth XPaths."""
 
     def __init__(self, page: Page):
+        self.page = page
         self.nodes = dict()
         for groundtruth_field in page.site.groundtruth:
             entry = groundtruth_field.entries[page.index]
@@ -278,6 +279,14 @@ class PageLabels(awe_graph.HtmlLabels):
 
     def get_labels(self, node: awe_graph.HtmlNode):
         return list(self._iter_labels(node))
+
+    def get_nodes(self, label: str):
+        xpaths = self.nodes[label]
+        return [
+            node
+            for node in self.page.initialize_tree().descendants
+            if node.xpath_swde in xpaths
+        ]
 
     def _iter_labels(self, node: awe_graph.HtmlNode):
         for label, xpaths in self.nodes.items():

@@ -35,7 +35,10 @@ class Page(awe_graph.HtmlPage):
         return html_utils.parse_html(text)
 
 class PageLabels(awe_graph.HtmlLabels):
-    def get_labels(self, _: awe_graph.HtmlNode):
+    def get_labels(self, _):
+        return []
+
+    def get_nodes(self, _):
         return []
 
 NO_LABELS = PageLabels()

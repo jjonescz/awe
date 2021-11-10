@@ -17,6 +17,10 @@ class HtmlLabels(ABC):
     def get_labels(self, node: 'HtmlNode') -> list[str]:
         pass
 
+    @abstractmethod
+    def get_nodes(self, label: str) -> list['HtmlNode']:
+        pass
+
 class HtmlPage(ABC):
     archived: Optional[WaybackPage] = False
     """
