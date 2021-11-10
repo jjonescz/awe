@@ -130,6 +130,14 @@ export class PageScraper {
     if (offline) {
       await this.handleOfflineRequest(request, timestamp, offline);
     } else {
+      // Ignore requests matching specified patterns.
+      if (ignoreUrl(request.url())) {
+        this.logger.debug('ignored', { url: request.url() });
+        await request.abort();
+        this.scraper.stats.ignored++;
+        return;
+      }
+
       if (offline === null && !this.scraper.forceLive) {
         // This request didn't complete last time, abort it.
         this.logger.debug('aborted', { url: request.url() });
@@ -140,17 +148,9 @@ export class PageScraper {
 
       if (!this.scraper.allowLive) {
         // In offline mode, act as if this endpoint was not available.
-        this.logger.debug('disabled', { url: request.url() });
+        this.logger.verbose('disabled', { url: request.url() });
         await request.respond({ status: 404 });
         this.scraper.stats.increment(404);
-        return;
-      }
-
-      // Ignore requests matching specified patterns.
-      if (ignoreUrl(request.url())) {
-        this.logger.debug('ignored', { url: request.url() });
-        await request.abort();
-        this.scraper.stats.ignored++;
         return;
       }
 
