@@ -149,8 +149,8 @@ export class PageScraper {
       if (!this.scraper.allowLive) {
         // In offline mode, act as if this endpoint was not available.
         this.logger.verbose('disabled', { url: request.url() });
-        await request.respond({ status: 404 });
-        this.scraper.stats.increment(404);
+        await request.abort();
+        this.scraper.stats.disabled++;
         return;
       }
 
