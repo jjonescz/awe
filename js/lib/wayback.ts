@@ -1,7 +1,12 @@
-import { writeFile } from 'fs/promises';
 import { HTTPRequest } from 'puppeteer-core';
 import { WAYBACK_CLOSEST_FILE } from './constants';
-import { getHttps, normalizeUrl, tryReadFile, urlsEqual } from './utils';
+import {
+  getHttps,
+  normalizeUrl,
+  tryReadFile,
+  urlsEqual,
+  writeFileSafe,
+} from './utils';
 
 const ARCHIVE_URL_REGEX =
   /^https?:\/\/web.archive.org\/web\/(\d{14})([a-z]{2}_)?\/(.*)$/;
@@ -49,8 +54,8 @@ export class Wayback {
   }
 
   /** Saves {@link closestTimestamp} cache. */
-  public async saveResponses() {
-    await writeFile(WAYBACK_CLOSEST_FILE, JSON.stringify(this.responses));
+  public saveResponses() {
+    writeFileSafe(WAYBACK_CLOSEST_FILE, JSON.stringify(this.responses));
   }
 
   /**

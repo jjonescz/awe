@@ -103,9 +103,9 @@ export class Cache {
   }
 
   /** Saves file map. */
-  public async save() {
+  public save() {
     const mapJson = JSON.stringify(this.map);
-    await writeFileSafe(CACHE_MAP_PATH, mapJson);
+    writeFileSafe(CACHE_MAP_PATH, mapJson);
   }
 
   private getPath(hash: string) {

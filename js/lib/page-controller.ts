@@ -94,7 +94,7 @@ export class PageController {
     });
 
     // Save local cache.
-    await this.controller.scraper.save();
+    this.controller.scraper.save();
 
     if (this.page.timestamp === null) {
       // Couldn't find snapshot of this page in the WaybackMachine, abort early.

@@ -1,5 +1,5 @@
-import { existsSync } from 'fs';
-import { readFile, rename, writeFile } from 'fs/promises';
+import { existsSync, renameSync, writeFileSync } from 'fs';
+import { readFile } from 'fs/promises';
 import https from 'https';
 import path from 'path';
 import { URL } from 'url';
@@ -36,10 +36,12 @@ export async function tryReadFile(fullPath: string, defaultContents: string) {
  * Saves {@link data} through a temporary file, so that this operation can
  * survive an interruption without losing the original {@link file}.
  */
-export async function writeFileSafe(file: string, data: string) {
+export function writeFileSafe(file: string, data: string) {
   const tempFile = `${file}.temp`;
-  await writeFile(tempFile, data, { encoding: 'utf-8' });
-  await rename(tempFile, file);
+  // Note that this must NOT be asynchronous, so it's "atomic" (in non-threaded
+  // Node.js world, at least).
+  writeFileSync(tempFile, data, { encoding: 'utf-8' });
+  renameSync(tempFile, file);
 }
 
 export function escapeFilePath(filePath: string) {

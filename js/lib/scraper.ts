@@ -55,14 +55,14 @@ export class Scraper {
     return await PageScraper.create(this, swdePage);
   }
 
-  public async save() {
+  public save() {
     logger.debug('saving data');
-    await this.cache.save();
-    await this.wayback.saveResponses();
+    this.cache.save();
+    this.wayback.saveResponses();
   }
 
   public async dispose() {
-    await this.save();
+    this.save();
     await this.browser.close();
   }
 }
