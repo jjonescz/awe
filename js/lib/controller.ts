@@ -28,7 +28,6 @@ export class Controller {
     {
       showProgressBar = true,
       jobs = 1,
-      continueOnError = false,
       versions = [ScrapeVersion.Exact, ScrapeVersion.Latest],
     } = {}
   ) {
@@ -70,14 +69,10 @@ export class Controller {
               }
             }
           } catch (e) {
-            if (continueOnError) {
-              logger.error('ignoring page controller error', {
-                file,
-                error: (e as Error)?.stack,
-              });
-            } else {
-              throw e;
-            }
+            logger.error('page controller error', {
+              file,
+              error: (e as Error)?.stack,
+            });
           }
 
           // Update progress bar.

@@ -70,10 +70,6 @@ class Program extends Command {
       description: 'number of jobs to run in parallel',
       default: 1,
     }),
-    continueOnError: flags.boolean({
-      char: 'e',
-      description: 'log errors but continue with other pages if possible',
-    }),
     clean: flags.boolean({
       description: 'clean files from previous runs and exit',
     }),
@@ -158,7 +154,6 @@ class Program extends Command {
       await controller.scrapeAll(files, {
         showProgressBar: !flags.noProgress,
         jobs: flags.jobs,
-        continueOnError: flags.continueOnError,
         versions: [
           ...(flags.latest ? [ScrapeVersion.Latest] : []),
           ...(flags.exact ? [ScrapeVersion.Exact] : []),
