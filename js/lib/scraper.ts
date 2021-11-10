@@ -21,12 +21,13 @@ export class Scraper {
   private constructor(
     public readonly wayback: Wayback,
     public readonly browser: puppeteer.Browser,
-    public readonly cache: Cache
+    public readonly cache: Cache,
+    poolSize: number
   ) {
-    this.pagePool = createPagePool(this);
+    this.pagePool = createPagePool(this, poolSize);
   }
 
-  public static async create() {
+  public static async create(opts: { poolSize: number }) {
     // Open browser.
     const browser = await puppeteer.launch({
       args: [
@@ -52,7 +53,7 @@ export class Scraper {
     const wayback = new Wayback();
     await wayback.loadResponses();
 
-    return new Scraper(wayback, browser, cache);
+    return new Scraper(wayback, browser, cache, opts.poolSize);
   }
 
   public async for(swdePage: SwdePage) {

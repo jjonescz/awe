@@ -3,7 +3,7 @@ import { logger } from './logging';
 import { Scraper } from './scraper';
 import puppeteer from 'puppeteer-core';
 
-export function createPagePool(scraper: Scraper) {
+export function createPagePool(scraper: Scraper, poolSize: number) {
   const factory = <genericPool.Factory<puppeteer.Page>>{
     create: async () => {
       const page = await scraper.browser.newPage();
@@ -28,7 +28,5 @@ export function createPagePool(scraper: Scraper) {
     },
   };
 
-  return genericPool.createPool(factory, {
-    max: 10,
-  });
+  return genericPool.createPool(factory, { max: poolSize });
 }

@@ -139,7 +139,7 @@ class Program extends Command {
     }
 
     // Open browser.
-    const scraper = await Scraper.create();
+    const scraper = await Scraper.create({ poolSize: flags.jobs });
     const controller = new Controller(scraper);
 
     // Apply CLI flags.
