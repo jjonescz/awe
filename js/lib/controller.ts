@@ -37,6 +37,10 @@ export class Controller {
           format:
             '[{bar}] {percentage}% | ETA: {eta_formatted} | ' +
             '{value}/{total} | {details}',
+          // In parallel mode, jobs can complete quickly after each other, so we
+          // must compute ETA from large enough previous jobs for it to be
+          // representative.
+          etaBuffer: jobs * 2,
         })
       : null;
     bar?.start(files.length, 0, { details: 'starting...' });
