@@ -10,26 +10,31 @@ from awe.data import dataset
 class Predictor:
     """Can do example predictions on a `Dataset`."""
 
-    def __init__(self, ds: dataset.Dataset, name: str, model: awe_model.AweModel):
+    def __init__(self,
+        ds: dataset.DatasetCollection,
+        name: str,
+        model: awe_model.AweModel
+    ):
         self.ds = ds
         self.name = name
-        self.dataloader = loader.DataLoader(ds.data[name])
+        self.dataloader = loader.DataLoader(ds[name])
         self.model = model
 
     def get_example(self, index: int):
         example_batch = next(itertools.islice(self.dataloader, index, None))
-        example_page = self.ds.pages[self.name][index]
-        example_ctx = self.ds.get_context(example_page)
+        example_page = self.ds[self.name].pages[index]
+        example_ctx = self.ds.create_context(example_page)
         return example_batch, example_ctx.nodes
 
     def evaluate_example(self, index: int, label: str):
         batch, _ = self.get_example(index)
-        return self.model.compute_swde_metrics(batch, self.ds.label_map[label])
+        return self.model.compute_swde_metrics(
+            batch, self.ds.first_dataset.label_map[label])
 
     def evaluate(self, indices: Iterable[int]):
         return [{
             label: self.evaluate_example(i, label)
-            for label in self.ds.label_map
+            for label in self.ds.first_dataset.label_map
             if label is not None
         } for i in indices]
 
@@ -42,7 +47,8 @@ class Predictor:
                 masked = itertools.compress(nodes, mask)
                 node = next(itertools.islice(masked, idx, None))
                 predicted_nodes.append(node)
-        self.model.predict_swde(batch, self.ds.label_map[label], handle)
+        self.model.predict_swde(
+            batch, self.ds.first_dataset.label_map[label], handle)
 
         return predicted_nodes
 
@@ -52,5 +58,5 @@ class Predictor:
                 [node.text_content for node in self.predict_example(i, label)]
                 for i in indices
             ]
-            for label in self.ds.label_map if label is not None
+            for label in self.ds.first_dataset.label_map if label is not None
         }
