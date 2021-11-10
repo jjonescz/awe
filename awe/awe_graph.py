@@ -26,6 +26,11 @@ class HtmlPage(ABC):
 
     @property
     @abstractmethod
+    def identifier(self) -> str:
+        """Unique identifier of the page (e.g., relative path in dataset)."""
+
+    @property
+    @abstractmethod
     def dom(self) -> parsel.Selector:
         pass
 

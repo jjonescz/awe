@@ -13,6 +13,10 @@ class Page(awe_graph.HtmlPage):
     _dom: Optional[parsel.Selector] = utils.cache_field()
 
     @property
+    def identifier(self):
+        return self.url
+
+    @property
     def dom(self):
         if self._dom is None:
             self._dom = self._download_dom()

@@ -41,8 +41,11 @@ class Checkpoint:
     def model_text_path(self):
         return f'{self.version_path}/model.txt'
 
-    def get_results_path(self, dataset_name):
+    def get_results_path(self, dataset_name: str):
         return f'{self.version_path}/results-{dataset_name}.txt'
+
+    def get_pages_path(self, dataset_name: str):
+        return f'{self.version_path}/pages-{dataset_name}.txt'
 
 class Gym:
     restore_checkpoint: Optional[Union[str, bool]] = None
@@ -113,6 +116,17 @@ class Gym:
         with open(path, mode='w', encoding='utf-8') as f:
             f.write(str(results))
         return path
+
+    def save_pages(self):
+        """Saves list of pages used for training and validation."""
+        return list(self._iterate_pages())
+
+    def _iterate_pages(self):
+        for name, items in self.ds.datasets.items():
+            path = self.get_last_checkpoint().get_pages_path(name)
+            with open(path, mode='w', encoding='utf-8') as file:
+                file.writelines(map(lambda p: f'{p.identifier}\n', items.pages))
+            yield name
 
     def save_named_version(self, name: str):
         """Saves the last version with a name."""

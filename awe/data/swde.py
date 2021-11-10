@@ -212,6 +212,10 @@ class Page(awe_graph.HtmlPage):
         return f'{self.site.dir_path}/{self.file_name}'
 
     @property
+    def identifier(self):
+        return f'{self.site.name}/{self.file_name}'
+
+    @property
     def data_point_path(self):
         return self.file_path.removesuffix('.htm') + '.pt'
 
