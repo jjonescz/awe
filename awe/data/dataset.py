@@ -90,7 +90,7 @@ class Dataset:
         else:
             torch.save(data, page.data_point_path)
 
-    def prepare(self, skip_existing=False):
+    def prepare(self, skip_existing=True):
         def prepare_one(idx: int):
             if (
                 not skip_existing or
@@ -100,6 +100,15 @@ class Dataset:
         utils.parallelize(
             self.parallelize, prepare_one, range(len(self)), 'pages')
         return len(self)
+
+    def delete_saved(self):
+        counter = 0
+        for page in self.pages:
+            pt_path = page.data_point_path
+            if pt_path is not None and os.path.exists(pt_path):
+                os.remove(pt_path)
+                counter += 1
+        return counter
 
     def _prepare_label_map(self):
         if self.label_map is None:
