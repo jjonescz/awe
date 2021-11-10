@@ -5,7 +5,7 @@ import { ignoreUrl } from './ignore';
 import { logger } from './logging';
 import { Scraper } from './scraper';
 import { SwdePage } from './swde-page';
-import { urlsEqual } from './utils';
+import { normalizeUrl, urlsEqual } from './utils';
 
 /** Method of handling request to SWDE page. */
 export const enum SwdeHandling {
@@ -178,15 +178,17 @@ export class PageScraper {
     request: puppeteer.HTTPRequest,
     timestamp: string
   ) {
+    const url = normalizeUrl(request.url());
+
     // Save this request as "in progress".
-    const inProgressEntry = [request.url(), timestamp] as const;
+    const inProgressEntry = [url, timestamp] as const;
     this.inProgress.add(inProgressEntry);
 
     // Redirect to `web.archive.org` unless it's already directed there.
     const archiveUrl =
-      this.scraper.wayback.parseArchiveUrl(request.url()) !== null
-        ? request.url()
-        : this.scraper.wayback.getArchiveUrl(request.url(), timestamp);
+      this.scraper.wayback.parseArchiveUrl(url) !== null
+        ? url
+        : this.scraper.wayback.getArchiveUrl(url, timestamp);
     this.logger.debug('live request', { archiveUrl });
     await request.continue({ url: archiveUrl });
 
@@ -194,9 +196,9 @@ export class PageScraper {
     // exactly the provided timestamp, it will redirect. That's detected
     // by `isArchiveRedirect`.
     const response = await this.page.waitForResponse((res) => {
-      if (res.url() === request.url() && res.status() !== 302) return true;
+      if (urlsEqual(res.url(), url) && res.status() !== 302) return true;
       const redirectUrl = this.scraper.wayback.isArchiveRedirect(res.request());
-      if (redirectUrl === request.url()) return true;
+      if (redirectUrl !== null && urlsEqual(redirectUrl, url)) return true;
       return false;
     });
 
@@ -211,12 +213,12 @@ export class PageScraper {
       body,
     };
     if (!this.inProgress.delete(inProgressEntry))
-      throw new Error(`Failed to delete ${request.url()} (${timestamp})`);
+      throw new Error(`Failed to delete ${url} (${timestamp})`);
     if (this.scraper.allowOffline) {
       // HACK: This header causes error in Puppeteer, remove it.
       delete cached.headers['x-archive-orig-set-cookie'];
 
-      await this.scraper.cache.add(request.url(), timestamp, cached);
+      await this.scraper.cache.add(url, timestamp, cached);
     }
     this.addToStats(cached);
     this.scraper.stats.live++;

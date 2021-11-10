@@ -5,7 +5,7 @@ import path from 'path';
 import { ResponseForRequest } from 'puppeteer-core';
 import { CACHE_DIR } from './constants';
 import { logger } from './logging';
-import { tryReadFile, writeFileSafe } from './utils';
+import { normalizeUrl, tryReadFile, writeFileSafe } from './utils';
 
 const CACHE_FILES_FOLDER = path.join(CACHE_DIR, 'files');
 const CACHE_MAP_PATH = path.join(CACHE_DIR, 'map.json');
@@ -113,6 +113,6 @@ export class Cache {
   }
 
   private stringifyKey(url: string, timestamp: string) {
-    return `${timestamp}:${url}`;
+    return `${timestamp}:${normalizeUrl(url)}`;
   }
 }

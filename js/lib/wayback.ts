@@ -1,7 +1,7 @@
 import { writeFile } from 'fs/promises';
 import { HTTPRequest } from 'puppeteer-core';
 import { WAYBACK_CLOSEST_FILE } from './constants';
-import { getHttps, tryReadFile, urlsEqual } from './utils';
+import { getHttps, normalizeUrl, tryReadFile, urlsEqual } from './utils';
 
 const ARCHIVE_URL_REGEX =
   /^https?:\/\/web.archive.org\/web\/(\d{14})([a-z]{2}_)?\/(.*)$/;
@@ -17,12 +17,14 @@ export class Wayback {
   public variant = 'id_';
 
   public getArchiveUrl(url: string, timestamp: string) {
+    url = normalizeUrl(url);
     // For URL scheme, see
     // https://en.wikipedia.org/wiki/Help:Using_the_Wayback_Machine#Specific_archive_copy.
     return `https://web.archive.org/web/${timestamp}${this.variant}/${url}`;
   }
 
   public parseArchiveUrl(url: string) {
+    url = normalizeUrl(url);
     const match = url.match(ARCHIVE_URL_REGEX);
     if (match === null) return null;
     const [_full, date, _modifier, pageUrl] = match;
@@ -36,7 +38,7 @@ export class Wayback {
     const chain = request.redirectChain();
     if (chain.length !== 1) return null;
     const prev = chain[0];
-    if (prev.url() !== url) return null;
+    if (!urlsEqual(prev.url(), url)) return null;
     return url;
   }
 
@@ -58,6 +60,8 @@ export class Wayback {
    * @see https://archive.org/help/wayback_api.php.
    */
   public async closestTimestamp(url: string) {
+    url = normalizeUrl(url);
+
     // Try cache first.
     const cached = this.responses[url];
     if (cached !== undefined) {

@@ -1,3 +1,5 @@
+import { normalizeUrl } from './utils';
+
 /** Patterns of URLs that will be ignored while scraping. */
 export const ignorePatterns: RegExp[] = [];
 
@@ -24,6 +26,7 @@ export const ignoreStartingWith = [
 ];
 
 export function ignoreUrl(url: string) {
+  url = normalizeUrl(url);
   return (
     ignoreStartingWith.some((p) => url.startsWith(p)) ||
     ignorePatterns.some((r) => r.test(url))
