@@ -48,7 +48,7 @@ class Gym:
     trainer: Optional[pl.Trainer] = None
 
     def __init__(self,
-        ds: dataset.Dataset,
+        ds: dataset.DatasetCollection,
         model: awe_model.AweModel
     ):
         self.ds = ds
@@ -105,7 +105,7 @@ class Gym:
     def save_results(self, dataset_name: str):
         results = self.trainer.validate(
             self.model,
-            self.ds.loaders[dataset_name]
+            self.ds[dataset_name].loader
         )
 
         path = self.get_last_checkpoint().get_results_path(dataset_name)
