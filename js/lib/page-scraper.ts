@@ -30,9 +30,9 @@ export class PageScraper {
     public readonly page: puppeteer.Page
   ) {
     // Handle events.
-    page.on('request', this.onRequest.bind(this));
-    page.on('error', (e) => logger.error('page error', { e }));
-    page.on('console', (m) => logger.debug('page console', { text: m.text() }));
+    this.page.on('request', this.onRequest);
+    this.page.on('error', this.onError);
+    this.page.on('console', this.onConsole);
   }
 
   public get numWaiting() {
@@ -40,23 +40,20 @@ export class PageScraper {
   }
 
   public static async create(scraper: Scraper, swdePage: SwdePage) {
-    const page = await scraper.browser.newPage();
+    const page = await scraper.pagePool.acquire();
     const pageLogger = logger.child({ page: swdePage.id });
-    const pageScraper = new PageScraper(pageLogger, scraper, swdePage, page);
-    await pageScraper.initialize();
-    return pageScraper;
+    return new PageScraper(pageLogger, scraper, swdePage, page);
   }
 
-  private async initialize() {
-    // Intercept requests.
-    await this.page.setRequestInterception(true);
+  private onError = (e: Error) => {
+    this.logger.error('page error', { error: e?.stack });
+  };
 
-    // Ignore some errors that would prevent WaybackMachine redirection.
-    await this.page.setBypassCSP(true);
-    this.page.setDefaultTimeout(0); // disable timeout
-  }
+  private onConsole = (m: puppeteer.ConsoleMessage) => {
+    this.logger.debug('page console', { text: m.text() });
+  };
 
-  private async onRequest(request: puppeteer.HTTPRequest) {
+  private onRequest = async (request: puppeteer.HTTPRequest) => {
     try {
       await this.handleRequest(request);
     } catch (e) {
@@ -68,7 +65,7 @@ export class PageScraper {
         error: error?.stack,
       });
     }
-  }
+  };
 
   private async handleRequest(request: puppeteer.HTTPRequest) {
     // Check for infinite loops.
@@ -291,5 +288,12 @@ export class PageScraper {
       await this.scraper.cache.add(url, timestamp, null);
       this.scraper.stats.aborted++;
     }
+  }
+
+  public async dispose() {
+    this.page.off('request', this.onRequest);
+    this.page.off('error', this.onError);
+    this.page.off('console', this.onConsole);
+    await this.scraper.pagePool.release(this.page);
   }
 }

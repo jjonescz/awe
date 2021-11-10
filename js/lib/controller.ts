@@ -65,7 +65,7 @@ export class Controller {
               try {
                 await pageController.scrape(file, version);
               } finally {
-                await pageController.close();
+                await pageController.dispose();
               }
             }
           } catch (e) {

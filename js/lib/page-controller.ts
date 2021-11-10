@@ -131,13 +131,7 @@ export class PageController {
     });
   }
 
-  public async close() {
-    try {
-      await this.pageScraper.page.close();
-    } catch (e: any) {
-      this.pageScraper.logger.error('closing failed', {
-        error: (e as Error)?.stack,
-      });
-    }
+  public async dispose() {
+    await this.pageScraper.dispose();
   }
 }

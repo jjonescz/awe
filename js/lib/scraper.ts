@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer-core';
 import { Cache } from './cache';
 import { logger } from './logging';
+import { createPagePool } from './page-pool';
 import { PageScraper } from './page-scraper';
 import { ScrapingStats } from './scraping-stats';
 import { SwdePage } from './swde-page';
@@ -15,12 +16,15 @@ export class Scraper {
   /** Force retry of all live (online) requests. */
   public forceLive = false;
   public readonly stats = new ScrapingStats();
+  public readonly pagePool;
 
   private constructor(
     public readonly wayback: Wayback,
     public readonly browser: puppeteer.Browser,
     public readonly cache: Cache
-  ) {}
+  ) {
+    this.pagePool = createPagePool(this);
+  }
 
   public static async create() {
     // Open browser.
