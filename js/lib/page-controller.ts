@@ -102,16 +102,16 @@ export class PageController {
       return;
     }
 
-    if (this.controller.skipExtraction) return;
+    if (!this.controller.skipExtraction) {
+      // Save page HTML (can be different from original due to JavaScript
+      // dynamically updating the DOM).
+      const html = await this.pageScraper.page.content();
+      await this.page.withHtml(html).saveAs(htmlPath);
 
-    // Save page HTML (can be different from original due to JavaScript
-    // dynamically updating the DOM).
-    const html = await this.pageScraper.page.content();
-    await this.page.withHtml(html).saveAs(htmlPath);
-
-    // Extract visual attributes.
-    await extractor.extract();
-    await extractor.save({ suffix });
+      // Extract visual attributes.
+      await extractor.extract();
+      await extractor.save({ suffix });
+    }
 
     // Take screenshot.
     if (this.controller.takeScreenshot) {

@@ -97,7 +97,6 @@ class Program extends Command {
     skipExtraction: flags.boolean({
       char: 'R',
       description: 'skip feature extraction',
-      exclusive: ['screenshot'],
     }),
   };
 
