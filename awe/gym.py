@@ -102,9 +102,7 @@ class Gym:
 
     def save_model_text(self):
         path = self.get_last_checkpoint().model_text_path
-        with open(path, mode='w', encoding='utf-8') as f:
-            f.write(str(self.model))
-        return path
+        return utils.save_or_check_file(path, str(self.model))
 
     def save_results(self, dataset_name: str):
         results = self.trainer.validate(
@@ -113,9 +111,7 @@ class Gym:
         )
 
         path = self.get_last_checkpoint().get_results_path(dataset_name)
-        with open(path, mode='w', encoding='utf-8') as f:
-            f.write(str(results))
-        return path
+        return utils.save_or_check_file(path, str(results))
 
     def save_pages(self):
         """Saves list of pages used for training and validation."""
@@ -124,8 +120,8 @@ class Gym:
     def _iterate_pages(self):
         for name, items in self.ds.datasets.items():
             path = self.get_last_checkpoint().get_pages_path(name)
-            with open(path, mode='w', encoding='utf-8') as file:
-                file.writelines(map(lambda p: f'{p.identifier}\n', items.pages))
+            pages = '\n'.join(map(lambda p: p.identifier, items.pages))
+            utils.save_or_check_file(path, pages)
             yield name
 
     def save_named_version(self, name: str):

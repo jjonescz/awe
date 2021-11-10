@@ -1,3 +1,4 @@
+import os
 from dataclasses import field
 from typing import Any, Callable, Iterable, Optional, TypeVar
 
@@ -44,3 +45,20 @@ def parallelize(
         return list(map(selector, items_with_progress))
     return list(joblib.Parallel(n_jobs=num)(
         map(joblib.delayed(selector), items_with_progress)))
+
+def save_or_check_file(path: str, content: str):
+    """
+    Saves `contents` to `file` if it doesn't exist yet. Otherwise, checks that
+    the existing file has the same content.
+    """
+    if os.path.exists(path):
+        # If the file already exists, check that it has the same contents.
+        with open(path, mode='r', encoding='utf-8') as file:
+            if file.read() != content:
+                raise RuntimeError(
+                    f'File content at {path} is different from expected: ' + \
+                    f'{content}')
+    else:
+        with open(path, mode='w', encoding='utf-8') as file:
+            file.write(content)
+    return path
