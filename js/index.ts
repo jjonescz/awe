@@ -94,6 +94,11 @@ class Program extends Command {
       char: 'x',
       description: 'skip already-scraped pages',
     }),
+    skipExtraction: flags.boolean({
+      char: 'R',
+      description: 'skip feature extraction',
+      exclusive: ['screenshot'],
+    }),
   };
 
   async run() {
@@ -147,6 +152,7 @@ class Program extends Command {
     if (flags.forceRefresh) scraper.forceLive = true;
     controller.takeScreenshot = flags.screenshot;
     controller.skipExisting = flags.skipExisting;
+    controller.skipExtraction = flags.skipExtraction;
 
     // Scrape pages.
     try {

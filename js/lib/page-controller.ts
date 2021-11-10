@@ -102,6 +102,8 @@ export class PageController {
       return;
     }
 
+    if (this.controller.skipExtraction) return;
+
     // Save page HTML (can be different from original due to JavaScript
     // dynamically updating the DOM).
     const html = await this.pageScraper.page.content();

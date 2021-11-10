@@ -13,6 +13,8 @@ export class Controller {
   public takeScreenshot = true;
   /** Skip already-scraped pages. */
   public skipExisting = false;
+  /** Skip extraction (perform only page loading). */
+  public skipExtraction = false;
 
   public constructor(public readonly scraper: Scraper) {}
 
