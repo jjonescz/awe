@@ -104,7 +104,6 @@ class WordEmbedding(Feature):
 
     def __init__(self):
         self.tokenizer = text_utils.get_tokenizer('basic_english')
-        self.glove = glove.get_embeddings()
 
     @property
     def labels(self):
@@ -112,7 +111,11 @@ class WordEmbedding(Feature):
 
     @property
     def dimension(self):
-        return self.glove.vector_size
+        return glove.VECTOR_DIMENSION
+
+    @property
+    def glove(self):
+        return glove.LazyEmbeddings.get_or_create()
 
     def _embed(self, text: str):
         for token in self.tokenizer(text):

@@ -11,10 +11,18 @@ from gensim import models
 assert api.base_dir == GLOVE_DIR
 
 # See https://github.com/RaRe-Technologies/gensim-data.
-MODEL_NAME = 'glove-wiki-gigaword-100'
+VECTOR_DIMENSION = 100
+MODEL_NAME = f'glove-wiki-gigaword-{VECTOR_DIMENSION}'
 
 def download_embeddings():
     api.load(MODEL_NAME, return_path=True)
 
-def get_embeddings() -> models.KeyedVectors:
-    return api.load(MODEL_NAME)
+class LazyEmbeddings:
+    """Container for lazily loaded model."""
+    _model = None
+
+    @classmethod
+    def get_or_create(cls) -> models.KeyedVectors:
+        if cls._model is None:
+            cls._model = api.load(MODEL_NAME)
+        return cls._model
