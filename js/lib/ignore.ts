@@ -1,7 +1,10 @@
 import { normalizeUrl } from './utils';
 
 /** Patterns of URLs that will be ignored while scraping. */
-export const ignorePatterns: RegExp[] = [];
+export const ignorePatterns: RegExp[] = [
+  // From `auto-automotive` and `auto-motortrend`.
+  /^http:\/\/[a-z]+\.112\.2o7\.net\/b\/ss/,
+];
 
 /** Prefixes of URLs that will be ignored while scraping. */
 export const ignoreStartingWith = [
@@ -21,8 +24,16 @@ export const ignoreStartingWith = [
   'http://secure-us.imrworldwide.com/cgi-bin/j',
   'http://pbid.pro-market.net/engine',
   'http://b.scorecardresearch.com/b',
-  'http://aumoautomotivecom.112.2o7.net/b/ss/aumoautomotivecom/1/H.17/',
-  'http://pix04.revsci.net/C07585/b3/0/3/1008211/',
+  'http://pix04.revsci.net/',
+  // From `auto-cars`.
+  'http://fls.doubleclick.net/activityi',
+  // From `auto-kbb`.
+  'http://metrics.kbb.com/',
+  'http://mxptint.net/2/1/0/',
+  'http://by.optimost.com/counter/422/',
+  'http://l.addthiscdn.com/live/',
+  // From `auto-yahoo`.
+  'http://autos.yahoo.com/darla/fc.php',
 ];
 
 export function ignoreUrl(url: string) {
