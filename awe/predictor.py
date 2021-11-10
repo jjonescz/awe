@@ -1,9 +1,10 @@
 import itertools
 from typing import Iterable
 
+import torch
 from torch_geometric import loader
 
-from awe import awe_model, awe_graph
+from awe import awe_graph, awe_model
 from awe.data import dataset
 
 
@@ -31,12 +32,20 @@ class Predictor:
         return self.model.compute_swde_metrics(
             batch, self.ds.first_dataset.label_map[label])
 
+    def evaluate_examples(self, indices: Iterable[int], label: str):
+        total = torch.FloatTensor([0, 0, 0])
+        count = 0
+        for idx in indices:
+            total += self.evaluate_example(idx, label).to_vector()
+            count += 1
+        return awe_model.SwdeMetrics.from_vector(total / count)
+
     def evaluate(self, indices: Iterable[int]):
-        return [{
-            label: self.evaluate_example(i, label)
+        return {
+            label: self.evaluate_examples(indices, label)
             for label in self.ds.first_dataset.label_map
             if label is not None
-        } for i in indices]
+        }
 
     def predict_example(self, index: int, label: str) -> list[awe_graph.HtmlNode]:
         batch, nodes = self.get_example(index)

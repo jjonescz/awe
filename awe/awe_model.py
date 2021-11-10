@@ -18,6 +18,13 @@ class SwdeMetrics:
     recall: float
     f1: float
 
+    def to_vector(self):
+        return torch.FloatTensor([self.precision, self.recall, self.f1])
+
+    @staticmethod
+    def from_vector(vector: torch.FloatTensor):
+        return SwdeMetrics(vector[0].item(), vector[1].item(), vector[2].item())
+
 class AweModel(pl.LightningModule):
     def __init__(self, feature_count, label_count, label_weights):
         super().__init__()
