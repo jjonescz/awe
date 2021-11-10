@@ -1,5 +1,7 @@
 import os
 
+from tqdm.auto import tqdm
+
 from awe.data import constants
 
 GLOVE_DIR = f'{constants.DATA_DIR}/glove'
@@ -24,5 +26,7 @@ class LazyEmbeddings:
     @classmethod
     def get_or_create(cls) -> models.KeyedVectors:
         if cls._model is None:
-            cls._model = api.load(MODEL_NAME)
+            with tqdm(total=1, desc='loading word vectors') as progress:
+                cls._model = api.load(MODEL_NAME)
+                progress.update()
         return cls._model
