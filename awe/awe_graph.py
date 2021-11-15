@@ -214,3 +214,13 @@ class HtmlNode:
     @property
     def is_white_space(self):
         return self.is_text and self.text.isspace()
+
+    @property
+    def visual_node(self):
+        """
+        Parent element for text fragments (because they don't have most of
+        visual features by themselves).
+        """
+        if self.is_text:
+            return self.parent
+        return self

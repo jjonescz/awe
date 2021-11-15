@@ -99,6 +99,16 @@ class CharCategories(Feature):
             count_pattern(r'\d')
         ])
 
+class FontSize(Feature):
+    """Font size (in pixels)."""
+
+    @property
+    def labels(self):
+        return ['font_size']
+
+    def create(self, node: 'awe_graph.HtmlNode', _):
+        return torch.FloatTensor([node.visual_node.font_size or 0])
+
 class WordEmbedding(Feature):
     """Pre-trained GloVe embedding for each word -> averaged to one vector."""
 
