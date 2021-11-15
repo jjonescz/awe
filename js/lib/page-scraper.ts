@@ -156,7 +156,7 @@ export class PageScraper {
         return;
       }
 
-      if (offline === null && !this.scraper.forceLive) {
+      if (this.scraper.rememberAborted && offline === null) {
         // This request didn't complete last time, abort it.
         this.logger.debug('aborted', { url: request.url() });
         await request.abort();

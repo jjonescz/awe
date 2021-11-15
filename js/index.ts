@@ -94,6 +94,10 @@ class Program extends Command {
       char: 'R',
       description: 'skip feature extraction',
     }),
+    rememberAborted: flags.boolean({
+      char: 'a',
+      description: 'avoid retrying requests aborted in previous runs',
+    }),
   };
 
   async run() {
@@ -145,6 +149,7 @@ class Program extends Command {
     // Apply CLI flags.
     if (flags.offlineMode) scraper.allowLive = false;
     if (flags.forceRefresh) scraper.forceLive = true;
+    scraper.rememberAborted = flags.rememberAborted;
     controller.takeScreenshot = flags.screenshot;
     controller.skipExisting = flags.skipExisting;
     controller.skipExtraction = flags.skipExtraction;

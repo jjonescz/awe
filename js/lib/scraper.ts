@@ -15,6 +15,8 @@ export class Scraper {
   public allowOffline = true;
   /** Force retry of all live (online) requests. */
   public forceLive = false;
+  /** Avoid retrying requests aborted in previous runs. */
+  public rememberAborted = false;
   public readonly stats = new ScrapingStats();
   public readonly pagePool;
 
