@@ -109,7 +109,7 @@ class Program extends Command {
 
     // Find pages to process.
     const fullPattern = path.join(flags.baseDir, flags.globPattern);
-    const fullGlob = path.resolve('.', fullPattern);
+    const fullGlob = path.resolve('.', fullPattern).replaceAll('\\', '/');
     const allFiles = await glob(fullGlob);
     const files = allFiles
       .sort()
