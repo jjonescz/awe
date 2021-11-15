@@ -225,5 +225,7 @@ class DatasetCollection:
         return [label for f in self.features for label in f.labels]
 
     def delete_saved_features(self):
+        counter = 0
         for ds in self.datasets.values():
-            ds.delete_saved()
+            counter += ds.delete_saved()
+        return counter
