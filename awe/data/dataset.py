@@ -84,7 +84,10 @@ class Dataset:
         edge_index = torch.LongTensor(
             child_edges + parent_edges).t().contiguous()
 
-        data = gdata.Data(x=x, y=y, edge_index=edge_index)
+        # Mask for "classifiable" nodes, i.e., leafs (text fragments).
+        target = torch.BoolTensor([node.is_text for node in ctx.nodes])
+
+        data = gdata.Data(x=x, y=y, edge_index=edge_index, target=target)
         if page.data_point_path is None:
             self.in_memory_data[idx] = data
         else:

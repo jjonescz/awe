@@ -49,12 +49,16 @@ class AweModel(pl.LightningModule):
         x, edge_index = data.x, data.edge_index
 
         # x = self.conv1(x, edge_index)
+        x = x[data.target]
         # x = F.relu(x)
         # x = F.dropout(x, training=self.training)
         # x = self.conv2(x, edge_index)
         x = self.head(x)
 
-        return x
+        full = torch.zeros(data.x.shape[0], x.shape[1])
+        full[:, 0] = 1 # classify as "none" by default
+        full[data.target] = x # use classification of target nodes
+        return full
 
     def training_step(self, batch: data.Batch, batch_idx: int):
         y = batch.y
