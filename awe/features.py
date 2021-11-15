@@ -50,6 +50,9 @@ class Feature(ABC):
         """Length of the feature vector."""
         return len(self.labels)
 
+    def initialize(self):
+        """Work needed to be done so that this feature can be computed."""
+
     @abstractmethod
     def create(self,
         node: 'awe_graph.HtmlNode',
@@ -140,6 +143,10 @@ class WordEmbedding(Feature):
             if len(vectors) != 0:
                 return np.mean(vectors, axis=0)
         return np.repeat(0, self.glove.vector_size)
+
+    def initialize(self):
+        # Load word vectors.
+        _ = self.glove
 
     def create(self, node: 'awe_graph.HtmlNode', _):
         return torch.FloatTensor(self._get_vector(node))

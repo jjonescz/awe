@@ -1,3 +1,4 @@
+import functools
 import os
 from typing import Optional
 
@@ -89,18 +90,39 @@ class Dataset:
         else:
             torch.save(data, page.data_point_path)
 
+    def will_prepare_page(self, idx: int, skip_existing=True):
+        """Determines whether this page needs features to be computed."""
+        if (
+            not skip_existing or
+            not os.path.exists(self.pages[idx].data_point_path)
+        ):
+            return True
+        return False
+
+    def will_prepare_any(self, skip_existing=True):
+        """Determines whether any page features will be computed."""
+        for i in range(len(self)):
+            if self.will_prepare_page(i, skip_existing):
+                return True
+        return False
+
     def prepare(self, skip_existing=True):
-        def prepare_one(idx: int):
-            if (
-                not skip_existing or
-                not os.path.exists(self.pages[idx].data_point_path)
-            ):
-                self.prepare_page(idx)
+        """Computes page features if necessary."""
+        pages_to_prepare = list(filter(
+            functools.partial(self.will_prepare_page,
+                skip_existing=skip_existing),
+            range(len(self))
+        ))
         utils.parallelize(
-            self.parent.parallelize, prepare_one, range(len(self)), 'pages')
+            self.parent.parallelize,
+            self.prepare_page,
+            pages_to_prepare,
+            'pages'
+        )
         return len(self)
 
     def delete_saved(self):
+        """Deletes saved computed features."""
         counter = 0
         for page in self.pages:
             pt_path = page.data_point_path
@@ -173,6 +195,21 @@ class DatasetCollection:
         ctx = f.FeatureContext(page, self.node_predicate)
         page.prepare(ctx)
         return ctx
+
+    def will_prepare_any(self, skip_existing=True):
+        """Determines whether any page features will be computed."""
+        for ds in self.datasets.values():
+            if ds.will_prepare_any(skip_existing):
+                return True
+        return False
+
+    def initialize(self, skip_existing=True):
+        """Initializes features if necessary."""
+        if self.will_prepare_any(skip_existing):
+            for feature in self.features:
+                feature.initialize()
+            return True
+        return False
 
     @property
     def feature_dim(self):
