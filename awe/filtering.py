@@ -19,7 +19,7 @@ class DefaultNodePredicate(NodePredicate):
 
     ignored_tag_names = ['script', 'style', 'noscript', 'iframe']
 
-    def include_node(self, node: awe_graph.HtmlNode) -> bool:
+    def include_node(self, node: awe_graph.HtmlNode):
         if node.is_text:
             return not node.text.isspace()
         return not (
@@ -27,7 +27,7 @@ class DefaultNodePredicate(NodePredicate):
             node.element.tag in self.ignored_tag_names
         )
 
-    def include_visual(self, node_data: dict[str, Any], node_name: str) -> bool:
+    def include_visual(self, node_data: dict[str, Any], node_name: str):
         return (
             node_data.get('whiteSpace') is not True and
             visual.get_tag_name(node_name) not in self.ignored_tag_names
