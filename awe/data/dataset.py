@@ -15,7 +15,6 @@ from awe import filtering, utils
 class Dataset:
     label_map: Optional[dict[Optional[str], int]] = None
     loader: Optional[gloader.DataLoader] = None
-    parallelize: Optional[int] = None
     in_memory_data: dict[int, gdata.Data] = {}
 
     def __init__(self,
@@ -98,7 +97,7 @@ class Dataset:
             ):
                 self.prepare_page(idx)
         utils.parallelize(
-            self.parallelize, prepare_one, range(len(self)), 'pages')
+            self.parent.parallelize, prepare_one, range(len(self)), 'pages')
         return len(self)
 
     def delete_saved(self):
@@ -156,6 +155,7 @@ class Dataset:
 class DatasetCollection:
     features: list[f.Feature] = []
     node_predicate: filtering.NodePredicate = filtering.DefaultNodePredicate()
+    parallelize: Optional[int] = None
     first_dataset: Optional[Dataset] = None
     datasets: dict[str, Dataset] = {}
 
