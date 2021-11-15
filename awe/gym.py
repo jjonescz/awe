@@ -7,8 +7,10 @@ from dataclasses import dataclass
 from typing import Optional, Union
 
 import pytorch_lightning as pl
-from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 import torch
+from pytorch_lightning.callbacks.progress import ProgressBar
+from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
+from tqdm.auto import tqdm
 
 from awe import awe_model, utils
 from awe.data import dataset
@@ -46,6 +48,11 @@ class Checkpoint:
 
     def get_pages_path(self, dataset_name: str):
         return f'{self.version_path}/pages-{dataset_name}.txt'
+
+class CustomProgressBar(ProgressBar):
+    """Disables validation progress bar."""
+    def init_validation_tqdm(self):
+        return tqdm(disable=True)
 
 class Gym:
     restore_checkpoint: Optional[Union[str, bool]] = None
