@@ -290,7 +290,7 @@ export class PageScraper {
 
       // Save as "aborted" for the next time.
       await this.scraper.cache.add(url, timestamp, null);
-      this.scraper.stats.aborted++;
+      this.scraper.stats.unhandled++;
     }
   }
 

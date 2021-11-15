@@ -5,6 +5,7 @@ export class ScrapingStats {
   public readonly status: Record<number, number> = {};
   public undef = 0;
   public aborted = 0;
+  public unhandled = 0;
   public offline = 0;
   public live = 0;
   public ignored = 0;
