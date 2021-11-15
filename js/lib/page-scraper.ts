@@ -255,6 +255,10 @@ export class PageScraper {
       throw new Error('Cannot start page scraper once stopped.');
     }
 
+    // Go online (revert offline mode set in `stop` which would be otherwise
+    // preserved when using page pool).
+    await this.page.setOfflineMode(false);
+
     // Navigate to page's URL. This will be intercepted in `onRequest`.
     try {
       await this.page.goto(this.swdePage.url, {
