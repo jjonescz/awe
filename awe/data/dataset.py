@@ -234,6 +234,10 @@ class DatasetCollection:
         """Description of each feature vector column."""
         return [label for f in self.features for label in f.labels]
 
+    def compute_features(self):
+        for ds in self.datasets.values():
+            ds.prepare()
+
     def delete_saved_features(self):
         counter = 0
         for ds in self.datasets.values():
