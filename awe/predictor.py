@@ -77,12 +77,20 @@ class Predictor:
         nodes = page.labels.get_nodes(label)
         return nodes
 
+    def ground_texts(self, index: int, label: str):
+        """Gets gold texts for an example."""
+        page = self.items.pages[index]
+        texts = page.get_groundtruth_texts(label)
+        if texts is not None:
+            return texts
+        return get_texts(self.ground_example(index, label))
+
     def get_example_text(self, index: int, label: str):
         """Gets predicted and gold nodes for an example."""
         predicted = get_texts(self.predict_example(index, label))
         if len(predicted) == 1:
             predicted = predicted[0]
-        ground = get_texts(self.ground_example(index, label))
+        ground = self.ground_texts(index, label)
         if len(ground) == 1:
             ground = ground[0]
         return predicted, ground

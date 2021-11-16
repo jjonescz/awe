@@ -264,12 +264,15 @@ class Page(awe_graph.HtmlPage):
         return [field.name for field in self.site.groundtruth]
 
     def count_label(self, label: str):
+        return len(self.get_groundtruth_texts(label))
+
+    def get_groundtruth_texts(self, label: str):
         field = self.site.find_groundtruth(label)
         if field is None:
-            return 0
+            return []
         entry = field.entries[self.index]
         assert entry.page == self
-        return len(entry.values)
+        return entry.values
 
     def prepare(self, ctx: features.FeatureContext):
         try:

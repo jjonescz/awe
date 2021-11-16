@@ -61,6 +61,10 @@ class HtmlPage(ABC):
     def count_label(self, label: str) -> int:
         """Number of occurrences of nodes with the given `label`."""
 
+    def get_groundtruth_texts(self, label: str) -> Optional[list[str]]:
+        """Groundtruth texts (if available)"""
+        return None
+
     def create_root(self):
         return HtmlNode(self, 0, 0, self.dom.root)
 
