@@ -75,16 +75,17 @@ class DomData:
         def load_attribute(
             snake_case: str,
             camel_case: Optional[str] = None,
-            selector: Callable[[Any], Any] = lambda x: x
+            selector: Callable[[Any], Any] = lambda x: x,
+            default: Optional[Any] = None
         ):
-            val = node_data.get(camel_case or snake_case)
+            val = node_data.get(camel_case or snake_case) or default
             if val is not None:
                 setattr(node, snake_case, selector(val))
 
         load_attribute('box',
             selector=lambda b: awe_graph.BoundingBox(b[0], b[1], b[2], b[3]))
-        load_attribute('font_family', 'fontFamily')
-        load_attribute('font_size', 'fontSize')
+        load_attribute('font_family', 'fontFamily', default='"Times New Roman"')
+        load_attribute('font_size', 'fontSize', default=16)
         return True
 
     def find(self, xpath: str):
