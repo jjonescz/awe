@@ -50,7 +50,24 @@ class Checkpoint:
         return f'{self.version_path}/pages-{dataset_name}.txt'
 
 class CustomProgressBar(ProgressBar):
-    """Disables validation progress bar."""
+    """Disables validation progress bar and shows progress over all epochs."""
+
+    def on_train_start(self, trainer, pl_module):
+        self.epoch_progress_bar = tqdm(
+            total=trainer.max_epochs,
+            dynamic_ncols=True,
+            desc='Training'
+        )
+        return super().on_train_start(trainer, pl_module)
+
+    def on_train_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule"):
+        self.epoch_progress_bar.update()
+        return super().on_train_epoch_end(trainer, pl_module)
+
+    def on_train_end(self, trainer, pl_module):
+        self.epoch_progress_bar.close()
+        return super().on_train_end(trainer, pl_module)
+
     def init_validation_tqdm(self):
         return tqdm(disable=True)
 
