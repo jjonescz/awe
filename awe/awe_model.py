@@ -26,16 +26,18 @@ class SwdeMetrics:
         return SwdeMetrics(vector[0].item(), vector[1].item(), vector[2].item())
 
 class AweModel(pl.LightningModule):
-    def __init__(self, feature_count, label_count, label_weights):
+    def __init__(self, feature_count, label_count, label_weights, use_gnn):
         super().__init__()
 
         self.save_hyperparameters()
 
         D = 64
-        self.conv1 = gnn.GCNConv(feature_count, D)
-        self.conv2 = gnn.GCNConv(D, D)
+        if use_gnn:
+            self.conv1 = gnn.GCNConv(feature_count, D)
+            self.conv2 = gnn.GCNConv(D, D)
+        input_dim = feature_count + D if use_gnn else feature_count
         self.head = nn.Sequential(
-            nn.Linear(feature_count + D, 2 * D),
+            nn.Linear(input_dim, 2 * D),
             nn.ReLU(),
             nn.Linear(2 * D, D),
             nn.ReLU(),
@@ -44,24 +46,28 @@ class AweModel(pl.LightningModule):
 
         self.label_count = label_count
         self.label_weights = torch.FloatTensor(label_weights)
+        self.use_gnn = use_gnn
 
     def forward(self, data: data.Data):
         # x: [num_nodes, num_features]
         x, edge_index = data.x, data.edge_index
 
         # Propagate features through edges (graph convolution).
-        x = self.conv1(x, edge_index) # [num_nodes, D]
-        x = F.relu(x)
-        x = F.dropout(x, training=self.training)
-        x = self.conv2(x, edge_index)
+        if self.use_gnn:
+            x = self.conv1(x, edge_index) # [num_nodes, D]
+            x = F.relu(x)
+            x = F.dropout(x, training=self.training)
+            x = self.conv2(x, edge_index)
 
         # Filter target nodes (we want to propagate features through all edges
         # but classify only leaf nodes).
-        orig = data.x[data.target] # [num_target_nodes, num_features]
+        if self.use_gnn:
+            orig = data.x[data.target] # [num_target_nodes, num_features]
         x = x[data.target] # [num_target_nodes, D]
 
         # Concatenate original feature vector with convoluted feature vector.
-        x = torch.hstack((orig, x)) # [num_target_nodes, D + num_features]
+        if self.use_gnn:
+            x = torch.hstack((orig, x)) # [num_target_nodes, D + num_features]
 
         # Classify using deep fully connected head.
         x = self.head(x) # [num_target_nodes, num_classes]
