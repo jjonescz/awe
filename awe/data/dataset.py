@@ -244,6 +244,11 @@ class DatasetCollection:
         parallelize: Optional[int] = None,
         skip_existing: bool = True
     ):
+        if parallelize is None:
+            # TODO: Initialization won't have effect on other cores, hence it's
+            # skipped if parallelization is enabled.
+            self.initialize()
+
         for ds in self.datasets.values():
             ds.prepare(parallelize=parallelize, skip_existing=skip_existing)
 
