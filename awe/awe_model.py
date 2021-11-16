@@ -32,10 +32,10 @@ class AweModel(pl.LightningModule):
         self.save_hyperparameters()
 
         D = 32
-        # self.conv1 = gnn.GCNConv(feature_count, D)
+        self.conv1 = gnn.GCNConv(feature_count, D)
         # self.conv2 = gnn.GCNConv(D, D)
         self.head = nn.Sequential(
-            nn.Linear(feature_count, D),
+            nn.Linear(feature_count + D, D),
             nn.ReLU(),
             nn.Linear(D, D),
             nn.ReLU(),
@@ -46,18 +46,30 @@ class AweModel(pl.LightningModule):
         self.label_weights = torch.FloatTensor(label_weights)
 
     def forward(self, data: data.Data):
+        # x: [num_nodes, num_features]
         x, edge_index = data.x, data.edge_index
 
-        # x = self.conv1(x, edge_index)
-        x = x[data.target]
+        # Propagate features through edges (graph convolution).
+        x = self.conv1(x, edge_index) # [num_nodes, D]
         # x = F.relu(x)
         # x = F.dropout(x, training=self.training)
         # x = self.conv2(x, edge_index)
-        x = self.head(x)
 
-        full = torch.zeros(data.x.shape[0], x.shape[1])
-        full[:, 0] = 1 # classify as "none" by default
-        full[data.target] = x # use classification of target nodes
+        # Filter target nodes (we want to propagate features through all edges
+        # but classify only leaf nodes).
+        orig = data.x[data.target] # [num_target_nodes, num_features]
+        x = x[data.target] # [num_target_nodes, D]
+
+        # Concatenate original feature vector with convoluted feature vector.
+        x = torch.hstack((orig, x)) # [num_target_nodes, D + num_features]
+
+        # Classify using deep fully connected head.
+        x = self.head(x) # [num_target_nodes, num_classes]
+
+        # Un-filter target nodes (so dimensions are as expected).
+        full = torch.zeros(data.x.shape[0], x.shape[1]) # [num_nodes, num_classes]
+        full[:, 0] = 1 # classify as "none" by default (for non-target nodes)
+        full[data.target] = x # use computed classification of target nodes
         return full
 
     def training_step(self, batch: data.Batch, batch_idx: int):
