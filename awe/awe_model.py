@@ -35,9 +35,9 @@ class AweModel(pl.LightningModule):
         self.conv1 = gnn.GCNConv(feature_count, D)
         self.conv2 = gnn.GCNConv(D, D)
         self.head = nn.Sequential(
-            nn.Linear(feature_count + D, D),
+            nn.Linear(feature_count + D, 2 * D),
             nn.ReLU(),
-            nn.Linear(D, D),
+            nn.Linear(2 * D, D),
             nn.ReLU(),
             nn.Linear(D, label_count)
         )
