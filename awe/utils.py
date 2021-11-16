@@ -1,13 +1,14 @@
 import itertools
 import os
 from dataclasses import field
-from typing import Any, Callable, Iterable, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, TypeVar
 
 import joblib
 import numpy as np
 from tqdm.auto import tqdm
 
-from awe import awe_graph
+if TYPE_CHECKING:
+    from awe import awe_graph
 
 
 def add_field(**kwargs):
@@ -87,10 +88,10 @@ def _iterate_ranges(iterable: Iterable[T]):
 def to_ranges(iterable: Iterable[T]):
     return list(_iterate_ranges(iterable))
 
-def _summarize_pages(pages: Iterable[awe_graph.HtmlPage]):
+def _summarize_pages(pages: Iterable['awe_graph.HtmlPage']):
     for key, group in itertools.groupby(pages, lambda p: p.group_key):
         ranges = to_ranges(map(lambda p: p.group_index, group))
         yield key, ranges
 
-def summarize_pages(pages: Iterable[awe_graph.HtmlPage]):
+def summarize_pages(pages: Iterable['awe_graph.HtmlPage']):
     return dict(_summarize_pages(pages))
