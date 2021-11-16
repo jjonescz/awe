@@ -245,3 +245,9 @@ class DatasetCollection:
             name: ds.count_labels()
             for name, ds in self.datasets.items()
         }
+
+    def get_lengths(self):
+        return {
+            name: len(ds)
+            for name, ds in self.datasets.items()
+        }
