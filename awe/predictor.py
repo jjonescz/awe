@@ -3,6 +3,7 @@ from typing import Iterable
 
 import torch
 from torch_geometric import data, loader
+from tqdm.auto import tqdm
 
 from awe import awe_graph, awe_model
 from awe.data import dataset
@@ -43,7 +44,7 @@ class Predictor:
     def evaluate_examples(self, indices: Iterable[int], label: str):
         total = torch.FloatTensor([0, 0, 0])
         count = 0
-        for idx in indices:
+        for idx in tqdm(indices, leave=False, desc='pages'):
             total += self.evaluate_example(idx, label).to_vector()
             count += 1
         return awe_model.SwdeMetrics.from_vector(total / count)
@@ -51,7 +52,7 @@ class Predictor:
     def evaluate(self, indices: Iterable[int]):
         return {
             label: self.evaluate_examples(indices, label)
-            for label in self.ds.first_dataset.label_map
+            for label in tqdm(self.ds.first_dataset.label_map, desc='labels')
             if label is not None
         }
 
@@ -101,7 +102,8 @@ class Predictor:
         return {
             label: [
                 self.get_example_text(i, label)
-                for i in indices
+                for i in tqdm(indices, leave=False, desc='pages')
             ]
-            for label in self.ds.first_dataset.label_map if label is not None
+            for label in tqdm(self.ds.first_dataset.label_map, desc='labels')
+            if label is not None
         }
