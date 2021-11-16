@@ -49,6 +49,10 @@ class HtmlPage(ABC):
         pass
 
     @property
+    def has_dom_data(self) -> bool:
+        return False
+
+    @property
     @abstractmethod
     def labels(self) -> HtmlLabels:
         pass

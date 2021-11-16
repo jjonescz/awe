@@ -239,6 +239,10 @@ class Page(awe_graph.HtmlPage):
         return visual.DomData(json_path)
 
     @property
+    def has_dom_data(self):
+        return self.dom_data.exists
+
+    @property
     def contents(self):
         with open(self.file_path, mode='r', encoding='utf-8-sig') as file:
             return file.read()

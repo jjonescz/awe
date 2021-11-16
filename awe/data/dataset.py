@@ -277,3 +277,13 @@ class DatasetCollection:
                 batch_size=batch_size,
                 shuffle=ds.shuffle
             )
+
+    def _iterate_pages_without_visual_features(self):
+        for ds in self.datasets.values():
+            for page in ds.pages:
+                if not page.has_dom_data:
+                    yield page
+
+    def summarize_pages_without_visual_features(self):
+        return utils.summarize_pages(
+            self._iterate_pages_without_visual_features())
