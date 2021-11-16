@@ -161,14 +161,11 @@ class Gym:
 
     def save_named_version(self, name: str):
         """Saves the last version with a name."""
-        timestamp = datetime.datetime.now().isoformat()
-        version_path = f'{LOG_DIR}/{timestamp}-{name}'
+        last_checkpoint = self.get_last_checkpoint()
+        version_path = f'{LOG_DIR}/saved_version_{last_checkpoint.version}_{name}'
         if os.path.isdir(version_path):
             raise RuntimeError(f'Directory already exists: {version_path}')
-        return shutil.copytree(
-            self.get_last_checkpoint().version_path,
-            version_path
-        )
+        return shutil.copytree(last_checkpoint.version_path, version_path)
 
     def create_logger(self):
         return TensorBoardLogger(
