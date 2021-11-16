@@ -3,6 +3,7 @@ from dataclasses import field
 from typing import Any, Callable, Iterable, Optional, TypeVar
 
 import joblib
+import numpy as np
 from tqdm.auto import tqdm
 
 
@@ -62,3 +63,10 @@ def save_or_check_file(path: str, content: str):
         with open(path, mode='w', encoding='utf-8') as file:
             file.write(content)
     return path
+
+def train_val_split(data: list[T], val_split: float):
+    split = int(np.floor(val_split * len(data)))
+    copy = list(data)
+    np.random.seed(42)
+    np.random.shuffle(copy)
+    return copy[split:], copy[:split]
