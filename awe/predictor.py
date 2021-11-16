@@ -93,6 +93,8 @@ class Predictor:
         ground = self.ground_texts(index, label)
         if len(ground) == 1:
             ground = ground[0]
+        if predicted == ground:
+            return predicted
         return predicted, ground
 
     def get_example_texts(self, indices: Iterable[int]):
