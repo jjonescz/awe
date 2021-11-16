@@ -33,7 +33,7 @@ class AweModel(pl.LightningModule):
 
         D = 32
         self.conv1 = gnn.GCNConv(feature_count, D)
-        # self.conv2 = gnn.GCNConv(D, D)
+        self.conv2 = gnn.GCNConv(D, D)
         self.head = nn.Sequential(
             nn.Linear(feature_count + D, D),
             nn.ReLU(),
@@ -51,9 +51,9 @@ class AweModel(pl.LightningModule):
 
         # Propagate features through edges (graph convolution).
         x = self.conv1(x, edge_index) # [num_nodes, D]
-        # x = F.relu(x)
-        # x = F.dropout(x, training=self.training)
-        # x = self.conv2(x, edge_index)
+        x = F.relu(x)
+        x = F.dropout(x, training=self.training)
+        x = self.conv2(x, edge_index)
 
         # Filter target nodes (we want to propagate features through all edges
         # but classify only leaf nodes).
