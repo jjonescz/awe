@@ -116,12 +116,13 @@ class Dataset:
                 skip_existing=skip_existing),
             range(len(self))
         ))
-        utils.parallelize(
-            self.parent.parallelize,
-            self.prepare_page,
-            pages_to_prepare,
-            'pages'
-        )
+        if len(pages_to_prepare) != 0:
+            utils.parallelize(
+                self.parent.parallelize,
+                self.prepare_page,
+                pages_to_prepare,
+                'pages'
+            )
         return len(self)
 
     def delete_saved(self):
