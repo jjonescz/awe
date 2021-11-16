@@ -255,3 +255,11 @@ class DatasetCollection:
             name: len(ds)
             for name, ds in self.datasets.items()
         }
+
+    def create_dataloaders(self, *, batch_size, shuffle = ['train']):
+        for name, ds in self.datasets.items():
+            ds.loader = gloader.DataLoader(
+                ds,
+                batch_size=batch_size,
+                shuffle=name in shuffle
+            )
