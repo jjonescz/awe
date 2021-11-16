@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
@@ -19,6 +20,10 @@ class DomData:
 
     def __init__(self, path: str):
         self.path = path
+
+    @property
+    def exists(self):
+        return os.path.exists(self.path)
 
     @property
     def contents(self):

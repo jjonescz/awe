@@ -35,6 +35,16 @@ class HtmlPage(ABC):
 
     @property
     @abstractmethod
+    def group_key(self) -> str:
+        """Identifier of page group (e.g., folder in dataset)."""
+
+    @property
+    @abstractmethod
+    def group_index(self) -> int:
+        """Index inside group determined by `group_key`."""
+
+    @property
+    @abstractmethod
     def dom(self) -> parsel.Selector:
         pass
 

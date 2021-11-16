@@ -17,6 +17,14 @@ class Page(awe_graph.HtmlPage):
         return self.url
 
     @property
+    def group_key(self):
+        return self.identifier
+
+    @property
+    def group_index(self):
+        return 0
+
+    @property
     def dom(self):
         if self._dom is None:
             self._dom = self._download_dom()

@@ -1,3 +1,4 @@
+import itertools
 import os
 from dataclasses import field
 from typing import Any, Callable, Iterable, Optional, TypeVar
@@ -5,6 +6,8 @@ from typing import Any, Callable, Iterable, Optional, TypeVar
 import joblib
 import numpy as np
 from tqdm.auto import tqdm
+
+from awe import awe_graph
 
 
 def add_field(**kwargs):
@@ -70,3 +73,24 @@ def train_val_split(data: list[T], val_split: float):
     np.random.seed(42)
     np.random.shuffle(copy)
     return copy[split:], copy[:split]
+
+def _iterate_ranges(iterable: Iterable[T]):
+    # Inspired by https://stackoverflow.com/a/43091576.
+    iterable = sorted(set(iterable))
+    for _, group in itertools.groupby(
+        enumerate(iterable),
+        lambda t: t[1] - t[0]
+    ):
+        group = list(group)
+        yield group[0][1], group[-1][1]
+
+def to_ranges(iterable: Iterable[T]):
+    return list(_iterate_ranges(iterable))
+
+def _summarize_pages(pages: Iterable[awe_graph.HtmlPage]):
+    for key, group in itertools.groupby(pages, lambda p: p.group_key):
+        ranges = to_ranges(map(lambda p: p.group_index, group))
+        yield key, ranges
+
+def summarize_pages(pages: Iterable[awe_graph.HtmlPage]):
+    return dict(_summarize_pages(pages))

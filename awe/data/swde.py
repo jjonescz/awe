@@ -222,6 +222,14 @@ class Page(awe_graph.HtmlPage):
         return f'{self.site.name}/{self.file_name}'
 
     @property
+    def group_key(self):
+        return f'{self.site.dir_path}/{self.suffix or ""}'
+
+    @property
+    def group_index(self):
+        return self.index
+
+    @property
     def data_point_path(self):
         return self.file_path.removesuffix('.htm') + '.pt'
 
