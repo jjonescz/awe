@@ -1,3 +1,4 @@
+import collections
 import functools
 import os
 from typing import Optional
@@ -178,6 +179,14 @@ class Dataset:
                 yield node, batch.x[node_idx], batch.y[node_idx]
             page_idx += batch.num_graphs
 
+    def count_labels(self):
+        counts = collections.defaultdict(int)
+        for page in self.pages:
+            for label in self.parent.first_dataset.label_map.keys():
+                if label is not None:
+                    counts[label] += page.count_label(label)
+        return counts
+
 class DatasetCollection:
     features: list[f.Feature] = []
     node_predicate: filtering.NodePredicate = filtering.DefaultNodePredicate()
@@ -230,3 +239,9 @@ class DatasetCollection:
         for ds in self.datasets.values():
             counter += ds.delete_saved()
         return counter
+
+    def count_labels(self):
+        return {
+            name: ds.count_labels()
+            for name, ds in self.datasets.items()
+        }

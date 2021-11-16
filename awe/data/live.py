@@ -30,6 +30,9 @@ class Page(awe_graph.HtmlPage):
     def fields(self):
         return []
 
+    def count_label(self, _: str):
+        return 0
+
     def _download_dom(self):
         text = requests.get(self.url).text
         return html_utils.parse_html(text)

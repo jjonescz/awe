@@ -57,6 +57,10 @@ class HtmlPage(ABC):
         """
         return None
 
+    @abstractmethod
+    def count_label(self, label: str) -> int:
+        """Number of occurrences of nodes with the given `label`."""
+
     def create_root(self):
         return HtmlNode(self, 0, 0, self.dom.root)
 

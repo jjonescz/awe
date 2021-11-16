@@ -189,6 +189,12 @@ class Website:
             assert os.path.samefile(groundtruth_field.file_path, file)
             yield groundtruth_field
 
+    def find_groundtruth(self, name: str):
+        for field in self.groundtruth:
+            if field.name == name:
+                return field
+        return None
+
 @dataclass
 class Page(awe_graph.HtmlPage):
     site: Website
@@ -256,6 +262,14 @@ class Page(awe_graph.HtmlPage):
     @property
     def fields(self):
         return [field.name for field in self.site.groundtruth]
+
+    def count_label(self, label: str):
+        field = self.site.find_groundtruth(label)
+        if field is None:
+            return 0
+        entry = field.entries[self.index]
+        assert entry.page == self
+        return len(entry.values)
 
     def prepare(self, ctx: features.FeatureContext):
         try:
