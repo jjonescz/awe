@@ -270,12 +270,13 @@ class DatasetCollection:
             for name, ds in self.datasets.items()
         }
 
-    def create_dataloaders(self, *, batch_size):
+    def create_dataloaders(self, *, batch_size: int = 1, num_workers: int = 0):
         for ds in self.datasets.values():
             ds.loader = gloader.DataLoader(
                 ds,
                 batch_size=batch_size,
-                shuffle=ds.shuffle
+                shuffle=ds.shuffle,
+                num_workers=num_workers
             )
 
     def _iterate_pages_without_visual_features(self):
