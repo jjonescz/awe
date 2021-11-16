@@ -15,6 +15,7 @@ from awe import filtering, utils
 # Implements PyG dataset API, see
 # https://pytorch-geometric.readthedocs.io/en/2.0.1/notes/create_dataset.html.
 class Dataset:
+    shuffle = False
     label_map: Optional[dict[Optional[str], int]] = None
     loader: Optional[gloader.DataLoader] = None
     in_memory_data: dict[int, gdata.Data] = {}
@@ -122,7 +123,7 @@ class Dataset:
                 self.parent.parallelize,
                 self.prepare_page,
                 pages_to_prepare,
-                'pages'
+                self.name
             )
         return len(self)
 
@@ -197,8 +198,11 @@ class DatasetCollection:
     def __getitem__(self, name: str):
         return self.datasets[name]
 
-    def create(self, name: str, pages: list[awe_graph.HtmlPage]):
+    def create(self,
+        name: str, pages: list[awe_graph.HtmlPage], shuffle = False
+    ):
         ds = Dataset(name, self, pages, self.first_dataset)
+        ds.shuffle = shuffle
         self.datasets[name] = ds
         if self.first_dataset is None:
             self.first_dataset = ds
@@ -256,10 +260,10 @@ class DatasetCollection:
             for name, ds in self.datasets.items()
         }
 
-    def create_dataloaders(self, *, batch_size, shuffle = ['train']):
-        for name, ds in self.datasets.items():
+    def create_dataloaders(self, *, batch_size):
+        for ds in self.datasets.values():
             ds.loader = gloader.DataLoader(
                 ds,
                 batch_size=batch_size,
-                shuffle=name in shuffle
+                shuffle=ds.shuffle
             )
