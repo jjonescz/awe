@@ -186,7 +186,7 @@ class Website:
         for file in glob.glob(f'{self.groundtruth_path_prefix}-*.txt'):
             file_name = os.path.basename(file)
             groundtruth_field = GroundTruthField(self, file_name)
-            assert groundtruth_field.file_path == file
+            assert os.path.samefile(groundtruth_field.file_path, file)
             yield groundtruth_field
 
 @dataclass
