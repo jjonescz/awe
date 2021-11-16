@@ -111,7 +111,10 @@ class Dataset:
                 return True
         return False
 
-    def prepare(self, skip_existing=True):
+    def prepare(self,
+        parallelize: Optional[int] = None,
+        skip_existing: bool = True
+    ):
         """Computes page features if necessary."""
         pages_to_prepare = list(filter(
             functools.partial(self.will_prepare_page,
@@ -120,7 +123,7 @@ class Dataset:
         ))
         if len(pages_to_prepare) != 0:
             utils.parallelize(
-                self.parent.parallelize,
+                parallelize,
                 self.prepare_page,
                 pages_to_prepare,
                 self.name
@@ -191,7 +194,6 @@ class Dataset:
 class DatasetCollection:
     features: list[f.Feature] = []
     node_predicate: filtering.NodePredicate = filtering.DefaultNodePredicate()
-    parallelize: Optional[int] = None
     first_dataset: Optional[Dataset] = None
     datasets: dict[str, Dataset] = {}
 
@@ -238,9 +240,12 @@ class DatasetCollection:
         """Description of each feature vector column."""
         return [label for f in self.features for label in f.labels]
 
-    def compute_features(self):
+    def compute_features(self,
+        parallelize: Optional[int] = None,
+        skip_existing: bool = True
+    ):
         for ds in self.datasets.values():
-            ds.prepare()
+            ds.prepare(parallelize=parallelize, skip_existing=skip_existing)
 
     def delete_saved_features(self):
         counter = 0
