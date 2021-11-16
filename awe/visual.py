@@ -84,8 +84,13 @@ class DomData:
 
         load_attribute('box',
             selector=lambda b: awe_graph.BoundingBox(b[0], b[1], b[2], b[3]))
-        load_attribute('font_family', 'fontFamily', default='"Times New Roman"')
-        load_attribute('font_size', 'fontSize', default=16)
+
+        # Load visual attributes except for text fragments (they don't have
+        # their own but inherit them from their container node instead).
+        if not node.is_text:
+            load_attribute(
+                'font_family', 'fontFamily', default='"Times New Roman"')
+            load_attribute('font_size', 'fontSize', default=16)
         return True
 
     def find(self, xpath: str):
