@@ -147,12 +147,12 @@ class Dataset:
         )
 
     def delete_saved(self):
-        """Deletes saved computed features."""
+        """Deletes saved computed features (backup file `.bak` is created)."""
         counter = 0
         for page in self.pages:
             pt_path = page.data_point_path
             if pt_path is not None and os.path.exists(pt_path):
-                os.remove(pt_path)
+                os.rename(pt_path, f'{pt_path}.bak')
                 counter += 1
         return counter
 
