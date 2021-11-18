@@ -133,7 +133,7 @@ class Program extends Command {
       // Detect files for cleaning.
       const patterns = files.map((f) => {
         // Generated files have some suffix after dash and any file extension.
-        return replaceExtension(escapeFilePath(f), '-*.*');
+        return escapeFilePath(f).replace(/\.htm$/, '-*.*');
       });
       const toClean = await glob(patterns);
 
