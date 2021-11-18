@@ -19,7 +19,8 @@ export function createPagePool(scraper: Scraper, opts: PagePoolOptions) {
       // Ignore some errors that would prevent WaybackMachine redirection.
       await page.setBypassCSP(true);
 
-      page.setDefaultTimeout(opts.timeout);
+      page.setDefaultTimeout(0); // disable default timeout
+      page.setDefaultNavigationTimeout(opts.timeout);
 
       return page;
     },
