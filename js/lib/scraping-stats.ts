@@ -10,6 +10,7 @@ export class ScrapingStats {
   public live = 0;
   public ignored = 0;
   public disabled = 0;
+  public timeout = 0;
 
   public increment(statusCode: number) {
     this.status[statusCode] = (this.status[statusCode] ?? 0) + 1;

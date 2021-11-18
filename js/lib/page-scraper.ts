@@ -267,8 +267,9 @@ export class PageScraper {
     } catch (e) {
       const error = e as Error;
       if (error?.name === 'TimeoutError') {
-        // Ignore timeouts.
-        this.logger.error('timeout');
+        // Handle timeouts.
+        this.logger.verbose('timeout', { error: error?.stack });
+        this.scraper.stats.timeout++;
       } else {
         this.logger.error('goto failed', { error: error?.stack });
       }
