@@ -103,6 +103,11 @@ class Program extends Command {
       description: 'Chrome-like browser that will be controlled by Puppeteer',
       default: 'google-chrome-stable',
     }),
+    timeout: flags.integer({
+      char: 'T',
+      description: 'milliseconds before scraping of one page is aborted',
+      default: 0,
+    }),
   };
 
   async run() {
@@ -151,6 +156,7 @@ class Program extends Command {
     const scraper = await Scraper.create({
       poolSize: flags.jobs,
       executablePath: flags.chromeExecutable,
+      timeout: flags.timeout,
     });
     const controller = new Controller(scraper);
 

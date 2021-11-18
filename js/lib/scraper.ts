@@ -1,7 +1,7 @@
 import puppeteer from 'puppeteer-core';
 import { Cache } from './cache';
 import { logger } from './logging';
-import { createPagePool } from './page-pool';
+import { createPagePool, PagePoolOptions } from './page-pool';
 import { PageScraper } from './page-scraper';
 import { ScrapingStats } from './scraping-stats';
 import { SwdePage } from './swde-page';
@@ -24,15 +24,16 @@ export class Scraper {
     public readonly wayback: Wayback,
     public readonly browser: puppeteer.Browser,
     public readonly cache: Cache,
-    poolSize: number
+    opts: PagePoolOptions
   ) {
-    this.pagePool = createPagePool(this, poolSize);
+    this.pagePool = createPagePool(this, opts);
   }
 
-  public static async create(opts: {
-    poolSize: number;
-    executablePath: string;
-  }) {
+  public static async create(
+    opts: PagePoolOptions & {
+      executablePath: string;
+    }
+  ) {
     // Open browser.
     const browser = await puppeteer.launch({
       args: [
@@ -58,7 +59,7 @@ export class Scraper {
     const wayback = new Wayback();
     await wayback.loadResponses();
 
-    return new Scraper(wayback, browser, cache, opts.poolSize);
+    return new Scraper(wayback, browser, cache, opts);
   }
 
   public async for(swdePage: SwdePage) {

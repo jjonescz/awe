@@ -3,7 +3,12 @@ import { logger } from './logging';
 import { Scraper } from './scraper';
 import puppeteer from 'puppeteer-core';
 
-export function createPagePool(scraper: Scraper, poolSize: number) {
+export interface PagePoolOptions {
+  poolSize: number;
+  timeout: number;
+}
+
+export function createPagePool(scraper: Scraper, opts: PagePoolOptions) {
   const factory = <genericPool.Factory<puppeteer.Page>>{
     create: async () => {
       const page = await scraper.browser.newPage();
@@ -13,7 +18,8 @@ export function createPagePool(scraper: Scraper, poolSize: number) {
 
       // Ignore some errors that would prevent WaybackMachine redirection.
       await page.setBypassCSP(true);
-      page.setDefaultTimeout(0); // disable timeout
+
+      page.setDefaultTimeout(opts.timeout);
 
       return page;
     },
@@ -28,5 +34,5 @@ export function createPagePool(scraper: Scraper, poolSize: number) {
     },
   };
 
-  return genericPool.createPool(factory, { max: poolSize });
+  return genericPool.createPool(factory, { max: opts.poolSize });
 }
