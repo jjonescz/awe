@@ -14,25 +14,32 @@ if TYPE_CHECKING:
 
 T = TypeVar('T', bound='Feature') # pylint: disable=invalid-name
 
-class FeatureContext:
-    """Everything needed to compute a `HtmlNode`'s `Feature`s."""
-    page: 'awe_graph.HtmlPage'
+class RootContext:
+    """Data stored here are scoped to all pages."""
+
+    char_dict: set[str] = set()
+    """
+    All characters present in processed nodes. Stored by `CharacterEmbedding`.
+    """
+
+class PageContext:
+    """
+    Everything needed to compute a `HtmlNode`'s `Feature`s.
+
+    Data stored here are scoped to one `HtmlPage`.
+    """
 
     max_depth: Optional[int] = None
     """Maximum DOM tree depth. Stored by `Depth`."""
 
-    char_dict: set[str] = set()
-    """
-    All characters present in processed nodes.
-    Stored by `CharacterEmbedding`.
-    """
-
     _nodes: list['awe_graph.HtmlNode'] = None
 
     def __init__(self,
+        root: RootContext,
         page: 'awe_graph.HtmlPage',
         node_predicate: filtering.NodePredicate
     ):
+        self.root = root
         self.page = page
         self.node_predicate = node_predicate
 
@@ -59,7 +66,7 @@ class Feature(ABC):
     def initialize(self):
         """Work needed to be done so that this feature can be computed."""
 
-    def prepare(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
+    def prepare(self, node: 'awe_graph.HtmlNode', context: PageContext):
         """
         Prepares feature for the given `node`.
 
@@ -70,7 +77,7 @@ class Feature(ABC):
     @abstractmethod
     def compute(self,
         node: 'awe_graph.HtmlNode',
-        context: FeatureContext) -> torch.FloatTensor:
+        context: PageContext) -> torch.FloatTensor:
         """Computes feature vector for the given `node`."""
 
 class Depth(Feature):
@@ -81,12 +88,12 @@ class Depth(Feature):
         return ['relative_depth']
 
     @staticmethod
-    def _get_max_depth(context: FeatureContext):
+    def _get_max_depth(context: PageContext):
         if context.max_depth is None:
             context.max_depth = max(map(lambda n: n.depth, context.nodes))
         return context.max_depth
 
-    def compute(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
+    def compute(self, node: 'awe_graph.HtmlNode', context: PageContext):
         return torch.FloatTensor([node.depth / self._get_max_depth(context)])
 
 class IsLeaf(Feature):
@@ -137,13 +144,13 @@ class CharEmbedding(Feature):
     def dimension(self):
         return None
 
-    def prepare(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
+    def prepare(self, node: 'awe_graph.HtmlNode', context: PageContext):
         if node.is_text:
-            context.char_dict.update(char for char in node.text)
+            context.root.char_dict.update(char for char in node.text)
 
-    def compute(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
+    def compute(self, node: 'awe_graph.HtmlNode', context: PageContext):
         if node.is_text:
-            # TODO: Use `context.char_dict` instead.
+            # TODO: Use `context.root.char_dict` instead.
             return torch.IntTensor([ord(char) for char in node.text])
         return torch.IntTensor([])
 

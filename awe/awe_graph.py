@@ -95,7 +95,7 @@ class HtmlPage(ABC):
             deep_index += 1
         return root
 
-    def prepare(self, ctx: 'features.FeatureContext'):
+    def prepare(self, ctx: 'features.PageContext'):
         """Prepare page features."""
 
 @dataclass

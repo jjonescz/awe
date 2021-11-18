@@ -34,7 +34,7 @@ class DomData:
         """Reads DOM data from JSON."""
         self.data = json.loads(self.contents)
 
-    def load_all(self, ctx: 'features.FeatureContext'):
+    def load_all(self, ctx: 'features.PageContext'):
         for node in ctx.nodes:
             self.load_one(node)
 

@@ -286,7 +286,7 @@ class Page(awe_graph.HtmlPage):
         assert entry.page == self
         return entry.values
 
-    def prepare(self, ctx: features.FeatureContext):
+    def prepare(self, ctx: features.PageContext):
         try:
             dom_data = self.dom_data
             dom_data.read()

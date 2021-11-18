@@ -46,7 +46,7 @@ class Dataset:
     def compute_page_features(self, idx: int):
         """Computes features for page at `idx` and persists them on disk."""
         page = self.pages[idx]
-        ctx = self.parent.create_context(page)
+        ctx = self.parent.create_page_context(page)
 
         def compute_node_features(node: awe_graph.HtmlNode):
             return torch.hstack([
@@ -127,7 +127,7 @@ class Dataset:
                 pages_to_process,
                 self.name
             )
-        return len(self)
+        return len(pages_to_process)
 
     def prepare_features(self, skip_existing: bool = True):
         """Prepares features for all pages where necessary."""
@@ -193,7 +193,7 @@ class Dataset:
                 page = self.pages[page_idx + page_offset]
                 if curr_page != page:
                     curr_page = page
-                    curr_ctx = self.parent.create_context(page)
+                    curr_ctx = self.parent.create_page_context(page)
                 node = curr_ctx.nodes[node_idx + node_offset]
 
                 yield node, batch.x[node_idx], batch.y[node_idx]
@@ -213,6 +213,9 @@ class DatasetCollection:
     first_dataset: Optional[Dataset] = None
     datasets: dict[str, Dataset] = {}
 
+    def __init__(self):
+        self.root = f.RootContext()
+
     def __getitem__(self, name: str):
         return self.datasets[name]
 
@@ -226,8 +229,8 @@ class DatasetCollection:
             self.first_dataset = ds
         return ds
 
-    def create_context(self, page: awe_graph.HtmlPage):
-        ctx = f.FeatureContext(page, self.node_predicate)
+    def create_page_context(self, page: awe_graph.HtmlPage):
+        ctx = f.PageContext(self.root, page, self.node_predicate)
         page.prepare(ctx)
         return ctx
 

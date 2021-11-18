@@ -33,7 +33,7 @@ class Predictor:
         """Gets batch and its corresponding nodes."""
         batch: data.Batch = next(itertools.islice(self.dataloader, index, None))
         page = self.items.pages[index]
-        ctx = self.ds.create_context(page)
+        ctx = self.ds.create_page_context(page)
         return batch, ctx.nodes
 
     def evaluate_example(self, index: int, label: str):
