@@ -60,7 +60,7 @@ class Feature(ABC):
         """Work needed to be done so that this feature can be computed."""
 
     @abstractmethod
-    def create(self,
+    def compute(self,
         node: 'awe_graph.HtmlNode',
         context: FeatureContext) -> torch.FloatTensor:
         """Computes feature vector for the given `node`."""
@@ -78,7 +78,7 @@ class Depth(Feature):
             context.max_depth = max(map(lambda n: n.depth, context.nodes))
         return context.max_depth
 
-    def create(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
+    def compute(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
         return torch.FloatTensor([node.depth / self._get_max_depth(context)])
 
 class IsLeaf(Feature):
@@ -88,7 +88,7 @@ class IsLeaf(Feature):
     def labels(self):
         return ['is_leaf']
 
-    def create(self, node: 'awe_graph.HtmlNode', _):
+    def compute(self, node: 'awe_graph.HtmlNode', _):
         return torch.FloatTensor([node.is_text])
 
 class CharCategories(Feature):
@@ -98,7 +98,7 @@ class CharCategories(Feature):
     def labels(self):
         return ['dollars', 'letters', 'digits']
 
-    def create(self, node: 'awe_graph.HtmlNode', _):
+    def compute(self, node: 'awe_graph.HtmlNode', _):
         def count_pattern(pattern: str):
             return len(re.findall(pattern, node.text)) if node.is_text else 0
 
@@ -115,7 +115,7 @@ class FontSize(Feature):
     def labels(self):
         return ['font_size']
 
-    def create(self, node: 'awe_graph.HtmlNode', _):
+    def compute(self, node: 'awe_graph.HtmlNode', _):
         return torch.FloatTensor([node.visual_node.font_size or 0])
 
 class CharEmbedding(Feature):
@@ -129,7 +129,7 @@ class CharEmbedding(Feature):
     def dimension(self):
         return None
 
-    def create(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
+    def compute(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
         if node.is_text:
             context.char_dict.update(char for char in node.text)
             return torch.IntTensor([ord(char) for char in node.text])
@@ -171,5 +171,5 @@ class WordEmbedding(Feature):
         # Load word vectors.
         _ = self.glove
 
-    def create(self, node: 'awe_graph.HtmlNode', _):
+    def compute(self, node: 'awe_graph.HtmlNode', _):
         return torch.FloatTensor(self._get_vector(node))

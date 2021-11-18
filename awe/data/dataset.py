@@ -43,14 +43,14 @@ class Dataset:
     def __len__(self):
         return len(self.pages)
 
-    def prepare_page(self, idx: int):
+    def compute_page_features(self, idx: int):
         """Computes features for page at `idx` and persists them on disk."""
         page = self.pages[idx]
         ctx = self.parent.create_context(page)
 
-        def get_node_features(node: awe_graph.HtmlNode):
+        def compute_node_features(node: awe_graph.HtmlNode):
             return torch.hstack([
-                feature.create(node, ctx)
+                feature.compute(node, ctx)
                 for feature in self.parent.features
             ])
 
@@ -59,7 +59,7 @@ class Dataset:
             label = None if len(node.labels) == 0 else node.labels[0]
             return self.label_map[label]
 
-        x = torch.vstack(list(map(get_node_features, ctx.nodes)))
+        x = torch.vstack(list(map(compute_node_features, ctx.nodes)))
         y = torch.tensor(list(map(get_node_label, ctx.nodes)))
 
         # Assign indices to nodes (different from `HtmlNode.index` as that
@@ -111,11 +111,11 @@ class Dataset:
                 return True
         return False
 
-    def prepare(self,
+    def compute_features(self,
         parallelize: Optional[int] = None,
         skip_existing: bool = True
     ):
-        """Computes page features if necessary."""
+        """Computes features for all pages where necessary."""
         pages_to_prepare = list(filter(
             functools.partial(self.will_prepare_page,
                 skip_existing=skip_existing),
@@ -124,7 +124,7 @@ class Dataset:
         if len(pages_to_prepare) != 0:
             utils.parallelize(
                 parallelize,
-                self.prepare_page,
+                self.compute_page_features,
                 pages_to_prepare,
                 self.name
             )
@@ -250,7 +250,10 @@ class DatasetCollection:
             self.initialize()
 
         for ds in self.datasets.values():
-            ds.prepare(parallelize=parallelize, skip_existing=skip_existing)
+            ds.compute_features(
+                parallelize=parallelize,
+                skip_existing=skip_existing
+            )
 
     def delete_saved_features(self):
         counter = 0
