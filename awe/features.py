@@ -19,7 +19,13 @@ class FeatureContext:
     page: 'awe_graph.HtmlPage'
 
     max_depth: Optional[int] = None
-    """Maximum DOM tree depth; stored by `Depth`."""
+    """Maximum DOM tree depth. Stored by `Depth`."""
+
+    char_dict: set[str] = set()
+    """
+    All characters present in processed nodes.
+    Stored by `CharacterEmbedding`.
+    """
 
     _nodes: list['awe_graph.HtmlNode'] = None
 
@@ -46,8 +52,8 @@ class Feature(ABC):
         """Column names of the resulting feature vector."""
 
     @property
-    def dimension(self):
-        """Length of the feature vector."""
+    def dimension(self) -> Optional[int]:
+        """Length of the feature vector or `None` if unknown."""
         return len(self.labels)
 
     def initialize(self):
@@ -111,6 +117,23 @@ class FontSize(Feature):
 
     def create(self, node: 'awe_graph.HtmlNode', _):
         return torch.FloatTensor([node.visual_node.font_size or 0])
+
+class CharEmbedding(Feature):
+    """Randomly-initialized character embeddings."""
+
+    @property
+    def labels(self):
+        return ['char_embedding']
+
+    @property
+    def dimension(self):
+        return None
+
+    def create(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
+        if node.is_text:
+            context.char_dict.update(char for char in node.text)
+            return torch.IntTensor([ord(char) for char in node.text])
+        return torch.IntTensor([])
 
 class WordEmbedding(Feature):
     """Pre-trained GloVe embedding for each word -> averaged to one vector."""
