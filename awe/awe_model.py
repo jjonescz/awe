@@ -25,6 +25,7 @@ class SwdeMetrics:
     def from_vector(vector: torch.FloatTensor):
         return SwdeMetrics(vector[0].item(), vector[1].item(), vector[2].item())
 
+# pylint: disable=arguments-differ, unused-argument
 class AweModel(pl.LightningModule):
     def __init__(self, feature_count, label_count, label_weights, use_gnn):
         super().__init__()
@@ -48,9 +49,9 @@ class AweModel(pl.LightningModule):
         self.label_weights = torch.FloatTensor(label_weights)
         self.use_gnn = use_gnn
 
-    def forward(self, data: data.Data):
+    def forward(self, batch: data.Data):
         # x: [num_nodes, num_features]
-        x, edge_index = data.x, data.edge_index
+        x, edge_index = batch.x, batch.edge_index
 
         # Propagate features through edges (graph convolution).
         if self.use_gnn:
@@ -62,8 +63,8 @@ class AweModel(pl.LightningModule):
         # Filter target nodes (we want to propagate features through all edges
         # but classify only leaf nodes).
         if self.use_gnn:
-            orig = data.x[data.target] # [num_target_nodes, num_features]
-        x = x[data.target] # [num_target_nodes, D]
+            orig = batch.x[batch.target] # [num_target_nodes, num_features]
+        x = x[batch.target] # [num_target_nodes, D]
 
         # Concatenate original feature vector with convoluted feature vector.
         if self.use_gnn:
@@ -73,9 +74,9 @@ class AweModel(pl.LightningModule):
         x = self.head(x) # [num_target_nodes, num_classes]
 
         # Un-filter target nodes (so dimensions are as expected).
-        full = torch.zeros(data.x.shape[0], x.shape[1]) # [num_nodes, num_classes]
+        full = torch.zeros(batch.x.shape[0], x.shape[1]) # [num_nodes, num_classes]
         full[:, 0] = 1 # classify as "none" by default (for non-target nodes)
-        full[data.target] = x # use computed classification of target nodes
+        full[batch.target] = x # use computed classification of target nodes
         return full
 
     def training_step(self, batch: data.Batch, batch_idx: int):

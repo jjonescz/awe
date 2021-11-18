@@ -391,7 +391,7 @@ VERTICAL_NAMES = [
     # - MPAA rating is only first character (e.g., "P" in the groundtruth but
     #   "PG13" in the HTML),
     # - director is not complete (e.g., "Roy Hill" in the groundtruth but
-    #   "Geogre Roy Hill" in the HTML).
+    #   "George Roy Hill" in the HTML).
     #'movie',
     'nbaplayer',
     'restaurant',

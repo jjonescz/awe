@@ -6,5 +6,19 @@
     "[markdown]": {
         "editor.formatOnSave": false
     },
-    "cSpell.words": ["swde", "wayback"]
+    "cSpell.words": [
+        "conv",
+        "curr",
+        "dataloaders",
+        "hstack",
+        "MPAA",
+        "nbsp",
+        "optim",
+        "preds",
+        "relu",
+        "swde",
+        "tqdm",
+        "wayback",
+        "xpaths"
+    ]
 }
