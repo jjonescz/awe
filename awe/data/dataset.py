@@ -111,24 +111,40 @@ class Dataset:
                 return True
         return False
 
+    def _process_features(self,
+        parallelize: Optional[int] = None,
+        skip_existing: bool = True
+    ):
+        pages_to_process = list(filter(
+            functools.partial(self.will_prepare_page,
+                skip_existing=skip_existing),
+            range(len(self))
+        ))
+        if len(pages_to_process) != 0:
+            utils.parallelize(
+                parallelize,
+                self.compute_page_features,
+                pages_to_process,
+                self.name
+            )
+        return len(self)
+
+    def prepare_features(self, skip_existing: bool = True):
+        """Prepares features for all pages where necessary."""
+        return self._process_features(
+            parallelize=None,
+            skip_existing=skip_existing
+        )
+
     def compute_features(self,
         parallelize: Optional[int] = None,
         skip_existing: bool = True
     ):
         """Computes features for all pages where necessary."""
-        pages_to_prepare = list(filter(
-            functools.partial(self.will_prepare_page,
-                skip_existing=skip_existing),
-            range(len(self))
-        ))
-        if len(pages_to_prepare) != 0:
-            utils.parallelize(
-                parallelize,
-                self.compute_page_features,
-                pages_to_prepare,
-                self.name
-            )
-        return len(self)
+        return self._process_features(
+            parallelize=parallelize,
+            skip_existing=skip_existing
+        )
 
     def delete_saved(self):
         """Deletes saved computed features."""
@@ -240,6 +256,13 @@ class DatasetCollection:
         """Description of each feature vector column."""
         return [label for f in self.features for label in f.labels]
 
+    def prepare_features(self, skip_existing: bool = True):
+        self.initialize(skip_existing=skip_existing)
+        counter = 0
+        for ds in self.datasets.values():
+            counter += ds.prepare_features(skip_existing=skip_existing)
+        return counter
+
     def compute_features(self,
         parallelize: Optional[int] = None,
         skip_existing: bool = True
@@ -247,13 +270,15 @@ class DatasetCollection:
         if parallelize is None:
             # TODO: Initialization won't have effect on other cores, hence it's
             # skipped if parallelization is enabled.
-            self.initialize()
+            self.initialize(skip_existing=skip_existing)
 
+        counter = 0
         for ds in self.datasets.values():
-            ds.compute_features(
+            counter += ds.compute_features(
                 parallelize=parallelize,
                 skip_existing=skip_existing
             )
+        return counter
 
     def delete_saved_features(self):
         counter = 0

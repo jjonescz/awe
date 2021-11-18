@@ -59,6 +59,14 @@ class Feature(ABC):
     def initialize(self):
         """Work needed to be done so that this feature can be computed."""
 
+    def prepare(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
+        """
+        Prepares feature for the given `node`.
+
+        This method runs for all nodes before computing the features.
+        Can be used for example to populate a global word dictionary.
+        """
+
     @abstractmethod
     def compute(self,
         node: 'awe_graph.HtmlNode',
@@ -129,9 +137,13 @@ class CharEmbedding(Feature):
     def dimension(self):
         return None
 
-    def compute(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
+    def prepare(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
         if node.is_text:
             context.char_dict.update(char for char in node.text)
+
+    def compute(self, node: 'awe_graph.HtmlNode', context: FeatureContext):
+        if node.is_text:
+            # TODO: Use `context.char_dict` instead.
             return torch.IntTensor([ord(char) for char in node.text])
         return torch.IntTensor([])
 
