@@ -29,7 +29,10 @@ export class Scraper {
     this.pagePool = createPagePool(this, poolSize);
   }
 
-  public static async create(opts: { poolSize: number }) {
+  public static async create(opts: {
+    poolSize: number;
+    executablePath: string;
+  }) {
     // Open browser.
     const browser = await puppeteer.launch({
       args: [
@@ -45,7 +48,7 @@ export class Scraper {
         '--disable-site-isolation-trials',
         '--disable-features=BlockInsecurePrivateNetworkRequests',
       ],
-      executablePath: 'google-chrome-stable',
+      executablePath: opts.executablePath,
     });
 
     // Open local cache.

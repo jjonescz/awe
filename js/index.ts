@@ -98,6 +98,11 @@ class Program extends Command {
       char: 'a',
       description: 'avoid retrying requests aborted in previous runs',
     }),
+    chromeExecutable: flags.string({
+      char: 'e',
+      description: 'Chrome-like browser that will be controlled by Puppeteer',
+      default: 'google-chrome-stable',
+    }),
   };
 
   async run() {
@@ -143,7 +148,10 @@ class Program extends Command {
     }
 
     // Open browser.
-    const scraper = await Scraper.create({ poolSize: flags.jobs });
+    const scraper = await Scraper.create({
+      poolSize: flags.jobs,
+      executablePath: flags.chromeExecutable,
+    });
     const controller = new Controller(scraper);
 
     // Apply CLI flags.
