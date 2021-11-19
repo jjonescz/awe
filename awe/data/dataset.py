@@ -61,9 +61,10 @@ class Dataset:
         page = self.pages[idx]
         ctx = self._prepare_page_context(page)
 
-        for feature in self.parent.features:
-            for node in ctx.nodes:
-                feature.prepare(node, ctx.root)
+        with torch.no_grad():
+            for feature in self.parent.features:
+                for node in ctx.nodes:
+                    feature.prepare(node, ctx.root)
         ctx.root.pages.add(page.identifier)
 
     def compute_page_features(self, idx: int):
@@ -71,7 +72,8 @@ class Dataset:
         page = self.pages[idx]
         ctx = self._prepare_page_context(page)
 
-        data = extraction.PageFeatureExtractor(self, ctx).extract()
+        with torch.no_grad():
+            data = extraction.PageFeatureExtractor(self, ctx).extract()
         if page.data_point_path is None:
             self.in_memory_data[idx] = data
         else:
@@ -97,10 +99,6 @@ class Dataset:
         parallelize: Optional[int] = None,
         skip_existing: bool = True
     ):
-        def process_one(idx: int):
-            with torch.no_grad():
-                processor(idx)
-
         pages_to_process = list(filter(
             functools.partial(will_process, skip_existing=skip_existing),
             range(len(self))
@@ -108,7 +106,7 @@ class Dataset:
         if len(pages_to_process) != 0:
             utils.parallelize(
                 parallelize,
-                process_one,
+                processor,
                 pages_to_process,
                 self.name
             )
