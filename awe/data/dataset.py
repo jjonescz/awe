@@ -252,6 +252,16 @@ class DatasetCollection:
         """Description of each feature vector column."""
         return [label for f in self.features for label in f.labels]
 
+    @property
+    def feature_summary(self):
+        return {
+            f.__class__.__name__: {
+                'labels': f.labels,
+                'dim': f.dimension
+            }
+            for f in self.features
+        }
+
     def _process(self,
         will_process: Callable[[Dataset], Callable[[int], bool]],
         processor: Callable[[Dataset], Callable[[int], None]],
