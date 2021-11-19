@@ -251,7 +251,7 @@ class DatasetCollection:
             # skipped if parallelization is enabled.
             if will_process_any():
                 for feature in self.features:
-                    feature.initialize()
+                    feature.initialize(self.live)
 
         counter = 0
         for ds in self.datasets.values():

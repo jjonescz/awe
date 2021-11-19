@@ -19,6 +19,7 @@ class PageFeatureExtractor:
         return torch.hstack([
             feature.compute(node, self.ctx)
             for feature in self.ds.parent.features
+            if isinstance(feature, features.DirectFeature)
         ])
 
     def get_node_label(self, node: awe_graph.HtmlNode):
@@ -27,8 +28,17 @@ class PageFeatureExtractor:
         return self.ds.label_map[label]
 
     def extract(self):
+        # Compute direct features and node labels.
         x = torch.vstack(list(map(self.compute_node_features, self.ctx.nodes)))
         y = torch.tensor(list(map(self.get_node_label, self.ctx.nodes)))
+
+        # Compute indirect features.
+        indirect = {
+            f.label: f.compute(node, self.ctx)
+            for node in self.ctx.nodes
+            for f in self.ds.parent.features
+            if isinstance(f, features.IndirectFeature)
+        }
 
         # Edges: parent-child relations.
         child_edges = [
@@ -52,4 +62,10 @@ class PageFeatureExtractor:
         # Mask for "classifiable" nodes, i.e., leafs (text fragments).
         target = torch.BoolTensor([node.is_text for node in self.ctx.nodes])
 
-        return gdata.Data(x=x, y=y, edge_index=edge_index, target=target)
+        return gdata.Data(
+            x=x,
+            y=y,
+            edge_index=edge_index,
+            target=target,
+            **indirect
+        )

@@ -201,7 +201,7 @@ class CharEmbedding(IndirectFeature):
     def initialize(self, context: LiveContext):
         # Map all founds characters to numbers.
         counter = 0
-        for c in context.root.char_dict:
+        for c in context.root.chars:
             context.char_dict[c] = counter
             counter += 1
 
