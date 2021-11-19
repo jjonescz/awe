@@ -251,6 +251,7 @@ class DatasetCollection:
     def _process(self,
         will_process: Callable[[Dataset], Callable[[int], bool]],
         processor: Callable[[Dataset], Callable[[int], None]],
+        initialize: bool = True,
         parallelize: Optional[int] = None,
         skip_existing: bool = True
     ):
@@ -271,7 +272,7 @@ class DatasetCollection:
             return False
 
         # Initialize features if necessary.
-        if parallelize is None:
+        if initialize and parallelize is None:
             # HACK: Initialization won't have effect on other cores, hence it's
             # skipped if parallelization is enabled.
             if will_process_any():
@@ -295,6 +296,7 @@ class DatasetCollection:
         return self._process(
             lambda ds: ds.will_prepare_page,
             lambda ds: ds.prepare_page_features,
+            initialize=False,
             parallelize=parallelize,
             skip_existing=skip_existing
         )
