@@ -37,6 +37,8 @@ class PageFeatureExtractor:
         return self.ds.label_map[label]
 
     def extract(self):
+        self.ds.parent.initialize_features()
+
         # Compute direct node features and labels.
         x = torch.vstack(list(map(self.compute_direct_features, self.ctx.nodes)))
         y = torch.tensor(list(map(self.get_node_label, self.ctx.nodes)))

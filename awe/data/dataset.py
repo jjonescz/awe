@@ -174,6 +174,7 @@ class Dataset:
         return counts
 
 class DatasetCollection:
+    initialized = False
     root_context_path = os.path.join(constants.DATA_DIR, 'root_context.pkl')
     features: list[f.Feature]
     node_predicate: filtering.NodePredicate = filtering.DefaultNodePredicate()
@@ -224,6 +225,15 @@ class DatasetCollection:
             for feat in self.features
         }
 
+    def initialize_features(self):
+        """
+        Initializes features before computation (if not already initialized).
+        """
+        if not self.initialized:
+            for feature in self.features:
+                feature.initialize(self.live)
+            self.initialized = True
+
     def _process(self,
         will_process: Callable[[Dataset], Callable[[int], bool]],
         processor: Callable[[Dataset], Callable[[int], None]],
@@ -252,8 +262,7 @@ class DatasetCollection:
             # HACK: Initialization won't have effect on other cores, hence it's
             # skipped if parallelization is enabled.
             if will_process_any():
-                for feature in self.features:
-                    feature.initialize(self.live)
+                self.initialize_features()
 
         counter = 0
         for ds in self.datasets.values():
