@@ -39,12 +39,13 @@ def where_max(items: Iterable[T], selector: Callable[[T], Any]):
             max_item = item
     return max_item
 
+R = TypeVar('R')
 def parallelize(
     num: Optional[int],
-    selector: Callable[[T], Any],
+    selector: Callable[[T], R],
     items: Iterable[T],
     desc: str
-):
+) -> list[R]:
     items_with_progress =  tqdm(items, desc=desc)
     if num is None:
         return list(map(selector, items_with_progress))
