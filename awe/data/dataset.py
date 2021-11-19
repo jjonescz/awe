@@ -112,7 +112,7 @@ class Dataset:
         else:
             torch.save(data, page.data_point_path)
 
-    def will_prepare_page(self, idx: int, skip_existing=True):
+    def will_compute_page(self, idx: int, skip_existing=True):
         """Determines whether this page needs features to be computed."""
         if (
             not skip_existing or
@@ -121,10 +121,10 @@ class Dataset:
             return True
         return False
 
-    def will_prepare_any(self, skip_existing=True):
+    def will_compute_any(self, skip_existing=True):
         """Determines whether any page features will be computed."""
         for i in range(len(self)):
-            if self.will_prepare_page(i, skip_existing):
+            if self.will_compute_page(i, skip_existing):
                 return True
         return False
 
@@ -134,7 +134,7 @@ class Dataset:
         skip_existing: bool = True
     ):
         pages_to_process = list(filter(
-            functools.partial(self.will_prepare_page,
+            functools.partial(self.will_compute_page,
                 skip_existing=skip_existing),
             range(len(self))
         ))
@@ -260,16 +260,16 @@ class DatasetCollection:
         page.prepare(ctx)
         return ctx
 
-    def will_prepare_any(self, skip_existing=True):
+    def will_compute_any(self, skip_existing=True):
         """Determines whether any page features will be computed."""
         for ds in self.datasets.values():
-            if ds.will_prepare_any(skip_existing):
+            if ds.will_compute_any(skip_existing):
                 return True
         return False
 
-    def initialize(self, skip_existing=True):
+    def initialize_features(self, skip_existing=True):
         """Initializes features if necessary."""
-        if self.will_prepare_any(skip_existing):
+        if self.will_compute_any(skip_existing):
             for feature in self.features:
                 feature.initialize()
             return True
@@ -293,7 +293,7 @@ class DatasetCollection:
         if parallelize is None:
             # TODO: Initialization won't have effect on other cores, hence it's
             # skipped if parallelization is enabled.
-            self.initialize(skip_existing=skip_existing)
+            self.initialize_features(skip_existing=skip_existing)
 
         counter = 0
         for ds in self.datasets.values():
