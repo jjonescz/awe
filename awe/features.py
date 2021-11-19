@@ -73,8 +73,8 @@ class Feature(ABC):
         """
         Prepares feature for the given `node`.
 
-        This method runs for all nodes before computing the features.
-        Can be used for example to populate a global word dictionary.
+        This method runs for all nodes before initializing and computing the
+        features. Can be used for example to populate a global word dictionary.
         """
 
     @abstractmethod
