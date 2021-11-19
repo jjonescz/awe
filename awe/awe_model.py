@@ -27,10 +27,25 @@ class SwdeMetrics:
 
 # pylint: disable=arguments-differ, unused-argument
 class AweModel(pl.LightningModule):
-    def __init__(self, feature_count, label_count, label_weights, use_gnn):
+    def __init__(self,
+        feature_count: int,
+        label_count: int,
+        label_weights: list[float],
+        char_count: int,
+        use_gnn: bool,
+        char_dim: int = 100
+    ):
         super().__init__()
 
         self.save_hyperparameters()
+
+        self.char_embedding = torch.nn.Embedding(char_count, char_dim)
+        self.char_conv = torch.nn.Conv1d(
+            in_channels=char_dim,
+            out_channels=50,
+            kernel_size=3,
+            padding='same'
+        )
 
         D = 64
         if use_gnn:
