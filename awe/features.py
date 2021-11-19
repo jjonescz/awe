@@ -22,14 +22,17 @@ class RootContext:
     pages: set[str]
     """Identifiers of pages used for feature preparation against this object."""
 
-    char_dict: set[str]
+    chars: set[str]
     """
     All characters present in processed nodes. Stored by `CharacterEmbedding`.
     """
 
+    max_word_len: int = 0
+    """Maximum word length. Stored by `WordEmbedding`."""
+
     def __init__(self):
         self.pages = set()
-        self.char_dict = set()
+        self.chars = set()
 
 class LiveContext:
     """
@@ -64,6 +67,10 @@ class PageContext:
         self.live = live
         self.page = page
         self.node_predicate = node_predicate
+
+    @property
+    def root(self):
+        return self.live.root
 
     @property
     def nodes(self):
@@ -169,7 +176,7 @@ class CharEmbedding(Feature):
     def prepare(self, node: 'awe_graph.HtmlNode', context: RootContext):
         # Find all distinct characters.
         if node.is_text:
-            context.char_dict.update(char for char in node.text)
+            context.chars.update(char for char in node.text)
 
     def initialize(self, context: LiveContext):
         # Map all founds characters to numbers.
@@ -216,6 +223,12 @@ class WordEmbedding(Feature):
             if len(vectors) != 0:
                 return np.mean(vectors, axis=0)
         return np.repeat(0, self.glove.vector_size)
+
+    def prepare(self, node: 'awe_graph.HtmlNode', context: RootContext):
+        # Find maximum word length.
+        if node.is_text:
+            for token in self.tokenizer(node.text):
+                context.max_word_len = max(context.max_word_len, len(token))
 
     def initialize(self, _):
         # Load word vectors.
