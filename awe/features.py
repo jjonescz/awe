@@ -66,7 +66,7 @@ class Feature(ABC):
     def initialize(self):
         """Work needed to be done so that this feature can be computed."""
 
-    def prepare(self, node: 'awe_graph.HtmlNode', context: PageContext):
+    def prepare(self, node: 'awe_graph.HtmlNode', context: RootContext):
         """
         Prepares feature for the given `node`.
 
@@ -144,9 +144,9 @@ class CharEmbedding(Feature):
     def dimension(self):
         return None
 
-    def prepare(self, node: 'awe_graph.HtmlNode', context: PageContext):
+    def prepare(self, node: 'awe_graph.HtmlNode', context: RootContext):
         if node.is_text:
-            context.root.char_dict.update(char for char in node.text)
+            context.char_dict.update(char for char in node.text)
 
     def compute(self, node: 'awe_graph.HtmlNode', context: PageContext):
         if node.is_text:

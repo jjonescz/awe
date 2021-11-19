@@ -1,7 +1,7 @@
 import collections
 import functools
 import os
-from typing import Optional
+from typing import Callable, Optional
 
 import torch
 from torch_geometric import data as gdata
@@ -43,10 +43,29 @@ class Dataset:
     def __len__(self):
         return len(self.pages)
 
+    def _prepare_page_context(self, page: awe_graph.HtmlPage):
+        ctx = self.parent.create_page_context(page)
+
+        # Assign indices to nodes (different from `HtmlNode.index` as that
+        # one is from before filtering). This is needed to compute edges.
+        for index, node in enumerate(ctx.nodes):
+            node.dataset_index = index
+
+        return ctx
+
+    def prepare_page_features(self, idx: int):
+        """Prepares features for page at `idx`."""
+        page = self.pages[idx]
+        ctx = self._prepare_page_context(page)
+
+        for feature in self.parent.features:
+            for node in ctx.nodes:
+                feature.prepare(node, ctx.root)
+
     def compute_page_features(self, idx: int):
         """Computes features for page at `idx` and persists them on disk."""
         page = self.pages[idx]
-        ctx = self.parent.create_page_context(page)
+        ctx = self._prepare_page_context(page)
 
         def compute_node_features(node: awe_graph.HtmlNode):
             return torch.hstack([
@@ -61,11 +80,6 @@ class Dataset:
 
         x = torch.vstack(list(map(compute_node_features, ctx.nodes)))
         y = torch.tensor(list(map(get_node_label, ctx.nodes)))
-
-        # Assign indices to nodes (different from `HtmlNode.index` as that
-        # one is from before filtering). This is needed to compute edges.
-        for index, node in enumerate(ctx.nodes):
-            node.dataset_index = index
 
         # Edges: parent-child relations.
         child_edges = [
@@ -112,6 +126,7 @@ class Dataset:
         return False
 
     def _process_features(self,
+        processor: Callable[[int]],
         parallelize: Optional[int] = None,
         skip_existing: bool = True
     ):
@@ -123,16 +138,19 @@ class Dataset:
         if len(pages_to_process) != 0:
             utils.parallelize(
                 parallelize,
-                self.compute_page_features,
+                processor,
                 pages_to_process,
                 self.name
             )
         return len(pages_to_process)
 
-    def prepare_features(self, skip_existing: bool = True):
+    def prepare_features(self,
+        parallelize: Optional[int] = None,
+        skip_existing: bool = True
+    ):
         """Prepares features for all pages where necessary."""
-        return self._process_features(
-            parallelize=None,
+        return self._process_features(self.prepare_page_features,
+            parallelize=parallelize,
             skip_existing=skip_existing
         )
 
@@ -141,7 +159,7 @@ class Dataset:
         skip_existing: bool = True
     ):
         """Computes features for all pages where necessary."""
-        return self._process_features(
+        return self._process_features(self.compute_page_features,
             parallelize=parallelize,
             skip_existing=skip_existing
         )
@@ -259,14 +277,7 @@ class DatasetCollection:
         """Description of each feature vector column."""
         return [label for f in self.features for label in f.labels]
 
-    def prepare_features(self, skip_existing: bool = True):
-        self.initialize(skip_existing=skip_existing)
-        counter = 0
-        for ds in self.datasets.values():
-            counter += ds.prepare_features(skip_existing=skip_existing)
-        return counter
-
-    def compute_features(self,
+    def _initialize(self,
         parallelize: Optional[int] = None,
         skip_existing: bool = True
     ):
@@ -275,6 +286,24 @@ class DatasetCollection:
             # skipped if parallelization is enabled.
             self.initialize(skip_existing=skip_existing)
 
+    def prepare_features(self,
+        parallelize: Optional[int] = None,
+        skip_existing: bool = True
+    ):
+        self._initialize(parallelize=parallelize, skip_existing=skip_existing)
+        counter = 0
+        for ds in self.datasets.values():
+            counter += ds.prepare_features(
+                parallelize=parallelize,
+                skip_existing=skip_existing
+            )
+        return counter
+
+    def compute_features(self,
+        parallelize: Optional[int] = None,
+        skip_existing: bool = True
+    ):
+        self._initialize(parallelize=parallelize, skip_existing=skip_existing)
         counter = 0
         for ds in self.datasets.values():
             counter += ds.compute_features(
