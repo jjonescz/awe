@@ -8,7 +8,7 @@ import torch
 from torch_geometric import data as gdata
 from torch_geometric import loader as gloader
 
-from awe import awe_graph
+from awe import awe_graph, extraction
 from awe import features as f
 from awe import filtering, utils
 from awe.data import constants
@@ -67,47 +67,11 @@ class Dataset:
         ctx.root.pages.add(page.identifier)
 
     def compute_page_features(self, idx: int):
-        """Computes features for page at `idx` and persists them on disk."""
+        """Computes features for page at `idx` and persists them to disk."""
         page = self.pages[idx]
         ctx = self._prepare_page_context(page)
 
-        def compute_node_features(node: awe_graph.HtmlNode):
-            return torch.hstack([
-                feature.compute(node, ctx)
-                for feature in self.parent.features
-            ])
-
-        def get_node_label(node: awe_graph.HtmlNode):
-            # Only the first label for now.
-            label = None if len(node.labels) == 0 else node.labels[0]
-            return self.label_map[label]
-
-        x = torch.vstack(list(map(compute_node_features, ctx.nodes)))
-        y = torch.tensor(list(map(get_node_label, ctx.nodes)))
-
-        # Edges: parent-child relations.
-        child_edges = [
-            [node.dataset_index, child.dataset_index]
-            for node in ctx.nodes for child in node.children
-            # Ignore removed children.
-            if self.parent.node_predicate.include_node(child)
-        ]
-        parent_edges = [
-            [node.dataset_index, node.parent.dataset_index]
-            for node in ctx.nodes
-            if (
-                node.parent is not None and
-                # Ignore removed parents.
-                self.parent.node_predicate.include_node(node.parent)
-            )
-        ]
-        edge_index = torch.LongTensor(
-            child_edges + parent_edges).t().contiguous()
-
-        # Mask for "classifiable" nodes, i.e., leafs (text fragments).
-        target = torch.BoolTensor([node.is_text for node in ctx.nodes])
-
-        data = gdata.Data(x=x, y=y, edge_index=edge_index, target=target)
+        data = extraction.PageFeatureExtractor(self, ctx).extract()
         if page.data_point_path is None:
             self.in_memory_data[idx] = data
         else:
