@@ -180,8 +180,9 @@ class CharEmbedding(Feature):
 
     def compute(self, node: 'awe_graph.HtmlNode', context: PageContext):
         if node.is_text:
-            # TODO: Use `context.live.char_dict` instead.
-            return torch.IntTensor([ord(char) for char in node.text])
+            return torch.IntTensor([
+                context.live.char_dict[char] for char in node.text
+            ])
         return torch.IntTensor([])
 
 class WordEmbedding(Feature):
