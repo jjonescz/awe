@@ -1,16 +1,20 @@
+from typing import TYPE_CHECKING
+
 import torch
 from torch.nn.utils import rnn
 from torch_geometric import data as gdata
 
 from awe import awe_graph, features
-from awe.data import dataset
+
+if TYPE_CHECKING:
+    from awe.data import dataset
 
 
 class PageFeatureExtractor:
     """Can extract features for one `HtmlPage`."""
 
     def __init__(self,
-        ds: dataset.Dataset,
+        ds: 'dataset.Dataset',
         ctx: features.PageContext
     ):
         self.ds = ds
