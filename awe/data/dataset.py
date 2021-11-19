@@ -97,6 +97,10 @@ class Dataset:
         parallelize: Optional[int] = None,
         skip_existing: bool = True
     ):
+        def process_one(idx: int):
+            with torch.no_grad():
+                processor(idx)
+
         pages_to_process = list(filter(
             functools.partial(will_process, skip_existing=skip_existing),
             range(len(self))
@@ -104,7 +108,7 @@ class Dataset:
         if len(pages_to_process) != 0:
             utils.parallelize(
                 parallelize,
-                processor,
+                process_one,
                 pages_to_process,
                 self.name
             )
