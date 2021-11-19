@@ -208,22 +208,18 @@ class DatasetCollection:
 
     @property
     def feature_dim(self):
-        """Feature vector total length."""
-        return sum(f.dimension or 0 for f in self.features)
-
-    @property
-    def feature_labels(self):
-        """Description of each feature vector column."""
-        return [label for f in self.features for label in f.labels]
+        """Direct feature vector total length."""
+        return sum(
+            len(feat.labels) or 0
+            for feat in self.features
+            if isinstance(feat, f.DirectFeature)
+        )
 
     @property
     def feature_summary(self):
         return {
-            f.__class__.__name__: {
-                'labels': f.labels,
-                'dim': f.dimension
-            }
-            for f in self.features
+            feat.__class__.__name__: feat.summary
+            for feat in self.features
         }
 
     def _process(self,

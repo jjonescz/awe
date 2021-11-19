@@ -84,13 +84,8 @@ class PageContext:
 class Feature(ABC):
     @property
     @abstractmethod
-    def labels(self) -> list[str]:
-        """Column names of the resulting feature vector."""
-
-    @property
-    def dimension(self) -> Optional[int]:
-        """Length of the feature vector or `None` if unknown."""
-        return len(self.labels)
+    def summary(self):
+        """User-friendly details."""
 
     def initialize(self, context: LiveContext):
         """Work needed to be done so that this feature can be computed."""
@@ -109,7 +104,36 @@ class Feature(ABC):
         context: PageContext) -> torch.FloatTensor:
         """Computes feature vector for the given `node`."""
 
-class Depth(Feature):
+class DirectFeature(Feature):
+    """
+    These features are appended to `torch_geometric.data.Data.x` without further
+    processing.
+    """
+
+    @property
+    @abstractmethod
+    def labels(self) -> list[str]:
+        """Column names of the resulting feature vector."""
+
+    @property
+    def summary(self):
+        return { 'labels': self.labels }
+
+class IndirectFeature(Feature):
+    """
+    These features are appended to `torch_geometric.data.Data` by their `label`.
+    """
+
+    @property
+    @abstractmethod
+    def label(self) -> str:
+        """Attribute name on `Data` for the resulting feature vector."""
+
+    @property
+    def summary(self):
+        return { 'label': self.label }
+
+class Depth(DirectFeature):
     """Relative depth of node in DOM tree."""
 
     @property
@@ -125,7 +149,7 @@ class Depth(Feature):
     def compute(self, node: 'awe_graph.HtmlNode', context: PageContext):
         return torch.FloatTensor([node.depth / self._get_max_depth(context)])
 
-class IsLeaf(Feature):
+class IsLeaf(DirectFeature):
     """Whether node is leaf (text) node."""
 
     @property
@@ -135,7 +159,7 @@ class IsLeaf(Feature):
     def compute(self, node: 'awe_graph.HtmlNode', _):
         return torch.FloatTensor([node.is_text])
 
-class CharCategories(Feature):
+class CharCategories(DirectFeature):
     """Counts of different character categories."""
 
     @property
@@ -152,7 +176,7 @@ class CharCategories(Feature):
             count_pattern(r'\d')
         ])
 
-class FontSize(Feature):
+class FontSize(DirectFeature):
     """Font size (in pixels)."""
 
     @property
@@ -162,16 +186,12 @@ class FontSize(Feature):
     def compute(self, node: 'awe_graph.HtmlNode', _):
         return torch.FloatTensor([node.visual_node.font_size or 0])
 
-class CharEmbedding(Feature):
+class CharEmbedding(IndirectFeature):
     """Randomly-initialized character embeddings."""
 
     @property
-    def labels(self):
-        return ['char_embedding']
-
-    @property
-    def dimension(self):
-        return None
+    def label(self):
+        return 'char_embedding'
 
     def prepare(self, node: 'awe_graph.HtmlNode', context: RootContext):
         # Find all distinct characters.
@@ -192,19 +212,15 @@ class CharEmbedding(Feature):
             ])
         return torch.IntTensor([])
 
-class WordEmbedding(Feature):
+class WordEmbedding(IndirectFeature):
     """Pre-trained GloVe embedding for each word -> averaged to one vector."""
 
     def __init__(self):
         self.tokenizer = text_utils.get_tokenizer('basic_english')
 
     @property
-    def labels(self):
-        return ['word_embedding']
-
-    @property
-    def dimension(self):
-        return glove.VECTOR_DIMENSION
+    def label(self):
+        return 'word_embedding'
 
     @property
     def glove(self):
