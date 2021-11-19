@@ -316,6 +316,10 @@ class DatasetCollection:
             pickle.dump(self.root, file)
         return self.root_context_path
 
+    def delete_saved_root_context(self):
+        os.rename(self.root_context_path, f'{self.root_context_path}.bak')
+        self.root = f.RootContext()
+
     def delete_saved_features(self):
         counter = 0
         for ds in self.datasets.values():
