@@ -292,15 +292,14 @@ class DatasetCollection:
             )
         return counter
 
-    def prepare_features(self,
-        parallelize: Optional[int] = None,
-        skip_existing: bool = True
-    ):
+    def prepare_features(self, skip_existing: bool = True):
         return self._process(
             lambda ds: ds.will_prepare_page,
             lambda ds: ds.prepare_page_features,
             initialize=False,
-            parallelize=parallelize,
+            # Preparing doesn't currently support parallelization because it
+            # updates shared memory (root context).
+            parallelize=None,
             skip_existing=skip_existing
         )
 
