@@ -16,10 +16,11 @@ def get_tag_name(xpath_element: str):
 class DomData:
     """Can load visual attributes saved by `extractor.ts`."""
 
-    data: dict[str, Any] = {}
+    data: dict[str, Any]
 
     def __init__(self, path: str):
         self.path = path
+        self.data = {}
 
     @property
     def exists(self):

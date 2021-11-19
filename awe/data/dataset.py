@@ -20,7 +20,7 @@ class Dataset:
     shuffle = False
     label_map: Optional[dict[Optional[str], int]] = None
     loader: Optional[gloader.DataLoader] = None
-    in_memory_data: dict[int, gdata.Data] = {}
+    in_memory_data: dict[int, gdata.Data]
 
     def __init__(self,
         name: str,
@@ -31,6 +31,7 @@ class Dataset:
         self.name = name
         self.parent = parent
         self.pages = pages
+        self.in_memory_data = {}
         if other is not None:
             self.label_map = other.label_map
         self._prepare_label_map()
@@ -208,12 +209,14 @@ class Dataset:
 
 class DatasetCollection:
     root_context_path = os.path.join(constants.DATA_DIR, 'root_context.pkl')
-    features: list[f.Feature] = []
+    features: list[f.Feature]
     node_predicate: filtering.NodePredicate = filtering.DefaultNodePredicate()
     first_dataset: Optional[Dataset] = None
-    datasets: dict[str, Dataset] = {}
+    datasets: dict[str, Dataset]
 
     def __init__(self):
+        self.features = []
+        self.datasets = {}
         if os.path.exists(self.root_context_path):
             with open(self.root_context_path, mode='rb') as file:
                 self.root = pickle.load(file)
