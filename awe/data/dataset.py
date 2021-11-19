@@ -244,7 +244,7 @@ class DatasetCollection:
     @property
     def feature_dim(self):
         """Feature vector total length."""
-        return sum(f.dimension for f in self.features)
+        return sum(f.dimension or 0 for f in self.features)
 
     @property
     def feature_labels(self):
