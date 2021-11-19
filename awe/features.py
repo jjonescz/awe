@@ -15,7 +15,9 @@ if TYPE_CHECKING:
 T = TypeVar('T', bound='Feature') # pylint: disable=invalid-name
 
 class RootContext:
-    """Data stored here are scoped to all pages."""
+    """
+    Data stored here are scoped to all pages. Initialized in `Feature.prepare`.
+    """
 
     pages: set[str]
     """Identifiers of pages used for feature preparation against this object."""
@@ -28,6 +30,19 @@ class RootContext:
     def __init__(self):
         self.pages = set()
         self.char_dict = set()
+
+class LiveContext:
+    """
+    Non-persisted (live) data scoped to all pages. Initialized in
+    `Feature.initialize`.
+    """
+
+    char_dict: dict[str, int]
+    """Used by `CharacterEmbedding`."""
+
+    def __init__(self, root: RootContext):
+        self.root = root
+        self.char_dict = dict()
 
 class PageContext:
     """
@@ -42,11 +57,11 @@ class PageContext:
     _nodes: list['awe_graph.HtmlNode'] = None
 
     def __init__(self,
-        root: RootContext,
+        live: LiveContext,
         page: 'awe_graph.HtmlPage',
         node_predicate: filtering.NodePredicate
     ):
-        self.root = root
+        self.live = live
         self.page = page
         self.node_predicate = node_predicate
 
@@ -70,7 +85,7 @@ class Feature(ABC):
         """Length of the feature vector or `None` if unknown."""
         return len(self.labels)
 
-    def initialize(self):
+    def initialize(self, context: LiveContext):
         """Work needed to be done so that this feature can be computed."""
 
     def prepare(self, node: 'awe_graph.HtmlNode', context: RootContext):
@@ -152,12 +167,20 @@ class CharEmbedding(Feature):
         return None
 
     def prepare(self, node: 'awe_graph.HtmlNode', context: RootContext):
+        # Find all distinct characters.
         if node.is_text:
             context.char_dict.update(char for char in node.text)
 
+    def initialize(self, context: LiveContext):
+        # Map all founds characters to numbers.
+        counter = 0
+        for c in context.root.char_dict:
+            context.char_dict[c] = counter
+            counter += 1
+
     def compute(self, node: 'awe_graph.HtmlNode', context: PageContext):
         if node.is_text:
-            # TODO: Use `context.root.char_dict` instead.
+            # TODO: Use `context.live.char_dict` instead.
             return torch.IntTensor([ord(char) for char in node.text])
         return torch.IntTensor([])
 
@@ -193,7 +216,7 @@ class WordEmbedding(Feature):
                 return np.mean(vectors, axis=0)
         return np.repeat(0, self.glove.vector_size)
 
-    def initialize(self):
+    def initialize(self, _):
         # Load word vectors.
         _ = self.glove
 

@@ -222,6 +222,7 @@ class DatasetCollection:
                 self.root = pickle.load(file)
         else:
             self.root = f.RootContext()
+        self.live = f.LiveContext(self.root)
 
     def __getitem__(self, name: str):
         return self.datasets[name]
@@ -237,7 +238,7 @@ class DatasetCollection:
         return ds
 
     def create_page_context(self, page: awe_graph.HtmlPage):
-        ctx = f.PageContext(self.root, page, self.node_predicate)
+        ctx = f.PageContext(self.live, page, self.node_predicate)
         page.prepare(ctx)
         return ctx
 
