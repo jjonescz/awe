@@ -277,7 +277,8 @@ class DatasetCollection:
         """Description of each feature vector column."""
         return [label for f in self.features for label in f.labels]
 
-    def _initialize(self,
+    def _process(self,
+        processor: Callable[[Dataset], Callable[..., int]],
         parallelize: Optional[int] = None,
         skip_existing: bool = True
     ):
@@ -286,31 +287,33 @@ class DatasetCollection:
             # skipped if parallelization is enabled.
             self.initialize(skip_existing=skip_existing)
 
-    def prepare_features(self,
-        parallelize: Optional[int] = None,
-        skip_existing: bool = True
-    ):
-        self._initialize(parallelize=parallelize, skip_existing=skip_existing)
         counter = 0
         for ds in self.datasets.values():
-            counter += ds.prepare_features(
+            counter += processor(ds)(
                 parallelize=parallelize,
                 skip_existing=skip_existing
             )
         return counter
 
+    def prepare_features(self,
+        parallelize: Optional[int] = None,
+        skip_existing: bool = True
+    ):
+        return self._process(
+            lambda ds: ds.prepare_features,
+            parallelize=parallelize,
+            skip_existing=skip_existing
+        )
+
     def compute_features(self,
         parallelize: Optional[int] = None,
         skip_existing: bool = True
     ):
-        self._initialize(parallelize=parallelize, skip_existing=skip_existing)
-        counter = 0
-        for ds in self.datasets.values():
-            counter += ds.compute_features(
-                parallelize=parallelize,
-                skip_existing=skip_existing
-            )
-        return counter
+        return self._process(
+            lambda ds: ds.compute_features,
+            parallelize=parallelize,
+            skip_existing=skip_existing
+        )
 
     def delete_saved_features(self):
         counter = 0
