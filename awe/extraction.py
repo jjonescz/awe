@@ -1,4 +1,5 @@
 import torch
+from torch.nn.utils import rnn
 from torch_geometric import data as gdata
 
 from awe import awe_graph, features
@@ -15,12 +16,16 @@ class PageFeatureExtractor:
         self.ds = ds
         self.ctx = ctx
 
-    def compute_node_features(self, node: awe_graph.HtmlNode):
+    def compute_direct_features(self, node: awe_graph.HtmlNode):
         return torch.hstack([
             feature.compute(node, self.ctx)
             for feature in self.ds.parent.features
             if isinstance(feature, features.DirectFeature)
         ])
+
+    def compute_indirect_features(self, feature: features.IndirectFeature):
+        vectors = [feature.compute(node, self.ctx) for node in self.ctx.nodes]
+        return rnn.pad_sequence(vectors, batch_first=True)
 
     def get_node_label(self, node: awe_graph.HtmlNode):
         # Only the first label for now.
@@ -28,14 +33,13 @@ class PageFeatureExtractor:
         return self.ds.label_map[label]
 
     def extract(self):
-        # Compute direct features and node labels.
-        x = torch.vstack(list(map(self.compute_node_features, self.ctx.nodes)))
+        # Compute direct node features and labels.
+        x = torch.vstack(list(map(self.compute_direct_features, self.ctx.nodes)))
         y = torch.tensor(list(map(self.get_node_label, self.ctx.nodes)))
 
-        # Compute indirect features.
+        # Compute indirect node features.
         indirect = {
-            f.label: f.compute(node, self.ctx)
-            for node in self.ctx.nodes
+            f.label: self.compute_indirect_features(f)
             for f in self.ds.parent.features
             if isinstance(f, features.IndirectFeature)
         }
