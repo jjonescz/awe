@@ -1,6 +1,7 @@
 import collections
 import functools
 import os
+import pickle
 from typing import Callable, Optional
 
 import torch
@@ -10,6 +11,7 @@ from torch_geometric import loader as gloader
 from awe import awe_graph
 from awe import features as f
 from awe import filtering, utils
+from awe.data import constants
 
 
 # Implements PyG dataset API, see
@@ -126,7 +128,7 @@ class Dataset:
         return False
 
     def _process_features(self,
-        processor: Callable[[int]],
+        processor: Callable[[int], None],
         parallelize: Optional[int] = None,
         skip_existing: bool = True
     ):
@@ -226,13 +228,18 @@ class Dataset:
         return counts
 
 class DatasetCollection:
+    root_context_path = os.path.join(constants.DATA_DIR, 'root_context.pkl')
     features: list[f.Feature] = []
     node_predicate: filtering.NodePredicate = filtering.DefaultNodePredicate()
     first_dataset: Optional[Dataset] = None
     datasets: dict[str, Dataset] = {}
 
     def __init__(self):
-        self.root = f.RootContext()
+        if os.path.exists(self.root_context_path):
+            with open(self.root_context_path, mode='rb') as file:
+                self.root = pickle.load(file)
+        else:
+            self.root = f.RootContext()
 
     def __getitem__(self, name: str):
         return self.datasets[name]
@@ -314,6 +321,12 @@ class DatasetCollection:
             parallelize=parallelize,
             skip_existing=skip_existing
         )
+
+    def save_root_context(self):
+        """Saves results of `prepare_features`."""
+        with open(self.root_context_path, mode='wb') as file:
+            pickle.dump(self.root, file)
+        return self.root_context_path
 
     def delete_saved_features(self):
         counter = 0
