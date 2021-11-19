@@ -63,6 +63,7 @@ class Dataset:
         for feature in self.parent.features:
             for node in ctx.nodes:
                 feature.prepare(node, ctx.root)
+        ctx.root.pages.add(page.identifier)
 
     def compute_page_features(self, idx: int):
         """Computes features for page at `idx` and persists them on disk."""

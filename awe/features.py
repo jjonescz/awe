@@ -17,6 +17,9 @@ T = TypeVar('T', bound='Feature') # pylint: disable=invalid-name
 class RootContext:
     """Data stored here are scoped to all pages."""
 
+    pages: set[str]
+    """Identifiers of pages used for feature preparation against this object."""
+
     char_dict: set[str] = set()
     """
     All characters present in processed nodes. Stored by `CharacterEmbedding`.
