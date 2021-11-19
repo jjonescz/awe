@@ -114,28 +114,26 @@ class Dataset:
 
     def will_compute_page(self, idx: int, skip_existing=True):
         """Determines whether this page needs features to be computed."""
-        if (
+        return (
             not skip_existing or
             not os.path.exists(self.pages[idx].data_point_path)
-        ):
-            return True
-        return False
+        )
 
-    def will_compute_any(self, skip_existing=True):
-        """Determines whether any page features will be computed."""
-        for i in range(len(self)):
-            if self.will_compute_page(i, skip_existing):
-                return True
-        return False
+    def will_prepare_page(self, idx: int, skip_existing=True):
+        """Determines whether this page needs features to be prepared."""
+        return (
+            not skip_existing or
+            self.pages[idx].identifier not in self.parent.root.pages
+        )
 
-    def _process_features(self,
+    def process_page_features(self,
+        will_process: Callable[[int], bool],
         processor: Callable[[int], None],
         parallelize: Optional[int] = None,
         skip_existing: bool = True
     ):
         pages_to_process = list(filter(
-            functools.partial(self.will_compute_page,
-                skip_existing=skip_existing),
+            functools.partial(will_process, skip_existing=skip_existing),
             range(len(self))
         ))
         if len(pages_to_process) != 0:
@@ -146,26 +144,6 @@ class Dataset:
                 self.name
             )
         return len(pages_to_process)
-
-    def prepare_features(self,
-        parallelize: Optional[int] = None,
-        skip_existing: bool = True
-    ):
-        """Prepares features for all pages where necessary."""
-        return self._process_features(self.prepare_page_features,
-            parallelize=parallelize,
-            skip_existing=skip_existing
-        )
-
-    def compute_features(self,
-        parallelize: Optional[int] = None,
-        skip_existing: bool = True
-    ):
-        """Computes features for all pages where necessary."""
-        return self._process_features(self.compute_page_features,
-            parallelize=parallelize,
-            skip_existing=skip_existing
-        )
 
     def delete_saved(self):
         """Deletes saved computed features (backup file `.bak` is created)."""
@@ -260,21 +238,6 @@ class DatasetCollection:
         page.prepare(ctx)
         return ctx
 
-    def will_compute_any(self, skip_existing=True):
-        """Determines whether any page features will be computed."""
-        for ds in self.datasets.values():
-            if ds.will_compute_any(skip_existing):
-                return True
-        return False
-
-    def initialize_features(self, skip_existing=True):
-        """Initializes features if necessary."""
-        if self.will_compute_any(skip_existing):
-            for feature in self.features:
-                feature.initialize()
-            return True
-        return False
-
     @property
     def feature_dim(self):
         """Feature vector total length."""
@@ -286,18 +249,40 @@ class DatasetCollection:
         return [label for f in self.features for label in f.labels]
 
     def _process(self,
-        processor: Callable[[Dataset], Callable[..., int]],
+        will_process: Callable[[Dataset], Callable[[int], bool]],
+        processor: Callable[[Dataset], Callable[[int], None]],
         parallelize: Optional[int] = None,
         skip_existing: bool = True
     ):
+        def will_process_any_page(ds: Dataset):
+            """
+            Determines whether any page features will be processed in a dataset.
+            """
+            for i in range(len(ds)):
+                if will_process(ds)(i, skip_existing=skip_existing):
+                    return True
+            return False
+
+        def will_process_any():
+            """Determines whether any page features will be processed."""
+            for ds in self.datasets.values():
+                if will_process_any_page(ds):
+                    return True
+            return False
+
+        # Initialize features if necessary.
         if parallelize is None:
-            # TODO: Initialization won't have effect on other cores, hence it's
+            # HACK: Initialization won't have effect on other cores, hence it's
             # skipped if parallelization is enabled.
-            self.initialize_features(skip_existing=skip_existing)
+            if will_process_any():
+                for feature in self.features:
+                    feature.initialize()
 
         counter = 0
         for ds in self.datasets.values():
-            counter += processor(ds)(
+            counter += ds.process_page_features(
+                will_process(ds),
+                processor(ds),
                 parallelize=parallelize,
                 skip_existing=skip_existing
             )
@@ -308,7 +293,8 @@ class DatasetCollection:
         skip_existing: bool = True
     ):
         return self._process(
-            lambda ds: ds.prepare_features,
+            lambda ds: ds.will_prepare_page,
+            lambda ds: ds.prepare_page_features,
             parallelize=parallelize,
             skip_existing=skip_existing
         )
@@ -318,7 +304,8 @@ class DatasetCollection:
         skip_existing: bool = True
     ):
         return self._process(
-            lambda ds: ds.compute_features,
+            lambda ds: ds.will_compute_page,
+            lambda ds: ds.compute_page_features,
             parallelize=parallelize,
             skip_existing=skip_existing
         )

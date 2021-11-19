@@ -17,7 +17,7 @@ T = TypeVar('T', bound='Feature') # pylint: disable=invalid-name
 class RootContext:
     """Data stored here are scoped to all pages."""
 
-    pages: set[str]
+    pages: set[str] = set()
     """Identifiers of pages used for feature preparation against this object."""
 
     char_dict: set[str] = set()
