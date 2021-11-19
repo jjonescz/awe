@@ -68,6 +68,10 @@ class AweModel(pl.LightningModule):
         # x: [num_nodes, num_features]
         x, edge_index = batch.x, batch.edge_index
 
+        # Concatenate word vectors as features for now.
+        if 'word_embedding' in batch:
+            x = torch.hstack((x, batch.word_embedding))
+
         # Propagate features through edges (graph convolution).
         if self.use_gnn:
             x = self.conv1(x, edge_index) # [num_nodes, D]
