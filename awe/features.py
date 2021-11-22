@@ -2,12 +2,11 @@ import re
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Optional, TypeVar
 
-import numpy as np
 import torch
+from torch.nn.utils import rnn
 from torchtext.data import utils as text_utils
 
 from awe import filtering
-from awe.data import glove
 
 if TYPE_CHECKING:
     from awe import awe_graph
@@ -27,12 +26,15 @@ class RootContext:
     All characters present in processed nodes. Stored by `CharacterEmbedding`.
     """
 
-    max_word_len: int = 0
-    """Maximum word length. Stored by `WordEmbedding`."""
+    tokens: set[str]
+    """
+    All word tokens present in processed nodes. Stored by `WordEmbedding`.
+    """
 
     def __init__(self):
         self.pages = set()
         self.chars = set()
+        self.tokens = set()
 
 class LiveContext:
     """
@@ -43,9 +45,13 @@ class LiveContext:
     char_dict: dict[str, int]
     """Used by `CharacterEmbedding`."""
 
+    token_dict: dict[str, int]
+    """Used by `WordEmbedding`."""
+
     def __init__(self, root: RootContext):
         self.root = root
         self.char_dict = dict()
+        self.word_dict = dict()
 
 class PageContext:
     """
@@ -186,69 +192,64 @@ class FontSize(DirectFeature):
     def compute(self, node: 'awe_graph.HtmlNode', _):
         return torch.FloatTensor([node.visual_node.font_size or 0])
 
-class CharEmbedding(IndirectFeature):
-    """Randomly-initialized character embeddings."""
+def get_default_tokenizer():
+    return text_utils.get_tokenizer('basic_english')
+
+class CharIdentifiers(IndirectFeature):
+    """Identifiers of characters. Used for randomly-initialized embeddings."""
+
+    def __init__(self):
+        self.tokenizer = get_default_tokenizer()
 
     @property
     def label(self):
-        return 'char_embedding'
+        return 'char_identifiers'
 
     def prepare(self, node: 'awe_graph.HtmlNode', context: RootContext):
         # Find all distinct characters.
         if node.is_text:
-            context.chars.update(char for char in node.text)
+            for token in self.tokenizer(node.text):
+                context.chars.update(char for char in token)
 
     def initialize(self, context: LiveContext):
         # Map all founds characters to numbers.
-        counter = 0
-        for c in context.root.chars:
-            context.char_dict[c] = counter
-            counter += 1
+        context.char_dict = { c: i for i, c in enumerate(context.root.chars) }
 
     def compute(self, node: 'awe_graph.HtmlNode', context: PageContext):
+        # Get character indices in each word.
         if node.is_text:
-            return torch.IntTensor([
-                context.live.char_dict[char] for char in node.text
-            ])
-        return torch.IntTensor([])
+            return [
+                torch.IntTensor([
+                    context.live.char_dict[char] for char in token
+                ])
+                for token in self.tokenizer(node.text)
+            ]
+        return []
 
-class WordEmbedding(IndirectFeature):
-    """Pre-trained GloVe embedding for each word -> averaged to one vector."""
+class WordIdentifiers(IndirectFeature):
+    """Identifiers of word tokens. Used for pre-trained GloVe embeddings."""
 
     def __init__(self):
-        self.tokenizer = text_utils.get_tokenizer('basic_english')
+        self.tokenizer = get_default_tokenizer()
 
     @property
     def label(self):
-        return 'word_embedding'
-
-    @property
-    def glove(self):
-        return glove.LazyEmbeddings.get_or_create()
-
-    def _embed(self, text: str):
-        for token in self.tokenizer(text):
-            try:
-                yield self.glove[token]
-            except KeyError:
-                pass
-
-    def _get_vector(self, node: 'awe_graph.HtmlNode'):
-        if node.is_text:
-            vectors = list(self._embed(node.text))
-            if len(vectors) != 0:
-                return np.mean(vectors, axis=0)
-        return np.repeat(0, self.glove.vector_size)
+        return 'word_identifiers'
 
     def prepare(self, node: 'awe_graph.HtmlNode', context: RootContext):
-        # Find maximum word length.
+        # Find all distinct tokens.
         if node.is_text:
-            for token in self.tokenizer(node.text):
-                context.max_word_len = max(context.max_word_len, len(token))
+            context.tokens.update(self.tokenizer(node.text))
 
-    def initialize(self, _):
-        # Load word vectors.
-        _ = self.glove
+    def initialize(self, context: LiveContext):
+        # Map all founds tokens to numbers.
+        context.token_dict = { t: i for i, t in enumerate(context.root.tokens) }
 
-    def compute(self, node: 'awe_graph.HtmlNode', _):
-        return torch.FloatTensor(self._get_vector(node))
+    def compute(self, node: 'awe_graph.HtmlNode', context: PageContext):
+        # Get word token indices.
+        if node.is_text:
+            return torch.IntTensor([
+                context.live.token_dict[token]
+                for token in self.tokenizer(node.text)
+            ])
+        return torch.IntTensor([])

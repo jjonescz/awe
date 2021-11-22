@@ -28,8 +28,7 @@ class PageFeatureExtractor:
         ])
 
     def compute_indirect_features(self, feature: features.IndirectFeature):
-        vectors = [feature.compute(node, self.ctx) for node in self.ctx.nodes]
-        return rnn.pad_sequence(vectors, batch_first=True)
+        return [feature.compute(node, self.ctx) for node in self.ctx.nodes]
 
     def get_node_label(self, node: awe_graph.HtmlNode):
         # Only the first label for now.
