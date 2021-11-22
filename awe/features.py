@@ -215,7 +215,7 @@ class CharIdentifiers(IndirectFeature):
                 context.chars.update(char for char in token)
 
     def initialize(self, context: LiveContext):
-        # Map all founds characters to numbers.
+        # Map all found characters to numbers.
         context.char_dict = { c: i for i, c in enumerate(context.root.chars) }
 
     def compute(self, node: 'awe_graph.HtmlNode', context: PageContext):
@@ -245,7 +245,7 @@ class WordIdentifiers(IndirectFeature):
             context.tokens.update(self.tokenizer(node.text))
 
     def initialize(self, context: LiveContext):
-        # Map all founds tokens to numbers.
+        # Map all found tokens to numbers.
         context.token_dict = { t: i for i, t in enumerate(context.root.tokens) }
 
     def compute(self, node: 'awe_graph.HtmlNode', context: PageContext):
