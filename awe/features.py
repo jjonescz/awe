@@ -249,11 +249,11 @@ class WordIdentifiers(IndirectFeature):
         _ = self.glove
 
     def compute(self, node: 'awe_graph.HtmlNode', _):
-        # Get word token indices. Indices start at 2; 1 is used for non-existent
-        # tokens and 0 is padding (not used here).
+        # Get word token indices. Indices start at 1; 0 is used for unknown and
+        # pad words.
         if node.is_text:
             return torch.IntTensor([
-                self.glove.get_index(token, default=-1) + 2
+                self.glove.get_index(token, default=-1) + 1
                 for token in self.tokenizer(node.text)
             ])
         return torch.IntTensor([])

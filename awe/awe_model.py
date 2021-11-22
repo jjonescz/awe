@@ -54,7 +54,10 @@ class AweModel(pl.LightningModule):
         # Load pre-trained word embedding layer.
         glove_model = glove.LazyEmbeddings.get_or_create()
         embeddings = torch.FloatTensor(glove_model.vectors)
-        self.word_embedding = torch.nn.Embedding.from_pretrained(embeddings)
+        # Add one embedding at the top (for unknown and pad words).
+        embeddings = F.pad(embeddings, (0, 0, 1, 0))
+        self.word_embedding = torch.nn.Embedding.from_pretrained(
+            embeddings, padding_idx=0)
         word_dim = embeddings.shape[1]
 
         self.lstm = torch.nn.LSTM(char_dim, word_dim, batch_first=True)
