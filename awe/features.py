@@ -143,15 +143,6 @@ class IndirectFeature(Feature):
     def summary(self):
         return { 'label': self.label }
 
-    def hydrate(self, data: torch.FloatTensor):
-        """
-        Transforms result of `compute` before it's used.
-
-        Result of this function is not serialized.
-        """
-
-        return data
-
 class Depth(DirectFeature):
     """Relative depth of node in DOM tree."""
 
