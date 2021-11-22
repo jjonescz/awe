@@ -36,6 +36,8 @@ class PageFeatureExtractor:
         return self.ds.label_map[label]
 
     def extract(self):
+        """Extracts features to `Data` instance that can be serialized."""
+
         self.ds.parent.initialize_features()
 
         # Compute direct node features and labels.
@@ -78,3 +80,11 @@ class PageFeatureExtractor:
             target=target,
             **indirect
         )
+
+def hydrate(data: gdata.Data):
+    """
+    Transforms result of `extract` for computation. This version is not
+    serialized, the transformation is performed live every time.
+    """
+
+    return data
