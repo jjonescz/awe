@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING
 
 import torch
-from torch.nn.utils import rnn
 from torch_geometric import data as gdata
 
 from awe import awe_graph, features
@@ -81,10 +80,15 @@ class PageFeatureExtractor:
             **indirect
         )
 
-def hydrate(data: gdata.Data):
+def hydrate(ds: 'dataset.Dataset', data: gdata.Data):
     """
-    Transforms result of `extract` for computation. This version is not
-    serialized, the transformation is performed live every time.
+    Transforms result of `extract` for computation. Result of this function is
+    not serialized, the transformation is performed live every time.
     """
 
+    for feature in ds.parent.features:
+        if isinstance(feature, features.IndirectFeature):
+            feat_data = getattr(data, feature.label)
+            feat_data = feature.hydrate(feat_data)
+            setattr(data, feature.label, feat_data)
     return data

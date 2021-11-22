@@ -108,7 +108,11 @@ class Feature(ABC):
     def compute(self,
         node: 'awe_graph.HtmlNode',
         context: PageContext) -> torch.FloatTensor:
-        """Computes feature vector for the given `node`."""
+        """
+        Computes feature vector for the given `node`.
+
+        This vector will be serialized.
+        """
 
 class DirectFeature(Feature):
     """
@@ -138,6 +142,15 @@ class IndirectFeature(Feature):
     @property
     def summary(self):
         return { 'label': self.label }
+
+    def hydrate(self, data: torch.FloatTensor):
+        """
+        Transforms result of `compute` before it's used.
+
+        Result of this function is not serialized.
+        """
+
+        return data
 
 class Depth(DirectFeature):
     """Relative depth of node in DOM tree."""

@@ -44,7 +44,7 @@ class Dataset:
 
     def __getitem__(self, idx: int):
         data = self._get_raw_data(idx)
-        return extraction.hydrate(data)
+        return extraction.hydrate(self, data)
 
     def __len__(self):
         return len(self.pages)
