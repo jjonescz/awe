@@ -10,6 +10,8 @@
         "conv",
         "curr",
         "dataloaders",
+        "gigaword",
+        "hparams",
         "hstack",
         "LSTM",
         "MPAA",

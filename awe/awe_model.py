@@ -104,8 +104,10 @@ class AweModel(pl.LightningModule):
             word_ids = extraction.collate(word_ids)
 
             # Embed words and pass them through LSTM.
-            padded_word_ids = rnn.pad_sequence(word_ids, batch_first=True) # [num_nodes, max_num_words]
-            embedded_words = self.word_embedding(padded_word_ids) # [num_nodes, max_num_words, word_dim]
+            padded_word_ids = rnn.pad_sequence(word_ids, batch_first=True)
+                # [num_nodes, max_num_words]
+            embedded_words = self.word_embedding(padded_word_ids)
+                # [num_nodes, max_num_words, word_dim]
             if self.use_lstm:
                 word_vectors, _ = self.lstm(embedded_words) # [num_nodes, max_num_words, word_dim]
 

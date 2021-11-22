@@ -7,6 +7,7 @@ from awe.data import constants
 GLOVE_DIR = f'{constants.DATA_DIR}/glove'
 os.environ['GENSIM_DATA_DIR'] = GLOVE_DIR
 
+# pylint: disable=wrong-import-order, wrong-import-position
 from gensim import downloader as api
 from gensim import models
 
