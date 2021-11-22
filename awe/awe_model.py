@@ -37,6 +37,7 @@ class AweModel(pl.LightningModule):
         label_weights: list[float],
         char_count: int,
         use_gnn: bool,
+        use_lstm: bool,
         char_dim: int = 100
     ):
         super().__init__()
@@ -60,7 +61,8 @@ class AweModel(pl.LightningModule):
             embeddings, padding_idx=0)
         word_dim = embeddings.shape[1]
 
-        self.lstm = torch.nn.LSTM(char_dim, word_dim, batch_first=True)
+        if use_lstm:
+            self.lstm = torch.nn.LSTM(char_dim, word_dim, batch_first=True)
 
         # Word vector will be appended for each node.
         feature_count += word_dim
@@ -81,6 +83,7 @@ class AweModel(pl.LightningModule):
         self.label_count = label_count
         self.label_weights = torch.FloatTensor(label_weights)
         self.use_gnn = use_gnn
+        self.use_lstm = use_lstm
 
     def forward(self, batch: data.Batch):
         # x: [num_nodes, num_features]
@@ -101,13 +104,17 @@ class AweModel(pl.LightningModule):
             word_ids = extraction.collate(word_ids)
 
             # Embed words and pass them through LSTM.
-            padded_word_ids = rnn.pad_sequence(word_ids, batch_first=True)
-            embedded_words = self.word_embedding(padded_word_ids)
-            word_vectors, _ = self.lstm(embedded_words)
+            padded_word_ids = rnn.pad_sequence(word_ids, batch_first=True) # [num_nodes, max_num_words]
+            embedded_words = self.word_embedding(padded_word_ids) # [num_nodes, max_num_words, word_dim]
+            if self.use_lstm:
+                word_vectors, _ = self.lstm(embedded_words) # [num_nodes, max_num_words, word_dim]
 
-            # Keep only the last vector for each word (whole text
-            # representation).
-            node_vectors = word_vectors[:, -1, :]
+                # Keep only the last vector for each word (whole text
+                # representation).
+                node_vectors = word_vectors[:, -1, :] # [num_nodes, word_dim]
+            else:
+                # If not using LSTM, use averaged word embeddings.
+                node_vectors = torch.mean(embedded_words, dim=1) # [num_nodes, word_dim]
 
             # Append to features.
             x = torch.hstack((x, node_vectors))
