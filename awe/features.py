@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Optional, TypeVar
 
 import torch
-from torch.nn.utils import rnn
 from torchtext.data import utils as text_utils
 
 from awe import filtering

@@ -18,6 +18,9 @@ class IndirectData:
     """
     data: list
 
+def collate(items: list[IndirectData]):
+    return [x for item in items for x in item.data]
+
 class PageFeatureExtractor:
     """Can extract features for one `HtmlPage`."""
 

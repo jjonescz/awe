@@ -8,8 +8,11 @@ import torch
 import torch.nn.functional as F
 import torch_geometric.nn as gnn
 from torch import nn
+from torch.nn.utils import rnn
 from torch_geometric import data
 from torchmetrics import functional as metrics
+
+from awe import extraction
 
 
 @dataclass
@@ -46,6 +49,11 @@ class AweModel(pl.LightningModule):
             kernel_size=3,
             padding='same'
         )
+        self.word_embedding = torch.nn.Embedding(6000, 100) # TODO: Arguments.
+        self.lstm = torch.nn.LSTM(char_dim, 100, batch_first=True)
+
+        # Word vector will be appended for each node.
+        feature_count += 100
 
         D = 64
         if use_gnn:
@@ -64,13 +72,35 @@ class AweModel(pl.LightningModule):
         self.label_weights = torch.FloatTensor(label_weights)
         self.use_gnn = use_gnn
 
-    def forward(self, batch: data.Data):
+    def forward(self, batch: data.Batch):
         # x: [num_nodes, num_features]
         x, edge_index = batch.x, batch.edge_index
 
-        # Concatenate word vectors as features for now.
-        if 'word_embedding' in batch:
-            x = torch.hstack((x, batch.word_embedding))
+        # Extract character identifiers for the batch.
+        char_ids = getattr(batch, 'char_identifiers', None)
+        if char_ids is not None:
+            # `char_ids` will be list of nodes, for each node list of words, for
+            # each word tensor of its character IDs.
+            char_ids = extraction.collate(char_ids)
+
+        # Extract word identifiers for the batch.
+        word_ids = getattr(batch, 'word_identifiers', None)
+        if word_ids is not None:
+            # `word_ids` will be list of nodes, for each node tensor of token
+            # IDs in text of that node.
+            word_ids = extraction.collate(word_ids)
+
+            # Embed words and pass them through LSTM.
+            padded_word_ids = rnn.pad_sequence(word_ids, batch_first=True)
+            embedded_words = self.word_embedding(padded_word_ids)
+            word_vectors, _ = self.lstm(embedded_words)
+
+            # Keep only the last vector for each word (whole text
+            # representation).
+            node_vectors = word_vectors[:, -1, :]
+
+            # Append to features.
+            x = torch.hstack((x, node_vectors))
 
         # Propagate features through edges (graph convolution).
         if self.use_gnn:
