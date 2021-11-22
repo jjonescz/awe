@@ -79,16 +79,3 @@ class PageFeatureExtractor:
             target=target,
             **indirect
         )
-
-def hydrate(ds: 'dataset.Dataset', data: gdata.Data):
-    """
-    Transforms result of `extract` for computation. Result of this function is
-    not serialized, the transformation is performed live every time.
-    """
-
-    for feature in ds.parent.features:
-        if isinstance(feature, features.IndirectFeature):
-            feat_data = getattr(data, feature.label)
-            feat_data = feature.hydrate(feat_data)
-            setattr(data, feature.label, feat_data)
-    return data

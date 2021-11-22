@@ -36,15 +36,11 @@ class Dataset:
             self.label_map = other.label_map
         self._prepare_label_map()
 
-    def _get_raw_data(self, idx: int) -> gdata.Data:
+    def __getitem__(self, idx: int) -> gdata.Data:
         page = self.pages[idx]
         if page.data_point_path is None:
             return self.in_memory_data[idx]
         return torch.load(page.data_point_path)
-
-    def __getitem__(self, idx: int):
-        data = self._get_raw_data(idx)
-        return extraction.hydrate(self, data)
 
     def __len__(self):
         return len(self.pages)
