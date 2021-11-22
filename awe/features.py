@@ -6,6 +6,7 @@ import torch
 from torchtext.data import utils as text_utils
 
 from awe import filtering
+from awe.data import glove
 
 if TYPE_CHECKING:
     from awe import awe_graph
@@ -239,20 +240,20 @@ class WordIdentifiers(IndirectFeature):
     def label(self):
         return 'word_identifiers'
 
-    def prepare(self, node: 'awe_graph.HtmlNode', context: RootContext):
-        # Find all distinct tokens.
-        if node.is_text:
-            context.tokens.update(self.tokenizer(node.text))
+    @property
+    def glove(self):
+        return glove.LazyEmbeddings.get_or_create()
 
-    def initialize(self, context: LiveContext):
-        # Map all found tokens to numbers.
-        context.token_dict = { t: i for i, t in enumerate(context.root.tokens) }
+    def initialize(self, _):
+        # Load word vectors.
+        _ = self.glove
 
-    def compute(self, node: 'awe_graph.HtmlNode', context: PageContext):
-        # Get word token indices.
+    def compute(self, node: 'awe_graph.HtmlNode', _):
+        # Get word token indices. Indices start at 2; 1 is used for non-existent
+        # tokens and 0 is padding (not used here).
         if node.is_text:
             return torch.IntTensor([
-                context.live.token_dict[token]
+                self.glove.get_index(token, default=-1) + 2
                 for token in self.tokenizer(node.text)
             ])
         return torch.IntTensor([])
