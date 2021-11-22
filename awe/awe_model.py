@@ -13,6 +13,7 @@ from torch_geometric import data
 from torchmetrics import functional as metrics
 
 from awe import extraction
+from awe.data import glove
 
 
 @dataclass
@@ -49,11 +50,17 @@ class AweModel(pl.LightningModule):
             kernel_size=3,
             padding='same'
         )
-        self.word_embedding = torch.nn.Embedding(6000, 100) # TODO: Arguments.
-        self.lstm = torch.nn.LSTM(char_dim, 100, batch_first=True)
+
+        # Load pre-trained word embedding layer.
+        glove_model = glove.LazyEmbeddings.get_or_create()
+        embeddings = torch.FloatTensor(glove_model.vectors)
+        self.word_embedding = torch.nn.Embedding.from_pretrained(embeddings)
+        word_dim = embeddings.shape[1]
+
+        self.lstm = torch.nn.LSTM(char_dim, word_dim, batch_first=True)
 
         # Word vector will be appended for each node.
-        feature_count += 100
+        feature_count += word_dim
 
         D = 64
         if use_gnn:
