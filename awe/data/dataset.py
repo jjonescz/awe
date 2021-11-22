@@ -117,7 +117,7 @@ class Dataset:
         for page in self.pages:
             pt_path = page.data_point_path
             if pt_path is not None and os.path.exists(pt_path):
-                os.rename(pt_path, f'{pt_path}.bak')
+                os.replace(pt_path, f'{pt_path}.bak')
                 counter += 1
         return counter
 
@@ -302,7 +302,7 @@ class DatasetCollection:
         return self.root_context_path
 
     def delete_saved_root_context(self):
-        os.rename(self.root_context_path, f'{self.root_context_path}.bak')
+        os.replace(self.root_context_path, f'{self.root_context_path}.bak')
         self.root = f.RootContext()
 
     def delete_saved_features(self):
