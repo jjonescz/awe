@@ -300,7 +300,7 @@ class PageLabels(awe_graph.HtmlLabels):
 
     def __init__(self, page: Page):
         self.page = page
-        self.nodes = dict()
+        self.nodes = {}
         for groundtruth_field in page.site.groundtruth:
             entry = groundtruth_field.entries[page.index]
             assert entry.page == page

@@ -50,8 +50,8 @@ class LiveContext:
 
     def __init__(self, root: RootContext):
         self.root = root
-        self.char_dict = dict()
-        self.word_dict = dict()
+        self.char_dict = {}
+        self.word_dict = {}
 
 class PageContext:
     """
