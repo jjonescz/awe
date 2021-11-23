@@ -1,0 +1,16 @@
+# See https://pip.pypa.io/en/stable/cli/pip_install/#requirements-file-format.
+# For list of packages, see https://pypi.org/.
+# Jupyter
+jupyterlab==3.2.4
+ipywidgets==7.6.5
+# PyTorch
+pytorch==1.9.1
+pyg==2.0.1
+pytorch-lightning==1.4.9
+# DoIt (job automation)
+doit==0.33.1
+# Parsel (HTML parsing)
+parsel==1.6.0
+beautifulsoup4==4.10.0
+# Gensim (word embeddings)
+gensim==4.1.2
