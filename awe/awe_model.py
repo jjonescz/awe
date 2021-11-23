@@ -92,22 +92,14 @@ class AweModel(pl.LightningModule):
 
         # Extract character identifiers for the batch.
         char_ids = getattr(batch, 'char_identifiers', None)
-        if char_ids is not None:
-            # `char_ids` will be list of nodes, for each node list of words, for
-            # each word tensor of its character IDs.
-            char_ids = extraction.flatten(char_ids)
+        if char_ids is not None: # [num_nodes, max_num_words, max_word_len]
+            pass
 
         # Extract word identifiers for the batch.
         word_ids = getattr(batch, 'word_identifiers', None)
-        if word_ids is not None:
-            # `word_ids` will be list of nodes, for each node tensor of token
-            # IDs in text of that node.
-            word_ids = extraction.flatten(word_ids)
-
+        if word_ids is not None: # [num_nodes, max_num_words]
             # Embed words and pass them through LSTM.
-            padded_word_ids = rnn.pad_sequence(word_ids, batch_first=True)
-                # [num_nodes, max_num_words]
-            embedded_words = self.word_embedding(padded_word_ids)
+            embedded_words = self.word_embedding(word_ids)
                 # [num_nodes, max_num_words, word_dim]
             if self.use_lstm:
                 word_vectors, _ = self.lstm(embedded_words) # [num_nodes, max_num_words, word_dim]

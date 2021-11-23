@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import torch
@@ -9,17 +8,6 @@ from awe import awe_graph, features
 if TYPE_CHECKING:
     from awe.data import dataset
 
-
-@dataclass
-class IndirectData:
-    """
-    Wrapper around list to avoid default collate behavior of PyTorch Geometric.
-    Used for `IndirectFeature`s that will be processed manually.
-    """
-    data: list
-
-def flatten(items: list[IndirectData]):
-    return [x for item in items for x in item.data]
 
 class PageFeatureExtractor:
     """Can extract features for one `HtmlPage`."""
@@ -39,9 +27,8 @@ class PageFeatureExtractor:
         ])
 
     def compute_indirect_features(self, feature: features.IndirectFeature):
-        return IndirectData([
-            feature.compute(node, self.ctx) for node in self.ctx.nodes
-        ])
+        vectors = [feature.compute(node, self.ctx) for node in self.ctx.nodes]
+        return torch.stack(vectors)
 
     def get_node_label(self, node: awe_graph.HtmlNode):
         # Only the first label for now.

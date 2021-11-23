@@ -22,6 +22,7 @@
         "relu",
         "swde",
         "tqdm",
+        "vstack",
         "wayback",
         "xpaths"
     ]

@@ -31,6 +31,10 @@ class RootContext:
     All word tokens present in processed nodes. Stored by `WordEmbedding`.
     """
 
+    max_word_len: int = 0
+
+    max_num_words: int = 0
+
     def __init__(self):
         self.pages = set()
         self.chars = set()
@@ -210,10 +214,14 @@ class CharIdentifiers(IndirectFeature):
         return 'char_identifiers'
 
     def prepare(self, node: 'awe_graph.HtmlNode', context: RootContext):
-        # Find all distinct characters.
+        # Find all distinct characters and maximum word length and count.
         if node.is_text:
+            counter = 0
             for token in self.tokenizer(node.text):
                 context.chars.update(char for char in token)
+                context.max_word_len = max(context.max_word_len, len(token))
+                counter += 1
+            context.max_num_words = max(context.max_num_words, counter)
 
     def initialize(self, context: LiveContext):
         # Map all found characters to numbers.
@@ -221,14 +229,17 @@ class CharIdentifiers(IndirectFeature):
 
     def compute(self, node: 'awe_graph.HtmlNode', context: PageContext):
         # Get character indices in each word.
+        result = torch.zeros(
+            context.root.max_num_words,
+            context.root.max_word_len,
+            dtype=torch.int32
+        )
         if node.is_text:
-            return [
-                torch.IntTensor([
+            for i, token in enumerate(self.tokenizer(node.text)):
+                result[i, :len(token)] = torch.IntTensor([
                     context.live.char_dict[char] for char in token
                 ])
-                for token in self.tokenizer(node.text)
-            ]
-        return []
+        return result
 
 class WordIdentifiers(IndirectFeature):
     """Identifiers of word tokens. Used for pre-trained GloVe embeddings."""
@@ -244,16 +255,21 @@ class WordIdentifiers(IndirectFeature):
     def glove(self):
         return glove.LazyEmbeddings.get_or_create()
 
+    def prepare(self, node: 'awe_graph.HtmlNode', context: RootContext):
+        # Find maximum word count.
+        if node.is_text:
+            count = sum(1 for _ in self.tokenizer(node.text))
+            context.max_num_words = max(context.max_num_words, count)
+
     def initialize(self, _):
         # Load word vectors.
         _ = self.glove
 
-    def compute(self, node: 'awe_graph.HtmlNode', _):
-        # Get word token indices. Indices start at 1; 0 is used for unknown and
-        # pad words.
+    def compute(self, node: 'awe_graph.HtmlNode', context: PageContext):
+        # Get word token indices.
+        result = torch.zeros(context.root.max_num_words, dtype=torch.int32)
         if node.is_text:
-            return torch.IntTensor([
-                self.glove.get_index(token, default=-1) + 1
-                for token in self.tokenizer(node.text)
-            ])
-        return torch.IntTensor([])
+            for i, token in enumerate(self.tokenizer(node.text)):
+                # Indices start at 1; 0 is used for unknown and pad words.
+                result[i] = self.glove.get_index(token, default=-1) + 1
+        return result
