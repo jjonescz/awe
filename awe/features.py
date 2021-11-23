@@ -23,12 +23,7 @@ class RootContext:
 
     chars: set[str]
     """
-    All characters present in processed nodes. Stored by `CharacterEmbedding`.
-    """
-
-    tokens: set[str]
-    """
-    All word tokens present in processed nodes. Stored by `WordEmbedding`.
+    All characters present in processed nodes. Stored by `CharacterIdentifiers`.
     """
 
     max_word_len: int = 0
@@ -38,7 +33,12 @@ class RootContext:
     def __init__(self):
         self.pages = set()
         self.chars = set()
-        self.tokens = set()
+
+    def merge_with(self, other: 'RootContext'):
+        self.pages.update(other.pages)
+        self.chars.update(other.chars)
+        self.max_word_len = max(self.max_word_len, other.max_word_len)
+        self.max_num_words = max(self.max_num_words, other.max_num_words)
 
 class LiveContext:
     """
