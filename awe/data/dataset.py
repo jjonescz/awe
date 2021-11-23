@@ -306,6 +306,8 @@ class DatasetCollection:
         ctx = l[0]
         for other in l[1:]:
             ctx.merge_with(other)
+        self.root = ctx
+        self.live = f.LiveContext(ctx)
 
     def compute_features(self,
         parallelize: Optional[int] = None,
