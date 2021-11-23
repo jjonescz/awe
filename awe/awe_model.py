@@ -8,11 +8,9 @@ import torch
 import torch.nn.functional as F
 import torch_geometric.nn as gnn
 from torch import nn
-from torch.nn.utils import rnn
 from torch_geometric import data
 from torchmetrics import functional as metrics
 
-from awe import extraction
 from awe.data import glove
 
 
