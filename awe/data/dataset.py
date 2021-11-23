@@ -2,7 +2,7 @@ import collections
 import functools
 import os
 import pickle
-from typing import Callable, Optional
+from typing import Callable, Optional, TypeVar
 
 import torch
 from torch_geometric import data as gdata
@@ -13,6 +13,7 @@ from awe import features as f
 from awe import filtering, utils
 from awe.data import constants
 
+T = TypeVar('T')
 
 # Implements PyG dataset API, see
 # https://pytorch-geometric.readthedocs.io/en/2.0.1/notes/create_dataset.html.
@@ -45,8 +46,11 @@ class Dataset:
     def __len__(self):
         return len(self.pages)
 
-    def _prepare_page_context(self, page: awe_graph.HtmlPage):
-        ctx = self.parent.create_page_context(page)
+    def _prepare_page_context(self,
+        page: awe_graph.HtmlPage,
+        root: Optional[f.RootContext] = None
+    ):
+        ctx = self.parent.create_page_context(page, root)
 
         # Assign indices to nodes (different from `HtmlNode.index` as that
         # one is from before filtering). This is needed to compute edges.
@@ -55,28 +59,34 @@ class Dataset:
 
         return ctx
 
-    def prepare_page_features(self, idx: int):
-        """Prepares features for page at `idx`."""
-        page = self.pages[idx]
-        ctx = self._prepare_page_context(page)
+    def prepare_page_features(self, indices: list[int]):
+        """Prepares features for pages at `indices`."""
+        root = f.RootContext()
+        for idx in indices:
+            page = self.pages[idx]
+            ctx = self._prepare_page_context(page, root)
 
-        with torch.no_grad():
-            for feature in self.parent.features:
-                for node in ctx.nodes:
-                    feature.prepare(node, ctx.root)
-        ctx.root.pages.add(page.identifier)
+            with torch.no_grad():
+                for feature in self.parent.features:
+                    for node in ctx.nodes:
+                        feature.prepare(node, ctx.root)
+            ctx.root.pages.add(page.identifier)
+        return root
 
-    def compute_page_features(self, idx: int):
-        """Computes features for page at `idx` and persists them to disk."""
-        page = self.pages[idx]
-        ctx = self._prepare_page_context(page)
+    def compute_page_features(self, indices: list[int]):
+        """
+        Computes features for pages at `indices` and persists them to disk.
+        """
+        for idx in indices:
+            page = self.pages[idx]
+            ctx = self._prepare_page_context(page)
 
-        with torch.no_grad():
-            data = extraction.PageFeatureExtractor(self, ctx).extract()
-        if page.data_point_path is None:
-            self.in_memory_data[idx] = data
-        else:
-            torch.save(data, page.data_point_path)
+            with torch.no_grad():
+                data = extraction.PageFeatureExtractor(self, ctx).extract()
+            if page.data_point_path is None:
+                self.in_memory_data[idx] = data
+            else:
+                torch.save(data, page.data_point_path)
 
     def will_compute_page(self, idx: int, skip_existing=True):
         """Determines whether this page needs features to be computed."""
@@ -94,7 +104,7 @@ class Dataset:
 
     def process_page_features(self,
         will_process: Callable[[int], bool],
-        processor: Callable[[int], None],
+        processor: Callable[[list[int]], T],
         parallelize: Optional[int] = None,
         skip_existing: bool = True
     ):
@@ -103,13 +113,18 @@ class Dataset:
             range(len(self))
         ))
         if len(pages_to_process) != 0:
-            utils.parallelize(
+            bulk_size = parallelize or 1
+            bulks = [
+                pages_to_process[i:i + bulk_size]
+                for i in range(0, len(pages_to_process), bulk_size)
+            ]
+            return utils.parallelize(
                 parallelize,
                 processor,
-                pages_to_process,
+                bulks,
                 self.name
             )
-        return len(pages_to_process)
+        return []
 
     def delete_saved(self):
         """Deletes saved computed features (backup file `.bak` is created)."""
@@ -203,8 +218,12 @@ class DatasetCollection:
             self.first_dataset = ds
         return ds
 
-    def create_page_context(self, page: awe_graph.HtmlPage):
-        ctx = f.PageContext(self.live, page, self.node_predicate)
+    def create_page_context(self,
+        page: awe_graph.HtmlPage,
+        root: Optional[f.RootContext] = None
+    ):
+        live = self.live if root is None else f.LiveContext(root)
+        ctx = f.PageContext(live, page, self.node_predicate)
         page.prepare(ctx)
         return ctx
 
@@ -235,7 +254,7 @@ class DatasetCollection:
 
     def _process(self,
         will_process: Callable[[Dataset], Callable[[int], bool]],
-        processor: Callable[[Dataset], Callable[[int], None]],
+        processor: Callable[[Dataset], Callable[[list[int]], T]],
         initialize: bool = True,
         parallelize: Optional[int] = None,
         skip_existing: bool = True
@@ -263,32 +282,36 @@ class DatasetCollection:
             if will_process_any():
                 self.initialize_features()
 
-        counter = 0
+        result: list[T] = []
         for ds in self.datasets.values():
-            counter += ds.process_page_features(
+            result += ds.process_page_features(
                 will_process(ds),
                 processor(ds),
                 parallelize=parallelize,
                 skip_existing=skip_existing
             )
-        return counter
+        return result
 
-    def prepare_features(self, skip_existing: bool = True):
-        return self._process(
+    def prepare_features(self,
+        parallelize: Optional[int] = None,
+        skip_existing: bool = True
+    ):
+        l = self._process(
             lambda ds: ds.will_prepare_page,
             lambda ds: ds.prepare_page_features,
             initialize=False,
-            # Preparing doesn't currently support parallelization because it
-            # updates shared memory (root context).
-            parallelize=None,
+            parallelize=parallelize,
             skip_existing=skip_existing
         )
+        ctx = l[0]
+        for other in l[1:]:
+            ctx.merge_with(other)
 
     def compute_features(self,
         parallelize: Optional[int] = None,
         skip_existing: bool = True
     ):
-        return self._process(
+        self._process(
             lambda ds: ds.will_compute_page,
             lambda ds: ds.compute_page_features,
             parallelize=parallelize,
