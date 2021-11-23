@@ -304,6 +304,7 @@ class DatasetCollection:
     def delete_saved_root_context(self):
         os.replace(self.root_context_path, f'{self.root_context_path}.bak')
         self.root = f.RootContext()
+        self.live = f.LiveContext(self.root)
 
     def delete_saved_features(self):
         counter = 0
