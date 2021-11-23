@@ -32,8 +32,10 @@ RUN curl -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Miniconda3-la
 
 ENV PATH=$PATH:/opt/conda/bin/
 
+RUN conda install python>=${PYTHON_VERSION}
+
 COPY requirements.txt /requirements.txt
-RUN conda install -c pyg -c pytorch -c conda-forge --file requirements.txt
+RUN pip install -r requirements.txt
 
 WORKDIR /notebooks
 
