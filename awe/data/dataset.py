@@ -303,11 +303,12 @@ class DatasetCollection:
             parallelize=parallelize,
             skip_existing=skip_existing
         )
-        ctx = l[0]
-        for other in l[1:]:
-            ctx.merge_with(other)
-        self.root = ctx
-        self.live = f.LiveContext(ctx)
+        if l != []:
+            ctx = l[0]
+            for other in l[1:]:
+                ctx.merge_with(other)
+            self.root = ctx
+            self.live = f.LiveContext(ctx)
 
     def compute_features(self,
         parallelize: Optional[int] = None,
