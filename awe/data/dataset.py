@@ -204,7 +204,7 @@ class DatasetCollection:
                 self.root = pickle.load(file)
         else:
             self.root = f.RootContext()
-        self.live = f.LiveContext(self.root)
+        self.init_root_context(self.root)
 
     def __getitem__(self, name: str):
         return self.datasets[name]
@@ -308,8 +308,7 @@ class DatasetCollection:
             ctx = l[0]
             for other in l[1:]:
                 ctx.merge_with(other)
-            self.root = ctx
-            self.live = f.LiveContext(ctx)
+            self.init_root_context(ctx)
 
     def compute_features(self,
         parallelize: Optional[int] = None,
@@ -322,6 +321,10 @@ class DatasetCollection:
             skip_existing=skip_existing
         )
 
+    def init_root_context(self, value: Optional[f.RootContext] = None):
+        self.root = value or f.RootContext()
+        self.live = f.LiveContext(self.root)
+
     def save_root_context(self):
         """Saves results of `prepare_features`."""
         with open(self.root_context_path, mode='wb') as file:
@@ -330,8 +333,7 @@ class DatasetCollection:
 
     def delete_saved_root_context(self):
         os.replace(self.root_context_path, f'{self.root_context_path}.bak')
-        self.root = f.RootContext()
-        self.live = f.LiveContext(self.root)
+        self.init_root_context()
 
     def delete_saved_features(self):
         counter = 0
