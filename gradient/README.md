@@ -16,7 +16,14 @@ This folder contains files used to setup development environment on
    docker push janjones/awe-gradient
    ```
 
-3. Create Gradient notebook.
+3. (Optional) Test that the container works locally.
+
+   ```sh
+   cd .. # go up to repository root
+   docker run --rm -it -p 8888:8888 -v$(pwd):/notebooks janjones/awe-gradient
+   ```
+
+4. Create Gradient notebook.
 
    - Provide Git repository as workspace (`https://github.com/jjonescz/awe`).
    - Select the pushed Docker image (`janjones/awe-gradient`) as [custom
