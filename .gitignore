@@ -1,6 +1,9 @@
 # Python compilation.
 __pycache__/
 
+# Jupyter Lab.
+.ipynb_checkpoints/
+
 # Python package `doit`. See `dodo.py`.
 .doit.db*
 
