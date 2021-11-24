@@ -63,6 +63,7 @@ class Dataset:
     def prepare_page_features(self, indices: list[int]):
         """Prepares features for pages at `indices`."""
         root = f.RootContext()
+        root.options_from(self.parent.root)
         for idx in indices:
             page = self.pages[idx]
             ctx = self._prepare_page_context(page, root)

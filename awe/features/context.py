@@ -38,11 +38,17 @@ class RootContext:
         self.pages = set()
         self.chars = set()
 
+    def options_from(self, other: 'RootContext'):
+        self.cutoff_words = other.cutoff_words
+
     def merge_with(self, other: 'RootContext'):
         self.pages.update(other.pages)
         self.chars.update(other.chars)
         self.max_word_len = max(self.max_word_len, other.max_word_len)
         self.max_num_words = max(self.max_num_words, other.max_num_words)
+        assert self.cutoff_words == other.cutoff_words, \
+            f'Option `cutoff_words` does not match ({self.cutoff_words} ' + \
+            'vs. {other.cutoff_words})'
 
 class LiveContext:
     """
