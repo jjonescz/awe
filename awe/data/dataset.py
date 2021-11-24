@@ -8,10 +8,11 @@ import torch
 from torch_geometric import data as gdata
 from torch_geometric import loader as gloader
 
-from awe import awe_graph, extraction
+from awe import awe_graph
 from awe import features as f
 from awe import filtering, utils
 from awe.data import constants
+from awe.features import extraction
 
 T = TypeVar('T')
 
