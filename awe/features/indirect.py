@@ -29,12 +29,12 @@ class CharIdentifiers(IndirectFeature):
         # Find all distinct characters and maximum word length and count.
         if node.is_text:
             counter = 0
-            for token in self.tokenizer(node.text):
+            for i, token in enumerate(self.tokenizer(node.text)):
+                if i >= context.cutoff_words:
+                    break
                 context.chars.update(char for char in token)
                 context.max_word_len = max(context.max_word_len, len(token))
                 counter += 1
-            if context.cutoff_words is not None:
-                counter = min(context.cutoff_words, counter)
             context.max_num_words = max(context.max_num_words, counter)
 
     def initialize(self, context: LiveContext):
@@ -50,6 +50,8 @@ class CharIdentifiers(IndirectFeature):
         )
         if node.is_text:
             for i, token in enumerate(self.tokenizer(node.text)):
+                if i >= context.root.max_num_words:
+                    break
                 result[i, :len(token)] = torch.IntTensor([
                     context.live.char_dict[char] for char in token
                 ])
@@ -72,10 +74,12 @@ class WordIdentifiers(IndirectFeature):
     def prepare(self, node: 'awe_graph.HtmlNode', context: RootContext):
         # Find maximum word count.
         if node.is_text:
-            count = sum(1 for _ in self.tokenizer(node.text))
-            if context.cutoff_words is not None:
-                count = min(context.cutoff_words, count)
-            context.max_num_words = max(context.max_num_words, count)
+            counter = 0
+            for i, _ in enumerate(self.tokenizer(node.text)):
+                if i >= context.cutoff_words:
+                    break
+                counter += 1
+            context.max_num_words = max(context.max_num_words, counter)
 
     def initialize(self, _):
         # Load word vectors.
@@ -86,6 +90,8 @@ class WordIdentifiers(IndirectFeature):
         result = torch.zeros(context.root.max_num_words, dtype=torch.int32)
         if node.is_text:
             for i, token in enumerate(self.tokenizer(node.text)):
+                if i >= context.root.max_num_words:
+                    break
                 # Indices start at 1; 0 is used for unknown and pad words.
                 result[i] = self.glove.get_index(token, default=-1) + 1
         return result
