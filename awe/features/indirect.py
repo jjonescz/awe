@@ -4,7 +4,9 @@ import torch
 from torchtext.data import utils as text_utils
 
 from awe.data import glove
-from awe.features import * # pylint: disable=wildcard-import, unused-wildcard-import
+# pylint: disable=wildcard-import, unused-wildcard-import
+from awe.features.context import *
+from awe.features.feature import *
 
 if TYPE_CHECKING:
     from awe import awe_graph

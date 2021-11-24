@@ -3,7 +3,9 @@ from typing import TYPE_CHECKING
 
 import torch
 
-from awe.features import * # pylint: disable=wildcard-import, unused-wildcard-import
+# pylint: disable=wildcard-import, unused-wildcard-import
+from awe.features.context import *
+from awe.features.feature import *
 
 if TYPE_CHECKING:
     from awe import awe_graph
