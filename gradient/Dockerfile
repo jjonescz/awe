@@ -37,6 +37,9 @@ RUN conda install python>=${PYTHON_VERSION}
 COPY requirements.txt /requirements.txt
 RUN pip install -r requirements.txt
 
+COPY requirements-pyg.txt /requirements-pyg.txt
+RUN pip install -r requirements-pyg.txt
+
 WORKDIR /notebooks
 
 COPY run.sh /run.sh

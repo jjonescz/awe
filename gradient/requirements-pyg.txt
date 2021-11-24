@@ -1,0 +1,8 @@
+# See https://pip.pypa.io/en/stable/cli/pip_install/#requirements-file-format.
+# For list of packages, see https://pypi.org/.
+-f https://data.pyg.org/whl/torch-1.9.1+cu92.html
+# PyTorch Geometric
+# https://pytorch-geometric.readthedocs.io/en/2.0.1/notes/installation.html
+torch-scatter==2.0.8
+torch-sparse==0.6.12
+torch-geometric==2.0.1
