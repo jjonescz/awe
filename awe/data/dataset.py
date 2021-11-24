@@ -332,7 +332,8 @@ class DatasetCollection:
         return self.root_context_path
 
     def delete_saved_root_context(self):
-        os.replace(self.root_context_path, f'{self.root_context_path}.bak')
+        if os.path.exists(self.root_context_path):
+            os.replace(self.root_context_path, f'{self.root_context_path}.bak')
         self.init_root_context()
 
     def delete_saved_features(self):
