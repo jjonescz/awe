@@ -28,3 +28,8 @@ This folder contains files used to setup development environment on
    - Provide Git repository as workspace (`https://github.com/jjonescz/awe`).
    - Select the pushed Docker image (`janjones/awe-gradient`) as [custom
      container](https://docs.paperspace.com/gradient/explore-train-deploy/notebooks/create-a-notebook/notebook-containers).
+     The command can be left empty (or deleted if it's pre-populated); then
+     default command from `run.sh` will be used.
+
+5. Start the notebook and then optionally switch to Jupyter Lab for better
+   terminal support.
