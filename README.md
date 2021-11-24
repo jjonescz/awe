@@ -24,5 +24,5 @@ See available commands via `doit list`. Their source code is in `dodo.py`.
 
 ## Development
 
-**Adding new Python package:** Add the package to `requirements.txt` and run
-`doit install`.
+**Adding new Python package:** Add the package to `requirements.txt` and/or
+`gradient/requirements.txt` and run `doit install`.
