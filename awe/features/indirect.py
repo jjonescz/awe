@@ -33,6 +33,8 @@ class CharIdentifiers(IndirectFeature):
                 context.chars.update(char for char in token)
                 context.max_word_len = max(context.max_word_len, len(token))
                 counter += 1
+            if context.cutoff_words is not None:
+                counter = min(context.cutoff_words, counter)
             context.max_num_words = max(context.max_num_words, counter)
 
     def initialize(self, context: LiveContext):
@@ -71,6 +73,8 @@ class WordIdentifiers(IndirectFeature):
         # Find maximum word count.
         if node.is_text:
             count = sum(1 for _ in self.tokenizer(node.text))
+            if context.cutoff_words is not None:
+                count = min(context.cutoff_words, count)
             context.max_num_words = max(context.max_num_words, count)
 
     def initialize(self, _):

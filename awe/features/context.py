@@ -20,8 +20,19 @@ class RootContext:
     """
 
     max_word_len: int = 0
+    """Length of the longest word. Stored by `CharacterIdentifiers`."""
 
     max_num_words: int = 0
+    """
+    Number of words in the longest node (up to `cutoff_words`). Stored by
+    `CharacterIdentifiers` and `WordIdentifiers`.
+    """
+
+    cutoff_words: Optional[int] = None
+    """
+    Maximum number of words to preserve in each node (or `None` to preserve
+    all). Used by `CharacterIdentifiers` and `WordIdentifiers`.
+    """
 
     def __init__(self):
         self.pages = set()

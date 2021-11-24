@@ -10,6 +10,7 @@
         "conv",
         "curr",
         "dataloaders",
+        "dtype",
         "gigaword",
         "hparams",
         "hstack",
