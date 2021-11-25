@@ -100,11 +100,8 @@ class AweModel(pl.LightningModule):
             embedded_words = self.word_embedding(word_ids)
                 # [num_nodes, max_num_words, word_dim]
             if self.use_lstm:
-                word_vectors, _ = self.lstm(embedded_words) # [num_nodes, max_num_words, word_dim]
-
-                # Keep only the last vector for each word (whole text
-                # representation).
-                node_vectors = word_vectors[:, -1, :] # [num_nodes, word_dim]
+                _, (word_state, _) = self.lstm(embedded_words) # [1, num_nodes, lstm_dim]
+                node_vectors = word_state.flatten(end_dim=1) # [num_nodes, lstm_dim]
             else:
                 # If not using LSTM, use averaged word embeddings.
                 node_vectors = torch.mean(embedded_words, dim=1) # [num_nodes, word_dim]
