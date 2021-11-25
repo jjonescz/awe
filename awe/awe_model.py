@@ -37,7 +37,8 @@ class AweModel(pl.LightningModule):
         use_gnn: bool,
         use_lstm: bool,
         char_dim: int = 100,
-        lstm_dim: int = 100
+        lstm_dim: int = 100,
+        lstm_args = {}
     ):
         super().__init__()
 
@@ -61,10 +62,13 @@ class AweModel(pl.LightningModule):
         word_dim = embeddings.shape[1]
 
         if use_lstm:
-            self.lstm = torch.nn.LSTM(word_dim, lstm_dim, batch_first=True)
+            self.lstm = torch.nn.LSTM(word_dim, lstm_dim,
+                batch_first=True,
+                **lstm_args
+            )
 
         # Word vector will be appended for each node.
-        feature_count += word_dim
+        feature_count += lstm_dim if use_lstm else word_dim
 
         D = 64
         if use_gnn:
@@ -101,7 +105,8 @@ class AweModel(pl.LightningModule):
                 # [num_nodes, max_num_words, word_dim]
             if self.use_lstm:
                 _, (word_state, _) = self.lstm(embedded_words) # [1, num_nodes, lstm_dim]
-                node_vectors = word_state.flatten(end_dim=1) # [num_nodes, lstm_dim]
+                # Keep only the last hidden state (whole text representation).
+                node_vectors = word_state[-1, ...] # [num_nodes, lstm_dim]
             else:
                 # If not using LSTM, use averaged word embeddings.
                 node_vectors = torch.mean(embedded_words, dim=1) # [num_nodes, word_dim]
