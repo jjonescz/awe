@@ -80,7 +80,7 @@ class AweModel(pl.LightningModule):
         )
 
         self.label_count = label_count
-        self.label_weights = torch.FloatTensor(label_weights)
+        self.register_buffer("label_weights", torch.FloatTensor(label_weights))
         self.use_gnn = use_gnn
         self.use_lstm = use_lstm
 
@@ -134,6 +134,7 @@ class AweModel(pl.LightningModule):
 
         # Un-filter target nodes (so dimensions are as expected).
         full = torch.zeros(batch.x.shape[0], x.shape[1]) # [num_nodes, num_classes]
+        full = full.type_as(x)
         full[:, 0] = 1 # classify as "none" by default (for non-target nodes)
         full[batch.target] = x # use computed classification of target nodes
         return full
