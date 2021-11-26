@@ -40,6 +40,23 @@ RUN pip install -r requirements.txt
 COPY requirements-pyg.txt /requirements-pyg.txt
 RUN pip install -r requirements-pyg.txt
 
+# Install SSH. Inspired by https://github.com/Paperspace/gradient-ssh-test.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssh-server && \
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir /var/run/sshd && \
+    sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd && \
+    echo "export VISIBLE=now" >> /etc/profile
+
+# Build WebSockets proxy.
+RUN curl -L https://go.dev/dl/go1.17.3.linux-amd64.tar.gz -o go.tar.gz && \
+    tar -C /usr/local -xzf go.tar.gz && \
+    rm go.tar.gz
+ENV GOPATH=/huproxy \
+    PATH=${PATH}:/usr/local/go/bin
+RUN go get github.com/google/huproxy
+
 WORKDIR /notebooks
 
 COPY run.sh /run.sh
