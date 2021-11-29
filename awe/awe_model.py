@@ -102,29 +102,39 @@ class AweModel(pl.LightningModule):
         # Extract word identifiers for the batch.
         word_ids = getattr(batch, 'word_identifiers', None)
         if word_ids is not None: # [num_nodes, max_num_words]
+            # Keep only sentences with at least one word.
+            lengths = utils.sequence_lengths(word_ids) # [num_nodes]
+            node_mask = lengths.gt(0) # [num_nodes]
+            masked_word_ids = word_ids[node_mask, :] # [num_masked_nodes, max_num_words]
+
             # Embed words and pass them through LSTM.
-            embedded_words = self.word_embedding(word_ids)
-                # [num_nodes, max_num_words, word_dim]
+            embedded_words = self.word_embedding(masked_word_ids)
+                # [num_masked_nodes, max_num_words, word_dim]
             if self.use_lstm:
                 # Pack sequences (to let LSTM ignore pad words).
                 packed_words = rnn.pack_padded_sequence(
                     embedded_words,
-                    utils.sequence_lengths(word_ids),
+                    lengths[node_mask],
                     batch_first = True,
                     enforce_sorted = False
                 )
 
                 # Run through LSTM.
-                _, (word_state, _) = self.lstm(packed_words) # [1, num_nodes, lstm_dim]
+                _, (word_state, _) = self.lstm(packed_words) # [1, num_masked_nodes, lstm_dim]
 
                 # Keep only the last hidden state (whole text representation).
-                node_vectors = word_state[-1, ...] # [num_nodes, lstm_dim]
+                node_vectors = word_state[-1, ...] # [num_masked_nodes, lstm_dim]
             else:
                 # If not using LSTM, use averaged word embeddings.
-                node_vectors = torch.mean(embedded_words, dim=1) # [num_nodes, word_dim]
+                node_vectors = torch.mean(embedded_words, dim=1) # [num_masked_nodes, word_dim]
+
+            # Expand word vectors to the original shape.
+            full_node_vectors = torch.zeros(word_ids.shape[0], node_vectors.shape[1]) # [num_nodes, lstm_dim]
+            full_node_vectors = full_node_vectors.type_as(x)
+            full_node_vectors[node_mask, :] = node_vectors
 
             # Append to features.
-            x = torch.hstack((x, node_vectors)) # [num_nodes, num_features]
+            x = torch.hstack((x, full_node_vectors)) # [num_nodes, num_features]
 
         # Propagate features through edges (graph convolution).
         if self.use_gnn:
