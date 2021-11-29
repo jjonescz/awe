@@ -23,12 +23,24 @@ This folder contains files used to setup development environment on
    docker run --rm -it -p 8888:8888 -v$(pwd):/notebooks janjones/awe-gradient
    ```
 
-4. Create Gradient notebook.
+4. Create and start Gradient notebook. Skip if testing locally.
 
    - Provide Git repository as workspace (`https://github.com/jjonescz/awe`).
    - Select the pushed Docker image (`janjones/awe-gradient`) as [custom
      container](https://docs.paperspace.com/gradient/explore-train-deploy/notebooks/create-a-notebook/notebook-containers).
      Set the command to `/run.sh`.
 
-5. Start the notebook and then optionally switch to Jupyter Lab for better
-   terminal support.
+5. Install [huproxy](https://github.com/google/huproxy) locally and configure
+   SSH as shown below. Replace `<JUPYTER_LAB_ID>` by ID from URL that opens in
+   Gradient when clicking on "Open in Jupyter Lab" button. For SSH password, use
+   token shown in terminal after the container is started.
+
+   ```ssh_config
+   Host 127.0.0.1
+     User root
+     HostName 127.0.0.1
+     ProxyCommand <FULL_PATH_TO_huproxyclient.exe> wss://<JUPYTER_LAB_ID>.paperspacegradient.com/proxy/%h/%p
+   ```
+
+6. Connect via [VS Code](https://code.visualstudio.com/) with [Remote
+   SSH](https://code.visualstudio.com/docs/remote/ssh).
