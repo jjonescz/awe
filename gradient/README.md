@@ -41,7 +41,13 @@ This folder contains files used to setup development environment on
      User root
      HostName 127.0.0.1
      ProxyCommand <FULL_PATH_TO_huproxyclient.exe> wss://<JUPYTER_LAB_ID>.paperspacegradient.com/proxy/%h/%p
+
+   Host localhost
+     User root
+     ProxyCommand <FULL_PATH_TO_huproxyclient.exe> ws://localhost:8888/proxy/%h/%p
    ```
+
+   Note that the first is for Gradient.run and the second is for local testing.
 
 6. Connect via [VS Code](https://code.visualstudio.com/) with [Remote
    SSH](https://code.visualstudio.com/docs/remote/ssh).
