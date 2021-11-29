@@ -24,7 +24,7 @@ jobs:
       id: set_tag
       run: echo "::set-output name=tag::${{ github.event.inputs.tag || steps.compute_tag.outputs.tag }}"
     - name: Login to Docker
-      run: docker login -u ${DOCKER_USERNAME} -p ${DOCKER_USERNAME}
+      run: docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
       env:
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
