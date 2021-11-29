@@ -3,8 +3,8 @@
 # This script should be run after source code is mounted.
 
 # Persist VSCode directory.
-mkdir -p .vscode-server
-ln -s $(pwd)/.vscode-server ~/.vscode-server
+mkdir -p /storage/awe/.vscode-server
+ln -s /storage/awe/.vscode-server ~/.vscode-server
 
 # Configure Git.
 ./sh/configure.sh
