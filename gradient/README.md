@@ -61,9 +61,3 @@ This folder contains files used to setup development environment on
    ```sh
    ./gradient/install.sh
    ```
-
-8. In all cases, initialize SSH shell by running:
-
-   ```sh
-   ./gradient/init.sh
-   ```
