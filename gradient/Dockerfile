@@ -41,7 +41,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     mkdir /var/run/sshd && \
     sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
     sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd && \
-    echo "export VISIBLE=now" >> /etc/profile
+    echo "export VISIBLE=now" >> /etc/profile && \
+    # Preserve environment variables in SSH sessions.
+    echo "export \$(cat /proc/1/environ | tr '\\\0' '\\\n' | xargs)" >> /etc/profile
 
 # Build WebSockets proxy.
 RUN curl -L https://go.dev/dl/go1.17.3.linux-amd64.tar.gz -o go.tar.gz && \
