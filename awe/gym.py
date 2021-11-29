@@ -150,14 +150,14 @@ class Gym:
 
     def save_pages(self):
         """Saves list of pages used for training and validation."""
-        return list(self._iterate_pages())
+        return dict(self._iterate_pages())
 
     def _iterate_pages(self):
         for name, items in self.ds.datasets.items():
             path = self.get_last_checkpoint().get_pages_path(name)
-            pages = '\n'.join(map(lambda p: p.identifier, items.pages))
+            pages = str(utils.summarize_pages(items.pages))
             utils.save_or_check_file(path, pages)
-            yield name
+            yield name, pages
 
     def save_named_version(self, name: str):
         """Saves the last version with a name."""
