@@ -137,7 +137,8 @@ class Gym:
 
     def save_model_text(self):
         path = self.get_last_checkpoint().model_text_path
-        return utils.save_or_check_file(path, str(self.model))
+        model_text = f'{self.model}\n\n{self.model.summarize(max_depth=1)}'
+        return utils.save_or_check_file(path, model_text)
 
     def save_results(self, dataset_name: str):
         results = self.trainer.validate(
