@@ -34,6 +34,11 @@ ENV PATH=$PATH:/opt/conda/bin/
 
 RUN conda install python>=${PYTHON_VERSION}
 
+# Install PyTorch Geometric.
+COPY requirements-*.txt /
+RUN pip install -r requirements-torch.txt && \
+    pip install -r requirements-pyg.txt
+
 # Install SSH. Inspired by https://github.com/Paperspace/gradient-ssh-test.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openssh-server && \
@@ -54,10 +59,8 @@ ENV GOPATH=/huproxy \
 RUN go get github.com/google/huproxy
 
 # Install Python packages.
-COPY requirements*.txt /
-RUN pip install -r requirements-torch.txt && \
-    pip install -r requirements-pyg.txt && \
-    pip install -r requirements.txt
+COPY requirements.txt /requirements.txt
+RUN pip install -r requirements.txt
 
 WORKDIR /storage/awe/src
 
