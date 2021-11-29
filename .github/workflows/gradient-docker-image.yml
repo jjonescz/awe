@@ -42,7 +42,7 @@ jobs:
         run: |
           docker build \
             --build-arg BUILDKIT_INLINE_CACHE=1 \
-            ${{ github.event.inputs.cache_from && format('--cache-from {0}', github.event.inputs.cache_from) }} \
+            ${{ github.event.inputs.cache_from && format('--cache-from janjones/awe-gradient:{0}', github.event.inputs.cache_from) }} \
             -t janjones/awe-gradient:${{ steps.set_tag.outputs.tag }} .
       - name: Push Docker image
         run: docker push janjones/awe-gradient:${{ steps.set_tag.outputs.tag }}
