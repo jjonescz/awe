@@ -9,7 +9,7 @@ __pycache__/
 
 # Data downloaded by `dodo.py` and cached by Python and Node.js code.
 # See `DATA_DIR` in `constants.py` and `constants.ts`.
-/data/
+/data
 
 # PyTorch machine learning. See `LOG_DIR` in `gym.py`.
-/logs/
+/logs
