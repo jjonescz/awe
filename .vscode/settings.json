@@ -26,5 +26,6 @@
         "vstack",
         "wayback",
         "xpaths"
-    ]
+    ],
+    "python.terminal.activateEnvironment": false
 }
