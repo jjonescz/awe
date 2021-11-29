@@ -20,8 +20,8 @@ This folder contains files used to setup development environment on
 
    ```sh
    cd .. # go up to repository root
-   docker run --rm -it -p 8888:8888 -v awe:/storage janjones/awe-gradient
-   git clone https://github.com/jjonescz/awe .
+   docker run --rm -it -p 8888:8888 -v awe:/storage --name awe janjones/awe-gradient
+   docker exec -it awe git clone https://github.com/jjonescz/awe .
    ```
 
 4. Create and start Gradient notebook. Skip if testing locally.
