@@ -30,7 +30,7 @@ RUN curl -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Miniconda3-la
     rm ~/miniconda.sh && \
     /opt/conda/bin/conda install conda-build
 
-ENV PATH=$PATH:/opt/conda/bin/
+ENV PATH=/opt/conda/bin:$PATH
 
 RUN conda install python>=${PYTHON_VERSION}
 
@@ -55,7 +55,7 @@ RUN curl -L https://go.dev/dl/go1.17.3.linux-amd64.tar.gz -o go.tar.gz && \
     tar -C /usr/local -xzf go.tar.gz && \
     rm go.tar.gz
 ENV GOPATH=/huproxy \
-    PATH=${PATH}:/usr/local/go/bin
+    PATH=/usr/local/go/bin:$PATH
 RUN go get github.com/google/huproxy
 
 # Install Python packages.
