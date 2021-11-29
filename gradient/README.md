@@ -22,7 +22,8 @@ This folder contains files used to setup development environment on
    - Ensure Git repository is not set.
    - Select the pushed Docker image (`janjones/awe-gradient`) as [custom
      container](https://docs.paperspace.com/gradient/explore-train-deploy/notebooks/create-a-notebook/notebook-containers).
-     Set the command to `/run.sh`.
+     Note that you may need to specify exact tag to overwrite previously cached
+     version. Set the command to `/run.sh`.
 
 4. Install [huproxy](https://github.com/google/huproxy) locally and configure
    SSH as shown below. Replace `<JUPYTER_LAB_ID>` by ID from URL that opens in
