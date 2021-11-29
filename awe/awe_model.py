@@ -8,9 +8,11 @@ import torch
 import torch.nn.functional as F
 import torch_geometric.nn as gnn
 from torch import nn
+from torch.nn.utils import rnn
 from torch_geometric import data
 from torchmetrics import functional as metrics
 
+from awe import utils
 from awe.data import glove
 
 
@@ -104,7 +106,17 @@ class AweModel(pl.LightningModule):
             embedded_words = self.word_embedding(word_ids)
                 # [num_nodes, max_num_words, word_dim]
             if self.use_lstm:
-                _, (word_state, _) = self.lstm(embedded_words) # [1, num_nodes, lstm_dim]
+                # Pack sequences (to let LSTM ignore pad words).
+                packed_words = rnn.pack_padded_sequence(
+                    embedded_words,
+                    utils.sequence_lengths(word_ids),
+                    batch_first = True,
+                    enforce_sorted = False
+                )
+
+                # Run through LSTM.
+                _, (word_state, _) = self.lstm(packed_words) # [1, num_nodes, lstm_dim]
+
                 # Keep only the last hidden state (whole text representation).
                 node_vectors = word_state[-1, ...] # [num_nodes, lstm_dim]
             else:
