@@ -20,7 +20,7 @@ This folder contains files used to setup development environment on
 
    ```sh
    cd .. # go up to repository root
-   docker run --rm -it -p 8888:8888 -v awe:/storage/awe/src janjones/awe-gradient
+   docker run --rm -it -p 8888:8888 -v awe:/storage janjones/awe-gradient
    git clone https://github.com/jjonescz/awe .
    ```
 

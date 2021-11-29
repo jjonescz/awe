@@ -57,6 +57,9 @@ RUN pip install -r requirements.txt
 COPY requirements-pyg.txt /requirements-pyg.txt
 RUN pip install -r requirements-pyg.txt
 
+# Persist VSCode directory.
+RUN ln -s /storage/.vscode-server ~/.vscode-server
+
 WORKDIR /storage/awe/src
 
 COPY run.sh /run.sh
