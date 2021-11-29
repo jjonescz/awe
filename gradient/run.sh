@@ -6,9 +6,6 @@
 mkdir -p /storage/awe/.vscode-server
 ln -s /storage/awe/.vscode-server ~/.vscode-server
 
-# Configure Git.
-./sh/configure.sh
-
 # Generate a random alphanumeric string of length 48 (like Jupyter notebook
 # token, e.g., `c8de56fa4deed24899803e93c227592aef6538f93025fe01`). Inspired by
 # https://gist.github.com/earthgecko/3089509.

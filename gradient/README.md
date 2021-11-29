@@ -30,7 +30,7 @@ This folder contains files used to setup development environment on
 
 4. Create and start Gradient notebook. Skip if testing locally.
 
-   - Provide Git repository as workspace (`https://github.com/jjonescz/awe`).
+   - Ensure Git repository is not set.
    - Select the pushed Docker image (`janjones/awe-gradient`) as [custom
      container](https://docs.paperspace.com/gradient/explore-train-deploy/notebooks/create-a-notebook/notebook-containers).
      Set the command to `/run.sh`.
@@ -56,8 +56,11 @@ This folder contains files used to setup development environment on
    SSH](https://code.visualstudio.com/docs/remote/ssh) and open directory
    `/storage/awe/src`.
 
-7. If this is the first time, initialize VSCode:
+7. If this is the first time clone the repository, configure Git and initialize
+   VSCode:
 
    ```sh
+   git clone https://github.com/jjonescz/awe .
+   ./sh/configure.sh
    ./gradient/install.sh
    ```
