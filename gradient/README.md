@@ -50,4 +50,11 @@ This folder contains files used to setup development environment on
    Note that the first is for Gradient.run and the second is for local testing.
 
 6. Connect via [VS Code](https://code.visualstudio.com/) with [Remote
-   SSH](https://code.visualstudio.com/docs/remote/ssh).
+   SSH](https://code.visualstudio.com/docs/remote/ssh) and open directory
+   `/storage/awe/src`.
+
+7. If this is the first time, initialize VSCode:
+
+   ```sh
+   ./sh/install.sh
+   ```
