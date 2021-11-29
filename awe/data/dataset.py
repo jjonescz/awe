@@ -326,8 +326,10 @@ class DatasetCollection:
         self.root = value or f.RootContext()
         self.live = f.LiveContext(self.root)
 
-    def save_root_context(self):
+    def save_root_context(self, overwrite_existing: bool = False):
         """Saves results of `prepare_features`."""
+        if not overwrite_existing and os.path.exists(self.root_context_path):
+            return False
         with open(self.root_context_path, mode='wb') as file:
             pickle.dump(self.root, file)
         return self.root_context_path
