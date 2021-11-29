@@ -1,3 +1,6 @@
+# VSCode.
+/.vscode-server/
+
 # Python compilation.
 __pycache__/
 

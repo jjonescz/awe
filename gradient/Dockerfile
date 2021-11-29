@@ -57,9 +57,6 @@ RUN pip install -r requirements-torch.txt && \
     pip install -r requirements-pyg.txt && \
     pip install -r requirements.txt
 
-# Persist VSCode directory.
-RUN ln -s /storage/.vscode-server ~/.vscode-server
-
 WORKDIR /storage/awe/src
 
 COPY run.sh /run.sh

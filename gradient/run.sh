@@ -2,6 +2,9 @@
 
 # This script should be run after source code is mounted.
 
+# Persist VSCode directory.
+ln -s ~/.vscode-server .vscode-server
+
 # Configure Git.
 ./sh/configure.sh
 
