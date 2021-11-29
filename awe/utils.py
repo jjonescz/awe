@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, TypeVar
 
 import joblib
 import numpy as np
+import torch
 from tqdm.auto import tqdm
 
 if TYPE_CHECKING:
@@ -96,3 +97,20 @@ def _summarize_pages(pages: Iterable['awe_graph.HtmlPage']):
 
 def summarize_pages(pages: Iterable['awe_graph.HtmlPage']):
     return dict(_summarize_pages(pages))
+
+def sequence_lengths(x: torch.IntTensor):
+    """
+    Lengths of rows padded with zero.
+
+    Takes `x` shaped `[num_rows, num_cols]`, returns `[num_rows]` with lengths.
+    """
+
+    return x.cumsum(dim=1).argmax(dim=1)
+
+def _test_sequence_lengths():
+    """Unit test of `sequence_lengths`."""
+    x = torch.LongTensor([[1, 0, 3], [1, 2, 0], [1, 0, 0]])
+    y = sequence_lengths(x)
+    assert torch.equal(y, torch.LongTensor([2, 1, 0]))
+
+_test_sequence_lengths()
