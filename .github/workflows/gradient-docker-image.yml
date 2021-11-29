@@ -11,6 +11,10 @@ on:
         description: "Another Docker image tag"
         required: false
         default: "latest"
+      cache_from:
+        description: "Docker image tag to use for build cache"
+        required: false
+        default: "latest"
 
 jobs:
   build:
@@ -32,7 +36,11 @@ jobs:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       - name: Build Docker image
         working-directory: gradient
-        run: docker build -t janjones/awe-gradient:${{ steps.set_tag.outputs.tag }} .
+        run: |
+          docker build \
+            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            ${{ github.event.inputs.cache_from && format('--cache-from {0}', github.event.inputs.cache_from) }} \
+            -t janjones/awe-gradient:${{ steps.set_tag.outputs.tag }} .
       - name: Push Docker image
         run: docker push janjones/awe-gradient:${{ steps.set_tag.outputs.tag }}
       - name: Push Docker image as another tag
