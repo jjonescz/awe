@@ -5,41 +5,39 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Docker image tag'
+        description: "Docker image tag"
         required: false
       tag2:
-        description: 'Another Docker image tag'
+        description: "Another Docker image tag"
         required: false
-        default: 'latest'
+        default: "latest"
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Compute Docker image tag
-      id: compute_tag
-      if: ${{ github.event.inputs.tag == null }}
-      run: echo "::set-output name=tag::$(date +%s)"
-    - name: Set Docker image tag
-      id: set_tag
-      run: echo "::set-output name=tag::${{ github.event.inputs.tag || steps.compute_tag.outputs.tag }}"
-    - name: Login to Docker
-      run: docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
-      env:
-        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-    - name: Build Docker image
-      working-directory: gradient
-      run: docker build -t janjones/awe-gradient:${{ steps.set_tag.outputs.tag }} .
-    - name: Push Docker image
-      run: docker push janjones/awe-gradient:${{ steps.set_tag.outputs.tag }}
-    - name: Push Docker image as another tag
-      if: ${{ github.event.inputs.tag2 != null }}
-      run: |
-        docker tag janjones/awe-gradient:${{ steps.set_tag.outputs.tag }} \
-            janjones/awe-gradient:${{ github.event.inputs.tag2 }}
-        docker push janjones/awe-gradient:${{ github.event.inputs.tag2 }}
+      - uses: actions/checkout@v2
+      - name: Compute Docker image tag
+        id: compute_tag
+        if: ${{ github.event.inputs.tag == null }}
+        run: echo "::set-output name=tag::$(date +%s)"
+      - name: Set Docker image tag
+        id: set_tag
+        run: echo "::set-output name=tag::${{ github.event.inputs.tag || steps.compute_tag.outputs.tag }}"
+      - name: Login to Docker
+        run: docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build Docker image
+        working-directory: gradient
+        run: docker build -t janjones/awe-gradient:${{ steps.set_tag.outputs.tag }} .
+      - name: Push Docker image
+        run: docker push janjones/awe-gradient:${{ steps.set_tag.outputs.tag }}
+      - name: Push Docker image as another tag
+        if: ${{ github.event.inputs.tag2 != null }}
+        run: |
+          docker tag janjones/awe-gradient:${{ steps.set_tag.outputs.tag }} \
+              janjones/awe-gradient:${{ github.event.inputs.tag2 }}
+          docker push janjones/awe-gradient:${{ github.event.inputs.tag2 }}
