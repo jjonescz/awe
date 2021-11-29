@@ -68,13 +68,13 @@ class AweModel(pl.LightningModule):
             )
 
         # Word vector will be appended for each node.
-        feature_count += lstm_dim if use_lstm else word_dim
+        input_features = feature_count + (lstm_dim if use_lstm else word_dim)
 
         D = 64
         if use_gnn:
-            self.conv1 = gnn.GCNConv(feature_count, D)
+            self.conv1 = gnn.GCNConv(input_features, D)
             self.conv2 = gnn.GCNConv(D, D)
-        input_dim = feature_count + D if use_gnn else feature_count
+        input_dim = feature_count + D if use_gnn else input_features
         self.head = nn.Sequential(
             nn.Linear(input_dim, 2 * D),
             nn.ReLU(),
@@ -112,7 +112,7 @@ class AweModel(pl.LightningModule):
                 node_vectors = torch.mean(embedded_words, dim=1) # [num_nodes, word_dim]
 
             # Append to features.
-            x = torch.hstack((x, node_vectors))
+            x = torch.hstack((x, node_vectors)) # [num_nodes, num_features]
 
         # Propagate features through edges (graph convolution).
         if self.use_gnn:
