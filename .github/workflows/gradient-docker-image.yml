@@ -7,6 +7,10 @@ on:
       tag:
         description: 'Docker image tag'
         required: false
+      tag2:
+        description: 'Another Docker image tag'
+        required: false
+        default: 'latest'
 
 jobs:
 
@@ -33,3 +37,9 @@ jobs:
       run: docker build -t janjones/awe-gradient:${{ steps.set_tag.outputs.tag }} .
     - name: Push Docker image
       run: docker push janjones/awe-gradient:${{ steps.set_tag.outputs.tag }}
+    - name: Push Docker image as another tag
+      if: ${{ github.event.inputs.tag2 != null }}
+      run: |
+        docker tag janjones/awe-gradient:${{ steps.set_tag.outputs.tag }} \
+            janjones/awe-gradient:${{ github.event.inputs.tag2 }}
+        docker push janjones/awe-gradient:${{ github.event.inputs.tag2 }}
