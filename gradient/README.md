@@ -55,7 +55,7 @@ This folder contains files used to setup development environment on
 7. If this is the first time, initialize VSCode:
 
    ```sh
-   ./sh/install.sh
+   ./gradient/install.sh
    ```
 
 8. In all cases, initialize SSH shell by running:
