@@ -22,7 +22,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rm -rf /var/lib/apt/lists/*
 
 ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64
-ENV PYTHON_VERSION=3.9
 
 RUN curl -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
     chmod +x ~/miniconda.sh && \
@@ -32,7 +31,8 @@ RUN curl -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Miniconda3-la
 
 ENV PATH=/opt/conda/bin:$PATH
 
-RUN conda install python>=${PYTHON_VERSION}
+ENV PYTHON_VERSION=3.9.7
+RUN conda install python==${PYTHON_VERSION}
 
 # Install PyTorch Geometric.
 COPY requirements-*.txt /
