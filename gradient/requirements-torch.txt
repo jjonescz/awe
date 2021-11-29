@@ -1,0 +1,5 @@
+# See https://pip.pypa.io/en/stable/cli/pip_install/#requirements-file-format.
+# For list of packages, see https://pypi.org/.
+
+# PyTorch
+torch==1.9.1

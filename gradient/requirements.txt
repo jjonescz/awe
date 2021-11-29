@@ -1,10 +1,10 @@
 # See https://pip.pypa.io/en/stable/cli/pip_install/#requirements-file-format.
 # For list of packages, see https://pypi.org/.
+
 # Jupyter
 jupyterlab==3.2.4
 ipywidgets==7.6.5
 # PyTorch
-torch==1.9.1
 torchtext==0.10.1
 pytorch-lightning==1.4.9
 # TensorBoard

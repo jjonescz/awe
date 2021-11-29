@@ -52,10 +52,10 @@ ENV GOPATH=/huproxy \
 RUN go get github.com/google/huproxy
 
 # Install Python packages.
-COPY requirements.txt /requirements.txt
-RUN pip install -r requirements.txt
-COPY requirements-pyg.txt /requirements-pyg.txt
-RUN pip install -r requirements-pyg.txt
+COPY requirements*.txt /
+RUN pip install -r requirements-torch.txt && \
+    pip install -r requirements-pyg.txt && \
+    pip install -r requirements.txt
 
 # Persist VSCode directory.
 RUN ln -s /storage/.vscode-server ~/.vscode-server
