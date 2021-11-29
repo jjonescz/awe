@@ -4,7 +4,7 @@ This folder contains files used to setup development environment on
 [Gradient](https://gradient.run).
 
 1. Build the Docker by manually executing GitHub Action workflow
-   `gradient-docker-image`.
+   [`gradient-docker-image`](https://github.com/jjonescz/awe/actions/workflows/gradient-docker-image.yml).
 
 2. (Optional) Test that the container works locally.
 
