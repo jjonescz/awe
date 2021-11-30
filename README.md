@@ -25,6 +25,6 @@ See available commands via `doit list`. Their source code is in `dodo.py`.
 
 ## Development
 
-**Adding new Python package:** Add the package to `requirements.txt` and/or
-`gradient/requirements.txt` and run `./sh/install.sh` (if using Dev Containers)
-or rebuild the Docker image (if using Remote SSH).
+**Adding new Python package:** Add the package to `gradient/requirements.txt`
+and run `./sh/install.sh` (if using Dev Containers) or rebuild the Docker image
+(if using Remote SSH).
