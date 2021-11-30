@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Docker image tag"
+        description: "Docker image tag (leave empty to use timestamp)"
         required: false
       tag2:
         description: "Another Docker image tag"
