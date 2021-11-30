@@ -2,10 +2,8 @@
 # For list of packages, see https://pypi.org/.
 
 # Jupyter
-ipykernel==6.4.1
-nbconvert==6.2.0
+jupyterlab==3.2.4
 ipywidgets==7.6.5
-jupyter==1.0.0
 # PyTorch
 torchtext==0.10.1
 pytorch-lightning==1.4.9
