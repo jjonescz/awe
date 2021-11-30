@@ -114,7 +114,7 @@ class AweModel(pl.LightningModule):
                 # Pack sequences (to let LSTM ignore pad words).
                 packed_words = rnn.pack_padded_sequence(
                     embedded_words,
-                    lengths[node_mask],
+                    lengths[node_mask].cpu(),
                     batch_first = True,
                     enforce_sorted = False
                 )
