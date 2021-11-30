@@ -19,5 +19,8 @@ fi
 echo "http://localhost:8888/?token=${JUPYTER_TOKEN}"
 echo "http://localhost:8888/\?token\=${JUPYTER_TOKEN}"
 
+# Print domain exposed by Gradient for localhost:8888.
+echo ${PAPERSPACE_FQDN}
+
 echo "root:${JUPYTER_TOKEN}" | chpasswd && /usr/sbin/sshd -eD &
 /huproxy/bin/huproxy -listen :8888
