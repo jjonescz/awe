@@ -13,24 +13,6 @@ def shell(command: str):
     print(f'$ {command}')
     subprocess.run(command, shell=True, check=True)
 
-def task_configure():
-    """configure"""
-
-    script = './sh/configure.sh'
-    return {
-        'actions': [script],
-        'file_dep': [script]
-    }
-
-def task_install():
-    """pip install"""
-
-    script = './sh/install.sh'
-    return {
-        'actions': [script],
-        'file_dep': [script, 'requirements.txt']
-    }
-
 def task_download_swde():
     """download SWDE dataset"""
 
