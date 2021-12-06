@@ -46,8 +46,9 @@ class Checkpoint:
     def get_results_path(self, dataset_name: str):
         return f'{self.version_path}/results-{dataset_name}.txt'
 
-    def get_pages_path(self, dataset_name: str):
-        return f'{self.version_path}/pages-{dataset_name}.txt'
+    @property
+    def inputs_path(self):
+        return f'{self.version_path}/inputs.txt'
 
 class CustomProgressBar(ProgressBar):
     """Disables validation progress bar and shows progress over all epochs."""
@@ -151,16 +152,15 @@ class Gym:
         path = self.get_last_checkpoint().get_results_path(dataset_name)
         return utils.save_or_check_file(path, str(results))
 
-    def save_pages(self):
-        """Saves list of pages used for training and validation."""
-        return dict(self._iterate_pages())
-
-    def _iterate_pages(self):
-        for name, items in self.ds.datasets.items():
-            path = self.get_last_checkpoint().get_pages_path(name)
-            pages = str(utils.summarize_pages(items.pages))
-            utils.save_or_check_file(path, pages)
-            yield name, pages
+    def save_inputs(self):
+        """
+        Saves inputs (list of pages, batch size) used for training and
+        validation.
+        """
+        path = self.get_last_checkpoint().inputs_path
+        text = str(self.ds.extract_inputs())
+        utils.save_or_check_file(path, text)
+        return text
 
     def save_named_version(self, name: str):
         """Saves the last version with a name."""

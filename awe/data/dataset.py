@@ -189,6 +189,14 @@ class Dataset:
                     counts[label] += page.count_label(label)
         return counts
 
+    def extract_inputs(self):
+        """Extracts inputs in a serialization-friendly form."""
+        return {
+            'pages': utils.summarize_pages(self.pages),
+            'batch_size': self.loader.batch_size,
+            'shuffle': self.shuffle
+        }
+
 class DatasetCollection:
     initialized = False
     root_context_path = os.path.join(constants.DATA_DIR, 'root_context.pkl')
@@ -375,3 +383,13 @@ class DatasetCollection:
     def summarize_pages_without_visual_features(self):
         return utils.summarize_pages(
             self._iterate_pages_without_visual_features())
+
+    def extract_inputs(self):
+        """Extracts inputs in a serialization-friendly form."""
+        return {
+            'root': self.root.extract_options(),
+            'sets': dict(
+                (name, ds.extract_inputs())
+                for name, ds in self.datasets.items()
+            )
+        }

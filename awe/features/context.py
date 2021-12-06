@@ -50,6 +50,11 @@ class RootContext:
             f'Option `cutoff_words` does not match ({self.cutoff_words} ' + \
             'vs. {other.cutoff_words})'
 
+    def extract_options(self):
+        return {
+            'cutoff_words': self.cutoff_words
+        }
+
 class LiveContext:
     """
     Non-persisted (live) data scoped to all pages. Initialized in
