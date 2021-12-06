@@ -53,6 +53,8 @@ class CharIdentifiers(IndirectFeature):
             for i, token in enumerate(self.tokenizer(node.text)):
                 if i >= context.root.max_num_words:
                     break
+                if len(token) > context.root.max_word_len:
+                    token = token[:context.root.max_word_len]
                 result[i, :len(token)] = torch.IntTensor([
                     context.live.char_dict.get(char, 0) for char in token
                 ])
