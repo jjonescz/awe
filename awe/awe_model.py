@@ -40,7 +40,8 @@ class AweModel(pl.LightningModule):
         use_lstm: bool,
         char_dim: int = 100,
         lstm_dim: int = 100,
-        lstm_args = {}
+        lstm_args = {},
+        filter_node_words: bool = True
     ):
         super().__init__()
 
@@ -89,6 +90,7 @@ class AweModel(pl.LightningModule):
         self.register_buffer("label_weights", torch.FloatTensor(label_weights))
         self.use_gnn = use_gnn
         self.use_lstm = use_lstm
+        self.filter_node_words = filter_node_words
 
     def forward(self, batch: data.Batch):
         # x: [num_nodes, num_features]
@@ -102,10 +104,13 @@ class AweModel(pl.LightningModule):
         # Extract word identifiers for the batch.
         word_ids = getattr(batch, 'word_identifiers', None)
         if word_ids is not None: # [num_nodes, max_num_words]
-            # Keep only sentences with at least one word.
-            lengths = utils.sequence_lengths(word_ids) # [num_nodes]
-            node_mask = lengths.gt(0) # [num_nodes]
-            masked_word_ids = word_ids[node_mask, :] # [num_masked_nodes, max_num_words]
+            if self.filter_node_words:
+                # Keep only sentences with at least one word.
+                lengths = utils.sequence_lengths(word_ids) # [num_nodes]
+                node_mask = lengths.gt(0) # [num_nodes]
+                masked_word_ids = word_ids[node_mask, :] # [num_masked_nodes, max_num_words]
+            else:
+                masked_word_ids = word_ids
 
             # Embed words and pass them through LSTM.
             embedded_words = self.word_embedding(masked_word_ids)
@@ -128,10 +133,13 @@ class AweModel(pl.LightningModule):
                 # If not using LSTM, use averaged word embeddings.
                 node_vectors = torch.mean(embedded_words, dim=1) # [num_masked_nodes, word_dim]
 
-            # Expand word vectors to the original shape.
-            full_node_vectors = torch.zeros(word_ids.shape[0], node_vectors.shape[1]) # [num_nodes, lstm_dim]
-            full_node_vectors = full_node_vectors.type_as(x)
-            full_node_vectors[node_mask, :] = node_vectors
+            if self.filter_node_words:
+                # Expand word vectors to the original shape.
+                full_node_vectors = torch.zeros(word_ids.shape[0], node_vectors.shape[1]) # [num_nodes, lstm_dim]
+                full_node_vectors = full_node_vectors.type_as(x)
+                full_node_vectors[node_mask, :] = node_vectors
+            else:
+                full_node_vectors = node_vectors
 
             # Append to features.
             x = torch.hstack((x, full_node_vectors)) # [num_nodes, num_features]
