@@ -92,10 +92,9 @@ class Dataset:
 
     def will_compute_page(self, idx: int, skip_existing=True):
         """Determines whether this page needs features to be computed."""
-        return (
-            not skip_existing or
-            not os.path.exists(self.pages[idx].data_point_path)
-        )
+        if not skip_existing: return True
+        path = self.pages[idx].data_point_path
+        return path is None or not os.path.exists(path)
 
     def will_prepare_page(self, idx: int, skip_existing=True):
         """Determines whether this page needs features to be prepared."""
