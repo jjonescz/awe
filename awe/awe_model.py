@@ -185,13 +185,7 @@ class AweModel(pl.LightningModule):
         return self._shared_eval_step('test', batch, batch_idx)
 
     def _shared_eval_step(self, prefix: str, batch: data.Batch, batch_idx: int):
-        swde_metrics = [
-            self.compute_swde_metrics(batch, label)
-            for label in range(self.label_count)
-            if label != 0
-        ]
-        swde_f1s = [m.f1 for m in swde_metrics]
-        swde_f1 = np.mean(swde_f1s)
+        swde_f1 = self.compute_swde_f1(batch)
 
         y = batch.y
         z = self.forward(batch)
@@ -222,6 +216,15 @@ class AweModel(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
         return optimizer
+
+    def compute_swde_f1(self, batch: data.Batch):
+        swde_metrics = [
+            self.compute_swde_metrics(batch, label)
+            for label in range(self.label_count)
+            if label != 0
+        ]
+        swde_f1s = [m.f1 for m in swde_metrics]
+        return np.mean(swde_f1s)
 
     def predict_swde(self, batch: data.Batch, label: int, callback: Callable):
         """SWDE-inspired prediction computation: per-attribute, page-wide."""
