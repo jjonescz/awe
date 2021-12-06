@@ -1,3 +1,4 @@
+import { ResponseForRequest } from 'puppeteer-core';
 import { normalizeUrl } from './utils';
 
 /** Patterns of URLs that will be ignored while scraping. */
@@ -42,4 +43,20 @@ export function ignoreUrl(url: string) {
     ignoreStartingWith.some((p) => url.startsWith(p)) ||
     ignorePatterns.some((r) => r.test(url))
   );
+}
+
+function ignoreHeader(name: string) {
+  // These headers can cause errors in Puppeteer, remove them.
+  return name.startsWith('x-archive-orig-');
+}
+
+/** Removes problematic headers. */
+export function cleanHeaders(request: Partial<ResponseForRequest>) {
+  if (request.headers !== undefined) {
+    for (const name in request.headers) {
+      if (ignoreHeader(name)) {
+        delete request.headers[name];
+      }
+    }
+  }
 }

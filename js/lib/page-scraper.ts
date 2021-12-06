@@ -1,7 +1,7 @@
 import puppeteer from 'puppeteer-core';
 import winston from 'winston';
 import { SWDE_TIMESTAMP } from './constants';
-import { ignoreUrl } from './ignore';
+import { cleanHeaders, ignoreUrl } from './ignore';
 import { logger } from './logging';
 import { Scraper } from './scraper';
 import { SwdePage } from './swde-page';
@@ -186,6 +186,10 @@ export class PageScraper {
       url: request.url(),
       hash: this.scraper.cache.getHash(request.url(), timestamp),
     });
+    // Header filter might have changed since last run, so we remove potentially
+    // invalid headers here although we remove them also when saving the
+    // request.
+    cleanHeaders(offline);
     await request.respond(offline);
     this.addToStats(offline);
     this.scraper.stats.offline++;
@@ -233,13 +237,7 @@ export class PageScraper {
     if (!this.inProgress.delete(inProgressEntry))
       throw new Error(`Failed to delete ${url} (${timestamp})`);
     if (this.scraper.allowOffline) {
-      // These headers can causes errors in Puppeteer, remove them.
-      for (const name in cached.headers) {
-        if (name.startsWith('x-archive-orig-')) {
-          delete cached.headers[name];
-        }
-      }
-
+      cleanHeaders(cached);
       await this.scraper.cache.add(url, timestamp, cached);
     }
     this.addToStats(cached);
