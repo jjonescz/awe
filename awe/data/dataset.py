@@ -42,7 +42,15 @@ class Dataset:
         page = self.pages[idx]
         if page.data_point_path is None:
             return self.in_memory_data[idx]
-        return torch.load(page.data_point_path)
+        data = torch.load(page.data_point_path)
+
+        # Load indirect features saved in sparse format to dense format.
+        for feature in self.parent.features:
+            if isinstance(feature, f.IndirectFeature):
+                setattr(data, feature.label,
+                    getattr(data, feature.label).to_dense())
+
+        return data
 
     def __len__(self):
         return len(self.pages)
@@ -88,6 +96,12 @@ class Dataset:
             if page.data_point_path is None:
                 self.in_memory_data[idx] = data
             else:
+                # Save indirect features in sparse format.
+                for feature in self.parent.features:
+                    if isinstance(feature, f.IndirectFeature):
+                        setattr(data, feature.label,
+                            getattr(data, feature.label).to_sparse())
+
                 torch.save(data, page.data_point_path)
 
     def will_compute_page(self, idx: int, skip_existing=True):
