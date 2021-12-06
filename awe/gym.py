@@ -89,6 +89,8 @@ class Gym:
                 yield int(match.group(1))
 
     def get_checkpoints(self, base_path: str):
+        if not os.path.exists(base_path):
+            return []
         for filename in os.listdir(base_path):
             match = re.match(r'epoch=(\d+)-step=(\d+)\.ckpt', filename)
             epoch = int(match.group(1))
