@@ -8,6 +8,14 @@ LABEL com.nvidia.volumes.needed="nvidia_driver"
 RUN echo "deb http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1604/x86_64 /" > /etc/apt/sources.list.d/nvidia-ml.list
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget && \
+    rm -rf /var/lib/apt/lists/*
+RUN \
+    # Add source for Google Chrome.
+    wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
+    echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list && \
+    # Install programs.
+    apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
     git \
@@ -18,7 +26,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libjpeg-dev \
     zip \
     unzip \
-    libpng-dev && \
+    libpng-dev \
+    # Needed to unzip SWDE.
+    p7zip-full \
+    # Needed for Puppeteer.
+    google-chrome-stable && \
     rm -rf /var/lib/apt/lists/*
 
 ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64
