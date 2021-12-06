@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN \
     # Add source for Google Chrome.
     wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
-    echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list && \
+    sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' && \
     # Install programs.
     apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -27,6 +27,8 @@ RUN \
     zip \
     unzip \
     libpng-dev \
+    # Needed for SSH below.
+    openssh-server \
     # Needed to unzip SWDE.
     p7zip-full \
     # Needed for Puppeteer.
@@ -58,11 +60,8 @@ COPY requirements-*.txt /
 RUN pip install -r requirements-torch.txt && \
     pip install -r requirements-pyg.txt
 
-# Install SSH. Inspired by https://github.com/Paperspace/gradient-ssh-test.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    openssh-server && \
-    rm -rf /var/lib/apt/lists/* && \
-    mkdir /var/run/sshd && \
+# Configure SSH. Inspired by https://github.com/Paperspace/gradient-ssh-test.
+RUN mkdir /var/run/sshd && \
     sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
     sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd && \
     echo "export VISIBLE=now" >> /etc/profile && \
