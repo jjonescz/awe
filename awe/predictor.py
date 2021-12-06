@@ -34,12 +34,13 @@ class Predictor:
         batch: data.Batch = next(itertools.islice(self.dataloader, index, None))
         page = self.items.pages[index]
         ctx = self.ds.create_page_context(page)
-        return batch, ctx.nodes
+        inputs = awe_model.ModelInputs(batch)
+        return inputs, ctx.nodes
 
     def evaluate_example(self, index: int, label: str):
-        batch, _ = self.get_example(index)
+        inputs, _ = self.get_example(index)
         return self.model.compute_swde_metrics(
-            batch, self.ds.first_dataset.label_map[label])
+            inputs, self.ds.first_dataset.label_map[label])
 
     def evaluate_examples(self, indices: Iterable[int], label: str):
         total = torch.FloatTensor([0, 0, 0])
@@ -58,7 +59,7 @@ class Predictor:
 
     def predict_example(self, index: int, label: str):
         """Gets predicted nodes for an example."""
-        batch, nodes = self.get_example(index)
+        inputs, nodes = self.get_example(index)
 
         predicted_nodes: list[awe_graph.HtmlNode] = []
         def handle(name: str, mask, idx=None):
@@ -68,7 +69,7 @@ class Predictor:
                 node = next(itertools.islice(masked, idx, None))
                 predicted_nodes.append(node)
         self.model.predict_swde(
-            batch, self.ds.first_dataset.label_map[label], handle)
+            inputs, self.ds.first_dataset.label_map[label], handle)
 
         return predicted_nodes
 
