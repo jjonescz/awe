@@ -38,8 +38,9 @@ class CharIdentifiers(IndirectFeature):
             context.max_num_words = max(context.max_num_words, counter)
 
     def initialize(self, context: LiveContext):
-        # Map all found characters to numbers.
-        context.char_dict = { c: i for i, c in enumerate(context.root.chars) }
+        # Map all found characters to numbers. Note that 0 is reserved for
+        # "unknown" characters.
+        context.char_dict = { c: i + 1 for i, c in enumerate(context.root.chars) }
 
     def compute(self, node: 'awe_graph.HtmlNode', context: PageContext):
         # Get character indices in each word.
@@ -53,7 +54,7 @@ class CharIdentifiers(IndirectFeature):
                 if i >= context.root.max_num_words:
                     break
                 result[i, :len(token)] = torch.IntTensor([
-                    context.live.char_dict[char] for char in token
+                    context.live.char_dict.get(char, 0) for char in token
                 ])
         return result
 
