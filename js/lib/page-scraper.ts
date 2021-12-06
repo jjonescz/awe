@@ -233,8 +233,12 @@ export class PageScraper {
     if (!this.inProgress.delete(inProgressEntry))
       throw new Error(`Failed to delete ${url} (${timestamp})`);
     if (this.scraper.allowOffline) {
-      // HACK: This header causes error in Puppeteer, remove it.
-      delete cached.headers['x-archive-orig-set-cookie'];
+      // These headers can causes errors in Puppeteer, remove them.
+      for (const name in cached.headers) {
+        if (name.startsWith('x-archive-orig-')) {
+          delete cached.headers[name];
+        }
+      }
 
       await this.scraper.cache.add(url, timestamp, cached);
     }
