@@ -1,6 +1,6 @@
 import collections
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, Optional
 
 import numpy as np
 import pytorch_lightning as pl
@@ -28,6 +28,18 @@ class SwdeMetrics:
     @staticmethod
     def from_vector(vector: torch.FloatTensor):
         return SwdeMetrics(vector[0].item(), vector[1].item(), vector[2].item())
+
+@dataclass
+class ModelInputs:
+    batch: data.Batch
+    y: Optional[torch.FloatTensor] = None
+    z: Optional[torch.FloatTensor] = None
+
+    def compute(self, model: 'AweModel'):
+        if self.y is None or self.z is None:
+            self.y = self.batch.y
+            self.z = model.forward(self.batch)
+        return self.y, self.z
 
 # pylint: disable=arguments-differ, unused-argument
 class AweModel(pl.LightningModule):
@@ -185,8 +197,6 @@ class AweModel(pl.LightningModule):
         return self._shared_eval_step('test', batch, batch_idx)
 
     def _shared_eval_step(self, prefix: str, batch: data.Batch, batch_idx: int):
-        swde_f1 = self.compute_swde_f1(batch)
-
         y = batch.y
         z = self.forward(batch)
         loss = self.criterion(z, y)
@@ -194,6 +204,7 @@ class AweModel(pl.LightningModule):
 
         acc = metrics.accuracy(preds, y)
         f1 = metrics.f1(preds, y, average="weighted", num_classes=self.label_count, ignore_index=0)
+        swde_f1 = self.compute_swde_f1(ModelInputs(batch, y, z))
 
         results = {
             'loss': loss,
@@ -217,20 +228,20 @@ class AweModel(pl.LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
         return optimizer
 
-    def compute_swde_f1(self, batch: data.Batch):
+    def compute_swde_f1(self, inputs: ModelInputs):
         swde_metrics = [
-            self.compute_swde_metrics(batch, label)
+            self.compute_swde_metrics(inputs, label)
             for label in range(self.label_count)
             if label != 0
         ]
         swde_f1s = [m.f1 for m in swde_metrics]
         return np.mean(swde_f1s)
 
-    def predict_swde(self, batch: data.Batch, label: int, callback: Callable):
+    def predict_swde(self, inputs: ModelInputs, label: int, callback: Callable):
         """SWDE-inspired prediction computation: per-attribute, page-wide."""
 
-        y = batch.y
-        z = self.forward(batch)
+        batch = inputs.batch
+        y, z = inputs.compute(self)
         preds_conf, preds = torch.max(z, dim=1)
 
         for page in range(batch.num_graphs):
@@ -255,13 +266,13 @@ class AweModel(pl.LightningModule):
             else:
                 callback('fp', mask, idx)
 
-    def compute_swde_metrics(self, batch: data.Batch, label: int):
+    def compute_swde_metrics(self, inputs: ModelInputs, label: int):
         """SWDE-inspired metric computation: per-attribute, page-wide."""
 
         stats = collections.defaultdict(int)
         def increment(name: str, *_):
             stats[name] += 1
-        self.predict_swde(batch, label, increment)
+        self.predict_swde(inputs, label, increment)
 
         true_positives = stats['tp']
         false_positives = stats['fp']
