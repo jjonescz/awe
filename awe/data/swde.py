@@ -396,10 +396,20 @@ class Dataset:
         pages: Optional[list[Page]] = None,
         verticals: Optional[list[Vertical]] = None,
         parallelize: Optional[int] = None,
-        skip: int = 0
+        skip: int = 0,
+        yield_errors: bool = False
     ):
-        def validate_one(page: Page):
-            _ = page.labels
+        def validate_one(t: tuple[int, Page]):
+            index, page = t
+            try:
+                _ = page.labels
+                return None
+            except AssertionError as e:
+                if yield_errors:
+                    return index, e
+                else:
+                    raise RuntimeError(
+                        f'Cannot validate page at {index}') from e
 
         if pages is None:
             pages = [
@@ -409,4 +419,17 @@ class Dataset:
                 for p in w.pages
             ]
 
-        utils.parallelize(parallelize, validate_one, pages[skip:], desc='pages')
+        target_pages = list(enumerate(pages))[skip:]
+
+        results = utils.parallelize(
+            parallelize,
+            validate_one,
+            target_pages,
+            desc='pages',
+            lazy=yield_errors
+        )
+
+        if yield_errors:
+            for r in results:
+                if r is not None:
+                    yield r
