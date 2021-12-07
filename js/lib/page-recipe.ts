@@ -10,7 +10,7 @@ export class PageRecipe {
     public readonly page: SwdePage,
     public readonly version: ScrapeVersion
   ) {
-    this.suffix = scrapeVersionToString(version);
+    this.suffix = `-${scrapeVersionToString(version)}`;
   }
 
   public get jsonPath() {

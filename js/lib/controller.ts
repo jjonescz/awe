@@ -78,7 +78,7 @@ export class Controller {
                 if (result.type !== ValidationResultType.Valid) {
                   logger.warn('invalid', {
                     file,
-                    version,
+                    suffix: validator.recipe.suffix,
                     result: result.toString(),
                   });
                 }
