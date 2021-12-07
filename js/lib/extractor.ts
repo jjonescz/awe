@@ -76,7 +76,8 @@ export class Extractor {
   constructor(
     public readonly page: Page,
     public readonly swdePage: SwdePage,
-    public readonly logger: winston.Logger
+    public readonly logger: winston.Logger,
+    public readonly suffix: string
   ) {
     this.data = {
       timestamp: swdePage.timestamp!,
@@ -305,14 +306,21 @@ export class Extractor {
     });
   }
 
-  public get filePath() {
-    return replaceExtension(this.swdePage.fullPath, '.json');
+  public get jsonPath() {
+    return replaceExtension(this.swdePage.fullPath, `${this.suffix}.json`);
   }
 
-  public async save({ suffix = '' } = {}) {
-    const fullPath = addSuffix(this.filePath, suffix);
-    logger.verbose('data', { path: fullPath });
+  public get htmlPath() {
+    return replaceExtension(this.jsonPath, '.html');
+  }
+
+  public get screenshotPath() {
+    return replaceExtension(this.jsonPath, '.png');
+  }
+
+  public async save() {
+    logger.verbose('data', { path: this.jsonPath });
     const json = JSON.stringify(this.data, null, 1);
-    await writeFile(fullPath, json, { encoding: 'utf-8' });
+    await writeFile(this.jsonPath, json, { encoding: 'utf-8' });
   }
 }

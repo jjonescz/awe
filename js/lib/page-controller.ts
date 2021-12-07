@@ -51,24 +51,22 @@ export class PageController {
   /** Scrapes {@link SwdePage} determined by {@link fullPath}. */
   public async scrape(fullPath: string, version: ScrapeVersion) {
     // Prepare dependencies.
-    const suffix = `-${scrapeVersionToString(version)}`;
-    const htmlPath = addSuffix(fullPath, suffix);
     const extractor = new Extractor(
       this.pageScraper.page,
       this.page,
-      this.pageScraper.logger
+      this.pageScraper.logger,
+      /* suffix */ `-${scrapeVersionToString(version)}`
     );
 
     // Check if not already scraped.
     if (this.controller.skipExisting) {
-      const jsonPath = addSuffix(extractor.filePath, suffix);
-      const jsonExists = existsSync(jsonPath);
-      const htmlExists = existsSync(htmlPath);
+      const jsonExists = existsSync(extractor.jsonPath);
+      const htmlExists = existsSync(extractor.htmlPath);
       const metadata = {
         jsonExists,
-        jsonPath,
+        jsonPath: extractor.jsonPath,
         htmlExists,
-        htmlPath,
+        htmlPath: extractor.htmlPath,
       };
       if (jsonExists && htmlExists) {
         this.pageScraper.logger.verbose('skipping', metadata);
@@ -82,7 +80,10 @@ export class PageController {
     this.pageScraper.swdeHandling = scrapeVersionToSwdeHandling(version);
 
     // Navigate to the page.
-    this.pageScraper.logger.verbose('goto', { fullPath, suffix });
+    this.pageScraper.logger.verbose('goto', {
+      fullPath,
+      suffix: extractor.suffix,
+    });
     await this.pageScraper.start();
 
     // Abort remaining requests.
@@ -106,18 +107,17 @@ export class PageController {
       // Save page HTML (can be different from original due to JavaScript
       // dynamically updating the DOM).
       const html = await this.pageScraper.page.content();
-      await this.page.withHtml(html).saveAs(htmlPath);
+      await this.page.withHtml(html).saveAs(extractor.htmlPath);
 
       // Extract visual attributes.
       await extractor.extract();
-      await extractor.save({ suffix });
+      await extractor.save();
     }
 
     // Take screenshot.
     if (this.controller.takeScreenshot) {
-      const screenshotPath = replaceExtension(fullPath, `${suffix}.png`);
-      await this.screenshot(screenshotPath, { fullPage: false });
-      await this.screenshot(screenshotPath, { fullPage: true });
+      await this.screenshot(extractor.screenshotPath, { fullPage: false });
+      await this.screenshot(extractor.screenshotPath, { fullPage: true });
     }
   }
 
