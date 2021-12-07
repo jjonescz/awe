@@ -35,7 +35,9 @@ This folder contains files used to setup development environment on
 4. Install [huproxy](https://github.com/google/huproxy) locally and configure
    SSH as shown below. Replace `<JUPYTER_LAB_ID>` by ID from URL that opens in
    Gradient when clicking on "Open in Jupyter Lab" button. For SSH password, use
-   token shown in terminal after the container is started.
+   token from that URL. Alternatively, look into terminal output in Gradient web
+   environment after the notebook starts, both the token and public URL should
+   appear there.
 
    ```ssh_config
    Host 127.0.0.1
