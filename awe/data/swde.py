@@ -392,20 +392,20 @@ class Dataset:
         self.suffix = suffix
         self.verticals = [Vertical(self, name) for name in VERTICAL_NAMES]
 
-    def validate(self, *, verticals_skip=0, parallelize=None):
-        def validate_one(entry: GroundTruthEntry):
-            _ = entry.nodes
+    def validate(self, *,
+        pages: Optional[list[Page]] = None,
+        verticals: Optional[list[Vertical]] = None,
+        parallelize: Optional[int] = None
+    ):
+        def validate_one(page: Page):
+            _ = page.labels
 
-        for vertical in tqdm(self.verticals[verticals_skip:], desc='verticals'):
-            vertical: Vertical
-            for website in tqdm(vertical.websites, desc='websites', leave=False):
-                website: Website
-                for groundtruth_field in tqdm(website.groundtruth, desc='fields', leave=False):
-                    groundtruth_field: GroundTruthField
-                    utils.parallelize(
-                        parallelize,
-                        validate_one,
-                        groundtruth_field.entries,
-                        desc='entries',
-                        leave=False
-                    )
+        if pages is None:
+            pages = [
+                p
+                for v in verticals or self.verticals
+                for w in v.websites
+                for p in w.pages
+            ]
+
+        utils.parallelize(parallelize, validate_one, pages, desc='pages')
