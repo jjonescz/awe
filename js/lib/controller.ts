@@ -78,6 +78,7 @@ export class Controller {
                 if (result.type !== ValidationResultType.Valid) {
                   logger.warn('invalid', { file, version, result });
                 }
+                continue;
               }
 
               // Execute `PageController`.
