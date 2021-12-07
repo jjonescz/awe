@@ -17,6 +17,10 @@ class Page(awe_graph.HtmlPage):
         return self.url
 
     @property
+    def relative_original_path(self):
+        return self.url
+
+    @property
     def group_key(self):
         return self.identifier
 

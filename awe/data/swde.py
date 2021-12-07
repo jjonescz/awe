@@ -219,6 +219,11 @@ class Page(awe_graph.HtmlPage):
         return f'{self.site.name}/{self.file_name}'
 
     @property
+    def relative_original_path(self):
+        return f'{self.site.vertical.name}/{self.site.dir_name}' + \
+            f'/{self.index:04}.htm'
+
+    @property
     def group_key(self):
         return f'{self.site.dir_path}/{self.suffix or ""}'
 

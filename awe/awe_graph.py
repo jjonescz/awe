@@ -35,6 +35,15 @@ class HtmlPage(ABC):
 
     @property
     @abstractmethod
+    def relative_original_path(self) -> str:
+        """
+        Path relative to dataset directory, without any suffix.
+
+        Useful as an input to our visual attribute extractor utility.
+        """
+
+    @property
+    @abstractmethod
     def group_key(self) -> str:
         """Identifier of page group (e.g., folder in dataset)."""
 
