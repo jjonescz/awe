@@ -39,7 +39,8 @@ class Program extends Command {
     }),
     baseDir: flags.string({
       char: 'd',
-      description: 'base directory for `--globPattern`',
+      description:
+        'base directory for `--globPattern` or paths loaded from `--files`',
       default: path.relative('.', SWDE_DIR),
     }),
     globPattern: flags.string({
@@ -115,7 +116,7 @@ class Program extends Command {
     files: flags.string({
       description:
         'path to a text file (relative to working directory) with each line ' +
-        'representing file to process (also relative to working directory)',
+        'representing file to process (relative to `--baseDir`)',
       exclusive: ['glob'],
     }),
   };
@@ -136,7 +137,7 @@ class Program extends Command {
       allFiles = content
         .split(/\r?\n/)
         .filter((v) => v.length !== 0)
-        .map((v) => path.resolve('.', v));
+        .map((v) => path.resolve('.', path.join(flags.baseDir, v)));
     } else {
       const fullPattern = path.join(flags.baseDir, flags.globPattern);
       const fullGlob = path.resolve('.', fullPattern).replaceAll('\\', '/');
