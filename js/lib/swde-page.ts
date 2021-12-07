@@ -118,6 +118,9 @@ class GroundTruthFile {
       // Other lines are ground truth values.
       const pages = new Array<string[]>(totalCount);
       for (const [num, line] of enumerate(lines.slice(2))) {
+        // Skip empty line at the end.
+        if (num === totalCount && line.length === 0) continue;
+
         const [indexStr, countStr, ...values] = line.split('\t');
 
         // If line is `<NULL>`, it means no values.
