@@ -4,7 +4,8 @@
   "main": "index.ts",
   "author": "Jan Joneš",
   "scripts": {
-    "start": "ts-node -T index.ts"
+    "start": "ts-node -T index.ts",
+    "test": "ts-node index.ts --help"
   },
   "files": [
     "lib/**/*.ts"
