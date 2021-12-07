@@ -395,7 +395,8 @@ class Dataset:
     def validate(self, *,
         pages: Optional[list[Page]] = None,
         verticals: Optional[list[Vertical]] = None,
-        parallelize: Optional[int] = None
+        parallelize: Optional[int] = None,
+        skip: int = 0
     ):
         def validate_one(page: Page):
             _ = page.labels
@@ -408,4 +409,4 @@ class Dataset:
                 for p in w.pages
             ]
 
-        utils.parallelize(parallelize, validate_one, pages, desc='pages')
+        utils.parallelize(parallelize, validate_one, pages[skip:], desc='pages')
