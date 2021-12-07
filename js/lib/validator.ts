@@ -53,6 +53,7 @@ export class Validator {
       const values = groundTruth.entries[this.recipe.page.index];
       for (const value of values) {
         // Check that groundtruth value is present.
+        // TODO: This doesn't work, use Python code instead (see `swde.py`).
         if (!this.recipe.page.html.includes(value)) {
           return new ValidationResult(ValidationResultType.MissingGroundTruth, {
             label,
