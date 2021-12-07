@@ -15,6 +15,7 @@ ZIP = f'{constants.DATA_DIR}/swde.zip'
 DIR = f'{constants.DATA_DIR}/swde'
 DATA_DIR = f'{DIR}/data'
 GROUND_TRUTH = 'groundtruth'
+INVALID_PAGES_PATH = f'{constants.DATA_DIR}/invalid_pages.txt'
 
 NBSP = html_utils.unescape('&nbsp;')
 
@@ -416,7 +417,8 @@ class Dataset:
         parallelize: Optional[int] = None,
         skip: int = 0,
         collect_errors: bool = False,
-        error_callback: Optional[Callable[[int, Page, AssertionError], None]] = None
+        error_callback: Optional[Callable[[int, Page, AssertionError], None]] = None,
+        save_list: bool = False
     ):
         def validate_one(t: tuple[int, Page]):
             index, page = t
@@ -464,4 +466,15 @@ class Dataset:
                 index, e = r
                 page = pages[index]
                 return index, page, e
-            return [transform(r) for r in results if r is not None]
+            result = [transform(r) for r in results if r is not None]
+
+            # Save list of invalid pages.
+            if save_list and len(result) != 0:
+                with open(INVALID_PAGES_PATH, mode='w', encoding='utf-8') as f:
+                    f.writelines(
+                        f'{p.relative_original_path}\n'
+                        for _, p, _ in result
+                    )
+                print(f'Saved {len(result)} to {INVALID_PAGES_PATH}.')
+
+            return result
