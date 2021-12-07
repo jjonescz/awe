@@ -2,7 +2,7 @@ import glob from 'fast-glob';
 import { readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import { SWDE_DIR } from './constants';
-import { Writable } from './utils';
+import { enumerate, Writable } from './utils';
 
 // First character is UTF-8 BOM marker.
 export const BASE_TAG_REGEX = /^\uFEFF?<base href="([^\n]*)"\/>\w*\n(.*)/s;
@@ -117,7 +117,7 @@ class GroundTruthFile {
 
       // Other lines are ground truth values.
       const pages = new Array<string[]>(totalCount);
-      for (const line in lines.slice(2)) {
+      for (const [num, line] of enumerate(lines.slice(2))) {
         const [indexStr, countStr, ...values] = line.split('\t');
 
         // If line is `<NULL>`, it means no values.
@@ -129,7 +129,7 @@ class GroundTruthFile {
         const count = parseInt(countStr);
         if (values.length !== count) {
           throw new Error(
-            `Expected line to have ${count} values, but got ` +
+            `Expected line #${num} to have ${count} values, but got ` +
               `${JSON.stringify(values)} in file ${fullPath} (${line}).`
           );
         }
@@ -139,7 +139,7 @@ class GroundTruthFile {
         if (pages[index] !== undefined) {
           throw new Error(
             `Duplicate value for ${index} in file ${fullPath} ` +
-              `(now ${JSON.stringify(values)}, previously ` +
+              `(now ${JSON.stringify(values)} at line #${num}, previously ` +
               `${JSON.stringify(pages[index])}).`
           );
         }

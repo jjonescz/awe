@@ -86,3 +86,7 @@ export function normalizeUrl(url: string) {
 export function urlsEqual(a: string, b: string) {
   return normalizeUrl(a) === normalizeUrl(b);
 }
+
+export function enumerate<T>(array: T[]) {
+  return array.map((v, i) => [i, v] as const);
+}
