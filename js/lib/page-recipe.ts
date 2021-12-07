@@ -18,7 +18,7 @@ export class PageRecipe {
   }
 
   public get htmlPath() {
-    return replaceExtension(this.jsonPath, '.html');
+    return replaceExtension(this.jsonPath, '.htm');
   }
 
   public get screenshotPath() {
