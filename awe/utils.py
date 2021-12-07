@@ -50,7 +50,7 @@ def parallelize(
     lazy: bool = False
 ) -> list[R]:
     items_with_progress = tqdm(items, desc=desc, leave=leave)
-    f = lambda x: x if lazy else list
+    f = (lambda x: x) if lazy else list
     if num is None:
         return f(map(selector, items_with_progress))
     return f(joblib.Parallel(n_jobs=num)(
