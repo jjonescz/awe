@@ -76,7 +76,11 @@ export class Controller {
                 const validator = new Validator(new PageRecipe(page, version));
                 const result = await validator.validate();
                 if (result.type !== ValidationResultType.Valid) {
-                  logger.warn('invalid', { file, version, result });
+                  logger.warn('invalid', {
+                    file,
+                    version,
+                    result: result.toString(),
+                  });
                 }
                 continue;
               }

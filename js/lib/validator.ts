@@ -1,8 +1,7 @@
 import { existsSync } from 'fs';
-import winston from 'winston';
 import { PageRecipe } from './page-recipe';
 
-export const enum ValidationResultType {
+export enum ValidationResultType {
   Valid,
   /** Extracted HTML doesn't exist. */
   HtmlNonExistent,
@@ -24,6 +23,16 @@ export class ValidationResult {
     public readonly type: ValidationResultType,
     public readonly data: MissingGroundTruth | null = null
   ) {}
+
+  public toString() {
+    let s = ValidationResultType[this.type];
+    if (this.data !== null) {
+      s += `(${Object.entries(this.data)
+        .map(([k, v]) => `${k}=${v}`)
+        .join(', ')})`;
+    }
+    return s;
+  }
 }
 
 /** Validates that extracted pages contain expected ground-truth data. */
