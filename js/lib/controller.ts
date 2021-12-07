@@ -4,10 +4,12 @@ import { from, lastValueFrom, mergeMap } from 'rxjs';
 import { SWDE_DIR } from './constants';
 import { logger } from './logging';
 import { PageController } from './page-controller';
+import { PageRecipe } from './page-recipe';
 import { ScrapeVersion } from './scrape-version';
 import { Scraper } from './scraper';
 import { SwdePage } from './swde-page';
 import { secondsToTimeString } from './utils';
+import { ValidationResultType, Validator } from './validator';
 
 /** Container for multiple {@link PageController}s. */
 export class Controller {
@@ -17,6 +19,8 @@ export class Controller {
   public skipExisting = false;
   /** Skip extraction (perform only page loading). */
   public skipExtraction = false;
+  /** Only validate existing extraction outcomes. */
+  public validateOnly = false;
 
   public constructor(public readonly scraper: Scraper) {}
 
@@ -63,10 +67,20 @@ export class Controller {
             path.relative(SWDE_DIR, file)
           );
 
-          // Execute `PageController`.
+          // Scrape different versions of the same page.
           try {
             const page = await SwdePage.parse(path.resolve(file));
             for (const version of versions) {
+              // Validate existing extraction of this version.
+              if (this.validateOnly) {
+                const validator = new Validator(new PageRecipe(page, version));
+                const result = await validator.validate();
+                if (result.type !== ValidationResultType.Valid) {
+                  logger.warn('invalid', { file, version, result });
+                }
+              }
+
+              // Execute `PageController`.
               const pageController = await this.for(page);
               try {
                 await pageController.scrape(version);

@@ -6,9 +6,9 @@ import path from 'path';
 import { SWDE_DIR } from './lib/constants';
 import { Controller } from './lib/controller';
 import { logFile, logger } from './lib/logging';
-import { ScrapeVersion } from './lib/page-controller';
+import { ScrapeVersion } from './lib/scrape-version';
 import { Scraper } from './lib/scraper';
-import { escapeFilePath, replaceExtension } from './lib/utils';
+import { escapeFilePath } from './lib/utils';
 
 function* getLogLevelNames() {
   for (const name in logger.levels) yield name;
@@ -108,6 +108,10 @@ class Program extends Command {
       description: 'milliseconds before scraping of one page is aborted',
       default: 0,
     }),
+    validateOnly: flags.boolean({
+      char: 'V',
+      description: 'only validate existing extraction outcomes',
+    }),
   };
 
   async run() {
@@ -167,6 +171,7 @@ class Program extends Command {
     controller.takeScreenshot = flags.screenshot;
     controller.skipExisting = flags.skipExisting;
     controller.skipExtraction = flags.skipExtraction;
+    controller.validateOnly = flags.validateOnly;
 
     // Scrape pages.
     try {

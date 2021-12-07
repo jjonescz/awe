@@ -59,6 +59,10 @@ export class SwdePage {
     return name;
   }
 
+  public get index() {
+    return parseInt(path.parse(path.basename(this.fullPath)).name);
+  }
+
   public get groundTruthPrefix() {
     return path.resolve(
       SWDE_DIR,
