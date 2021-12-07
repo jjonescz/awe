@@ -145,17 +145,6 @@ class Website:
         result: list[Optional[Page]] = [None] * self.page_count
         for file in sorted(os.listdir(f'{self.dir_path}')):
             page = Page.try_create(self, file)
-            if page is None and self.vertical.dataset.suffix is not None:
-                # If suffix is specified and page with that suffix doesn't
-                # exist, load page without suffix as fallback.
-                # TODO: Remove when attribute extraction is complete.
-                page = Page.try_create(self, file, no_suffix=True)
-                if page is not None and result[page.index] is not None:
-                    # Ignore if this page has already been loaded (with suffix).
-                    assert result[page.index].suffix == \
-                        self.vertical.dataset.suffix, 'Page should have ' + \
-                        f'been loaded with suffix ({page.index}).'
-                    continue
             if page is not None:
                 assert page.file_name == file, 'Page name inconsistent ' + \
                     f'(computed {page.file_name}, actual {file}).'
@@ -403,9 +392,20 @@ class Dataset:
         self.suffix = suffix
         self.verticals = [Vertical(self, name) for name in VERTICAL_NAMES]
 
-    def validate(self, *, verticals_skip=0):
+    def validate(self, *, verticals_skip=0, parallelize=None):
+        def validate_one(entry: GroundTruthEntry):
+            _ = entry.nodes
+
         for vertical in tqdm(self.verticals[verticals_skip:], desc='verticals'):
+            vertical: Vertical
             for website in tqdm(vertical.websites, desc='websites', leave=False):
+                website: Website
                 for groundtruth_field in tqdm(website.groundtruth, desc='fields', leave=False):
-                    for entry in groundtruth_field.entries:
-                        _ = entry.nodes
+                    groundtruth_field: GroundTruthField
+                    utils.parallelize(
+                        parallelize,
+                        validate_one,
+                        groundtruth_field.entries,
+                        desc='entries',
+                        leave=False
+                    )

@@ -45,9 +45,10 @@ def parallelize(
     num: Optional[int],
     selector: Callable[[T], R],
     items: Iterable[T],
-    desc: str
+    desc: str,
+    leave: bool = True
 ) -> list[R]:
-    items_with_progress = tqdm(items, desc=desc)
+    items_with_progress = tqdm(items, desc=desc, leave=leave)
     if num is None:
         return list(map(selector, items_with_progress))
     return list(joblib.Parallel(n_jobs=num)(
