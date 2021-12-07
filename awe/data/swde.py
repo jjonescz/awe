@@ -143,7 +143,7 @@ class Website:
                 f'{self.page_count}).'
         return self._pages
 
-    def _get_pages(self):
+    def _get_pages(self) -> list['Page']:
         result: list[Optional[Page]] = [None] * self.page_count
         for file in sorted(os.listdir(f'{self.dir_path}')):
             page = Page.try_create(self, file)
@@ -440,4 +440,6 @@ class Dataset:
         if yield_errors:
             for r in results:
                 if r is not None:
-                    yield r
+                    index, e = r
+                    page = pages[index]
+                    yield index, page, e
