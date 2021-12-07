@@ -46,14 +46,12 @@ def parallelize(
     selector: Callable[[T], R],
     items: Iterable[T],
     desc: str,
-    leave: bool = True,
-    lazy: bool = False
+    leave: bool = True
 ) -> list[R]:
     items_with_progress = tqdm(items, desc=desc, leave=leave)
-    f = (lambda x: x) if lazy else list
     if num is None:
-        return f(map(selector, items_with_progress))
-    return f(joblib.Parallel(n_jobs=num)(
+        return list(map(selector, items_with_progress))
+    return list(joblib.Parallel(n_jobs=num)(
         map(joblib.delayed(selector), items_with_progress)))
 
 def save_or_check_file(path: str, content: str):

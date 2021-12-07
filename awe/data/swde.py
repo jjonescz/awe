@@ -2,7 +2,7 @@ import glob
 import os
 import re
 from dataclasses import dataclass
-from typing import Optional
+from typing import Callable, Optional
 
 from tqdm.auto import tqdm
 
@@ -405,7 +405,8 @@ class Dataset:
         verticals: Optional[list[Vertical]] = None,
         parallelize: Optional[int] = None,
         skip: int = 0,
-        yield_errors: bool = False
+        collect_errors: bool = False,
+        error_callback: Optional[Callable[[int, Page, AssertionError], None]] = None
     ):
         def validate_one(t: tuple[int, Page]):
             index, page = t
@@ -413,7 +414,9 @@ class Dataset:
                 _ = page.labels
                 return None
             except AssertionError as e:
-                if yield_errors:
+                if error_callback is not None:
+                    error_callback(index, page, e)
+                if collect_errors:
                     return index, e
                 else:
                     raise RuntimeError(
@@ -433,13 +436,12 @@ class Dataset:
             parallelize,
             validate_one,
             target_pages,
-            desc='pages',
-            lazy=yield_errors
+            desc='pages'
         )
 
-        if yield_errors:
-            for r in results:
-                if r is not None:
-                    index, e = r
-                    page = pages[index]
-                    yield index, page, e
+        if collect_errors:
+            def transform(r: tuple[int, AssertionError]):
+                index, e = r
+                page = pages[index]
+                return index, page, e
+            return [transform(r) for r in results if r is not None]
