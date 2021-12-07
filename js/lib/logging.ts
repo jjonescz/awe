@@ -7,7 +7,7 @@ export const logFile = path.join(SCRAPING_LOG_DIR, `${timestamp}.txt`);
 
 export const logger = winston.createLogger({
   format: winston.format.combine(
-    winston.format.timestamp(),
+    winston.format.timestamp({ alias: '_timestamp' }),
     winston.format.json()
   ),
   transports: [
