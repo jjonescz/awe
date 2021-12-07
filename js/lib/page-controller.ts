@@ -2,37 +2,13 @@ import { existsSync } from 'fs';
 import { Controller } from './controller';
 import { Extractor } from './extractor';
 import { PageScraper, SwdeHandling } from './page-scraper';
+import {
+  ScrapeVersion,
+  scrapeVersionToString,
+  scrapeVersionToSwdeHandling,
+} from './scrape-version';
 import { SwdePage } from './swde-page';
 import { addSuffix, replaceExtension } from './utils';
-
-export const enum ScrapeVersion {
-  /** Scrapes version that preserves HTML from the SWDE dataset. */
-  Exact,
-  /**
-   * Scrapes latest available version from the WaybackMachine. This doesn't
-   * consider HTML from the SWDE dataset and therefore gold labels might be
-   * inconsistent.
-   */
-  Latest,
-}
-
-export function scrapeVersionToSwdeHandling(version: ScrapeVersion) {
-  switch (version) {
-    case ScrapeVersion.Exact:
-      return SwdeHandling.Offline;
-    case ScrapeVersion.Latest:
-      return SwdeHandling.Wayback;
-  }
-}
-
-export function scrapeVersionToString(version: ScrapeVersion) {
-  switch (version) {
-    case ScrapeVersion.Exact:
-      return 'exact';
-    case ScrapeVersion.Latest:
-      return 'latest';
-  }
-}
 
 /** {@link PageScraper} controller to scrape one {@link SwdePage}. */
 export class PageController {
