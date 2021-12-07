@@ -418,7 +418,8 @@ class Dataset:
         skip: int = 0,
         collect_errors: bool = False,
         error_callback: Optional[Callable[[int, Page, AssertionError], None]] = None,
-        save_list: bool = False
+        save_list: bool = False,
+        read_list: bool = False
     ):
         def validate_one(t: tuple[int, Page]):
             index, page = t
@@ -451,6 +452,15 @@ class Dataset:
                 for w in v.websites
                 for p in w.pages
             ]
+
+            # Keep only pages from previous list of invalid pages.
+            if read_list:
+                with open(INVALID_PAGES_PATH, mode='r', encoding='utf-8') as f:
+                    page_paths = { l.rstrip() for l in f.readlines() }
+                pages = [
+                    p for p in pages
+                    if p.relative_original_path in page_paths
+                ]
 
         target_pages = list(enumerate(pages))[skip:]
 
