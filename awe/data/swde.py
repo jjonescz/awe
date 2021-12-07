@@ -15,7 +15,7 @@ ZIP = f'{constants.DATA_DIR}/swde.zip'
 DIR = f'{constants.DATA_DIR}/swde'
 DATA_DIR = f'{DIR}/data'
 GROUND_TRUTH = 'groundtruth'
-INVALID_PAGES_PATH = f'{constants.DATA_DIR}/invalid_pages.txt'
+INVALID_PAGES_PATH = f'{DIR}/invalid_pages.txt'
 
 NBSP = html_utils.unescape('&nbsp;')
 
