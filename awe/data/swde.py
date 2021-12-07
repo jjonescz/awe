@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass
 from typing import Callable, Optional
 
-from tqdm.auto import tqdm
+import parsel
 
 from awe import awe_graph, features, html_utils, utils, visual
 from awe.data import constants
@@ -332,10 +332,11 @@ class GroundTruthEntry:
         Returns XPaths to nodes from `page.html` matching the groundtruth
         `values`.
         """
-        return list(self._iterate_nodes())
+        return list(self.iterate_nodes())
 
-    def _iterate_nodes(self):
-        page_html = self.page.html
+    @staticmethod
+    def prepare_page_dom(page: Page):
+        page_html = page.html
 
         # HACK: If there are HTML-encoded spaces in the HTML (e.g., `&nbsp;`),
         # they are preserved in the groundtruth. If they're there as plain
@@ -344,7 +345,11 @@ class GroundTruthEntry:
         # characters before matching. See AWE-1.
         page_html = re.sub(WHITESPACE_REGEX, ' ', page_html)
 
-        page_dom = html_utils.parse_html(page_html)
+        return html_utils.parse_html(page_html)
+
+    def iterate_nodes(self, page_dom: Optional[parsel.Selector] = None):
+        if page_dom is None:
+            page_dom = GroundTruthEntry.prepare_page_dom(self.page)
 
         for value in self.values:
             # Note that this XPath is written so that it finds text fragments X,
@@ -411,7 +416,17 @@ class Dataset:
         def validate_one(t: tuple[int, Page]):
             index, page = t
             try:
-                _ = page.labels
+                # Check that ground-truth values exist.
+                page_dom = GroundTruthEntry.prepare_page_dom(page)
+                for groundtruth_field in page.site.groundtruth:
+                    entry = groundtruth_field.entries[page.index]
+                    assert entry.page == page
+                    num = sum(1 for _ in entry.iterate_nodes(page_dom))
+                    assert num >= len(entry.values), 'Expected at least ' + \
+                        f'{len(entry.values)}, found only {num} ' + \
+                        f'ground-truth values for {groundtruth_field.name}' + \
+                        f'=[{", ".join(entry.values)}] in {page.identifier}.'
+
                 return None
             except AssertionError as e:
                 if error_callback is not None:
