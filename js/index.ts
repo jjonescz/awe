@@ -1,7 +1,7 @@
 import { Command, flags } from '@oclif/command';
 import { ExitError } from '@oclif/errors/lib/errors/exit';
 import glob from 'fast-glob';
-import { unlink } from 'fs/promises';
+import { readFile, unlink } from 'fs/promises';
 import path from 'path';
 import { SWDE_DIR } from './lib/constants';
 import { Controller } from './lib/controller';
@@ -112,6 +112,12 @@ class Program extends Command {
       char: 'V',
       description: 'only validate existing extraction outcomes',
     }),
+    files: flags.string({
+      description:
+        'path to a text file (relative to working directory) with each line ' +
+        'representing file to process (also relative to working directory)',
+      exclusive: ['glob'],
+    }),
   };
 
   async run() {
@@ -122,9 +128,22 @@ class Program extends Command {
     logger.info('starting', { logFile, flags });
 
     // Find pages to process.
-    const fullPattern = path.join(flags.baseDir, flags.globPattern);
-    const fullGlob = path.resolve('.', fullPattern).replaceAll('\\', '/');
-    const allFiles = await glob(fullGlob);
+    let allFiles: string[];
+    if (flags.files !== undefined) {
+      const fullFiles = path.resolve('.', flags.files);
+      logger.verbose('reading files', { path: fullFiles });
+      const content = await readFile(fullFiles, { encoding: 'utf-8' });
+      allFiles = content
+        .split(/\r?\n/)
+        .filter((v) => v.length !== 0)
+        .map((v) => path.resolve('.', v));
+    } else {
+      const fullPattern = path.join(flags.baseDir, flags.globPattern);
+      const fullGlob = path.resolve('.', fullPattern).replaceAll('\\', '/');
+      logger.verbose('executing glob', { pattern: fullGlob });
+      allFiles = await glob(fullGlob);
+    }
+    logger.debug('found files', { count: allFiles.length });
     const files = allFiles
       .sort()
       .slice(
