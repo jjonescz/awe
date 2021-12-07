@@ -2,8 +2,7 @@ import { writeFile } from 'fs/promises';
 import { ElementHandle, Page } from 'puppeteer-core';
 import winston from 'winston';
 import { logger } from './logging';
-import { SwdePage } from './swde-page';
-import { addSuffix, replaceExtension } from './utils';
+import { PageRecipe } from './page-recipe';
 
 type TreeData = {
   /** Data for child element. */
@@ -75,12 +74,11 @@ export class Extractor {
 
   constructor(
     public readonly page: Page,
-    public readonly swdePage: SwdePage,
-    public readonly logger: winston.Logger,
-    public readonly suffix: string
+    public readonly recipe: PageRecipe,
+    public readonly logger: winston.Logger
   ) {
     this.data = {
-      timestamp: swdePage.timestamp!,
+      timestamp: recipe.page.timestamp!,
     };
   }
 
@@ -306,21 +304,9 @@ export class Extractor {
     });
   }
 
-  public get jsonPath() {
-    return replaceExtension(this.swdePage.fullPath, `${this.suffix}.json`);
-  }
-
-  public get htmlPath() {
-    return replaceExtension(this.jsonPath, '.html');
-  }
-
-  public get screenshotPath() {
-    return replaceExtension(this.jsonPath, '.png');
-  }
-
   public async save() {
-    logger.verbose('data', { path: this.jsonPath });
+    logger.verbose('data', { path: this.recipe.jsonPath });
     const json = JSON.stringify(this.data, null, 1);
-    await writeFile(this.jsonPath, json, { encoding: 'utf-8' });
+    await writeFile(this.recipe.jsonPath, json, { encoding: 'utf-8' });
   }
 }

@@ -1,14 +1,11 @@
 import { existsSync } from 'fs';
 import { Controller } from './controller';
 import { Extractor } from './extractor';
-import { PageScraper, SwdeHandling } from './page-scraper';
-import {
-  ScrapeVersion,
-  scrapeVersionToString,
-  scrapeVersionToSwdeHandling,
-} from './scrape-version';
+import { PageRecipe } from './page-recipe';
+import { PageScraper } from './page-scraper';
+import { ScrapeVersion, scrapeVersionToSwdeHandling } from './scrape-version';
 import { SwdePage } from './swde-page';
-import { addSuffix, replaceExtension } from './utils';
+import { addSuffix } from './utils';
 
 /** {@link PageScraper} controller to scrape one {@link SwdePage}. */
 export class PageController {
@@ -18,31 +15,31 @@ export class PageController {
     private readonly pageScraper: PageScraper
   ) {}
 
-  public static async create(controller: Controller, fullPath: string) {
-    const page = await SwdePage.parse(fullPath);
+  public static async create(controller: Controller, page: SwdePage) {
     const pageScraper = await controller.scraper.for(page);
     return new PageController(controller, page, pageScraper);
   }
 
-  /** Scrapes {@link SwdePage} determined by {@link fullPath}. */
-  public async scrape(fullPath: string, version: ScrapeVersion) {
+  /** Scrapes the specified {@link version}. */
+  public async scrape(version: ScrapeVersion) {
+    const recipe = new PageRecipe(this.page, version);
+
     // Prepare dependencies.
     const extractor = new Extractor(
       this.pageScraper.page,
-      this.page,
-      this.pageScraper.logger,
-      /* suffix */ `-${scrapeVersionToString(version)}`
+      recipe,
+      this.pageScraper.logger
     );
 
     // Check if not already scraped.
     if (this.controller.skipExisting) {
-      const jsonExists = existsSync(extractor.jsonPath);
-      const htmlExists = existsSync(extractor.htmlPath);
+      const jsonExists = existsSync(recipe.jsonPath);
+      const htmlExists = existsSync(recipe.htmlPath);
       const metadata = {
         jsonExists,
-        jsonPath: extractor.jsonPath,
+        jsonPath: recipe.jsonPath,
         htmlExists,
-        htmlPath: extractor.htmlPath,
+        htmlPath: recipe.htmlPath,
       };
       if (jsonExists && htmlExists) {
         this.pageScraper.logger.verbose('skipping', metadata);
@@ -53,12 +50,12 @@ export class PageController {
     }
 
     // Configure page scraper.
-    this.pageScraper.swdeHandling = scrapeVersionToSwdeHandling(version);
+    this.pageScraper.swdeHandling = scrapeVersionToSwdeHandling(recipe.version);
 
     // Navigate to the page.
     this.pageScraper.logger.verbose('goto', {
-      fullPath,
-      suffix: extractor.suffix,
+      path: this.page.fullPath,
+      suffix: recipe.suffix,
     });
     await this.pageScraper.start();
 
@@ -83,7 +80,7 @@ export class PageController {
       // Save page HTML (can be different from original due to JavaScript
       // dynamically updating the DOM).
       const html = await this.pageScraper.page.content();
-      await this.page.withHtml(html).saveAs(extractor.htmlPath);
+      await this.page.withHtml(html).saveAs(recipe.htmlPath);
 
       // Extract visual attributes.
       await extractor.extract();
@@ -92,8 +89,8 @@ export class PageController {
 
     // Take screenshot.
     if (this.controller.takeScreenshot) {
-      await this.screenshot(extractor.screenshotPath, { fullPage: false });
-      await this.screenshot(extractor.screenshotPath, { fullPage: true });
+      await this.screenshot(recipe.screenshotPath, { fullPage: false });
+      await this.screenshot(recipe.screenshotPath, { fullPage: true });
     }
   }
 

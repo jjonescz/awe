@@ -3,8 +3,10 @@ import path from 'path';
 import { from, lastValueFrom, mergeMap } from 'rxjs';
 import { SWDE_DIR } from './constants';
 import { logger } from './logging';
-import { PageController, ScrapeVersion } from './page-controller';
+import { PageController } from './page-controller';
+import { ScrapeVersion } from './scrape-version';
 import { Scraper } from './scraper';
+import { SwdePage } from './swde-page';
 import { secondsToTimeString } from './utils';
 
 /** Container for multiple {@link PageController}s. */
@@ -18,8 +20,8 @@ export class Controller {
 
   public constructor(public readonly scraper: Scraper) {}
 
-  public async for(fullPath: string) {
-    return await PageController.create(this, fullPath);
+  public async for(page: SwdePage) {
+    return await PageController.create(this, page);
   }
 
   /** Scrapes all SWDE page {@link files}. */
@@ -63,11 +65,11 @@ export class Controller {
 
           // Execute `PageController`.
           try {
-            const fullPath = path.resolve(file);
+            const page = await SwdePage.parse(path.resolve(file));
             for (const version of versions) {
-              const pageController = await this.for(fullPath);
+              const pageController = await this.for(page);
               try {
-                await pageController.scrape(file, version);
+                await pageController.scrape(version);
               } finally {
                 await pageController.dispose();
               }
