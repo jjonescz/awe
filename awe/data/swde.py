@@ -500,7 +500,7 @@ class Dataset:
 
             # Save list of invalid pages.
             if save_list and len(result) != 0:
-                with open(INVALID_PAGES_PATH, mode='w', encoding='utf-8') as f:
+                with open(INVALID_PAGES_PATH, mode='w', encoding='utf-8', newline='\n') as f:
                     f.writelines(
                         f'{p.relative_original_path}\n'
                         for _, p, _ in result
