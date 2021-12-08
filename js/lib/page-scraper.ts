@@ -265,8 +265,7 @@ export class PageScraper {
     } catch (e) {
       const error = e as Error;
       this.logger.error('cannot start page scraper', { error: error?.stack });
-      await this.scraper.pagePool.destroy(this.page);
-      this.destroyed = true;
+      await this.destroy();
       return false;
     }
 
@@ -283,10 +282,17 @@ export class PageScraper {
         this.scraper.stats.timeout++;
       } else {
         this.logger.error('goto failed', { error: error?.stack });
+        await this.destroy();
+        return false;
       }
     }
 
     return true;
+  }
+
+  private async destroy() {
+    this.destroyed = true;
+    await this.scraper.pagePool.destroy(this.page);
   }
 
   public async stop() {
