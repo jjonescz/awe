@@ -18,6 +18,7 @@ export const enum SwdeHandling {
 /** Browser navigator intercepting requests. */
 export class PageScraper {
   private stopped = false;
+  private destroyed = false;
   private readonly inProgress: Set<readonly [string, string]> = new Set();
   private readonly handled: Map<string, number> = new Map();
   private totalHandled = 0;
@@ -264,7 +265,8 @@ export class PageScraper {
     } catch (e) {
       const error = e as Error;
       this.logger.error('cannot start page scraper', { error: error?.stack });
-      await this.scraper.pagePool.release(this.page);
+      await this.scraper.pagePool.destroy(this.page);
+      this.destroyed = true;
       return false;
     }
 
@@ -310,6 +312,6 @@ export class PageScraper {
     this.page.off('request', this.onRequest);
     this.page.off('error', this.onError);
     this.page.off('console', this.onConsole);
-    await this.scraper.pagePool.release(this.page);
+    if (!this.destroyed) await this.scraper.pagePool.release(this.page);
   }
 }

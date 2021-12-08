@@ -58,7 +58,7 @@ export class PageController {
       suffix: recipe.suffix,
     });
     if (!(await this.pageScraper.start())) {
-      return;
+      return false;
     }
 
     // Abort remaining requests.
@@ -94,6 +94,8 @@ export class PageController {
       await this.screenshot(recipe.screenshotPath, { fullPage: false });
       await this.screenshot(recipe.screenshotPath, { fullPage: true });
     }
+
+    return true;
   }
 
   private async screenshot(fullPath: string, { fullPage = true } = {}) {

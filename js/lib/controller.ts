@@ -88,7 +88,7 @@ export class Controller {
               // Execute `PageController`.
               const pageController = await this.for(page);
               try {
-                await pageController.scrape(version);
+                if (!(await pageController.scrape(version))) break;
               } finally {
                 await pageController.dispose();
               }
