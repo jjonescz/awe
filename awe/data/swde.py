@@ -360,7 +360,11 @@ class GroundTruthEntry:
         for value in self.values:
             # Note that this XPath is written so that it finds text fragments X,
             # Y, Z separately in HTML `<p>X<br>Y<br>Z</p>`.
-            args = { 'value': html_utils.unescape(value) }
+            args = { 'value': html_utils.unescape(
+                value,
+                # Process original SWDE data differently than extracted SWDE.
+                with_html_entities = (self.page.suffix is None)
+            ) }
             match = page_dom.xpath(
                 '//text()[normalize-space(.) = $value]',
                 **args
