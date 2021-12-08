@@ -430,6 +430,9 @@ class Dataset:
             index, page = t
 
             if end_after_first_error and found.value == 1:
+                # If reading existing list, continue yielding values from it.
+                if read_list and page.relative_original_path in page_paths:
+                    return index, None
                 return None
 
             try:
