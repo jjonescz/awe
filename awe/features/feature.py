@@ -66,3 +66,12 @@ class IndirectFeature(Feature):
     @property
     def summary(self):
         return { 'label': self.label }
+
+    def update(self, context: RootContext, vector: torch.FloatTensor):
+        """
+        Updates (usually shape of) `vector` to match data in `RootContext`.
+
+        This can be used to consolidate features computed earlier with features
+        computed for new data which can be padded to longer size.
+        """
+        return vector

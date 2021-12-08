@@ -104,6 +104,23 @@ class Dataset:
 
                 torch.save(data, page.data_point_path)
 
+    def update_page_features(self, indices: list[int]):
+        """
+        Loads features for pages at `indices`, updates them and persists them
+        back to disk.
+        """
+        for idx in indices:
+            page = self.pages[idx]
+
+            data = torch.load(page.data_point_path)
+            with torch.no_grad():
+                for feature in self.parent.features:
+                    if isinstance(feature, f.IndirectFeature):
+                        vector = getattr(data, feature.label).to_dense()
+                        vector = feature.update(self.parent.root, vector)
+                        setattr(data, feature.label, vector.to_sparse())
+            torch.save(data, page.data_point_path)
+
     def will_compute_page(self, idx: int, skip_existing=True):
         """Determines whether this page needs features to be computed."""
         if not skip_existing: return True
@@ -341,6 +358,15 @@ class DatasetCollection:
             lambda ds: ds.compute_page_features,
             parallelize=parallelize,
             skip_existing=skip_existing
+        )
+
+    def update_features(self, parallelize: Optional[int] = None):
+        self._process(
+            lambda _: lambda _, *, skip_existing: True,
+            lambda ds: ds.update_page_features,
+            initialize=False,
+            parallelize=parallelize,
+            skip_existing=False
         )
 
     def init_root_context(self, value: Optional[f.RootContext] = None):

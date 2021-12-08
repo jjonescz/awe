@@ -115,3 +115,12 @@ def _test_sequence_lengths():
     assert torch.equal(y, torch.LongTensor([2, 1, 0]))
 
 _test_sequence_lengths()
+
+def copy_to(source: torch.Tensor, target: torch.Tensor):
+    """
+    Copies cells from `source` to `target` ignoring indices they don't share.
+    """
+
+    shape = np.minimum(source.shape, target.shape)
+    indices = tuple(slice(None, i) for i in shape)
+    target[indices] = source[indices]

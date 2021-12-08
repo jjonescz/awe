@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 import torch
 from torchtext.data import utils as text_utils
+from awe import utils
 
 from awe.data import glove
 # pylint: disable=wildcard-import, unused-wildcard-import
@@ -60,6 +61,16 @@ class CharIdentifiers(IndirectFeature):
                 ])
         return result
 
+    def update(self, context: RootContext, vector: torch.FloatTensor):
+        result = torch.zeros(
+            vector.shape[0], # batch size
+            context.max_num_words,
+            context.max_word_len,
+            dtype=torch.int32
+        )
+        utils.copy_to(vector, result)
+        return result
+
 class WordIdentifiers(IndirectFeature):
     """Identifiers of word tokens. Used for pre-trained GloVe embeddings."""
 
@@ -97,4 +108,13 @@ class WordIdentifiers(IndirectFeature):
                     break
                 # Indices start at 1; 0 is used for unknown and pad words.
                 result[i] = self.glove.get_index(token, default=-1) + 1
+        return result
+
+    def update(self, context: RootContext, vector: torch.FloatTensor):
+        result = torch.zeros(
+            vector.shape[0], # batch size
+            context.max_num_words,
+            dtype=torch.int32
+        )
+        utils.copy_to(vector, result)
         return result
