@@ -190,13 +190,13 @@ class AweModel(pl.LightningModule):
         self.log("train_loss", loss)
         return loss
 
-    def validation_step(self, batch: data.Batch, *_):
-        return self._shared_eval_step('val', batch)
+    def validation_step(self, batch: data.Batch, _, id: int = 0):
+        return self._shared_eval_step('val', batch, id)
 
-    def test_step(self, batch: data.Batch, *_):
-        return self._shared_eval_step('test', batch)
+    def test_step(self, batch: data.Batch, _, id: int = 0):
+        return self._shared_eval_step('test', batch, id)
 
-    def _shared_eval_step(self, prefix: str, batch: data.Batch):
+    def _shared_eval_step(self, prefix: str, batch: data.Batch, id: int):
         y = batch.y
         z = self.forward(batch)
         loss = self.criterion(z, y)
@@ -213,7 +213,7 @@ class AweModel(pl.LightningModule):
             'swde_f1': swde_f1
         }
         prefixed = { f'{prefix}_{key}': value for key, value in results.items() }
-        self.log_dict(prefixed, prog_bar=True)
+        self.log_dict(prefixed, prog_bar=(id == 0), add_dataloader_idx=(id != 0))
         return prefixed
 
     def predict_step(self, batch: data.Batch, *_):
