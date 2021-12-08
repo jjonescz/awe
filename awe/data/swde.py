@@ -1,5 +1,4 @@
 import glob
-import multiprocessing
 import os
 import re
 from dataclasses import dataclass
@@ -423,13 +422,13 @@ class Dataset:
         save_list: bool = False,
         read_list: bool = False
     ):
-        manager = multiprocessing.Manager()
-        found = manager.Value('i', 0)
+        found = False
 
         def validate_one(t: tuple[int, Page]):
+            nonlocal found
             index, page = t
 
-            if end_after_first_error and found.value == 1:
+            if end_after_first_error and found:
                 # If reading existing list, continue yielding values from it.
                 if read_list and page.relative_original_path in page_paths:
                     return index, None
@@ -457,7 +456,7 @@ class Dataset:
                 return None
             except (AssertionError, RuntimeError) as e:
                 if end_after_first_error:
-                    found.value = 1
+                    found = True
                 if error_callback is not None:
                     error_callback(index, page, e)
                 if collect_errors:
