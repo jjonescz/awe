@@ -47,8 +47,7 @@ class Dataset:
         # Load indirect features saved in sparse format to dense format.
         for feature in self.parent.features:
             if isinstance(feature, f.IndirectFeature):
-                setattr(data, feature.label,
-                    getattr(data, feature.label).to_dense())
+                data[feature.label] = data[feature.label].to_dense()
 
         return data
 
@@ -99,8 +98,7 @@ class Dataset:
                 # Save indirect features in sparse format.
                 for feature in self.parent.features:
                     if isinstance(feature, f.IndirectFeature):
-                        setattr(data, feature.label,
-                            getattr(data, feature.label).to_sparse())
+                        data[feature.label] = data[feature.label].to_sparse()
 
                 torch.save(data, page.data_point_path)
 
@@ -116,9 +114,9 @@ class Dataset:
             with torch.no_grad():
                 for feature in self.parent.features:
                     if isinstance(feature, f.IndirectFeature):
-                        vector = getattr(data, feature.label).to_dense()
+                        vector = data[feature.label].to_dense()
                         vector = feature.update(self.parent.root, vector)
-                        setattr(data, feature.label, vector.to_sparse())
+                        data[feature.label] = vector.to_sparse()
             torch.save(data, page.data_point_path)
 
     def will_compute_page(self, idx: int, skip_existing=True):
