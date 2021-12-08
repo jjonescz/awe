@@ -86,11 +86,18 @@ export class Controller {
               }
 
               // Execute `PageController`.
-              const pageController = await this.for(page);
-              try {
-                if (!(await pageController.scrape(version))) break;
-              } finally {
-                await pageController.dispose();
+              for (let retries = 0; retries < 2; retries++) {
+                const pageController = await this.for(page);
+                try {
+                  if (!(await pageController.scrape(version))) {
+                    logger.verbose('retrying', { file, version, retries });
+                    continue;
+                  } else {
+                    break;
+                  }
+                } finally {
+                  await pageController.dispose();
+                }
               }
             }
           } catch (e) {
