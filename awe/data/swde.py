@@ -1,4 +1,5 @@
 import glob
+import multiprocessing
 import os
 import re
 from dataclasses import dataclass
@@ -416,13 +417,21 @@ class Dataset:
         verticals: Optional[list[Vertical]] = None,
         parallelize: Optional[int] = None,
         skip: int = 0,
+        end_after_first_error: bool = False,
         collect_errors: bool = False,
         error_callback: Optional[Callable[[int, Page, AssertionError], None]] = None,
         save_list: bool = False,
         read_list: bool = False
     ):
+        manager = multiprocessing.Manager()
+        found = manager.Value('i', 0)
+
         def validate_one(t: tuple[int, Page]):
             index, page = t
+
+            if end_after_first_error and found.value == 1:
+                return None
+
             try:
                 # Check that ground-truth values exist.
                 page_dom = GroundTruthEntry.prepare_page_dom(page)
@@ -444,6 +453,8 @@ class Dataset:
 
                 return None
             except (AssertionError, RuntimeError) as e:
+                if end_after_first_error:
+                    found.value = 1
                 if error_callback is not None:
                     error_callback(index, page, e)
                 if collect_errors:
