@@ -6,7 +6,7 @@ from typing import Callable, Optional
 
 import parsel
 
-from awe import awe_graph, features, html_utils, utils, visual
+from awe import awe_graph, features, filtering, html_utils, utils, visual
 from awe.data import constants
 
 URL = 'https://web.archive.org/web/20210630013015id_/' + \
@@ -289,7 +289,7 @@ class Page(awe_graph.HtmlPage):
         assert entry.page == self
         return entry.values
 
-    def prepare(self, ctx: features.PageContext):
+    def prepare(self, ctx: features.PageContextBase):
         try:
             dom_data = self.dom_data
             dom_data.read()

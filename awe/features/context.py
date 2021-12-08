@@ -72,30 +72,17 @@ class LiveContext:
         self.char_dict = {}
         self.word_dict = {}
 
-class PageContext:
-    """
-    Everything needed to compute a `HtmlNode`'s `Feature`s.
-
-    Data stored here are scoped to one `HtmlPage`.
-    """
-
-    max_depth: Optional[int] = None
-    """Maximum DOM tree depth. Stored by `Depth`."""
+class PageContextBase:
+    """Everything needed to prepare `HtmlPage`."""
 
     _nodes: list['awe_graph.HtmlNode'] = None
 
     def __init__(self,
-        live: LiveContext,
         page: 'awe_graph.HtmlPage',
         node_predicate: filtering.NodePredicate
     ):
-        self.live = live
         self.page = page
         self.node_predicate = node_predicate
-
-    @property
-    def root(self):
-        return self.live.root
 
     @property
     def nodes(self):
@@ -105,3 +92,25 @@ class PageContext:
             self._nodes = list(root.iterate_descendants(
                 self.node_predicate.include_node))
         return self._nodes
+
+class PageContext(PageContextBase):
+    """
+    Everything needed to compute a `HtmlNode`'s `Feature`s.
+
+    Data stored here are scoped to one `HtmlPage`.
+    """
+
+    max_depth: Optional[int] = None
+    """Maximum DOM tree depth. Stored by `Depth`."""
+
+    def __init__(self,
+        live: LiveContext,
+        page: 'awe_graph.HtmlPage',
+        node_predicate: filtering.NodePredicate
+    ):
+        self.live = live
+        super().__init__(page, node_predicate)
+
+    @property
+    def root(self):
+        return self.live.root
