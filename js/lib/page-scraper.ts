@@ -292,6 +292,8 @@ export class PageScraper {
 
   private async destroy() {
     this.destroyed = true;
+    // Also mark as stopped, so that "Target closed" errors are ignored.
+    this.stopped = true;
     await this.scraper.pagePool.destroy(this.page);
   }
 
