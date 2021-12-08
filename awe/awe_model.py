@@ -183,20 +183,20 @@ class AweModel(pl.LightningModule):
         full[batch.target] = x # use computed classification of target nodes
         return full
 
-    def training_step(self, batch: data.Batch, batch_idx: int):
+    def training_step(self, batch: data.Batch, *_):
         y = batch.y
         z = self.forward(batch)
         loss = self.criterion(z, y)
         self.log("train_loss", loss)
         return loss
 
-    def validation_step(self, batch: data.Batch, batch_idx: int):
-        return self._shared_eval_step('val', batch, batch_idx)
+    def validation_step(self, batch: data.Batch, *_):
+        return self._shared_eval_step('val', batch)
 
-    def test_step(self, batch: data.Batch, batch_idx: int):
-        return self._shared_eval_step('test', batch, batch_idx)
+    def test_step(self, batch: data.Batch, *_):
+        return self._shared_eval_step('test', batch)
 
-    def _shared_eval_step(self, prefix: str, batch: data.Batch, batch_idx: int):
+    def _shared_eval_step(self, prefix: str, batch: data.Batch):
         y = batch.y
         z = self.forward(batch)
         loss = self.criterion(z, y)
@@ -216,7 +216,7 @@ class AweModel(pl.LightningModule):
         self.log_dict(prefixed, prog_bar=True)
         return prefixed
 
-    def predict_step(self, batch: data.Batch, batch_idx: int):
+    def predict_step(self, batch: data.Batch, *_):
         z = self.forward(batch)
         preds = torch.argmax(z, dim=1)
         return preds
