@@ -435,8 +435,15 @@ class Dataset:
                         f'ground-truth values for {groundtruth_field.name}' + \
                         f'=[{", ".join(entry.values)}] in {page.identifier}.'
 
+                # Check that visual attributes are consistent.
+                ctx = features.PageContextBase(
+                    page,
+                    filtering.DefaultNodePredicate()
+                )
+                page.prepare(ctx)
+
                 return None
-            except AssertionError as e:
+            except (AssertionError, RuntimeError) as e:
                 if error_callback is not None:
                     error_callback(index, page, e)
                 if collect_errors:
