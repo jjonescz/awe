@@ -259,7 +259,14 @@ export class PageScraper {
 
     // Go online (revert offline mode set in `stop` which would be otherwise
     // preserved when using page pool).
-    await this.page.setOfflineMode(false);
+    try {
+      await this.page.setOfflineMode(false);
+    } catch (e) {
+      const error = e as Error;
+      this.logger.error('cannot start page scraper', { error: error?.stack });
+      await this.scraper.pagePool.release(this.page);
+      return false;
+    }
 
     // Navigate to page's URL. This will be intercepted in `onRequest`.
     try {
@@ -276,6 +283,8 @@ export class PageScraper {
         this.logger.error('goto failed', { error: error?.stack });
       }
     }
+
+    return true;
   }
 
   public async stop() {

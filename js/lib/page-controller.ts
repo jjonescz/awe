@@ -57,7 +57,9 @@ export class PageController {
       path: this.page.fullPath,
       suffix: recipe.suffix,
     });
-    await this.pageScraper.start();
+    if (!(await this.pageScraper.start())) {
+      return;
+    }
 
     // Abort remaining requests.
     await this.pageScraper.stop();
