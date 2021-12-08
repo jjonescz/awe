@@ -327,8 +327,8 @@ class DatasetCollection:
             skip_existing=skip_existing
         )
         if l != []:
-            ctx = l[0]
-            for other in l[1:]:
+            ctx = self.root
+            for other in l:
                 ctx.merge_with(other)
             self.init_root_context(ctx)
 
