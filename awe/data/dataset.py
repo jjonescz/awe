@@ -110,7 +110,11 @@ class Dataset:
         for idx in indices:
             page = self.pages[idx]
 
-            data = torch.load(page.data_point_path)
+            try:
+                data = torch.load(page.data_point_path)
+            except Exception as e:
+                print(f'Cannot load {page.data_point_path}: {repr(e)}')
+                continue
             with torch.no_grad():
                 for feature in self.parent.features:
                     if isinstance(feature, f.IndirectFeature):
