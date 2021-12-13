@@ -19,7 +19,7 @@ export const enum SwdeHandling {
 export class PageScraper {
   private stopped = false;
   private destroyed = false;
-  private readonly inProgress: Set<readonly [string, string]> = new Set();
+  private readonly inProgress: Map<string, Promise<void>> = new Map();
   private readonly handled: Map<string, number> = new Map();
   private totalHandled = 0;
   public swdeHandling = SwdeHandling.Offline;
@@ -203,16 +203,43 @@ export class PageScraper {
   ) {
     const url = normalizeUrl(request.url());
 
-    // Save this request as "in progress".
-    const inProgressEntry = [url, timestamp] as const;
-    this.inProgress.add(inProgressEntry);
+    // Save this request as "in progress" if it's not already.
+    const inProgressKey = `${timestamp}:${url}`;
+    const inProgressEntry = this.inProgress.get(inProgressKey);
+    if (inProgressEntry !== undefined) {
+      // This request is already "in progress". Wait for it to finish and then
+      // handle it, hopefully offline the second time.
+      logger.debug('waiting for in-progress request', {
+        url,
+        timestamp,
+        id: request._requestId,
+      });
+      await inProgressEntry;
+    }
 
+    // Start new "in progress" request.
+    if (this.inProgress.has(inProgressKey))
+      logger.error('unexpected in-progress request', {
+        url,
+        timestamp,
+        id: request._requestId,
+      });
+    const promise = this.handleLiveRequestCore(request, timestamp, url);
+    this.inProgress.set(inProgressKey, promise);
+    await promise;
+  }
+
+  private async handleLiveRequestCore(
+    request: puppeteer.HTTPRequest,
+    timestamp: string,
+    url: string
+  ) {
     // Redirect to `web.archive.org` unless it's already directed there.
     const archiveUrl =
       this.scraper.wayback.parseArchiveUrl(url) !== null
         ? url
         : this.scraper.wayback.getArchiveUrl(url, timestamp);
-    this.logger.debug('live request', { archiveUrl });
+    this.logger.debug('live request', { archiveUrl, id: request._requestId });
     await request.continue({ url: archiveUrl });
 
     // Note that if WaybackMachine doesn't have the page archived at
@@ -226,7 +253,10 @@ export class PageScraper {
     });
 
     // Handle response.
-    this.logger.debug('response', { url: response.url() });
+    this.logger.debug('response', {
+      url: response.url(),
+      request: request._requestId,
+    });
     const body = await response.buffer();
     const headers = response.headers();
     const cached: puppeteer.ResponseForRequest = {
@@ -235,7 +265,7 @@ export class PageScraper {
       contentType: headers['Content-Type'],
       body,
     };
-    if (!this.inProgress.delete(inProgressEntry))
+    if (!this.inProgress.delete(`${timestamp}:${url}`))
       throw new Error(`Failed to delete ${url} (${timestamp})`);
     if (this.scraper.allowOffline) {
       cleanHeaders(cached);
@@ -307,7 +337,8 @@ export class PageScraper {
       this.logger.error('stopping failed', { error: (e as Error)?.stack });
     }
 
-    for (const [url, timestamp] of this.inProgress) {
+    for (const key of this.inProgress.keys()) {
+      const [url, timestamp] = key.split(':', 2);
       this.logger.debug('unhandled', { url, timestamp });
 
       // Save as "aborted" for the next time.
