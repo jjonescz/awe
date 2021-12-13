@@ -3,6 +3,7 @@ import { readFile } from 'fs/promises';
 import https from 'https';
 import path from 'path';
 import { URL } from 'url';
+import { logger } from './logging';
 
 export type Writable<T> = { -readonly [P in keyof T]: T[P] };
 
@@ -80,7 +81,13 @@ export function getHttps(url: string, query: Record<string, string>) {
 
 export function normalizeUrl(url: string) {
   // This removes superfluous port numbers.
-  return new URL(url).toString();
+  try {
+    return new URL(url).toString();
+  } catch (e) {
+    // URL is not valid.
+    logger.error('invalid URL', { url, error: (e as Error)?.stack });
+    return url;
+  }
 }
 
 export function urlsEqual(a: string, b: string) {
