@@ -123,6 +123,10 @@ class Program extends Command {
         'representing file to process (relative to `--baseDir`)',
       exclusive: ['glob'],
     }),
+    disableJavaScript: flags.boolean({
+      char: 'S',
+      description: 'disable JavaScript execution on pages',
+    }),
   };
 
   async run() {
@@ -186,6 +190,7 @@ class Program extends Command {
       executablePath: flags.chromeExecutable,
       devtools: flags.devtools,
       timeout: flags.timeout,
+      disableJavaScript: flags.disableJavaScript,
     });
     const controller = new Controller(scraper);
 

@@ -6,12 +6,16 @@ import puppeteer from 'puppeteer-core';
 export interface PagePoolOptions {
   poolSize: number;
   timeout: number;
+  disableJavaScript: boolean;
 }
 
 export function createPagePool(scraper: Scraper, opts: PagePoolOptions) {
   const factory = <genericPool.Factory<puppeteer.Page>>{
     create: async () => {
       const page = await scraper.browser.newPage();
+
+      // Disable JavaScript.
+      if (opts.disableJavaScript) await page.setJavaScriptEnabled(false);
 
       // Intercept requests.
       await page.setRequestInterception(true);
