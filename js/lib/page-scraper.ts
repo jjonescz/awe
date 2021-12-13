@@ -94,7 +94,7 @@ export class PageScraper {
       // Pass WaybackMachine redirects through.
       const redirectUrl = this.scraper.wayback.isArchiveRedirect(request);
       if (redirectUrl !== null) {
-        this.logger.debug('redirected:', { url: request.url() });
+        this.logger.debug('redirected', { url: request.url() });
         await request.continue();
         return;
       }
