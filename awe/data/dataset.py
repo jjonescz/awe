@@ -214,7 +214,7 @@ class Dataset:
                     curr_ctx = self.parent.create_page_context(page)
                 node = curr_ctx.nodes[node_idx + node_offset]
 
-                yield node, batch.x[node_idx], batch.y[node_idx]
+                yield curr_ctx, node, batch, node_idx
             page_idx += batch.num_graphs
 
     def count_labels(self):
