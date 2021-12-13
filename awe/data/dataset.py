@@ -190,6 +190,10 @@ class Dataset:
 
     def iterate_data(self):
         """Iterates `HtmlNode`s along with their feature vectors and labels."""
+
+        if self.shuffle:
+            raise ValueError(f'Cannot iterate over shuffled dataset.')
+
         page_idx = 0
         for batch in self.loader or []:
             curr_page = None
