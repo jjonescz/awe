@@ -338,7 +338,7 @@ export class PageScraper {
     }
 
     for (const key of this.inProgress.keys()) {
-      const [url, timestamp] = key.split(':', 2);
+      const [timestamp, url] = key.split(':', 2);
       this.logger.debug('unhandled', { url, timestamp });
 
       // Save as "aborted" for the next time.
