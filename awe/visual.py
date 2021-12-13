@@ -56,7 +56,7 @@ class DomData:
             node = node_data.get('_node')
             if node is None and tag_name != '':
                 raise RuntimeError('Unused visual attributes for ' + \
-                    f'{get_xpath(tag_name, parent)}')
+                    f'{get_xpath(tag_name, parent)} in {self.path}')
 
             # Add children to queue.
             for child_name, child_data in node_data.items():
@@ -75,7 +75,7 @@ class DomData:
             real_id = node.element.attrib.get('id')
             extracted_id = node_data.get('id')
             assert real_id == extracted_id, f'IDs of {node.xpath} do not ' + \
-                f'match ("{real_id}" vs "{extracted_id}").'
+                f'match ("{real_id}" vs "{extracted_id}") in {self.path}.'
 
         # Load `node_data` into `node`.
         def load_attribute(
@@ -108,5 +108,5 @@ class DomData:
                 current_xpath = '/'.join(elements[:index + 1])
                 raise RuntimeError(
                     f'Cannot find visual attributes for /{current_xpath} ' + \
-                    f'while searching for {xpath}')
+                    f'while searching for {xpath} in {self.path}')
         return current_data
