@@ -32,6 +32,7 @@ export class Scraper {
   public static async create(
     opts: PagePoolOptions & {
       executablePath: string;
+      headless: boolean;
     }
   ) {
     // Open browser.
@@ -50,6 +51,7 @@ export class Scraper {
         '--disable-features=BlockInsecurePrivateNetworkRequests',
       ],
       executablePath: opts.executablePath,
+      headless: opts.headless,
     });
 
     // Open local cache.

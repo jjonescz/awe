@@ -104,6 +104,11 @@ class Program extends Command {
       description: 'Chrome-like browser that will be controlled by Puppeteer',
       default: 'google-chrome-stable',
     }),
+    headless: flags.boolean({
+      description: 'Run Chrome in headless mode',
+      default: true,
+      allowNo: true,
+    }),
     timeout: flags.integer({
       char: 'T',
       description: 'milliseconds before scraping of one page is aborted',
@@ -180,6 +185,7 @@ class Program extends Command {
     const scraper = await Scraper.create({
       poolSize: flags.jobs,
       executablePath: flags.chromeExecutable,
+      headless: flags.headless,
       timeout: flags.timeout,
     });
     const controller = new Controller(scraper);
