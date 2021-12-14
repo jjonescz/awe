@@ -169,6 +169,14 @@ class HtmlNode:
             return '#text'
         return self.element.tag
 
+    @property
+    def summary(self):
+        if self.is_text:
+            return f'"{self.text}"'
+        id = self.element.get('id')
+        id_str = f'#{id}' if id is not None else ''
+        return f'<{self.tag_name}{id_str}>{len(self.children)}'
+
     def _get_xpath(self,
         node_filter: Callable[['HtmlNode'], bool] = lambda _: True
     ):
