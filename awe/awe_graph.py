@@ -159,6 +159,12 @@ class HtmlNode:
         assert self.is_text
         return self.element
 
+    @property
+    def tag_name(self) -> str:
+        if self.is_text:
+            return '#text'
+        return self.element.tag
+
     def _get_xpath(self,
         node_filter: Callable[['HtmlNode'], bool] = lambda _: True
     ):
