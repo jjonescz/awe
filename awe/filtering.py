@@ -32,3 +32,16 @@ class DefaultNodePredicate(NodePredicate):
             node_data.get('whiteSpace') is not True and
             visual.get_tag_name(node_name) not in self.ignored_tag_names
         )
+
+class LeafNodePredicate(DefaultNodePredicate):
+    """Keeps only leaf (text) nodes."""
+
+    def include_node(self, node: awe_graph.HtmlNode):
+        if not node.is_text:
+            return False
+        return super().include_node(node)
+
+    def include_visual(self, node_data: dict[str, Any], node_name: str):
+        if visual.get_tag_name(node_name) != 'text':
+            return False
+        return super().include_visual(node_data, node_name)
