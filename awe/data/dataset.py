@@ -8,7 +8,7 @@ import torch
 from torch_geometric import data as gdata
 from torch_geometric import loader as gloader
 
-from awe import awe_graph
+from awe import awe_graph, graph_utils
 from awe import features as f
 from awe import filtering, utils
 from awe.data import constants
@@ -230,6 +230,7 @@ class DatasetCollection:
     node_predicate: filtering.NodePredicate = filtering.DefaultNodePredicate()
     first_dataset: Optional[Dataset] = None
     datasets: dict[str, Dataset]
+    remove_single_nodes: bool = True
 
     def __init__(self):
         self.features = []
@@ -268,6 +269,8 @@ class DatasetCollection:
         root: Optional[f.RootContext] = None
     ):
         ctx = self.create_page_context(page, root)
+        if self.remove_single_nodes:
+            graph_utils.remove_single_nodes(ctx)
         ctx.prepare()
         return ctx
 
@@ -434,5 +437,6 @@ class DatasetCollection:
             'sets': dict(
                 (name, ds.extract_inputs())
                 for name, ds in self.datasets.items()
-            )
+            ),
+            'remove_single_nodes': self.remove_single_nodes
         }
