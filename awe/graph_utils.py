@@ -13,10 +13,14 @@ def remove_single_nodes(ctx: features.PageContextBase):
         to_remove = []
         for node in ctx.nodes:
             if node.parent is not None and len(node.children) == 1:
+                # Rewire edges.
                 child = node.children[0]
                 node.parent.children[node.index] = child
                 child.parent = node.parent
+
+                # Detach this node.
                 to_remove.append(node)
+
                 changed = True
 
         # Remove detached nodes.

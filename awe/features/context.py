@@ -95,6 +95,12 @@ class PageContextBase:
             ))
         return self._nodes
 
+    def prepare(self):
+        # Assign indices to nodes (different from `HtmlNode.index` as that
+        # one is from before filtering). This is needed to compute edges.
+        for index, node in enumerate(self.nodes):
+            node.dataset_index = index
+
 class PageContext(PageContextBase):
     """
     Everything needed to compute a `HtmlNode`'s `Feature`s.

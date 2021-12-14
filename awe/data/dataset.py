@@ -265,12 +265,7 @@ class DatasetCollection:
         root: Optional[f.RootContext] = None
     ):
         ctx = self.create_page_context(page, root)
-
-        # Assign indices to nodes (different from `HtmlNode.index` as that
-        # one is from before filtering). This is needed to compute edges.
-        for index, node in enumerate(ctx.nodes):
-            node.dataset_index = index
-
+        ctx.prepare()
         return ctx
 
     @property
