@@ -54,26 +54,13 @@ class Dataset:
     def __len__(self):
         return len(self.pages)
 
-    def _prepare_page_context(self,
-        page: awe_graph.HtmlPage,
-        root: Optional[f.RootContext] = None
-    ):
-        ctx = self.parent.create_page_context(page, root)
-
-        # Assign indices to nodes (different from `HtmlNode.index` as that
-        # one is from before filtering). This is needed to compute edges.
-        for index, node in enumerate(ctx.nodes):
-            node.dataset_index = index
-
-        return ctx
-
     def prepare_page_features(self, indices: list[int]):
         """Prepares features for pages at `indices`."""
         root = f.RootContext()
         root.options_from(self.parent.root)
         for idx in indices:
             page = self.pages[idx]
-            ctx = self._prepare_page_context(page, root)
+            ctx = self.parent.prepare_page_context(page, root)
 
             with torch.no_grad():
                 for feature in self.parent.features:
@@ -88,7 +75,7 @@ class Dataset:
         """
         for idx in indices:
             page = self.pages[idx]
-            ctx = self._prepare_page_context(page)
+            ctx = self.parent.prepare_page_context(page)
 
             with torch.no_grad():
                 data = extraction.PageFeatureExtractor(self, ctx).extract()
@@ -271,6 +258,19 @@ class DatasetCollection:
         live = self.live if root is None else f.LiveContext(root)
         ctx = f.PageContext(live, page, self.node_predicate)
         page.prepare(ctx)
+        return ctx
+
+    def prepare_page_context(self,
+        page: awe_graph.HtmlPage,
+        root: Optional[f.RootContext] = None
+    ):
+        ctx = self.create_page_context(page, root)
+
+        # Assign indices to nodes (different from `HtmlNode.index` as that
+        # one is from before filtering). This is needed to compute edges.
+        for index, node in enumerate(ctx.nodes):
+            node.dataset_index = index
+
         return ctx
 
     @property
