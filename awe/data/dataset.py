@@ -97,6 +97,9 @@ class Dataset:
         for idx in indices:
             page = self.pages[idx]
 
+            if not os.path.exists(page.data_point_path):
+                continue
+
             try:
                 data = torch.load(page.data_point_path)
             except Exception as e:
