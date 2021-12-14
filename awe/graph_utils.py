@@ -1,6 +1,6 @@
 import networkx as nx
 
-from awe import features
+from awe import awe_graph, features
 
 
 def remove_single_nodes(ctx: features.PageContextBase):
@@ -48,13 +48,36 @@ class PageGraph:
                 center=node.box.center_point if node.box is not None else (0, 0)
             )
 
+    def link_parent_of(self, node: awe_graph.HtmlNode):
+        if node.parent is not None and node.parent.dataset_index is not None:
+            self.graph.add_edge(node.dataset_index, node.parent.dataset_index)
+            return True
+        return False
+
     def link_parents(self):
         for node in self.ctx.nodes:
-            if node.parent is not None and node.parent.dataset_index is not None:
-                self.graph.add_edge(node.dataset_index, node.parent.dataset_index)
+            self.link_parent_of(node)
 
-    def link_siblings(self):
+    def get_children(self, node: awe_graph.HtmlNode):
+        return [n for n in node.children if n.dataset_index is not None]
+
+    def link_children_of(self, node: awe_graph.HtmlNode):
+        children = self.get_children(node)
+        if len(children) == 0:
+            return False
+        for prev, next in zip(children, children[1:]):
+            self.graph.add_edge(prev.dataset_index, next.dataset_index)
+        return True
+
+    def link_children(self):
         for node in self.ctx.nodes:
-            siblings = [n for n in node.children if n.dataset_index is not None]
-            for prev, next in zip(siblings, siblings[1:]):
-                self.graph.add_edge(prev.dataset_index, next.dataset_index)
+            self.link_children_of(node)
+
+    def link_children_or_parents(self):
+        for node in self.ctx.nodes:
+            if (
+                node.parent is not None and
+                len(self.get_children(node.parent)) == 1
+            ):
+                self.link_parent_of(node)
+            self.link_children_of(node)
