@@ -3,6 +3,28 @@ import networkx as nx
 from awe import features
 
 
+def remove_single_nodes(ctx: features.PageContextBase):
+    """Removes nodes with single child while preserving edges."""
+    changes = 0
+    changed = True
+    while changed and changes < 100:
+        changes += 1
+        changed = False
+        to_remove = []
+        for node in ctx.nodes:
+            if node.parent is not None and len(node.children) == 1:
+                child = node.children[0]
+                node.parent.children[node.index] = child
+                child.parent = node.parent
+                to_remove.append(node)
+                changed = True
+
+        # Remove detached nodes.
+        for node in to_remove:
+            ctx.nodes.remove(node)
+
+    return changes
+
 def to_networkx(ctx: features.PageContextBase):
     graph = nx.DiGraph()
 
