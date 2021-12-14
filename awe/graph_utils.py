@@ -17,6 +17,7 @@ def remove_single_nodes(ctx: features.PageContextBase):
                 child = node.children[0]
                 node.parent.children[node.index] = child
                 child.parent = node.parent
+                child.index = node.index
 
                 # Detach this node.
                 to_remove.append(node)
