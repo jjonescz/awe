@@ -89,9 +89,11 @@ class AweModel(pl.LightningModule):
         if use_gnn:
             self.conv1 = gnn.GCNConv(input_features, D)
             self.conv2 = gnn.GCNConv(D, D)
-        input_dim = feature_count + D if use_gnn else input_features
+            # GNN output will be appended to FNN input.
+            input_features += D
+
         self.head = nn.Sequential(
-            nn.Linear(input_dim, 2 * D),
+            nn.Linear(input_features, 2 * D),
             nn.ReLU(),
             nn.Linear(2 * D, D),
             nn.ReLU(),
@@ -158,6 +160,7 @@ class AweModel(pl.LightningModule):
 
         # Propagate features through edges (graph convolution).
         if self.use_gnn:
+            orig = x # [num_nodes, num_features]
             x = self.conv1(x, edge_index) # [num_nodes, D]
             x = F.relu(x)
             x = F.dropout(x, training=self.training)
@@ -166,12 +169,12 @@ class AweModel(pl.LightningModule):
         # Filter target nodes (we want to propagate features through all edges
         # but classify only leaf nodes).
         if self.use_gnn:
-            orig = batch.x[batch.target] # [num_target_nodes, num_features]
+            orig = orig[batch.target] # [num_target_nodes, num_features]
         x = x[batch.target] # [num_target_nodes, D]
 
         # Concatenate original feature vector with convoluted feature vector.
         if self.use_gnn:
-            x = torch.hstack((orig, x)) # [num_target_nodes, D + num_features]
+            x = torch.hstack((orig, x)) # [num_target_nodes, num_features + D]
 
         # Classify using deep fully connected head.
         x = self.head(x) # [num_target_nodes, num_classes]
