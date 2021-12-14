@@ -114,6 +114,10 @@ class BoundingBox:
     width: int
     height: int
 
+    @property
+    def center_point(self):
+        return self.x + self.width / 2, self.y + self.height / 2
+
 @dataclass
 class HtmlNode:
     page: HtmlPage = field(repr=False)

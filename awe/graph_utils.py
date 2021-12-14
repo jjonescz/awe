@@ -13,7 +13,9 @@ def to_networkx(ctx: features.PageContextBase):
             tag=node.tag_name,
             text=node.text if node.is_text else '',
             label=node.labels,
-            display_size=5 * (len(node.labels) + 1)
+            display_size=5 * (len(node.labels) + 1),
+            coords=(node.box.x, node.box.y) if node.box is not None else (0, 0),
+            center=node.box.center_point if node.box is not None else (0, 0)
         )
 
     for node in ctx.nodes:
