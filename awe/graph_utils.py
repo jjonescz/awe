@@ -9,8 +9,9 @@ def to_networkx(ctx: features.PageContextBase):
     for node in ctx.nodes:
         graph.add_node(
             node.dataset_index,
+            id=node.element.get('id') or '' if not node.is_text else '',
             tag=node.tag_name,
-            text=node.text if node.is_text else None,
+            text=node.text if node.is_text else '',
             label=node.labels
         )
 
