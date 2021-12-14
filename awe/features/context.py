@@ -90,7 +90,9 @@ class PageContextBase:
         if self._nodes is None:
             root = self.page.initialize_tree()
             self._nodes = list(root.iterate_descendants(
-                self.node_predicate.include_node))
+                self.node_predicate.include_node_itself,
+                self.node_predicate.include_node_descendants
+            ))
         return self._nodes
 
 class PageContext(PageContextBase):

@@ -226,17 +226,21 @@ class HtmlNode:
                 if child.tail is not None:
                     yield child.tail
 
-    def iterate_descendants(self, predicate: Callable[['HtmlNode'], bool]):
+    def iterate_descendants(self,
+        shallow_predicate: Callable[['HtmlNode'], bool],
+        deep_predicate: Callable[['HtmlNode'], bool]
+    ):
         stack = [self]
         while len(stack) != 0:
             node = stack.pop()
-            if predicate(node):
+            if shallow_predicate(node):
                 yield node
+            if deep_predicate(node):
                 stack.extend(node.children)
 
     @property
     def descendants(self):
-        return self.iterate_descendants(lambda _: True)
+        return self.iterate_descendants(lambda _: True, lambda _: True)
 
     @property
     def prev_siblings(self):

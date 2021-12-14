@@ -21,7 +21,7 @@ def to_networkx(ctx: features.PageContextBase):
         )
 
     for node in ctx.nodes:
-        if node.parent is not None:
+        if node.parent is not None and node.parent.dataset_index is not None:
             graph.add_edge(node.dataset_index, node.parent.dataset_index)
 
     return graph

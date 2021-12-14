@@ -6,13 +6,23 @@ from lxml import etree
 from awe import awe_graph, visual
 
 class NodePredicate(ABC):
+    def include_node_descendants(self, node: awe_graph.HtmlNode) -> bool:
+        """Whether `node`'s descendants should be included in page nodes."""
+        return self.include_node(node)
+
+    def include_node_itself(self, node: awe_graph.HtmlNode) -> bool:
+        """Whether `node` should be included in page nodes."""
+        return self.include_node(node)
+
     @abstractmethod
     def include_node(self, node: awe_graph.HtmlNode) -> bool:
-        """Whether `node` should be included in page nodes."""
+        """
+        Whether `node` and its descendants should be included in page nodes.
+        """
 
     @abstractmethod
     def include_visual(self, node_data: dict[str, Any], node_name: str) -> bool:
-        """Whether visual data should be imported."""
+        """Whether visual data of node's descendants should be imported."""
 
 class DefaultNodePredicate(NodePredicate):
     """Ignores whitespace-only nodes, comments and script/style tags."""
@@ -36,7 +46,7 @@ class DefaultNodePredicate(NodePredicate):
 class LeafNodePredicate(DefaultNodePredicate):
     """Keeps only leaf (text) nodes."""
 
-    def include_node(self, node: awe_graph.HtmlNode):
+    def include_node_itself(self, node: awe_graph.HtmlNode):
         if not node.is_text:
             return False
         return super().include_node(node)
