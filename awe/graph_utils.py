@@ -1,4 +1,5 @@
 import networkx as nx
+import torch
 
 from awe import awe_graph, features
 
@@ -33,9 +34,10 @@ def remove_single_nodes(ctx: features.PageContextBase):
 class PageGraph:
     def __init__(self, ctx: features.PageContextBase):
         self.ctx = ctx
-        self.graph = nx.DiGraph()
+        self.graph = nx.Graph()
 
-        for node in ctx.nodes:
+    def add_nodes(self):
+        for node in self.ctx.nodes:
             self.graph.add_node(
                 node.dataset_index,
                 id=node.element.get('id') or '' if not node.is_text else '',
@@ -48,6 +50,9 @@ class PageGraph:
                 coords=(node.box.x, node.box.y) if node.box is not None else (0, 0),
                 center=node.box.center_point if node.box is not None else (0, 0)
             )
+
+    def get_edge_index(self):
+        return torch.LongTensor(list(self.graph.edges)).t().contiguous()
 
     def link_parent_of(self, node: awe_graph.HtmlNode):
         if node.parent is not None and node.parent.dataset_index is not None:
