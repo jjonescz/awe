@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 import torch
 from torch_geometric import data as gdata
 
-from awe import awe_graph, features
+from awe import awe_graph, features, graph_utils
 
 if TYPE_CHECKING:
     from awe.data import dataset
@@ -51,24 +51,10 @@ class PageFeatureExtractor:
             if isinstance(f, features.IndirectFeature)
         }
 
-        # Edges: parent-child relations.
-        child_edges = [
-            [node.dataset_index, child.dataset_index]
-            for node in self.ctx.nodes for child in node.children
-            # Ignore removed children.
-            if self.ds.parent.node_predicate.include_node(child)
-        ]
-        parent_edges = [
-            [node.dataset_index, node.parent.dataset_index]
-            for node in self.ctx.nodes
-            if (
-                node.parent is not None and
-                # Ignore removed parents.
-                self.ds.parent.node_predicate.include_node(node.parent)
-            )
-        ]
-        edge_index = torch.LongTensor(
-            child_edges + parent_edges).t().contiguous()
+        # Compute edges.
+        pg = graph_utils.PageGraph(self.ctx)
+        pg.link_children_or_parents()
+        edge_index = pg.get_edge_index()
 
         # Mask for "classifiable" nodes, i.e., leafs (text fragments).
         target = torch.BoolTensor([node.is_text for node in self.ctx.nodes])
