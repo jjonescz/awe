@@ -144,10 +144,17 @@ class Gym:
         return utils.save_or_check_file(path, model_text)
 
     def save_results(self, dataset_name: str):
+        # Disable logging to TensorBoard.
+        log_dict = self.model.log_dict
+        self.model.log_dict = lambda *args, **kwargs: log_dict(*args, logger=False, **kwargs)
+
         results = self.trainer.validate(
             self.model,
             self.ds[dataset_name].loader
         )
+
+        # Restore logging.
+        self.model.log_dict = log_dict
 
         path = self.get_last_checkpoint().get_results_path(dataset_name)
         return utils.save_or_check_file(path, str(results))
