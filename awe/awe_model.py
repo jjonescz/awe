@@ -54,7 +54,8 @@ class AweModel(pl.LightningModule):
         lstm_dim: int = 100,
         lstm_args = {},
         filter_node_words: bool = True,
-        label_smoothing: float = 0.0
+        label_smoothing: float = 0.0,
+        pack_words: bool = False
     ):
         super().__init__()
 
@@ -110,6 +111,7 @@ class AweModel(pl.LightningModule):
         self.use_gnn = use_gnn
         self.use_lstm = use_lstm
         self.filter_node_words = filter_node_words
+        self.pack_words = pack_words
 
     def forward(self, batch: data.Batch):
         # x: [num_nodes, num_features]
@@ -134,15 +136,20 @@ class AweModel(pl.LightningModule):
                 # [num_masked_nodes, max_num_words, word_dim]
             if self.use_lstm:
                 # Pack sequences (to let LSTM ignore pad words).
-                # packed_words = rnn.pack_padded_sequence(
-                #     embedded_words,
-                #     lengths[node_mask].cpu(),
-                #     batch_first = True,
-                #     enforce_sorted = False
-                # )
+                if self.pack_words:
+                    lengths = utils.sequence_lengths(masked_word_ids)
+                    lengths = torch.clamp(lengths, min=1)
+                    packed_words = rnn.pack_padded_sequence(
+                        embedded_words,
+                        lengths.cpu(),
+                        batch_first = True,
+                        enforce_sorted = False
+                    )
+                else:
+                    packed_words = embedded_words
 
                 # Run through LSTM.
-                _, (word_state, _) = self.lstm(embedded_words) # [1, num_masked_nodes, lstm_dim]
+                _, (word_state, _) = self.lstm(packed_words) # [1, num_masked_nodes, lstm_dim]
 
                 # Keep only the last hidden state (whole text representation).
                 node_vectors = word_state[-1, ...] # [num_masked_nodes, lstm_dim]
