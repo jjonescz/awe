@@ -172,7 +172,7 @@ class Gym:
     def save_named_version(self, name: str):
         """Saves the last version with a name."""
         last_checkpoint = self.get_last_checkpoint()
-        version_path = f'{LOG_DIR}/saved_version_{last_checkpoint.version}_{name}'
+        version_path = f'{LOG_DIR}/{name}-version_{last_checkpoint.version}'
         if os.path.isdir(version_path):
             raise RuntimeError(f'Directory already exists: {version_path}')
         return shutil.copytree(last_checkpoint.version_path, version_path)
