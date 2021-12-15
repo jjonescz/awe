@@ -201,7 +201,7 @@ class Dataset:
                 page = self.pages[page_idx + page_offset]
                 if curr_page != page:
                     curr_page = page
-                    curr_ctx = self.parent.create_page_context(page)
+                    curr_ctx = self.parent.prepare_page_context(page)
                 node = curr_ctx.nodes[node_idx + node_offset]
 
                 yield curr_ctx, node, batch, node_idx
