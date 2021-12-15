@@ -53,7 +53,8 @@ class AweModel(pl.LightningModule):
         char_dim: int = 100,
         lstm_dim: int = 100,
         lstm_args = {},
-        filter_node_words: bool = True
+        filter_node_words: bool = True,
+        label_smoothing: float = 0.0
     ):
         super().__init__()
 
@@ -100,8 +101,12 @@ class AweModel(pl.LightningModule):
             nn.Linear(D, label_count)
         )
 
+        self.loss = torch.nn.CrossEntropyLoss(
+            weight=torch.FloatTensor(label_weights),
+            label_smoothing=label_smoothing
+        )
+
         self.label_count = label_count
-        self.register_buffer("label_weights", torch.FloatTensor(label_weights))
         self.use_gnn = use_gnn
         self.use_lstm = use_lstm
         self.filter_node_words = filter_node_words
@@ -225,7 +230,7 @@ class AweModel(pl.LightningModule):
         return preds
 
     def criterion(self, z, y):
-        return F.cross_entropy(z, y, weight=self.label_weights)
+        return self.loss(z, y)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
