@@ -63,6 +63,14 @@ class RootContext:
             'cutoff_word_length': self.cutoff_word_length
         }
 
+    def describe(self):
+        return {
+            'pages': len(self.pages),
+            'chars': len(self.chars),
+            'max_num_words': self.max_num_words,
+            'max_word_len': self.max_word_len
+        }
+
 class LiveContext:
     """
     Non-persisted (live) data scoped to all pages. Initialized in
