@@ -5,7 +5,7 @@ import torch
 from torch_geometric import data, loader
 from tqdm.auto import tqdm
 
-from awe import awe_graph, awe_model
+from awe import awe_graph, awe_model, features
 from awe.data import dataset
 
 
@@ -14,6 +14,8 @@ def get_texts(nodes: list[awe_graph.HtmlNode]):
 
 class Predictor:
     """Can do example predictions on a `Dataset`."""
+
+    cached_page_contexts: dict[str, features.PageContext]
 
     def __init__(self,
         ds: dataset.DatasetCollection,
@@ -24,6 +26,7 @@ class Predictor:
         self.name = name
         self.dataloader = loader.DataLoader(ds[name])
         self.model = model
+        self.cached_page_contexts = dict()
 
     @property
     def items(self):
@@ -33,7 +36,10 @@ class Predictor:
         """Gets batch and its corresponding nodes."""
         batch: data.Batch = next(itertools.islice(self.dataloader, index, None))
         page = self.items.pages[index]
-        ctx = self.ds.prepare_page_context(page)
+        ctx = self.cached_page_contexts.get(page.identifier)
+        if ctx is None:
+            ctx = self.ds.prepare_page_context(page)
+            self.cached_page_contexts[page.identifier] = ctx
         inputs = awe_model.ModelInputs(batch)
         return inputs, ctx.nodes
 
