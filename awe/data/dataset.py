@@ -87,7 +87,10 @@ class Dataset:
                     if isinstance(feature, f.IndirectFeature):
                         data[feature.label] = data[feature.label].to_sparse()
 
-                torch.save(data, page.data_point_path)
+                # Save to temporary file first and then move it to prevent
+                # partially saved features when there's an error.
+                torch.save(data, f'{page.data_point_path}.tmp')
+                os.replace(f'{page.data_point_path}.tmp', page.data_point_path)
 
     def update_page_features(self, indices: list[int]):
         """
