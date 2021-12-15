@@ -2,4 +2,4 @@
 # For list of packages, see https://pypi.org/.
 
 # PyTorch
-torch==1.9.1
+torch==1.10.0

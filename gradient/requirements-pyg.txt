@@ -2,8 +2,8 @@
 # For list of packages, see https://pypi.org/.
 
 # PyTorch Geometric
-# https://pytorch-geometric.readthedocs.io/en/2.0.1/notes/installation.html
--f https://data.pyg.org/whl/torch-1.9.1+cu102.html
-torch-scatter==2.0.8
+# https://pytorch-geometric.readthedocs.io/en/2.0.2/notes/installation.html
+-f https://data.pyg.org/whl/torch-1.10.0+cu102.html
+torch-scatter==2.0.9
 torch-sparse==0.6.12
-torch-geometric==2.0.1
+torch-geometric==2.0.2
