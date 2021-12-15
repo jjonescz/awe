@@ -34,12 +34,19 @@ class RootContext:
     all). Used by `CharacterIdentifiers` and `WordIdentifiers`.
     """
 
+    cutoff_word_length: Optional[int] = None
+    """
+    Maximum number of characters to preserve in each token (or `None` to
+    preserve all). Used by `CharacterIdentifiers`.
+    """
+
     def __init__(self):
         self.pages = set()
         self.chars = set()
 
     def options_from(self, other: 'RootContext'):
         self.cutoff_words = other.cutoff_words
+        self.cutoff_word_length = other.cutoff_word_length
 
     def merge_with(self, other: 'RootContext'):
         self.pages.update(other.pages)
@@ -52,7 +59,8 @@ class RootContext:
 
     def extract_options(self):
         return {
-            'cutoff_words': self.cutoff_words
+            'cutoff_words': self.cutoff_words,
+            'cutoff_word_length': self.cutoff_word_length
         }
 
 class LiveContext:
