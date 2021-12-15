@@ -124,10 +124,8 @@ class AweModel(pl.LightningModule):
         word_ids = getattr(batch, 'word_identifiers', None)
         if word_ids is not None: # [num_nodes, max_num_words]
             if self.filter_node_words:
-                # Keep only sentences with at least one word.
-                lengths = utils.sequence_lengths(word_ids) # [num_nodes]
-                node_mask = lengths.gt(0) # [num_nodes]
-                masked_word_ids = word_ids[node_mask, :] # [num_masked_nodes, max_num_words]
+                # Keep only sentences at leaf nodes.
+                masked_word_ids = word_ids[batch.target, :] # [num_masked_nodes, max_num_words]
             else:
                 masked_word_ids = word_ids
 
@@ -156,7 +154,7 @@ class AweModel(pl.LightningModule):
                 # Expand word vectors to the original shape.
                 full_node_vectors = torch.zeros(word_ids.shape[0], node_vectors.shape[1]) # [num_nodes, lstm_dim]
                 full_node_vectors = full_node_vectors.type_as(x)
-                full_node_vectors[node_mask, :] = node_vectors
+                full_node_vectors[batch.target] = node_vectors
             else:
                 full_node_vectors = node_vectors
 
