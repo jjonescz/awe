@@ -14,8 +14,6 @@ def get_tag_name(xpath_element: str):
     return re.match(XPATH_ELEMENT_REGEX, xpath_element).group(1)
 
 def parse_font_weight(s: str):
-    if not s.isdecimal():
-        raise ValueError(f'Cannot parse font weight "{s}"')
     return int(s) / 100
 
 class DomData:
@@ -91,7 +89,12 @@ class DomData:
         ):
             val = node_data.get(camel_case or snake_case) or default
             if val is not None:
-                setattr(node, snake_case, selector(val))
+                try:
+                    result = selector(val)
+                except Exception as e:
+                    raise ValueError(f'Cannot parse {snake_case}="{val}" ' + \
+                        f'in {self.path}') from e
+                setattr(node, snake_case, result)
 
         load_attribute('box',
             selector=lambda b: awe_graph.BoundingBox(b[0], b[1], b[2], b[3]))
