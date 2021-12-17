@@ -32,5 +32,7 @@
         "wayback",
         "xpaths"
     ],
-    "python.terminal.activateEnvironment": false
+    "python.terminal.activateEnvironment": false,
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true
 }
