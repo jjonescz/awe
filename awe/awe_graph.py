@@ -152,6 +152,9 @@ class HtmlNode:
     font_size: Optional[int] = utils.lazy_field()
     """In pixels."""
 
+    font_weight: Optional[float] = utils.lazy_field()
+    """In font weight units divided by 100. E.g., "normal" is 4."""
+
     _children: list['HtmlNode'] = utils.cache_field()
 
     @property
