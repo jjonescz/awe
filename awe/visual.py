@@ -3,7 +3,7 @@ import os
 import re
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
-from awe import awe_graph
+from awe import awe_graph, utils
 
 if TYPE_CHECKING:
     from awe import features
@@ -83,11 +83,11 @@ class DomData:
         # Load `node_data` into `node`.
         def load_attribute(
             snake_case: str,
-            camel_case: Optional[str] = None,
             selector: Callable[[Any], Any] = lambda x: x,
             default: Optional[Any] = None
         ):
-            val = node_data.get(camel_case or snake_case) or default
+            camel_case = utils.to_camel_case(snake_case)
+            val = node_data.get(camel_case) or default
             if val is not None:
                 try:
                     result = selector(val)
@@ -102,10 +102,9 @@ class DomData:
         # Load visual attributes except for text fragments (they don't have
         # their own but inherit them from their container node instead).
         if not node.is_text:
-            load_attribute(
-                'font_family', 'fontFamily', default='"Times New Roman"')
-            load_attribute('font_size', 'fontSize', default=16)
-            load_attribute('font_weight', 'fontWeight', parse_font_weight, default='400')
+            load_attribute('font_family', default='"Times New Roman"')
+            load_attribute('font_size', default=16)
+            load_attribute('font_weight', parse_font_weight, default='400')
         return True
 
     def find(self, xpath: str):

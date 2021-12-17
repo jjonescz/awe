@@ -124,3 +124,8 @@ def copy_to(source: torch.Tensor, target: torch.Tensor):
     shape = np.minimum(source.shape, target.shape)
     indices = tuple(slice(None, i) for i in shape)
     target[indices] = source[indices]
+
+def to_camel_case(snake_case: str):
+    # Inspired by https://stackoverflow.com/a/19053800.
+    parts = snake_case.split('_')
+    return parts[0] + ''.join(p.title() for p in parts[1:])
