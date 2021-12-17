@@ -106,6 +106,16 @@ class DomData:
             load_attribute('font_family', default='"Times New Roman"')
             load_attribute('font_size', default=16)
             load_attribute('font_weight', parse_font_weight, default='400')
+            load_attribute('text_transform', default='none')
+            load_attribute('font_style', default='normal')
+            load_attribute('text_align', default='start')
+            load_attribute('cursor', default='auto')
+            load_attribute('letter_spacing', default=0)
+            load_attribute('line_height', default=node.font_size * 1.2)
+            load_attribute('opacity', default=1)
+            load_attribute('overflow', default='auto')
+            load_attribute('pointer_events', default='auto')
+            load_attribute('text_overflow', default='clip')
         return True
 
     def find(self, xpath: str):

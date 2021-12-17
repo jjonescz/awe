@@ -149,11 +149,34 @@ class HtmlNode:
 
     font_family: Optional[str] = utils.lazy_field()
 
-    font_size: Optional[int] = utils.lazy_field()
+    font_size: Optional[float] = utils.lazy_field()
     """In pixels."""
 
     font_weight: Optional[float] = utils.lazy_field()
     """In font weight units divided by 100. E.g., "normal" is 4."""
+
+    text_transform: Optional[str] = utils.lazy_field()
+
+    font_style: Optional[str] = utils.lazy_field()
+
+    text_align: Optional[str] = utils.lazy_field()
+
+    cursor: Optional[str] = utils.lazy_field()
+
+    letter_spacing: Optional[float] = utils.lazy_field()
+    """In pixels."""
+
+    line_height: Optional[float] = utils.lazy_field()
+    """In pixels."""
+
+    opacity: Optional[float] = utils.lazy_field()
+    """0 = transparent, 1 = opaque."""
+
+    overflow: Optional[str] = utils.lazy_field()
+
+    pointer_events: Optional[str] = utils.lazy_field()
+
+    text_overflow: Optional[str] = utils.lazy_field()
 
     _children: list['HtmlNode'] = utils.cache_field()
 
