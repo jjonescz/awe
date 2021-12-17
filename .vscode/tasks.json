@@ -7,8 +7,7 @@
             "type": "shell",
             "command": "pylint --msg-template \"{path}:{line}:{column}:{category}:{symbol} - {msg}\" awe",
             "presentation": {
-                "reveal": "never",
-                "panel": "shared"
+                "reveal": "never"
             },
             "problemMatcher": {
                 "owner": "python",
@@ -21,6 +20,16 @@
                     "severity": 4,
                     "message": 5
                 }
+            }
+        },
+        {
+            "label": "TensorBoard",
+            "type": "shell",
+            "command": "tensorboard --logdir logs",
+            "problemMatcher": [],
+            "isBackground": true,
+            "presentation": {
+                "reveal": "never"
             }
         }
     ]
