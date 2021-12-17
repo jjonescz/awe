@@ -133,13 +133,18 @@ class Gym:
         last_checkpoint = self.get_last_checkpoint()
         return last_checkpoint.version if last_checkpoint is not None else None
 
+    def get_current_checkpoint(self):
+        result = Checkpoint(None, self.trainer.logger.version, None, None)
+        os.makedirs(result.version_path, exist_ok=True)
+        return result
+
     def save_model(self):
-        path = self.get_last_checkpoint().model_path
+        path = self.get_current_checkpoint().model_path
         torch.save(self.model, path)
         return path
 
     def save_model_text(self):
-        path = self.get_last_checkpoint().model_text_path
+        path = self.get_current_checkpoint().model_text_path
         model_text = f'{self.model}\n\n{self.model.summarize(max_depth=1)}'
         return utils.save_or_check_file(path, model_text)
 
@@ -156,7 +161,7 @@ class Gym:
         # Restore logging.
         self.model.log_dict = log_dict
 
-        path = self.get_last_checkpoint().get_results_path(dataset_name)
+        path = self.get_current_checkpoint().get_results_path(dataset_name)
         return utils.save_or_check_file(path, str(results))
 
     def save_inputs(self):
@@ -164,18 +169,18 @@ class Gym:
         Saves inputs (list of pages, batch size) used for training and
         validation.
         """
-        path = self.get_last_checkpoint().inputs_path
+        path = self.get_current_checkpoint().inputs_path
         text = str(self.ds.extract_inputs())
         utils.save_or_check_file(path, text)
         return text
 
     def save_named_version(self, name: str):
         """Saves the last version with a name."""
-        last_checkpoint = self.get_last_checkpoint()
-        version_path = f'{LOG_DIR}/{name}-version_{last_checkpoint.version}'
+        current_checkpoint = self.get_current_checkpoint()
+        version_path = f'{LOG_DIR}/{name}-version_{current_checkpoint.version}'
         if os.path.isdir(version_path):
             raise RuntimeError(f'Directory already exists: {version_path}')
-        return shutil.copytree(last_checkpoint.version_path, version_path)
+        return shutil.copytree(current_checkpoint.version_path, version_path)
 
     def create_logger(self):
         return TensorBoardLogger(
