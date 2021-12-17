@@ -223,6 +223,7 @@ class Dataset:
         return {
             'pages': utils.summarize_pages(self.pages),
             'batch_size': self.loader.batch_size,
+            'num_workers': self.loader.num_workers,
             'shuffle': self.shuffle
         }
 
