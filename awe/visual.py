@@ -91,9 +91,10 @@ class DomData:
             if val is not None:
                 try:
                     result = selector(val)
-                except Exception as e:
-                    raise ValueError(f'Cannot parse {snake_case}="{val}" ' + \
-                        f'in {self.path}') from e
+                except ValueError as e:
+                    print(f'Cannot parse {snake_case}="{val}", using ' + \
+                        f'default="{val}" in {self.path}: {str(e)}')
+                    result = default
                 setattr(node, snake_case, result)
 
         load_attribute('box',
