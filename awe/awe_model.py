@@ -53,7 +53,7 @@ class AweModel(pl.LightningModule):
         use_cnn: bool,
         char_dim: int = 100,
         lstm_dim: int = 100,
-        lstm_args = {},
+        lstm_args: Optional[dict] = None,
         filter_node_words: bool = True,
         label_smoothing: float = 0.0,
         pack_words: bool = False
@@ -88,7 +88,7 @@ class AweModel(pl.LightningModule):
         if use_lstm:
             self.lstm = torch.nn.LSTM(word_dim, lstm_dim,
                 batch_first=True,
-                **lstm_args
+                **(lstm_args or {})
             )
 
         # Word vector will be appended for each node.
