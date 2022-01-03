@@ -131,6 +131,7 @@ class DomData:
             load_attribute('font_style', default='normal')
             load_attribute('text_align', default='start')
             load_attribute('color', Color.parse, default='#000000ff')
+            load_attribute('background_color', Color.parse, default='#00000000')
             load_attribute('cursor', default='auto')
             load_attribute('letter_spacing', default=0)
             load_attribute('line_height', default=node.font_size * 1.2)

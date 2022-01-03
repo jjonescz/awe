@@ -184,6 +184,8 @@ class HtmlNode:
 
     color: Optional['visual.Color'] = utils.lazy_field()
 
+    background_color: Optional['visual.Color'] = utils.lazy_field()
+
     _children: list['HtmlNode'] = utils.cache_field()
 
     @property
@@ -332,3 +334,4 @@ class HtmlNode:
             self.pointer_events = self.parent.pointer_events
             self.text_overflow = self.parent.text_overflow
             self.color = self.parent.color
+            self.background_color = self.parent.background_color
