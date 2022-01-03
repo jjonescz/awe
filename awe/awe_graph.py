@@ -9,7 +9,7 @@ from awe import html_utils, utils
 from awe.data.wayback import WaybackPage
 
 if TYPE_CHECKING:
-    from awe import features
+    from awe import features, visual
 
 
 class HtmlLabels(ABC):
@@ -181,6 +181,8 @@ class HtmlNode:
 
     text_overflow: Optional[str] = utils.lazy_field()
 
+    color: Optional['visual.Color'] = utils.lazy_field()
+
     _children: list['HtmlNode'] = utils.cache_field()
 
     @property
@@ -328,3 +330,4 @@ class HtmlNode:
             self.overflow = self.parent.overflow
             self.pointer_events = self.parent.pointer_events
             self.text_overflow = self.parent.text_overflow
+            self.color = self.parent.color

@@ -1,6 +1,8 @@
+import colorsys
 import json
 import os
 import re
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from awe import awe_graph, utils
@@ -9,6 +11,27 @@ if TYPE_CHECKING:
     from awe import features
 
 XPATH_ELEMENT_REGEX = r'^/(.*?)(\[\d+\])?$'
+
+@dataclass
+class Color:
+    red: int
+    green: int
+    blue: int
+    alpha: int
+
+    @property
+    def hls(self):
+        return colorsys.rgb_to_hls(self.red, self.green, self.blue)
+
+    @property
+    def hue(self):
+        return self.hls[0]
+
+    @classmethod
+    def parse(cls, s: str):
+        def h(i: int):
+            return int(s[i:(i + 2)], 16)
+        return Color(h(1), h(3), h(5), h(7))
 
 def get_tag_name(xpath_element: str):
     return re.match(XPATH_ELEMENT_REGEX, xpath_element).group(1)
@@ -105,6 +128,7 @@ class DomData:
             load_attribute('font_weight', int, default='400')
             load_attribute('font_style', default='normal')
             load_attribute('text_align', default='start')
+            load_attribute('color', Color.parse, default='#000000ff')
             load_attribute('cursor', default='auto')
             load_attribute('letter_spacing', default=0)
             load_attribute('line_height', default=node.font_size * 1.2)
