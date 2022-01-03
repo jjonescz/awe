@@ -1,3 +1,4 @@
+import collections
 from typing import TYPE_CHECKING, Optional
 
 from awe import filtering
@@ -40,12 +41,16 @@ class RootContext:
     preserve all). Used by `CharacterIdentifiers`.
     """
 
-    font_family: dict[str, int]
+    visual_categorical: collections.defaultdict[str, dict[str, int]]
+    """
+    Visual categorical features (name of feature -> category label -> category
+    ID). Used by `Visuals`.
+    """
 
     def __init__(self):
         self.pages = set()
         self.chars = set()
-        self.font_family = {}
+        self.visual_categorical = collections.defaultdict(dict)
 
     def options_from(self, other: 'RootContext'):
         self.cutoff_words = other.cutoff_words

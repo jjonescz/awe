@@ -63,6 +63,7 @@ class Visuals(DirectFeature):
             'font_family',
             'font_size',
             'font_weight',
+            'font_style',
             'letter_spacing',
             'line_height',
             'opacity'
@@ -72,7 +73,7 @@ class Visuals(DirectFeature):
         node = node.visual_node
 
         def categorical(name: str):
-            d: dict[str, int] = getattr(context.root, name)
+            d = context.root.visual_categorical[name]
             s: str = getattr(node, name)
             return d.setdefault(s, len(d))
 
@@ -80,6 +81,7 @@ class Visuals(DirectFeature):
             categorical('font_family'),
             node.font_size or 0,
             node.font_weight / 100,
+            categorical('font_style'),
             node.letter_spacing,
             node.line_height,
             node.opacity
