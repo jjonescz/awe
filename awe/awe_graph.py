@@ -186,6 +186,16 @@ class HtmlNode:
 
     background_color: Optional['visual.Color'] = utils.lazy_field()
 
+    text_decoration: Optional[str] = utils.lazy_field()
+
+    background_image: Optional[str] = utils.lazy_field()
+
+    box_shadow: Optional[str] = utils.lazy_field()
+
+    text_shadow: Optional[str] = utils.lazy_field()
+
+    z_index: Optional[str] = utils.lazy_field()
+
     _children: list['HtmlNode'] = utils.cache_field()
 
     @property
@@ -335,3 +345,8 @@ class HtmlNode:
             self.text_overflow = self.parent.text_overflow
             self.color = self.parent.color
             self.background_color = self.parent.background_color
+            self.text_decoration = self.parent.text_decoration
+            self.background_image = self.parent.background_image
+            self.box_shadow = self.parent.box_shadow
+            self.text_shadow = self.parent.text_shadow
+            self.z_index = self.parent.z_index
