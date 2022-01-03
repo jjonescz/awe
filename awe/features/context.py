@@ -84,12 +84,24 @@ class RootContext:
             'cutoff_word_length': self.cutoff_word_length
         }
 
+    def describe_visual_categorical(self):
+        return {
+            # Place most used first.
+            feature: dict(sorted(
+                category.items(),
+                key=lambda p: p[1].count,
+                reverse=True
+            ))
+            for feature, category in self.visual_categorical.items()
+        }
+
     def describe(self):
         return {
             'pages': len(self.pages),
             'chars': len(self.chars),
             'max_num_words': self.max_num_words,
-            'max_word_len': self.max_word_len
+            'max_word_len': self.max_word_len,
+            'visual_categorical': self.describe_visual_categorical()
         }
 
 class LiveContext:
