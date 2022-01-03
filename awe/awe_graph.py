@@ -18,7 +18,10 @@ class HtmlLabels(ABC):
         pass
 
     @abstractmethod
-    def get_nodes(self, label: str) -> list['HtmlNode']:
+    def get_nodes(self,
+        label: str,
+        ctx: 'features.PageContextBase'
+    ) -> list['HtmlNode']:
         pass
 
 class HtmlPage(ABC):

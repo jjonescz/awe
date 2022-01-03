@@ -53,7 +53,7 @@ class PageLabels(awe_graph.HtmlLabels):
     def get_labels(self, _):
         return []
 
-    def get_nodes(self, _):
+    def get_nodes(self, *_):
         return []
 
 NO_LABELS = PageLabels()

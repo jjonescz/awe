@@ -312,11 +312,11 @@ class PageLabels(awe_graph.HtmlLabels):
     def get_labels(self, node: awe_graph.HtmlNode):
         return list(self._iter_labels(node))
 
-    def get_nodes(self, label: str):
+    def get_nodes(self, label: str, ctx: features.PageContextBase):
         xpaths = self.nodes[label]
         return [
             node
-            for node in self.page.initialize_tree().descendants
+            for node in ctx.nodes
             if node.xpath_swde in xpaths
         ]
 
