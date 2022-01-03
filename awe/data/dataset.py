@@ -386,6 +386,12 @@ class DatasetCollection:
         self.root = value or f.RootContext()
         self.live = f.LiveContext(self.root)
 
+    def reload_root_context(self):
+        new_root = f.RootContext()
+        new_root.options_from(self.root)
+        new_root.merge_with(self.root)
+        self.init_root_context(new_root)
+
     def save_root_context(self, overwrite_existing: bool = False):
         """Saves results of `prepare_features`."""
         if not overwrite_existing and os.path.exists(self.root_context_path):

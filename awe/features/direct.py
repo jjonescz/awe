@@ -60,6 +60,7 @@ class Visuals(DirectFeature):
     @property
     def labels(self):
         return [
+            'font_family',
             'font_size',
             'font_weight',
             'letter_spacing',
@@ -67,9 +68,16 @@ class Visuals(DirectFeature):
             'opacity'
         ]
 
-    def compute(self, node: 'awe_graph.HtmlNode', _):
+    def compute(self, node: 'awe_graph.HtmlNode', context: PageContext):
         node = node.visual_node
+
+        def categorical(name: str):
+            d: dict[str, int] = getattr(context.root, name)
+            s: str = getattr(node, name)
+            return d.setdefault(s, len(d))
+
         return torch.FloatTensor([
+            categorical('font_family'),
             node.font_size or 0,
             node.font_weight / 100,
             node.letter_spacing,

@@ -40,9 +40,12 @@ class RootContext:
     preserve all). Used by `CharacterIdentifiers`.
     """
 
+    font_family: dict[str, int]
+
     def __init__(self):
         self.pages = set()
         self.chars = set()
+        self.font_family = {}
 
     def options_from(self, other: 'RootContext'):
         self.cutoff_words = other.cutoff_words
