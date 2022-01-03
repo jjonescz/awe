@@ -59,11 +59,20 @@ class Visuals(DirectFeature):
 
     @property
     def labels(self):
-        return ['font_size', 'font_weight']
+        return [
+            'font_size',
+            'font_weight',
+            'letter_spacing',
+            'line_height',
+            'opacity'
+        ]
 
     def compute(self, node: 'awe_graph.HtmlNode', _):
         node = node.visual_node
         return torch.FloatTensor([
             node.font_size or 0,
-            node.font_weight / 100
+            node.font_weight / 100,
+            node.letter_spacing,
+            node.line_height,
+            node.opacity
         ])
