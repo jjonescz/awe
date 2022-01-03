@@ -13,9 +13,6 @@ XPATH_ELEMENT_REGEX = r'^/(.*?)(\[\d+\])?$'
 def get_tag_name(xpath_element: str):
     return re.match(XPATH_ELEMENT_REGEX, xpath_element).group(1)
 
-def parse_font_weight(s: str):
-    return int(s) / 100
-
 class DomData:
     """Can load visual attributes saved by `extractor.ts`."""
 
@@ -105,7 +102,7 @@ class DomData:
         if not node.is_text:
             load_attribute('font_family', default='"Times New Roman"')
             load_attribute('font_size', default=16)
-            load_attribute('font_weight', parse_font_weight, default='400')
+            load_attribute('font_weight', int, default='400')
             load_attribute('text_transform', default='none')
             load_attribute('font_style', default='normal')
             load_attribute('text_align', default='start')
