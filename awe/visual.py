@@ -17,7 +17,9 @@ class Color:
     red: int
     green: int
     blue: int
+
     alpha: int
+    """Alpha channel (0 = fully transparent, 255 = fully opaque)."""
 
     @property
     def hls(self):
