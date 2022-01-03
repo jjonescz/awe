@@ -35,6 +35,30 @@ class PageFeatureExtractor:
         label = None if len(node.labels) == 0 else node.labels[0]
         return self.ds.label_map[label]
 
+    def describe_feature(self,
+        node: awe_graph.HtmlNode,
+        feature: features.Feature
+    ):
+        vector = feature.compute(node, self.ctx)
+        if isinstance(feature, features.DirectFeature):
+            return (feature.__class__.__name__, dict(zip(feature.labels, vector)))
+        if isinstance(feature, features.IndirectFeature):
+            return (feature.label, vector)
+        return (feature.__class__.__name__, None)
+
+    def describe(self):
+        """Extracts features into a `dict` that can be inspected."""
+
+        self.ds.parent.initialize_features()
+
+        return {
+            node.xpath: dict(
+                self.describe_feature(node, feature)
+                for feature in self.ds.parent.features
+            )
+            for node in self.ctx.nodes
+        }
+
     def extract(self):
         """Extracts features to `Data` instance that can be serialized."""
 
