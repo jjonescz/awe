@@ -308,3 +308,23 @@ class HtmlNode:
         if self.is_text:
             return self.parent
         return self
+
+    def copy_visual_features(self):
+        """
+        Copies visual features from parent element for text fragments (because
+        they don't have most of visual features by themselves).
+        """
+        if self.is_text:
+            self.font_family = self.parent.font_family
+            self.font_size = self.parent.font_size
+            self.font_weight = self.parent.font_weight
+            self.text_transform = self.parent.text_transform
+            self.font_style = self.parent.font_style
+            self.text_align = self.parent.text_align
+            self.cursor = self.parent.cursor
+            self.letter_spacing = self.parent.letter_spacing
+            self.line_height = self.parent.line_height
+            self.opacity = self.parent.opacity
+            self.overflow = self.parent.overflow
+            self.pointer_events = self.parent.pointer_events
+            self.text_overflow = self.parent.text_overflow
