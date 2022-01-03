@@ -51,6 +51,10 @@ export class Controller {
       : null;
     bar?.start(files.length, 0, { details: 'starting...' });
     const showStats = (...stats: string[]) => {
+      // Add timestamp of last progress update (useful to detect stuck
+      // scraping).
+      stats.unshift(new Date().toLocaleString());
+
       bar?.update({
         details: stats.filter((s) => s?.length).join(' | '),
       });
