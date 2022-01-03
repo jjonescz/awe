@@ -25,6 +25,8 @@ class RootContext:
     Data stored here are scoped to all pages. Initialized in `Feature.prepare`.
     """
 
+    OPTIONS = ['cutoff_words', 'cutoff_word_length']
+
     pages: set[str]
     """Identifiers of pages used for feature preparation against this object."""
 
@@ -66,17 +68,19 @@ class RootContext:
         self.visual_categorical = collections.defaultdict(categorical_dict)
 
     def options_from(self, other: 'RootContext'):
-        self.cutoff_words = other.cutoff_words
-        self.cutoff_word_length = other.cutoff_word_length
+        for option in self.OPTIONS:
+            setattr(self, option, getattr(other, option))
 
     def merge_with(self, other: 'RootContext'):
         self.pages.update(other.pages)
         self.chars.update(other.chars)
         self.max_word_len = max(self.max_word_len, other.max_word_len)
         self.max_num_words = max(self.max_num_words, other.max_num_words)
-        assert self.cutoff_words == other.cutoff_words, \
-            f'Option `cutoff_words` does not match ({self.cutoff_words} ' + \
-            f'vs. {other.cutoff_words})'
+
+        for option in self.OPTIONS:
+            assert getattr(self, option) == getattr(other, option), \
+                f'Option `{option}` does not match ' + \
+                f'({getattr(self, option)} vs. {getattr(other, option)})'
 
     def extract_options(self):
         return {
