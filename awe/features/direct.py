@@ -64,9 +64,15 @@ class Visuals(DirectFeature):
             'font_size',
             'font_weight',
             'font_style',
+            'text_align',
+            'cursor',
             'letter_spacing',
             'line_height',
-            'opacity'
+            'opacity',
+            'overflow',
+            'pointer_events',
+            'text_overflow',
+            'text_transform'
         ]
 
     def compute(self, node: 'awe_graph.HtmlNode', context: PageContext):
@@ -82,7 +88,13 @@ class Visuals(DirectFeature):
             node.font_size or 0,
             node.font_weight / 100,
             categorical('font_style'),
+            categorical('text_align'),
+            categorical('cursor'),
             node.letter_spacing,
             node.line_height,
-            node.opacity
+            node.opacity,
+            categorical('overflow'),
+            categorical('pointer_events'),
+            categorical('text_overflow'),
+            categorical('text_transform')
         ])
