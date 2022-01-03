@@ -76,7 +76,7 @@ class RootContext:
         self.max_num_words = max(self.max_num_words, other.max_num_words)
         assert self.cutoff_words == other.cutoff_words, \
             f'Option `cutoff_words` does not match ({self.cutoff_words} ' + \
-            'vs. {other.cutoff_words})'
+            f'vs. {other.cutoff_words})'
 
     def extract_options(self):
         return {
