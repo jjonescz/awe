@@ -103,15 +103,20 @@ class Visuals(DirectFeature):
             node.font_size or 0,
             node.font_weight / 100,
             categorical('font_style'),
+            categorical('text_decoration'),
             categorical('text_align'),
             *color('color'),
             *color('background_color'),
+            categorical('background_image'),
+            categorical('box_shadow'),
             categorical('cursor'),
             node.letter_spacing,
             node.line_height,
             node.opacity,
             categorical('overflow'),
             categorical('pointer_events'),
+            categorical('text_shadow'),
             categorical('text_overflow'),
-            categorical('text_transform')
+            categorical('text_transform'),
+            categorical('z_index')
         ])
