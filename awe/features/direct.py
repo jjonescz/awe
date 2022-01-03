@@ -54,12 +54,16 @@ class CharCategories(DirectFeature):
             count_pattern(r'\d')
         ])
 
-class FontSize(DirectFeature):
-    """Font size (in pixels)."""
+class Visuals(DirectFeature):
+    """Visual features."""
 
     @property
     def labels(self):
-        return ['font_size']
+        return ['font_size', 'font_weight']
 
     def compute(self, node: 'awe_graph.HtmlNode', _):
-        return torch.FloatTensor([node.visual_node.font_size or 0])
+        node = node.visual_node
+        return torch.FloatTensor([
+            node.font_size or 0,
+            node.font_weight / 100
+        ])
