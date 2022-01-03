@@ -457,6 +457,18 @@ class Dataset:
                 )
                 page.prepare(ctx)
 
+                # Check that ground-truth nodes are correctly labeled in the
+                # resulting tree.
+                for groundtruth_field in page.site.groundtruth:
+                    num = sum(1
+                        for n in ctx.nodes
+                        if groundtruth_field.name in n.labels
+                    )
+                    assert num >= len(entry.values),  'Expected at least ' + \
+                        f'{len(entry.values)}, found only {num} nodes ' + \
+                        f'labeled {groundtruth_field.name} in ' + \
+                        f'{page.identifier}.'
+
                 return None
             except (AssertionError, RuntimeError) as e:
                 if end_after_first_error:
