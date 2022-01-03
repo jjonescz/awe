@@ -99,13 +99,20 @@ class RootContext:
             for feature, category in self.visual_categorical.items()
         }
 
+    def total_visual_categorical_count(self):
+        return sum(
+            i.count
+            for c in self.visual_categorical.values()
+            for i in c.values()
+        )
+
     def describe(self):
         return {
             'pages': len(self.pages),
             'chars': len(self.chars),
             'max_num_words': self.max_num_words,
             'max_word_len': self.max_word_len,
-            'visual_categorical': self.describe_visual_categorical()
+            'visual_categorical': self.total_visual_categorical_count()
         }
 
 class LiveContext:
