@@ -1,5 +1,7 @@
+import importlib
 import itertools
 import os
+import sys
 from dataclasses import field
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, TypeVar
 
@@ -129,3 +131,10 @@ def to_camel_case(snake_case: str):
     # Inspired by https://stackoverflow.com/a/19053800.
     parts = snake_case.split('_')
     return parts[0] + ''.join(p.title() for p in parts[1:])
+
+def reload(*modules: list[str]):
+    for module in modules:
+        # Inspired by https://stackoverflow.com/a/51074507.
+        for k, v in list(sys.modules.items()):
+            if k.startswith(module):
+                importlib.reload(v)
