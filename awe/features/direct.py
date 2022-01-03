@@ -2,6 +2,7 @@ import re
 from typing import TYPE_CHECKING
 
 import torch
+from awe import visual
 
 # pylint: disable=wildcard-import, unused-wildcard-import
 from awe.features.context import *
@@ -59,12 +60,21 @@ class Visuals(DirectFeature):
 
     @property
     def labels(self):
+        def color(name: str):
+            return [
+                f'{name}_hue',
+                f'{name}_brightness',
+                f'{name}_alpha'
+            ]
+
         return [
             'font_family',
             'font_size',
             'font_weight',
             'font_style',
             'text_align',
+            *color('color'),
+            *color('background'),
             'cursor',
             'letter_spacing',
             'line_height',
@@ -84,12 +94,18 @@ class Visuals(DirectFeature):
             i.count += 1
             return i.unique_id
 
+        def color(name: str):
+            c: visual.Color = getattr(node, name)
+            return [c.hue, c.brightness / 255, c.alpha / 255]
+
         return torch.FloatTensor([
             categorical('font_family'),
             node.font_size or 0,
             node.font_weight / 100,
             categorical('font_style'),
             categorical('text_align'),
+            *color('color'),
+            *color('background_color'),
             categorical('cursor'),
             node.letter_spacing,
             node.line_height,

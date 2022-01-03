@@ -22,12 +22,16 @@ class Color:
     """Alpha channel (0 = fully transparent, 255 = fully opaque)."""
 
     @property
-    def hls(self):
-        return colorsys.rgb_to_hls(self.red, self.green, self.blue)
+    def hsv(self):
+        return colorsys.rgb_to_hsv(self.red, self.green, self.blue)
 
     @property
     def hue(self):
-        return self.hls[0]
+        return self.hsv[0]
+
+    @property
+    def brightness(self):
+        return self.hsv[2]
 
     @classmethod
     def parse(cls, s: str):
