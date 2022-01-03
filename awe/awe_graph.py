@@ -227,7 +227,9 @@ class HtmlNode:
     def xpath_swde(self):
         """XPath without white-space-only text fragments."""
         # See AWE-1.
-        return self._get_xpath(lambda n: not n.element.isspace())
+        return self._get_xpath(
+            lambda n: not n.element.isspace() or '\n' in n.element
+        )
 
     @property
     def xpath(self):
