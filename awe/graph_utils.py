@@ -71,8 +71,8 @@ class PageGraph:
         children = self.get_children(node)
         if len(children) == 0:
             return False
-        for prev, next in zip(children, children[1:]):
-            self.graph.add_edge(prev.dataset_index, next.dataset_index)
+        for prev, curr in zip(children, children[1:]):
+            self.graph.add_edge(prev.dataset_index, curr.dataset_index)
         return True
 
     def link_children(self):

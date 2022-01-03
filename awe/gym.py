@@ -1,5 +1,4 @@
 import dataclasses
-import datetime
 import os
 import re
 import shutil
@@ -50,6 +49,7 @@ class Checkpoint:
     def inputs_path(self):
         return f'{self.version_path}/inputs.txt'
 
+# pylint: disable=attribute-defined-outside-init, arguments-differ
 class CustomProgressBar(ProgressBar):
     """Disables validation progress bar and shows progress over all epochs."""
 

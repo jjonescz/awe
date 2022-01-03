@@ -4,11 +4,11 @@ import parsel
 from lxml import etree
 from lxml.html import soupparser
 
-
+# pylint: disable-next=protected-access
 invalid_charrefs_backup = dict(html._invalid_charrefs)
 
-def parse_html(html: str):
-    return parsel.Selector(root=soupparser.fromstring(html))
+def parse_html(dom: str):
+    return parsel.Selector(root=soupparser.fromstring(dom))
 
 def unescape(text: str, with_html_entities: bool = False):
     if with_html_entities:

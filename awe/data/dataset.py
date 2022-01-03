@@ -105,6 +105,7 @@ class Dataset:
 
             try:
                 data = torch.load(page.data_point_path)
+            # pylint: disable-next=broad-except
             except Exception as e:
                 print(f'Cannot load {page.data_point_path}: {repr(e)}')
                 continue
@@ -118,7 +119,8 @@ class Dataset:
 
     def will_compute_page(self, idx: int, skip_existing=True):
         """Determines whether this page needs features to be computed."""
-        if not skip_existing: return True
+        if not skip_existing:
+            return True
         path = self.pages[idx].data_point_path
         return path is None or not os.path.exists(path)
 
@@ -185,7 +187,7 @@ class Dataset:
         """Iterates `HtmlNode`s along with their feature vectors and labels."""
 
         if self.shuffle:
-            raise ValueError(f'Cannot iterate over shuffled dataset.')
+            raise ValueError('Cannot iterate over shuffled dataset.')
 
         page_idx = 0
         for batch in self.loader or []:

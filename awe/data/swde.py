@@ -157,7 +157,7 @@ class Website:
 
         # Verify all pages were created.
         non_existent = [str(i) for i, p in enumerate(result) if p is None]
-        assert len(non_existent) == 0, f'Some pages were not created for ' + \
+        assert len(non_existent) == 0, 'Some pages were not created for ' + \
             f'site {self.dir_name} ({", ".join(non_existent)}).'
 
         return result

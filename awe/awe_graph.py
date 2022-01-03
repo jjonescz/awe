@@ -87,6 +87,7 @@ class HtmlPage(ABC):
     def count_label(self, label: str) -> int:
         """Number of occurrences of nodes with the given `label`."""
 
+    # pylint: disable-next=unused-argument
     def get_groundtruth_texts(self, label: str) -> Optional[list[str]]:
         """Groundtruth texts (if available)"""
         return None
@@ -204,8 +205,8 @@ class HtmlNode:
     def summary(self):
         if self.is_text:
             return f'"{self.text}"'
-        id = self.element.get('id')
-        id_str = f'#{id}' if id is not None else ''
+        element_id = self.element.get('id')
+        id_str = f'#{element_id}' if element_id is not None else ''
         return f'<{self.tag_name}{id_str}>{len(self.children)}'
 
     def _get_xpath(self,

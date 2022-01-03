@@ -67,6 +67,7 @@ class IndirectFeature(Feature):
     def summary(self):
         return { 'label': self.label }
 
+    # pylint: disable-next=unused-argument
     def update(self, context: RootContext, vector: torch.FloatTensor):
         """
         Updates (usually shape of) `vector` to match data in `RootContext`.

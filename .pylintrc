@@ -6,3 +6,4 @@ disable=missing-module-docstring,
 
 [TYPECHECK]
 generated-members=torch.*
+extension-pkg-allow-list=lxml.etree

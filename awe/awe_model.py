@@ -201,7 +201,8 @@ class AweModel(pl.LightningModule):
 
             if self.filter_node_words:
                 # Expand word vectors to the original shape.
-                full_node_vectors = torch.zeros(word_ids.shape[0], node_vectors.shape[1]) # [num_nodes, lstm_dim]
+                full_node_vectors = torch.zeros(word_ids.shape[0], node_vectors.shape[1])
+                    # [num_nodes, lstm_dim]
                 full_node_vectors = full_node_vectors.type_as(x)
                 full_node_vectors[batch.target] = node_vectors
             else:
@@ -245,13 +246,13 @@ class AweModel(pl.LightningModule):
         self.log("train_loss", loss)
         return loss
 
-    def validation_step(self, batch: data.Batch, _, id: int = 0):
-        return self._shared_eval_step('val', batch, id)
+    def validation_step(self, batch: data.Batch, _, idx: int = 0):
+        return self._shared_eval_step('val', batch, idx)
 
-    def test_step(self, batch: data.Batch, _, id: int = 0):
-        return self._shared_eval_step('test', batch, id)
+    def test_step(self, batch: data.Batch, _, idx: int = 0):
+        return self._shared_eval_step('test', batch, idx)
 
-    def _shared_eval_step(self, prefix: str, batch: data.Batch, id: int):
+    def _shared_eval_step(self, prefix: str, batch: data.Batch, idx: int):
         y = batch.y
         z = self.forward(batch)
         loss = self.criterion(z, y)
@@ -268,7 +269,7 @@ class AweModel(pl.LightningModule):
             'swde_f1': swde_f1
         }
         prefixed = { f'{prefix}_{key}': value for key, value in results.items() }
-        self.log_dict(prefixed, prog_bar=(id == 0), add_dataloader_idx=(id != 0))
+        self.log_dict(prefixed, prog_bar=(idx == 0), add_dataloader_idx=(idx != 0))
         return prefixed
 
     def predict_step(self, batch: data.Batch, *_):
