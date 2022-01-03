@@ -1,4 +1,5 @@
 import collections
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 
 from awe import filtering
@@ -6,6 +7,18 @@ from awe import filtering
 if TYPE_CHECKING:
     from awe import awe_graph
 
+@dataclass
+class CategoryInfo:
+    unique_id: int
+    """Unique ID of the category."""
+
+    count: int
+    """How many times was this category used."""
+
+def categorical_dict() -> dict[str, CategoryInfo]:
+    d = collections.defaultdict()
+    d.default_factory = lambda: CategoryInfo(len(d), 0)
+    return d
 
 class RootContext:
     """
@@ -41,16 +54,16 @@ class RootContext:
     preserve all). Used by `CharacterIdentifiers`.
     """
 
-    visual_categorical: collections.defaultdict[str, dict[str, int]]
+    visual_categorical: dict[str, dict[str, CategoryInfo]]
     """
     Visual categorical features (name of feature -> category label -> category
-    ID). Used by `Visuals`.
+    info). Used by `Visuals`.
     """
 
     def __init__(self):
         self.pages = set()
         self.chars = set()
-        self.visual_categorical = collections.defaultdict(dict)
+        self.visual_categorical = collections.defaultdict(categorical_dict)
 
     def options_from(self, other: 'RootContext'):
         self.cutoff_words = other.cutoff_words

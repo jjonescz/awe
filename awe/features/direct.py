@@ -79,9 +79,10 @@ class Visuals(DirectFeature):
         node = node.visual_node
 
         def categorical(name: str):
-            d = context.root.visual_categorical[name]
             s: str = getattr(node, name)
-            return d.setdefault(s, len(d))
+            i = context.root.visual_categorical[name][s]
+            i.count += 1
+            return i.unique_id
 
         return torch.FloatTensor([
             categorical('font_family'),
