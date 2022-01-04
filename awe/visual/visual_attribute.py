@@ -43,6 +43,14 @@ COLOR = {
     'labels': ['hue', 'brightness', 'alpha']
 }
 
+def parse_font_family(value: str):
+    values = [
+        v.strip().strip('"').strip()
+        for v in value.split(',')
+    ]
+    values = [v for v in values if len(v) != 0]
+    return values[0].lower() if len(values) != 0 else ''
+
 @dataclass
 class VisualAttribute(Generic[T, TInput]):
     name: str
@@ -93,7 +101,8 @@ class VisualAttribute(Generic[T, TInput]):
         return self.selector(c)
 
 _VISUAL_ATTRIBUTES: list[VisualAttribute[Any, Any]] = [
-    VisualAttribute('font_family', categorical, default='"Times New Roman"'),
+    VisualAttribute('font_family', categorical, parse_font_family,
+        default='"Times New Roman"'),
     VisualAttribute('font_size', lambda c: [c.value or 0],
         load_types=(float, int), default=16),
         # In pixels.
