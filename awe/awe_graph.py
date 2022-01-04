@@ -87,7 +87,7 @@ class HtmlPage(ABC):
     def count_label(self, label: str) -> int:
         """Number of occurrences of nodes with the given `label`."""
 
-    # pylint: disable-next=unused-argument
+    # pylint: disable-next=unused-argument,no-self-use
     def get_groundtruth_texts(self, label: str) -> Optional[list[str]]:
         """Groundtruth texts (if available)"""
         return None

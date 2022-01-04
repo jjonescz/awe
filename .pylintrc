@@ -2,7 +2,14 @@
 disable=missing-module-docstring,
     missing-class-docstring,
     missing-function-docstring,
-    invalid-name
+    invalid-name,
+    too-few-public-methods,
+    too-many-locals,
+    too-many-ancestors,
+    too-many-instance-attributes,
+    too-many-arguments,
+    too-many-branches,
+    too-many-statements
 
 [TYPECHECK]
 generated-members=torch.*

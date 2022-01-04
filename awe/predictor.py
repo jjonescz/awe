@@ -26,7 +26,7 @@ class Predictor:
         self.name = name
         self.dataloader = loader.DataLoader(ds[name])
         self.model = model
-        self.cached_page_contexts = dict()
+        self.cached_page_contexts = {}
 
     @property
     def items(self):
