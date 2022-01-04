@@ -60,12 +60,13 @@ class Dataset:
         root.options_from(self.parent.root)
         for idx in indices:
             page = self.pages[idx]
-            ctx = self.parent.prepare_page_context(page, root)
+            with awe_graph.HtmlPageCaching():
+                ctx = self.parent.prepare_page_context(page, root)
 
-            with torch.no_grad():
-                for feature in self.parent.features:
-                    for node in ctx.nodes:
-                        feature.prepare(node, ctx.root)
+                with torch.no_grad():
+                    for feature in self.parent.features:
+                        for node in ctx.nodes:
+                            feature.prepare(node, ctx.root)
             ctx.root.pages.add(page.identifier)
         return root
 
@@ -75,10 +76,11 @@ class Dataset:
         """
         for idx in indices:
             page = self.pages[idx]
-            ctx = self.parent.prepare_page_context(page)
+            with awe_graph.HtmlPageCaching():
+                ctx = self.parent.prepare_page_context(page)
 
-            with torch.no_grad():
-                data = extraction.PageFeatureExtractor(self, ctx).extract()
+                with torch.no_grad():
+                    data = extraction.PageFeatureExtractor(self, ctx).extract()
             if page.data_point_path is None:
                 self.in_memory_data[idx] = data
             else:
@@ -109,12 +111,13 @@ class Dataset:
             except Exception as e:
                 print(f'Cannot load {page.data_point_path}: {repr(e)}')
                 continue
-            with torch.no_grad():
-                for feature in self.parent.features:
-                    if isinstance(feature, f.IndirectFeature):
-                        vector = data[feature.label].to_dense()
-                        vector = feature.update(self.parent.root, vector)
-                        data[feature.label] = vector.to_sparse()
+            with awe_graph.HtmlPageCaching():
+                with torch.no_grad():
+                    for feature in self.parent.features:
+                        if isinstance(feature, f.IndirectFeature):
+                            vector = data[feature.label].to_dense()
+                            vector = feature.update(self.parent.root, vector)
+                            data[feature.label] = vector.to_sparse()
             torch.save(data, page.data_point_path)
 
     def will_compute_page(self, idx: int, skip_existing=True):
