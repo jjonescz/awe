@@ -344,7 +344,6 @@ class PageCaching:
 
     def __exit__(self, *_):
         assert PageCaching.current == self
-        print(f'Clearing cache of page DOMs ({len(self.doms)}).')
         PageCaching.current = None
 
     @classmethod
