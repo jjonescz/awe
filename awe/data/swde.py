@@ -297,6 +297,40 @@ class Page(awe_graph.HtmlPage):
         except Exception as e:
             raise RuntimeError(f'Cannot prepare page {self.file_path}') from e
 
+    def validate(self):
+        # Check that ground-truth values exist.
+        for groundtruth_field in self.site.groundtruth:
+            entry = groundtruth_field.entries[self.index]
+            assert entry.page == self
+            num = sum(1 for _ in entry.nodes)
+            assert num >= len(entry.values), 'Expected at least ' + \
+                f'{len(entry.values)}, found only {num} ' + \
+                f'ground-truth values for {groundtruth_field.name}' + \
+                f'=[{", ".join(entry.values)}] in {self.identifier}.'
+
+        # Check that visual attributes are consistent.
+        ctx = features.PageContextBase(
+            self,
+            filtering.DefaultNodePredicate()
+        )
+        self.prepare(ctx)
+
+        # Check that ground-truth nodes are correctly labeled in the
+        # resulting tree.
+        for groundtruth_field in self.site.groundtruth:
+            entry = groundtruth_field.entries[self.index]
+            assert entry.page == self
+            num = sum(1
+                for n in ctx.nodes
+                if groundtruth_field.name in n.labels
+            )
+            assert num >= len(entry.values), 'Expected at least ' + \
+                f'{len(entry.values)}, found only {num} nodes ' + \
+                f'labeled {groundtruth_field.name} in ' + \
+                f'{self.identifier}.'
+
+        return None
+
 class PageCaching:
     current: Optional['PageCaching'] = None
 
@@ -467,38 +501,7 @@ class Dataset:
                 return None
 
             try:
-                # Check that ground-truth values exist.
-                for groundtruth_field in page.site.groundtruth:
-                    entry = groundtruth_field.entries[page.index]
-                    assert entry.page == page
-                    num = sum(1 for _ in entry.nodes)
-                    assert num >= len(entry.values), 'Expected at least ' + \
-                        f'{len(entry.values)}, found only {num} ' + \
-                        f'ground-truth values for {groundtruth_field.name}' + \
-                        f'=[{", ".join(entry.values)}] in {page.identifier}.'
-
-                # Check that visual attributes are consistent.
-                ctx = features.PageContextBase(
-                    page,
-                    filtering.DefaultNodePredicate()
-                )
-                page.prepare(ctx)
-
-                # Check that ground-truth nodes are correctly labeled in the
-                # resulting tree.
-                for groundtruth_field in page.site.groundtruth:
-                    entry = groundtruth_field.entries[page.index]
-                    assert entry.page == page
-                    num = sum(1
-                        for n in ctx.nodes
-                        if groundtruth_field.name in n.labels
-                    )
-                    assert num >= len(entry.values), 'Expected at least ' + \
-                        f'{len(entry.values)}, found only {num} nodes ' + \
-                        f'labeled {groundtruth_field.name} in ' + \
-                        f'{page.identifier}.'
-
-                return None
+                page.validate()
             except (AssertionError, RuntimeError) as e:
                 if end_after_first_error:
                     found = True
