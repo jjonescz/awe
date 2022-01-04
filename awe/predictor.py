@@ -82,7 +82,7 @@ class Predictor:
     def ground_example(self, index: int, label: str):
         """Gets gold nodes for an example."""
         page = self.items.pages[index]
-        page_nodes = page.initialize_tree().descendants # TODO: Persist?
+        page_nodes = page.get_tree().descendants
         ground_nodes = page.labels.get_nodes(label, page_nodes)
         return ground_nodes
 

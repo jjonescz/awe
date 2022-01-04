@@ -165,7 +165,7 @@ class PageContextBase:
     def nodes(self):
         """Cached list of `page.nodes`."""
         if self._nodes is None:
-            root = self.page.initialize_tree()
+            root = self.page.get_tree()
             self._nodes = list(root.iterate_descendants(
                 self.node_predicate.include_node_itself,
                 self.node_predicate.include_node_descendants
