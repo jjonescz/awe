@@ -4,8 +4,6 @@ import re
 from dataclasses import dataclass
 from typing import Callable, Optional
 
-import parsel
-
 from awe import awe_graph, features, filtering, html_utils, utils, visual
 from awe.data import constants
 
@@ -329,33 +327,6 @@ class Page(awe_graph.HtmlPage):
                 f'labeled {groundtruth_field.name} in ' + \
                 f'{self.identifier}.'
 
-class PageCaching:
-    current: Optional['PageCaching'] = None
-
-    doms: dict[str, parsel.Selector]
-    """Page identifier -> cached DOM."""
-
-    def __init__(self):
-        self.doms = {}
-
-    def __enter__(self):
-        assert PageCaching.current is None
-        PageCaching.current = self
-
-    def __exit__(self, *_):
-        assert PageCaching.current == self
-        PageCaching.current = None
-
-    @classmethod
-    def get_dom(cls, page: Page, factory: Callable[[Page], parsel.Selector]):
-        if cls.current is None:
-            return factory(page)
-        dom = cls.current.doms.get(page.identifier)
-        if dom is None:
-            dom = factory(page)
-            cls.current.doms[page.identifier] = dom
-        return dom
-
 class PageLabels(awe_graph.HtmlLabels):
     nodes: dict[str, list[str]]
     """Map label -> groundtruth XPaths."""
@@ -413,7 +384,7 @@ class GroundTruthEntry:
         return html_utils.parse_html(page_html)
 
     def _iterate_nodes(self):
-        page_dom = PageCaching.get_dom(self.page,
+        page_dom = awe_graph.HtmlPageCaching.get('dom', self.page,
             GroundTruthEntry._prepare_page_dom)
 
         for value in self.values:
@@ -498,7 +469,7 @@ class Dataset:
                 return None
 
             try:
-                with PageCaching():
+                with awe_graph.HtmlPageCaching():
                     page.validate()
                 return None
             except (AssertionError, RuntimeError) as e:

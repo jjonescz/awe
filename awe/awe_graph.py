@@ -1,6 +1,7 @@
+import collections
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union
 
 import parsel
 from lxml import etree
@@ -11,6 +12,7 @@ from awe.data.wayback import WaybackPage
 if TYPE_CHECKING:
     from awe import features, visual
 
+T = TypeVar('T')
 
 class HtmlLabels(ABC):
     @abstractmethod
@@ -110,6 +112,33 @@ class HtmlPage(ABC):
 
     def prepare(self, ctx: 'features.PageContextBase'):
         """Prepare page features."""
+
+class HtmlPageCaching:
+    current: Optional['HtmlPageCaching'] = None
+
+    cached: dict[str, dict[str, Any]]
+    """Cache group -> page identifier -> cached value."""
+
+    def __init__(self):
+        self.cached = collections.defaultdict(dict)
+
+    def __enter__(self):
+        assert HtmlPageCaching.current is None
+        HtmlPageCaching.current = self
+
+    def __exit__(self, *_):
+        assert HtmlPageCaching.current == self
+        HtmlPageCaching.current = None
+
+    @classmethod
+    def get(cls, name: str, page: HtmlPage, factory: Callable[[HtmlPage], T]) -> T:
+        if cls.current is None:
+            return factory(page)
+        value = cls.current.cached[name].get(page.identifier)
+        if value is None:
+            value = factory(page)
+            cls.current.cached[name][page.identifier] = value
+        return value
 
 @dataclass
 class BoundingBox:
