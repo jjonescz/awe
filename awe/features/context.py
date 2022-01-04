@@ -15,6 +15,9 @@ class CategoryInfo:
     count: int
     """How many times was this category used."""
 
+    def merge_with(self, other: 'CategoryInfo'):
+        self.count += other.count
+
 def categorical_dict() -> dict[str, CategoryInfo]:
     d = collections.defaultdict()
     d.default_factory = lambda: CategoryInfo(len(d), 0)
@@ -72,15 +75,29 @@ class RootContext:
             setattr(self, option, getattr(other, option))
 
     def merge_with(self, other: 'RootContext'):
+        # Check that options are consistent.
+        for option in self.OPTIONS:
+            assert getattr(self, option) == getattr(other, option), \
+                f'Option `{option}` does not match ' + \
+                f'({getattr(self, option)} vs. {getattr(other, option)})'
+
         self.pages.update(other.pages)
         self.chars.update(other.chars)
         self.max_word_len = max(self.max_word_len, other.max_word_len)
         self.max_num_words = max(self.max_num_words, other.max_num_words)
 
-        for option in self.OPTIONS:
-            assert getattr(self, option) == getattr(other, option), \
-                f'Option `{option}` does not match ' + \
-                f'({getattr(self, option)} vs. {getattr(other, option)})'
+        # Merge `visual_categorical` dictionaries.
+        for f, other_category in other.visual_categorical.items():
+            curr_category = self.visual_categorical.get(f)
+            if curr_category is None:
+                self.visual_categorical[f] = other_category
+            else:
+                for l, other_info in other_category.items():
+                    curr_info = curr_category.get(l)
+                    if curr_info is None:
+                        curr_category[l] = other_info
+                    else:
+                        curr_info.merge_with(other_info)
 
     def extract_options(self):
         return {
