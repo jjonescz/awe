@@ -27,7 +27,7 @@ ds.features = [
     features.Depth(),
     features.IsLeaf(),
     features.CharCategories(),
-    features.FontSize(),
+    features.Visuals(),
     features.CharIdentifiers(),
     features.WordIdentifiers(),
 ]
