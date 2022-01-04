@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from awe import awe_graph, utils
+from awe.features.visual import visual_attribute
 
 if TYPE_CHECKING:
     from awe import features
@@ -129,26 +130,8 @@ class DomData:
         # Load visual attributes except for text fragments (they don't have
         # their own but inherit them from their container node instead).
         if not node.is_text:
-            load_attribute('font_family', default='"Times New Roman"')
-            load_attribute('font_size', default=16)
-            load_attribute('font_weight', int, default='400')
-            load_attribute('font_style', default='normal')
-            load_attribute('text_decoration', default='none')
-            load_attribute('text_align', default='start')
-            load_attribute('color', Color.parse, default='#000000ff')
-            load_attribute('background_color', Color.parse, default='#00000000')
-            load_attribute('background_image', default='none')
-            load_attribute('box_shadow', default='none')
-            load_attribute('cursor', default='auto')
-            load_attribute('letter_spacing', default=0)
-            load_attribute('line_height', default=node.font_size * 1.2)
-            load_attribute('opacity', default=1)
-            load_attribute('overflow', default='auto')
-            load_attribute('pointer_events', default='auto')
-            load_attribute('text_shadow', default='none')
-            load_attribute('text_overflow', default='clip')
-            load_attribute('text_transform', default='none')
-            load_attribute('z_index', default='auto')
+            for a in visual_attribute.VISUAL_ATTRIBUTES.values():
+                load_attribute(a.name, a.selector, a.get_default(node))
         return True
 
     def find(self, xpath: str):

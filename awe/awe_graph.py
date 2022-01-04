@@ -183,50 +183,8 @@ class HtmlNode:
 
     box: Optional[BoundingBox] = utils.lazy_field()
 
-    font_family: Optional[str] = utils.lazy_field()
-
-    font_size: Optional[float] = utils.lazy_field()
-    """In pixels."""
-
-    font_weight: Optional[float] = utils.lazy_field()
-    """In font weight units divided by 100. E.g., "normal" is 4."""
-
-    text_transform: Optional[str] = utils.lazy_field()
-
-    font_style: Optional[str] = utils.lazy_field()
-
-    text_align: Optional[str] = utils.lazy_field()
-
-    cursor: Optional[str] = utils.lazy_field()
-
-    letter_spacing: Optional[float] = utils.lazy_field()
-    """In pixels."""
-
-    line_height: Optional[float] = utils.lazy_field()
-    """In pixels."""
-
-    opacity: Optional[float] = utils.lazy_field()
-    """0 = transparent, 1 = opaque."""
-
-    overflow: Optional[str] = utils.lazy_field()
-
-    pointer_events: Optional[str] = utils.lazy_field()
-
-    text_overflow: Optional[str] = utils.lazy_field()
-
-    color: Optional['visual.Color'] = utils.lazy_field()
-
-    background_color: Optional['visual.Color'] = utils.lazy_field()
-
-    text_decoration: Optional[str] = utils.lazy_field()
-
-    background_image: Optional[str] = utils.lazy_field()
-
-    box_shadow: Optional[str] = utils.lazy_field()
-
-    text_shadow: Optional[str] = utils.lazy_field()
-
-    z_index: Optional[str] = utils.lazy_field()
+    visuals: dict[str, Any] = field(init=False, default_factory=dict)
+    """`VisualAttribute.name` -> attribute's value or `None`."""
 
     _children: list['HtmlNode'] = utils.cache_field()
 
@@ -362,23 +320,4 @@ class HtmlNode:
         they don't have most of visual features by themselves).
         """
         if self.is_text:
-            self.font_family = self.parent.font_family
-            self.font_size = self.parent.font_size
-            self.font_weight = self.parent.font_weight
-            self.text_transform = self.parent.text_transform
-            self.font_style = self.parent.font_style
-            self.text_align = self.parent.text_align
-            self.cursor = self.parent.cursor
-            self.letter_spacing = self.parent.letter_spacing
-            self.line_height = self.parent.line_height
-            self.opacity = self.parent.opacity
-            self.overflow = self.parent.overflow
-            self.pointer_events = self.parent.pointer_events
-            self.text_overflow = self.parent.text_overflow
-            self.color = self.parent.color
-            self.background_color = self.parent.background_color
-            self.text_decoration = self.parent.text_decoration
-            self.background_image = self.parent.background_image
-            self.box_shadow = self.parent.box_shadow
-            self.text_shadow = self.parent.text_shadow
-            self.z_index = self.parent.z_index
+            self.visuals.update(self.parent.visuals)
