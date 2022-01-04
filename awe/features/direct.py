@@ -6,7 +6,7 @@ import torch
 # pylint: disable=wildcard-import, unused-wildcard-import
 from awe.features.context import *
 from awe.features.feature import *
-from awe.features.visual import visual_attribute
+from awe.visual import visual_attribute
 
 if TYPE_CHECKING:
     from awe import awe_graph

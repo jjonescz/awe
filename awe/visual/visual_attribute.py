@@ -1,8 +1,12 @@
 from dataclasses import dataclass, field
-from typing import Any, Callable, Generic, Optional, TypeVar, Union
+from typing import (TYPE_CHECKING, Any, Callable, Generic, Optional, TypeVar,
+                    Union)
 
-from awe import awe_graph, features, utils
-from awe.features.visual import color
+from awe import utils
+from awe.visual import color
+
+if TYPE_CHECKING:
+    from awe import awe_graph, features
 
 T = TypeVar('T')
 
@@ -11,8 +15,8 @@ class AttributeContext(Generic[T]):
     """Everything needed to compute feature from `VisualAttribute` of a node."""
 
     attribute: 'VisualAttribute[T]'
-    node: awe_graph.HtmlNode
-    context: features.RootContext
+    node: 'awe_graph.HtmlNode'
+    context: 'features.RootContext'
     freezed: bool
 
     @property
@@ -56,7 +60,7 @@ class VisualAttribute(Generic[T]):
     labels: Optional[list[str]] = field(default=None)
     """Column labels of the resulting feature vector."""
 
-    default: Union[T, Callable[[awe_graph.HtmlNode], T]] = \
+    default: Union[T, Callable[['awe_graph.HtmlNode'], T]] = \
         field(default=None, repr=False)
     """Default Python value if JSON is missing this attribute."""
 
@@ -64,7 +68,7 @@ class VisualAttribute(Generic[T]):
     def camel_case_name(self):
         utils.to_camel_case(self.name)
 
-    def get_default(self, node: awe_graph.HtmlNode) -> T:
+    def get_default(self, node: 'awe_graph.HtmlNode') -> T:
         if callable(self.default):
             return self.default(node)
         return self.default

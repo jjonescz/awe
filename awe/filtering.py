@@ -4,7 +4,7 @@ from typing import Any
 from lxml import etree
 
 from awe import awe_graph
-from awe.features.visual import dom_data
+from awe.visual import dom_data
 
 
 class NodePredicate(ABC):

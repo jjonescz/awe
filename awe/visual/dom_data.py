@@ -4,7 +4,7 @@ import re
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from awe import awe_graph, utils
-from awe.features.visual import visual_attribute
+from awe.visual import visual_attribute
 
 if TYPE_CHECKING:
     from awe import features

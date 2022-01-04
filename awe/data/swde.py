@@ -6,7 +6,7 @@ from typing import Callable, Optional
 
 from awe import awe_graph, features, filtering, html_utils, utils
 from awe.data import constants
-from awe.features.visual import dom_data
+from awe.visual import dom_data
 
 URL = 'https://web.archive.org/web/20210630013015id_/' + \
 'https://codeplexarchive.blob.core.windows.net/archive/projects/swde/swde.zip'
