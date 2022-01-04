@@ -58,26 +58,41 @@ class CharCategories(DirectFeature):
 class Visuals(DirectFeature):
     """Visual features."""
 
+    def __init__(self,
+        enabled: Optional[list[str]] = None,
+        disabled: Optional[list[str]] = None
+    ):
+        # Filter visual attributes if caller provides some constraints.
+        self.visual_attributes = [
+            a
+            for a in visual_attribute.VISUAL_ATTRIBUTES.values()
+            if enabled is None or a.name in enabled
+            if disabled is None or a.name not in disabled
+        ]
+
     @property
     def labels(self):
         return [
             l
-            for a in visual_attribute.VISUAL_ATTRIBUTES.values()
+            for a in self.visual_attributes
             for l in a.get_labels()
         ]
 
     def prepare(self, node: 'awe_graph.HtmlNode', context: RootContext):
-        Visuals._compute(node, context, freezed = False)
+        self._compute(node, context, freezed = False)
 
     def compute(self, node: 'awe_graph.HtmlNode', context: PageContext):
-        return Visuals._compute(node, context.root, freezed = True)
+        return self._compute(node, context.root, freezed = True)
 
-    @staticmethod
-    def _compute(node: 'awe_graph.HtmlNode', context: RootContext, freezed: bool):
+    def _compute(self,
+        node: 'awe_graph.HtmlNode',
+        context: RootContext,
+        freezed: bool
+    ):
         node = node.visual_node
         return torch.FloatTensor([
             f
-            for a in visual_attribute.VISUAL_ATTRIBUTES.values()
+            for a in self.visual_attributes
             for f in a.selector(
                 visual_attribute.AttributeContext(a, node, context, freezed))
         ])
