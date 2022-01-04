@@ -329,8 +329,6 @@ class Page(awe_graph.HtmlPage):
                 f'labeled {groundtruth_field.name} in ' + \
                 f'{self.identifier}.'
 
-        return None
-
 class PageCaching:
     current: Optional['PageCaching'] = None
 
@@ -501,7 +499,9 @@ class Dataset:
                 return None
 
             try:
-                page.validate()
+                with PageCaching():
+                    page.validate()
+                return None
             except (AssertionError, RuntimeError) as e:
                 if end_after_first_error:
                     found = True
