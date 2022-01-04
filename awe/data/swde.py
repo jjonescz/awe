@@ -460,6 +460,8 @@ class Dataset:
                 # Check that ground-truth nodes are correctly labeled in the
                 # resulting tree.
                 for groundtruth_field in page.site.groundtruth:
+                    entry = groundtruth_field.entries[page.index]
+                    assert entry.page == page
                     num = sum(1
                         for n in ctx.nodes
                         if groundtruth_field.name in n.labels
