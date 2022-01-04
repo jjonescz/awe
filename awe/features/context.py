@@ -20,7 +20,8 @@ class CategoryInfo:
 
 def categorical_dict() -> dict[str, CategoryInfo]:
     d = collections.defaultdict()
-    d.default_factory = lambda: CategoryInfo(len(d), 0)
+    # Note that ID `0` is reserved for "unseen" category.
+    d.default_factory = lambda: CategoryInfo(len(d) + 1, 0)
     return d
 
 class RootContext:
@@ -59,7 +60,8 @@ class RootContext:
     preserve all). Used by `CharacterIdentifiers`.
     """
 
-    visual_categorical: dict[str, dict[str, CategoryInfo]]
+    visual_categorical: collections.defaultdict[str,
+        collections.defaultdict[str, CategoryInfo]]
     """
     Visual categorical features (name of feature -> category label -> category
     info). Used by `Visuals`.
@@ -131,6 +133,12 @@ class RootContext:
             'max_word_len': self.max_word_len,
             'visual_categorical': self.total_visual_categorical_count()
         }
+
+    def freeze(self):
+        # Needed to pickle this object.
+        for value in self.visual_categorical.values():
+            value.default_factory = None
+        self.visual_categorical.default_factory = None
 
 class LiveContext:
     """

@@ -39,6 +39,7 @@ class PageFeatureExtractor:
         node: awe_graph.HtmlNode,
         feature: features.Feature
     ):
+        feature.prepare(node, self.ctx.root)
         vector = feature.compute(node, self.ctx)
         if isinstance(feature, features.DirectFeature):
             return (feature.__class__.__name__, dict(zip(feature.labels, vector)))

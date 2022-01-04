@@ -85,13 +85,25 @@ class Visuals(DirectFeature):
             'text_transform'
         ]
 
+    def prepare(self, node: 'awe_graph.HtmlNode', context: RootContext):
+        Visuals._compute(node, context, freezed = False)
+
     def compute(self, node: 'awe_graph.HtmlNode', context: PageContext):
+        return Visuals._compute(node, context.root, freezed = True)
+
+    @staticmethod
+    def _compute(node: 'awe_graph.HtmlNode', context: RootContext, freezed: bool):
         node = node.visual_node
 
         def categorical(name: str):
             s: str = getattr(node, name)
-            i = context.root.visual_categorical[name][s]
-            i.count += 1
+            if freezed:
+                i = context.visual_categorical[name].get(s)
+                if i is None:
+                    return 0
+            else:
+                i = context.visual_categorical[name][s]
+                i.count += 1
             return i.unique_id
 
         def color(name: str):
