@@ -464,7 +464,7 @@ class Dataset:
                         for n in ctx.nodes
                         if groundtruth_field.name in n.labels
                     )
-                    assert num >= len(entry.values),  'Expected at least ' + \
+                    assert num >= len(entry.values), 'Expected at least ' + \
                         f'{len(entry.values)}, found only {num} nodes ' + \
                         f'labeled {groundtruth_field.name} in ' + \
                         f'{page.identifier}.'
