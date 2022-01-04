@@ -297,6 +297,34 @@ class Page(awe_graph.HtmlPage):
         except Exception as e:
             raise RuntimeError(f'Cannot prepare page {self.file_path}') from e
 
+class PageCaching:
+    current: Optional['PageCaching'] = None
+
+    doms: dict[str, parsel.Selector]
+    """Page identifier -> cached DOM."""
+
+    def __init__(self):
+        self.doms = {}
+
+    def __enter__(self):
+        assert PageCaching.current is None
+        PageCaching.current = self
+
+    def __exit__(self, *_):
+        assert PageCaching.current == self
+        print(f'Clearing cache of page DOMs ({len(self.doms)}).')
+        PageCaching.current = None
+
+    @classmethod
+    def get_dom(cls, page: Page, factory: Callable[[Page], parsel.Selector]):
+        if cls.current is None:
+            return factory(page)
+        dom = cls.current.doms.get(page.identifier)
+        if dom is None:
+            dom = factory(page)
+            cls.current.doms[page.identifier] = dom
+        return dom
+
 class PageLabels(awe_graph.HtmlLabels):
     nodes: dict[str, list[str]]
     """Map label -> groundtruth XPaths."""
@@ -338,10 +366,10 @@ class GroundTruthEntry:
         Returns XPaths to nodes from `page.html` matching the groundtruth
         `values`.
         """
-        return list(self.iterate_nodes())
+        return list(self._iterate_nodes())
 
     @staticmethod
-    def prepare_page_dom(page: Page):
+    def _prepare_page_dom(page: Page):
         page_html = page.html
 
         # HACK: If there are HTML-encoded spaces in the HTML (e.g., `&nbsp;`),
@@ -353,9 +381,9 @@ class GroundTruthEntry:
 
         return html_utils.parse_html(page_html)
 
-    def iterate_nodes(self, page_dom: Optional[parsel.Selector] = None):
-        if page_dom is None:
-            page_dom = GroundTruthEntry.prepare_page_dom(self.page)
+    def _iterate_nodes(self):
+        page_dom = PageCaching.get_dom(self.page,
+            GroundTruthEntry._prepare_page_dom)
 
         for value in self.values:
             # Note that this XPath is written so that it finds text fragments X,
@@ -440,11 +468,10 @@ class Dataset:
 
             try:
                 # Check that ground-truth values exist.
-                page_dom = GroundTruthEntry.prepare_page_dom(page)
                 for groundtruth_field in page.site.groundtruth:
                     entry = groundtruth_field.entries[page.index]
                     assert entry.page == page
-                    num = sum(1 for _ in entry.iterate_nodes(page_dom))
+                    num = sum(1 for _ in entry.nodes)
                     assert num >= len(entry.values), 'Expected at least ' + \
                         f'{len(entry.values)}, found only {num} ' + \
                         f'ground-truth values for {groundtruth_field.name}' + \
