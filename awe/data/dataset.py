@@ -158,15 +158,22 @@ class Dataset:
             )
         return []
 
-    def delete_saved(self):
+    def delete_saved(self, parallelize: Optional[int] = None):
         """Deletes saved computed features (backup file `.bak` is created)."""
-        counter = 0
-        for page in self.pages:
-            pt_path = page.data_point_path
+
+        def delete_one(pt_path):
             if pt_path is not None and os.path.exists(pt_path):
                 os.replace(pt_path, f'{pt_path}.bak')
-                counter += 1
-        return counter
+                return 1
+            return 0
+
+        pt_paths = map(lambda p: p.data_point_path, self.pages)
+        return sum(utils.parallelize(
+            parallelize,
+            delete_one,
+            pt_paths,
+            self.name
+        ))
 
     def _prepare_label_map(self):
         if self.label_map is None:
@@ -408,10 +415,10 @@ class DatasetCollection:
             os.replace(self.root_context_path, f'{self.root_context_path}.bak')
         self.init_root_context()
 
-    def delete_saved_features(self):
+    def delete_saved_features(self, parallelize: Optional[int] = None):
         counter = 0
         for ds in self.datasets.values():
-            counter += ds.delete_saved()
+            counter += ds.delete_saved(parallelize=parallelize)
         return counter
 
     def count_labels(self):
