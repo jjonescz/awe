@@ -3,11 +3,11 @@ import importlib
 import torch
 import numpy as np
 
-from awe import utils, filtering, features, html_utils, awe_graph, visual
+from awe import utils, filtering, features, html_utils, awe_graph
 from awe.data import swde, live, dataset
 from awe.features import extraction
 
-for module in [utils, filtering, dataset, swde, live, features, extraction, html_utils, awe_graph, visual]:
+for module in [utils, filtering, dataset, swde, live, features, extraction, html_utils, awe_graph]:
     importlib.reload(module)
 
 np.random.seed(42)

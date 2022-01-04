@@ -10,7 +10,7 @@ from awe import html_utils, utils
 from awe.data.wayback import WaybackPage
 
 if TYPE_CHECKING:
-    from awe import features, visual
+    from awe import features
 
 T = TypeVar('T')
 

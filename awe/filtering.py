@@ -3,7 +3,9 @@ from typing import Any
 
 from lxml import etree
 
-from awe import awe_graph, visual
+from awe import awe_graph
+from awe.features.visual import dom_data
+
 
 class NodePredicate(ABC):
     def include_node_descendants(self, node: awe_graph.HtmlNode) -> bool:
@@ -40,7 +42,7 @@ class DefaultNodePredicate(NodePredicate):
     def include_visual(self, node_data: dict[str, Any], node_name: str):
         return (
             node_data.get('whiteSpace') is not True and
-            visual.get_tag_name(node_name) not in self.ignored_tag_names
+            dom_data.get_tag_name(node_name) not in self.ignored_tag_names
         )
 
 class LeafNodePredicate(DefaultNodePredicate):
@@ -52,6 +54,6 @@ class LeafNodePredicate(DefaultNodePredicate):
         return super().include_node(node)
 
     def include_visual(self, node_data: dict[str, Any], node_name: str):
-        if visual.get_tag_name(node_name) != 'text':
+        if dom_data.get_tag_name(node_name) != 'text':
             return False
         return super().include_visual(node_data, node_name)

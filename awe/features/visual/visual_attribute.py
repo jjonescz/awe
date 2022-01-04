@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Any, Callable, Generic, Optional, TypeVar, Union
 
-from awe import awe_graph, features, utils, visual
+from awe import awe_graph, features, utils
+from awe.features.visual import color
 
 T = TypeVar('T')
 
@@ -31,12 +32,12 @@ def categorical(c: AttributeContext[str]):
         i.count += 1
     return i.unique_id
 
-def color(c: AttributeContext[visual.Color]):
+def select_color(c: AttributeContext[color.Color]):
     return [c.value.hue, c.value.brightness / 255, c.value.alpha / 255]
 
 COLOR = {
-    'selector': color,
-    'parser': visual.Color.parse,
+    'selector': select_color,
+    'parser': color.Color.parse,
     'labels': ['hue', 'brightness', 'alpha']
 }
 

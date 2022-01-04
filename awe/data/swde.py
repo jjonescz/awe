@@ -4,8 +4,9 @@ import re
 from dataclasses import dataclass
 from typing import Callable, Optional
 
-from awe import awe_graph, features, filtering, html_utils, utils, visual
+from awe import awe_graph, features, filtering, html_utils, utils
 from awe.data import constants
+from awe.features.visual import dom_data
 
 URL = 'https://web.archive.org/web/20210630013015id_/' + \
 'https://codeplexarchive.blob.core.windows.net/archive/projects/swde/swde.zip'
@@ -237,7 +238,7 @@ class Page(awe_graph.HtmlPage):
     @property
     def dom_data(self):
         json_path = self.file_path.removesuffix('.htm') + '.json'
-        return visual.DomData(json_path)
+        return dom_data.DomData(json_path)
 
     @property
     def has_dom_data(self):
@@ -289,9 +290,9 @@ class Page(awe_graph.HtmlPage):
 
     def prepare(self, ctx: features.PageContextBase):
         try:
-            dom_data = self.dom_data
-            dom_data.read()
-            dom_data.load_all(ctx)
+            data = self.dom_data
+            data.read()
+            data.load_all(ctx)
         except Exception as e:
             raise RuntimeError(f'Cannot prepare page {self.file_path}') from e
 
