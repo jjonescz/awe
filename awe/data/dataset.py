@@ -92,7 +92,21 @@ class Dataset:
                 # Save to temporary file first and then move it to prevent
                 # partially saved features when there's an error.
                 torch.save(data, f'{page.data_point_path}.tmp')
-                os.replace(f'{page.data_point_path}.tmp', page.data_point_path)
+
+                # HACK: Rename can sometimes fail (probably because of virtual
+                # file system errors), so we try multiple times.
+                MAX_RETRIES = 3
+                for retry in range(MAX_RETRIES):
+                    try:
+                        os.replace(f'{page.data_point_path}.tmp',
+                            page.data_point_path)
+                    except FileNotFoundError:
+                        if retry == 2:
+                            raise
+                        print(f'Retrying {page.data_point_path} ' + \
+                            f'({retry + 1}/{MAX_RETRIES})')
+                        continue
+                    break
 
     def update_page_features(self, indices: list[int]):
         """
