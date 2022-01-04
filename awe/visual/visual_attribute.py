@@ -59,7 +59,7 @@ class VisualAttribute(Generic[T]):
 
     default: Union[T, Callable[['awe_graph.HtmlNode'], T]] = \
         field(default=None, repr=False)
-    """Default Python value if JSON is missing this attribute."""
+    """Default JSON value if DOM data are missing this attribute."""
 
     @property
     def camel_case_name(self):
@@ -77,7 +77,7 @@ _VISUAL_ATTRIBUTES: list[VisualAttribute[Any]] = [
     VisualAttribute('font_family', categorical, default='"Times New Roman"'),
     VisualAttribute('font_size', lambda c: c.value or 0, default=16),
         # In pixels.
-    VisualAttribute('font_weight', lambda c: c.value / 100, default='400'),
+    VisualAttribute('font_weight', lambda c: float(c.value) / 100, default='400'),
         # In font weight units divided by 100. E.g., "normal" is 4.
     VisualAttribute('font_style', categorical, default='normal'),
     VisualAttribute('text_decoration', categorical, default='none'),
