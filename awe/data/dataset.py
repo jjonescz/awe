@@ -167,7 +167,7 @@ class Dataset:
                 return 1
             return 0
 
-        pt_paths = map(lambda p: p.data_point_path, self.pages)
+        pt_paths = list(map(lambda p: p.data_point_path, self.pages))
         return sum(utils.parallelize(
             parallelize,
             delete_one,
