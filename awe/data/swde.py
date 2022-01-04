@@ -477,9 +477,7 @@ class Dataset:
                     error_callback(index, page, e)
                 if collect_errors:
                     return index, e
-                else:
-                    raise RuntimeError(
-                        f'Cannot validate page at {index}') from e
+                raise RuntimeError(f'Cannot validate page at {index}') from e
 
         if pages is None:
             pages = [
