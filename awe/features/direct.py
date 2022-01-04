@@ -76,7 +76,8 @@ class Visuals(DirectFeature):
     def _compute(node: 'awe_graph.HtmlNode', context: RootContext, freezed: bool):
         node = node.visual_node
         return torch.FloatTensor([
-            a.selector(
-                visual_attribute.AttributeContext(a, node, context, freezed))
+            f
             for a in visual_attribute.VISUAL_ATTRIBUTES.values()
+            for f in a.selector(
+                visual_attribute.AttributeContext(a, node, context, freezed))
         ])

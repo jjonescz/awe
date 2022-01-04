@@ -31,7 +31,7 @@ def categorical(c: AttributeContext[str]):
     else:
         i = c.context.visual_categorical[c.attribute.name][c.value]
         i.count += 1
-    return i.unique_id
+    return [i.unique_id]
 
 def select_color(c: AttributeContext[color.Color]):
     return [c.value.hue, c.value.brightness / 255, c.value.alpha / 255]
@@ -75,9 +75,10 @@ class VisualAttribute(Generic[T]):
 
 _VISUAL_ATTRIBUTES: list[VisualAttribute[Any]] = [
     VisualAttribute('font_family', categorical, default='"Times New Roman"'),
-    VisualAttribute('font_size', lambda c: c.value or 0, default=16),
+    VisualAttribute('font_size', lambda c: [c.value or 0], default=16),
         # In pixels.
-    VisualAttribute('font_weight', lambda c: float(c.value) / 100, default='400'),
+    VisualAttribute('font_weight', lambda c: [float(c.value) / 100],
+        default='400'),
         # In font weight units divided by 100. E.g., "normal" is 4.
     VisualAttribute('font_style', categorical, default='normal'),
     VisualAttribute('text_decoration', categorical, default='none'),
@@ -87,12 +88,12 @@ _VISUAL_ATTRIBUTES: list[VisualAttribute[Any]] = [
     VisualAttribute('background_image', categorical, default='none'),
     VisualAttribute('box_shadow', categorical, default='none'),
     VisualAttribute('cursor', categorical, default='auto'),
-    VisualAttribute('letter_spacing', float, default=0),
+    VisualAttribute('letter_spacing', lambda c: [c.value], default=0),
         # In pixels.
-    VisualAttribute('line_height', float,
+    VisualAttribute('line_height', lambda c: [c.value],
         default=lambda n: n.visuals['font_size'] * 1.2),
         # In pixels.
-    VisualAttribute('opacity', float, default=1),
+    VisualAttribute('opacity', lambda c: [c.value], default=1),
         # 0 = transparent, 1 = opaque.
     VisualAttribute('overflow', categorical, default='auto'),
     VisualAttribute('pointer_events', categorical, default='auto'),
