@@ -21,10 +21,7 @@ class AttributeContext(Generic[T]):
 
     @property
     def value(self) -> T:
-        return self[self.attribute.name]
-
-    def __getitem__(self, name: str) -> Any:
-        return self.node.visuals.get(name)
+        return self.node.visuals.get(self.attribute.name)
 
 def categorical(c: AttributeContext[str]):
     if c.freezed:
@@ -92,7 +89,8 @@ _VISUAL_ATTRIBUTES: list[VisualAttribute[Any]] = [
     VisualAttribute('cursor', categorical, default='auto'),
     VisualAttribute('letter_spacing', float, default=0),
         # In pixels.
-    VisualAttribute('line_height', float, default=lambda c: c['font_size'] * 1.2),
+    VisualAttribute('line_height', float,
+        default=lambda n: n.visuals['font_size'] * 1.2),
         # In pixels.
     VisualAttribute('opacity', float, default=1),
         # 0 = transparent, 1 = opaque.
