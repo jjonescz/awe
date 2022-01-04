@@ -47,8 +47,8 @@ class VisualAttribute(Generic[T]):
     name: str
     """Name in snake_case."""
 
-    selector: Callable[[AttributeContext[T]], list[float]] = \
-        field(repr=False)
+    selector: Optional[Callable[[AttributeContext[T]], list[float]]] = \
+        field(default=None, repr=False)
     """Converts attribute to feature vector."""
 
     parser: Callable[[Any], T] = field(default=lambda x: x, repr=False)
@@ -75,11 +75,16 @@ class VisualAttribute(Generic[T]):
             return [f'{self.name}_{l}' for l in self.labels]
         return [self.name]
 
+    def select(self, c: AttributeContext[T]):
+        if self.selector is None:
+            return [c.value]
+        return self.selector(c)
+
 _VISUAL_ATTRIBUTES: list[VisualAttribute[Any]] = [
     VisualAttribute('font_family', categorical, default='"Times New Roman"'),
     VisualAttribute('font_size', lambda c: [c.value or 0], default=16),
         # In pixels.
-    VisualAttribute('font_weight', lambda c: [float(c.value) / 100],
+    VisualAttribute('font_weight', lambda c: [c.value / 100], float,
         default='400'),
         # In font weight units divided by 100. E.g., "normal" is 4.
     VisualAttribute('font_style', categorical, default='normal'),
@@ -90,12 +95,12 @@ _VISUAL_ATTRIBUTES: list[VisualAttribute[Any]] = [
     VisualAttribute('background_image', categorical, default='none'),
     VisualAttribute('box_shadow', categorical, default='none'),
     VisualAttribute('cursor', categorical, default='auto'),
-    VisualAttribute('letter_spacing', lambda c: [c.value], default=0),
+    VisualAttribute('letter_spacing', default=0),
         # In pixels.
-    VisualAttribute('line_height', lambda c: [c.value],
+    VisualAttribute('line_height',
         default=lambda n: n.visuals['font_size'] * 1.2),
         # In pixels.
-    VisualAttribute('opacity', lambda c: [c.value], default=1),
+    VisualAttribute('opacity', default=1),
         # 0 = transparent, 1 = opaque.
     VisualAttribute('overflow', categorical, default='auto'),
     VisualAttribute('pointer_events', categorical, default='auto'),

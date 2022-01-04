@@ -93,6 +93,6 @@ class Visuals(DirectFeature):
         return torch.FloatTensor([
             f
             for a in self.visual_attributes
-            for f in a.selector(
+            for f in a.select(
                 visual_attribute.AttributeContext(a, node, context, freezed))
         ])
