@@ -162,15 +162,18 @@ class Dataset:
         """Deletes saved computed features (backup file `.bak` is created)."""
 
         def delete_one(pt_path):
-            if pt_path is not None and os.path.exists(pt_path):
-                try:
-                    os.replace(pt_path, f'{pt_path}.bak')
-                except FileNotFoundError:
-                    return 0
-                return 1
-            return 0
+            try:
+                os.replace(pt_path, f'{pt_path}.bak')
+            except FileNotFoundError:
+                return 0
+            return 1
 
-        pt_paths = list(map(lambda p: p.data_point_path, self.pages))
+        pt_paths = list(
+            filter(lambda p: p is not None and os.path.exists(p),
+            map(lambda p: p.data_point_path, self.pages))
+        )
+        if len(pt_paths) == 0:
+            return 0
         return sum(utils.parallelize(
             parallelize,
             delete_one,
