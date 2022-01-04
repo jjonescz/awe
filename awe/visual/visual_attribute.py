@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
-from typing import (TYPE_CHECKING, Any, Callable, Generic, Optional, TypeVar,
-                    Union)
+from typing import (TYPE_CHECKING, Any, Callable, Generic, Optional, Tuple,
+                    TypeVar, Union)
 
 from awe import utils
 from awe.visual import color
@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from awe import awe_graph, features
 
 T = TypeVar('T')
+TInput = TypeVar('TInput')
 
 @dataclass
 class AttributeContext(Generic[T]):
@@ -43,7 +44,7 @@ COLOR = {
 }
 
 @dataclass
-class VisualAttribute(Generic[T]):
+class VisualAttribute(Generic[T, TInput]):
     name: str
     """Name in snake_case."""
 
@@ -51,8 +52,12 @@ class VisualAttribute(Generic[T]):
         field(default=None, repr=False)
     """Converts attribute to feature vector."""
 
-    parser: Callable[[Any], T] = field(default=lambda x: x, repr=False)
+    parser: Callable[[TInput], T] = field(default=lambda x: x, repr=False)
     """Used when converting from JSON value to Python value."""
+
+    load_types: Union[type[TInput], Tuple[type[TInput]]] = \
+        field(default=str, repr=False)
+    """What types are allowed to be loaded from JSON DOM data."""
 
     labels: Optional[list[str]] = field(default=None)
     """Column labels of the resulting feature vector."""
@@ -75,17 +80,25 @@ class VisualAttribute(Generic[T]):
             return [f'{self.name}_{l}' for l in self.labels]
         return [self.name]
 
+    def parse(self, value: TInput):
+        if not isinstance(value, self.load_types):
+            raise RuntimeError(f'Expected attribute {self.name} to be ' + \
+                f'loaded as {self.load_types} but found {type(value)} ' + \
+                f'({value}).')
+        return self.parser(value)
+
     def select(self, c: AttributeContext[T]):
         if self.selector is None:
             return [c.value]
         return self.selector(c)
 
-_VISUAL_ATTRIBUTES: list[VisualAttribute[Any]] = [
+_VISUAL_ATTRIBUTES: list[VisualAttribute[Any, Any]] = [
     VisualAttribute('font_family', categorical, default='"Times New Roman"'),
-    VisualAttribute('font_size', lambda c: [c.value or 0], default=16),
+    VisualAttribute('font_size', lambda c: [c.value or 0],
+        load_types=(float, int), default=16),
         # In pixels.
-    VisualAttribute('font_weight', lambda c: [c.value / 100], float,
-        default='400'),
+    VisualAttribute('font_weight', lambda c: [c.value / 100],
+        parser=float, default='400'),
         # In font weight units divided by 100. E.g., "normal" is 4.
     VisualAttribute('font_style', categorical, default='normal'),
     VisualAttribute('text_decoration', categorical, default='none'),
@@ -95,12 +108,12 @@ _VISUAL_ATTRIBUTES: list[VisualAttribute[Any]] = [
     VisualAttribute('background_image', categorical, default='none'),
     VisualAttribute('box_shadow', categorical, default='none'),
     VisualAttribute('cursor', categorical, default='auto'),
-    VisualAttribute('letter_spacing', default=0),
+    VisualAttribute('letter_spacing', load_types=(float, int), default=0),
         # In pixels.
-    VisualAttribute('line_height',
+    VisualAttribute('line_height', load_types=(float, int),
         default=lambda n: n.visuals['font_size'] * 1.2),
         # In pixels.
-    VisualAttribute('opacity', default=1),
+    VisualAttribute('opacity', load_types=(float, int), default=1),
         # 0 = transparent, 1 = opaque.
     VisualAttribute('overflow', categorical, default='auto'),
     VisualAttribute('pointer_events', categorical, default='auto'),

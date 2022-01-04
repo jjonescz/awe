@@ -103,7 +103,7 @@ class DomData:
         if not node.is_text:
             for a in visual_attribute.VISUAL_ATTRIBUTES.values():
                 node.visuals[a.name] = load_attribute(
-                    a.name, a.parser, a.get_default(node))
+                    a.name, a.parse, a.get_default(node))
         return True
 
     def find(self, xpath: str):
