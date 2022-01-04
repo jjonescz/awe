@@ -8,9 +8,9 @@ import torch
 from torch_geometric import data as gdata
 from torch_geometric import loader as gloader
 
-from awe import awe_graph, graph_utils
+from awe import awe_graph
 from awe import features as f
-from awe import filtering, utils
+from awe import filtering, graph_utils, utils
 from awe.data import constants
 from awe.features import extraction
 
@@ -163,7 +163,10 @@ class Dataset:
 
         def delete_one(pt_path):
             if pt_path is not None and os.path.exists(pt_path):
-                os.replace(pt_path, f'{pt_path}.bak')
+                try:
+                    os.replace(pt_path, f'{pt_path}.bak')
+                except FileNotFoundError:
+                    return 0
                 return 1
             return 0
 
