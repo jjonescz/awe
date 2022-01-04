@@ -71,7 +71,9 @@ class VisualAttribute(Generic[T]):
         return self.default
 
     def get_labels(self):
-        return self.labels or [self.name]
+        if self.labels is not None:
+            return [f'{self.name}_{l}' for l in self.labels]
+        return [self.name]
 
 _VISUAL_ATTRIBUTES: list[VisualAttribute[Any]] = [
     VisualAttribute('font_family', categorical, default='"Times New Roman"'),
