@@ -89,15 +89,15 @@ class Dataset:
                     if isinstance(feature, f.IndirectFeature):
                         data[feature.label] = data[feature.label].to_sparse()
 
-                # Save to temporary file first and then move it to prevent
-                # partially saved features when there's an error.
-                torch.save(data, f'{page.data_point_path}.tmp')
-
-                # HACK: Rename can sometimes fail (probably because of virtual
-                # file system errors), so we try multiple times.
+                # HACK: This can sometimes fail (probably due to virtual file
+                # system errors), so we retry multiple times.
                 MAX_RETRIES = 3
                 for retry in range(MAX_RETRIES):
                     try:
+                        # Save to temporary file first and then move it to
+                        # prevent partially saved features when there's an
+                        # error.
+                        torch.save(data, f'{page.data_point_path}.tmp')
                         os.replace(f'{page.data_point_path}.tmp',
                             page.data_point_path)
                     except FileNotFoundError:
