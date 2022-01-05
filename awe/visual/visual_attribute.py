@@ -24,6 +24,10 @@ class AttributeContext(Generic[T]):
     def value(self) -> T:
         return self.node.visuals.get(self.attribute.name)
 
+    @value.setter
+    def value(self, v: T):
+        self.node.visuals[self.attribute.name] = v
+
 def categorical(c: AttributeContext[str]):
     if c.freezed:
         i = c.context.visual_categorical[c.attribute.name].get(c.value)
@@ -36,6 +40,10 @@ def categorical(c: AttributeContext[str]):
 
 def select_color(c: AttributeContext[color.Color]):
     return [c.value.hue, c.value.brightness / 255, c.value.alpha / 255]
+
+def select_image(c: AttributeContext[str]):
+    c.value = 'url' if c.value.startswith('url') else c.value
+    return categorical(c)
 
 COLOR = {
     'selector': select_color,
@@ -121,7 +129,7 @@ _VISUAL_ATTRIBUTES: list[VisualAttribute[Any, Any]] = [
     VisualAttribute('text_align', categorical, parse_prefixed, default='start'),
     VisualAttribute('color', **COLOR, default='#000000ff'),
     VisualAttribute('background_color', **COLOR, default='#00000000'),
-    VisualAttribute('background_image', categorical, default='none'),
+    VisualAttribute('background_image', select_image, default='none'),
     VisualAttribute('box_shadow', categorical, default='none'),
     VisualAttribute('cursor', categorical, default='auto'),
     VisualAttribute('letter_spacing', load_types=(float, int), default=0),
