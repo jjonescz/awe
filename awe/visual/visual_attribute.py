@@ -51,6 +51,13 @@ def parse_font_family(value: str):
     values = [v for v in values if len(v) != 0]
     return values[0].lower() if len(values) != 0 else ''
 
+def parse_prefixed(value: str):
+    """Trims vendor prefixes from CSS value (e.g., `-webkit-left` -> `left`)."""
+    PREFIX = '-webkit-' # only Chrome should be enough for computed CSS
+    if value.startswith(PREFIX):
+        return value[len(PREFIX):]
+    return value
+
 @dataclass
 class VisualAttribute(Generic[T, TInput]):
     name: str
@@ -111,7 +118,7 @@ _VISUAL_ATTRIBUTES: list[VisualAttribute[Any, Any]] = [
         # In font weight units divided by 100. E.g., "normal" is 4.
     VisualAttribute('font_style', categorical, default='normal'),
     VisualAttribute('text_decoration', categorical, default='none'),
-    VisualAttribute('text_align', categorical, default='start'),
+    VisualAttribute('text_align', categorical, parse_prefixed, default='start'),
     VisualAttribute('color', **COLOR, default='#000000ff'),
     VisualAttribute('background_color', **COLOR, default='#00000000'),
     VisualAttribute('background_image', categorical, default='none'),
