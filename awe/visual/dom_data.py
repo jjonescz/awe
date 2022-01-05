@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable
 
 from awe import awe_graph, utils
 from awe.visual import visual_attribute
@@ -80,35 +80,31 @@ class DomData:
 
         # Load `node_data` into `node`.
         def load_attribute(
-            target: object,
             snake_case: str,
-            parser: Callable[[Any], Any] = lambda x: x,
-            default: Optional[Any] = None
+            parser: Callable[[Any, dict[str, Any]], Any] = lambda x: x,
+            default: Callable[[awe_graph.HtmlNode], Any] = lambda _: None
         ):
             camel_case = utils.to_camel_case(snake_case)
-            val = node_data.get(camel_case) or default
+            val = node_data.get(camel_case) or default(node)
             if val is not None:
                 try:
-                    result = parser(val)
+                    result = parser(val, node_data)
                 except ValueError as e:
                     print(f'Cannot parse {snake_case}="{val}", using ' + \
                         f'default="{val}" in {self.path}: {str(e)}')
-                    result = default
+                    result = default(node)
+                return result
+            return None
 
-                # Set attribute.
-                if isinstance(target, dict):
-                    target[snake_case] = result
-                else:
-                    setattr(target, snake_case, result)
-
-        load_attribute(node, 'box',
-            parser=lambda b: awe_graph.BoundingBox(b[0], b[1], b[2], b[3]))
+        node.box = load_attribute('box',
+            parser=lambda b, _: awe_graph.BoundingBox(b[0], b[1], b[2], b[3]))
 
         # Load visual attributes except for text fragments (they don't have
         # their own but inherit them from their container node instead).
         if not node.is_text:
             for a in visual_attribute.VISUAL_ATTRIBUTES.values():
-                load_attribute(node.visuals, a.name, a.parse, a.get_default(node))
+                node.visuals[a.name] = load_attribute(
+                    a.name, a.parse, a.get_default)
         return True
 
     def find(self, xpath: str):

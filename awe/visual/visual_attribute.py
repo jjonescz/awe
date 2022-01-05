@@ -82,6 +82,10 @@ class VisualAttribute(Generic[T, TInput]):
     parser: Callable[[TInput], T] = field(default=lambda x: x, repr=False)
     """Used when converting from JSON value to Python value."""
 
+    complex_parser: Optional[Callable[[dict[str, Any]], T]] = \
+        field(default=None, repr=False)
+    """Like parser but gets all node's DOM data."""
+
     load_types: Union[type[TInput], Tuple[type[TInput]]] = \
         field(default=str, repr=False)
     """What types are allowed to be loaded from JSON DOM data."""
@@ -107,7 +111,12 @@ class VisualAttribute(Generic[T, TInput]):
             return [f'{self.name}_{l}' for l in self.labels]
         return [self.name]
 
-    def parse(self, value: TInput):
+    def parse(self, value: TInput, values: dict[str, Any]):
+        if self.complex_parser is None:
+            return self._simple_parse(value)
+        return self.complex_parser(values)
+
+    def _simple_parse(self, value: TInput):
         if not isinstance(value, self.load_types):
             raise RuntimeError(f'Expected attribute "{self.name}" to be ' + \
                 f'loaded as {self.load_types} but found {type(value)} ' + \
