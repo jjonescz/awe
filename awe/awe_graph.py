@@ -97,7 +97,7 @@ class HtmlPage(ABC):
     def create_root(self):
         return HtmlNode(self, 0, 0, self.dom.root)
 
-    def _initialize_tree(self):
+    def get_tree(self):
         root = self.create_root()
         page_labels = self.labels
         deep_index = 0
@@ -109,9 +109,6 @@ class HtmlPage(ABC):
 
             deep_index += 1
         return root
-
-    def get_tree(self):
-        return HtmlPageCaching.get('tree', self, HtmlPage._initialize_tree)
 
     def prepare(self, ctx: 'features.PageContextBase'):
         """Prepare page features."""
