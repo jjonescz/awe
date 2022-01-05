@@ -94,6 +94,7 @@ class DomData:
                         f'default="{val}" in {self.path}: {str(e)}')
                     result = default
                 return result
+            return None
 
         node.box = load_attribute('box',
             parser=lambda b: awe_graph.BoundingBox(b[0], b[1], b[2], b[3]))
