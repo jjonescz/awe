@@ -122,7 +122,8 @@ class HtmlPageCaching:
     cached: dict[str, dict[str, Any]]
     """Cache group -> page identifier -> cached value."""
 
-    def __init__(self):
+    def __init__(self, *, debug: bool = False):
+        self.debug = debug
         self.cached = collections.defaultdict(dict)
 
     def __enter__(self):
@@ -135,13 +136,21 @@ class HtmlPageCaching:
 
     @classmethod
     def get(cls, name: str, page: HtmlPage, factory: Callable[[HtmlPage], T]) -> T:
-        if cls.current is None:
+        self = cls.current
+        if self is None:
             return factory(page)
-        value = cls.current.cached[name].get(page.identifier)
+        value = self.cached[name].get(page.identifier)
         if value is None:
+            self.log(f'Caching "{name}" for {page.identifier}')
             value = factory(page)
-            cls.current.cached[name][page.identifier] = value
+            self.cached[name][page.identifier] = value
+        else:
+            self.log(f'Re-using "{name}" for {page.identifier}')
         return value
+
+    def log(self, message: str):
+        if self.debug:
+            print(message)
 
 @dataclass
 class BoundingBox:
