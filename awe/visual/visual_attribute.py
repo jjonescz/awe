@@ -122,7 +122,7 @@ _VISUAL_ATTRIBUTES: list[VisualAttribute[Any, Any]] = [
     VisualAttribute('line_height', load_types=(float, int),
         default=lambda n: n.visuals['font_size'] * 1.2),
         # In pixels.
-    VisualAttribute('opacity', load_types=(float, int), default=1),
+    VisualAttribute('opacity', load_types=(str, int), parser=float, default=1),
         # 0 = transparent, 1 = opaque.
     VisualAttribute('overflow', categorical, default='auto'),
     VisualAttribute('pointer_events', categorical, default='auto'),
