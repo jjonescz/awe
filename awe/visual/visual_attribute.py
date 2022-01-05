@@ -73,8 +73,14 @@ def select_decoration(c: AttributeContext[str]):
     return categorical(c)
 
 def select_border(c: AttributeContext[list[str]]):
-    c.value = [v.split(maxsplit=1)[0] for v in c.value]
-    return categorical(c)
+    def get_pixels(token: str):
+        if token == 'none':
+            return 0
+        if token.endswith('px'):
+            return float(token[:-2])
+        raise RuntimeError(f'Cannot parse pixels from "{token}".')
+
+    return [get_pixels(v.split(maxsplit=1)[0]) for v in c.value]
 
 COLOR = {
     'selector': select_color,
