@@ -80,6 +80,7 @@ class DomData:
 
         # Load `node_data` into `node`.
         def load_attribute(
+            target: object,
             snake_case: str,
             parser: Callable[[Any], Any] = lambda x: x,
             default: Optional[Any] = None
@@ -93,18 +94,21 @@ class DomData:
                     print(f'Cannot parse {snake_case}="{val}", using ' + \
                         f'default="{val}" in {self.path}: {str(e)}')
                     result = default
-                return result
-            return None
 
-        node.box = load_attribute('box',
+                # Set attribute.
+                if isinstance(target, dict):
+                    target[snake_case] = result
+                else:
+                    setattr(target, snake_case, result)
+
+        load_attribute(node, 'box',
             parser=lambda b: awe_graph.BoundingBox(b[0], b[1], b[2], b[3]))
 
         # Load visual attributes except for text fragments (they don't have
         # their own but inherit them from their container node instead).
         if not node.is_text:
             for a in visual_attribute.VISUAL_ATTRIBUTES.values():
-                node.visuals[a.name] = load_attribute(
-                    a.name, a.parse, a.get_default(node))
+                load_attribute(node.visuals, a.name, a.parse, a.get_default(node))
         return True
 
     def find(self, xpath: str):
