@@ -45,6 +45,10 @@ def select_image(c: AttributeContext[str]):
     c.value = 'url' if c.value.startswith('url') else c.value
     return categorical(c)
 
+def select_border(c: AttributeContext[str]):
+    c.value = c.value.split(maxsplit=1)[0]
+    return categorical(c)
+
 COLOR = {
     'selector': select_color,
     'parser': color.Color.parse,
@@ -125,7 +129,7 @@ _VISUAL_ATTRIBUTES: list[VisualAttribute[Any, Any]] = [
         parser=float, default='400'),
         # In font weight units divided by 100. E.g., "normal" is 4.
     VisualAttribute('font_style', categorical, default='normal'),
-    VisualAttribute('text_decoration', categorical, default='none'),
+    VisualAttribute('text_decoration', select_border, default='none'),
     VisualAttribute('text_align', categorical, parse_prefixed, default='start'),
     VisualAttribute('color', **COLOR, default='#000000ff'),
     VisualAttribute('background_color', **COLOR, default='#00000000'),
