@@ -51,7 +51,7 @@ class Predictor:
     def evaluate_examples(self, indices: Iterable[int], label: str):
         total = torch.FloatTensor([0, 0, 0])
         count = 0
-        for idx in tqdm(indices, leave=False, desc='pages'):
+        for idx in indices:
             total += self.evaluate_example(idx, label).to_vector()
             count += 1
         return awe_model.SwdeMetrics.from_vector(total / count)
@@ -59,7 +59,7 @@ class Predictor:
     def evaluate(self, indices: Iterable[int]):
         return {
             label: self.evaluate_examples(indices, label)
-            for label in tqdm(self.ds.first_dataset.label_map, desc='labels')
+            for label in tqdm(self.ds.first_dataset.label_map, desc='eval')
             if label is not None
         }
 
@@ -110,8 +110,8 @@ class Predictor:
         return {
             label: [
                 self.get_example_text(i, label)
-                for i in tqdm(indices, leave=False, desc='pages')
+                for i in indices
             ]
-            for label in tqdm(self.ds.first_dataset.label_map, desc='labels')
+            for label in tqdm(self.ds.first_dataset.label_map, desc='texts')
             if label is not None
         }
