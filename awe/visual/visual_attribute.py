@@ -11,6 +11,29 @@ if TYPE_CHECKING:
 T = TypeVar('T')
 TInput = TypeVar('TInput')
 
+def parse_font_family(value: str):
+    values = [
+        v.strip().strip('"').strip()
+        for v in value.split(',')
+    ]
+    values = [v for v in values if len(v) != 0]
+    return values[0].lower() if len(values) != 0 else ''
+
+def parse_prefixed(value: str):
+    """Trims vendor prefixes from CSS value (e.g., `-webkit-left` -> `left`)."""
+    PREFIX = '-webkit-' # only Chrome should be enough for computed CSS
+    if value.startswith(PREFIX):
+        return value[len(PREFIX):]
+    return value
+
+BORDER_SIDES = ['left', 'top', 'right', 'bottom']
+
+def parse_border(values: dict[str, str], default: str):
+    value = values.get('')
+    if value is not None:
+        return [value] * 4
+    return [values.get(side, default) for side in BORDER_SIDES]
+
 @dataclass
 class AttributeContext(Generic[T]):
     """Everything needed to compute feature from `VisualAttribute` of a node."""
@@ -45,8 +68,12 @@ def select_image(c: AttributeContext[str]):
     c.value = 'url' if c.value.startswith('url') else c.value
     return categorical(c)
 
-def select_border(c: AttributeContext[str]):
+def select_decoration(c: AttributeContext[str]):
     c.value = c.value.split(maxsplit=1)[0]
+    return categorical(c)
+
+def select_border(c: AttributeContext[list[str]]):
+    c.value = [v.split(maxsplit=1)[0] for v in c.value]
     return categorical(c)
 
 COLOR = {
@@ -55,20 +82,11 @@ COLOR = {
     'labels': ['hue', 'brightness', 'alpha']
 }
 
-def parse_font_family(value: str):
-    values = [
-        v.strip().strip('"').strip()
-        for v in value.split(',')
-    ]
-    values = [v for v in values if len(v) != 0]
-    return values[0].lower() if len(values) != 0 else ''
-
-def parse_prefixed(value: str):
-    """Trims vendor prefixes from CSS value (e.g., `-webkit-left` -> `left`)."""
-    PREFIX = '-webkit-' # only Chrome should be enough for computed CSS
-    if value.startswith(PREFIX):
-        return value[len(PREFIX):]
-    return value
+BORDER = {
+    'selector': select_border,
+    'complex_parser': parse_border,
+    'labels': BORDER_SIDES
+}
 
 @dataclass
 class VisualAttribute(Generic[T, TInput]):
@@ -82,9 +100,11 @@ class VisualAttribute(Generic[T, TInput]):
     parser: Callable[[TInput], T] = field(default=lambda x: x, repr=False)
     """Used when converting from JSON value to Python value."""
 
-    complex_parser: Optional[Callable[[dict[str, Any]], T]] = \
+    complex_parser: Optional[Callable[[dict[str, TInput], TInput], T]] = \
         field(default=None, repr=False)
-    """Like parser but gets all node's DOM data."""
+    """
+    Like parser but gets all node's DOM data prefixed with attribute's name.
+    """
 
     load_types: Union[type[TInput], Tuple[type[TInput]]] = \
         field(default=str, repr=False)
@@ -111,17 +131,26 @@ class VisualAttribute(Generic[T, TInput]):
             return [f'{self.name}_{l}' for l in self.labels]
         return [self.name]
 
-    def parse(self, value: TInput, values: dict[str, Any]):
+    def parse(self, value: TInput, node_data: dict[str, Any]):
         if self.complex_parser is None:
             return self._simple_parse(value)
-        return self.complex_parser(values)
 
-    def _simple_parse(self, value: TInput):
+        values = {
+            k[len(self.name):]: self._check_value(v)
+            for k, v in node_data.items()
+            if k.startswith(self.name)
+        }
+        return self.complex_parser(values, self.default)
+
+    def _check_value(self, value: TInput):
         if not isinstance(value, self.load_types):
             raise RuntimeError(f'Expected attribute "{self.name}" to be ' + \
                 f'loaded as {self.load_types} but found {type(value)} ' + \
                 f'({repr(value)}).')
-        return self.parser(value)
+        return value
+
+    def _simple_parse(self, value: TInput):
+        return self.parser(self._check_value(value))
 
     def select(self, c: AttributeContext[T]):
         if self.selector is None:
@@ -138,11 +167,12 @@ _VISUAL_ATTRIBUTES: list[VisualAttribute[Any, Any]] = [
         parser=float, default='400'),
         # In font weight units divided by 100. E.g., "normal" is 4.
     VisualAttribute('font_style', categorical, default='normal'),
-    VisualAttribute('text_decoration', select_border, default='none'),
+    VisualAttribute('text_decoration', select_decoration, default='none'),
     VisualAttribute('text_align', categorical, parse_prefixed, default='start'),
     VisualAttribute('color', **COLOR, default='#000000ff'),
     VisualAttribute('background_color', **COLOR, default='#00000000'),
     VisualAttribute('background_image', select_image, default='none'),
+    VisualAttribute('border', **BORDER, default='none'),
     VisualAttribute('box_shadow', categorical, default='none'),
     VisualAttribute('cursor', categorical, default='auto'),
     VisualAttribute('letter_spacing', load_types=(float, int), default=0),
@@ -152,6 +182,7 @@ _VISUAL_ATTRIBUTES: list[VisualAttribute[Any, Any]] = [
         # In pixels.
     VisualAttribute('opacity', load_types=(str, int), parser=float, default=1),
         # 0 = transparent, 1 = opaque.
+    VisualAttribute('outline', **BORDER, default='none'),
     VisualAttribute('overflow', categorical, default='auto'),
     VisualAttribute('pointer_events', categorical, default='auto'),
     VisualAttribute('text_shadow', categorical, default='none'),
