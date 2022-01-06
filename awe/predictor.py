@@ -37,7 +37,7 @@ class Predictor:
     def get_example_inputs(self, index: int):
         batch = self.cached_batches.get(index)
         if batch is None:
-            batch = next(itertools.islice(self.dataloader, index, None))
+            batch = data.Batch.from_data_list([self.ds[self.name][index]])
             self.cached_batches[index] = batch
         return awe_model.ModelInputs(batch)
 
