@@ -9,9 +9,6 @@ from awe import awe_graph, awe_model, features
 from awe.data import dataset
 
 
-def get_texts(nodes: list[awe_graph.HtmlNode]):
-    return list(map(lambda n: n.text_content, nodes))
-
 class Predictor:
     """Can do example predictions on a `Dataset`."""
 
@@ -71,16 +68,20 @@ class Predictor:
         }
 
     def predict_example(self, index: int, label: str):
-        """Gets predicted nodes for an example."""
+        """
+        Gets predicted nodes for an example (and whether they were a match
+        (i.e., a `True` positive) or not (`False`)).
+        """
         inputs, nodes = self.get_example(index)
 
-        predicted_nodes: list[awe_graph.HtmlNode] = []
+        predicted_nodes: list[tuple[bool, awe_graph.HtmlNode]] = []
         def handle(name: str, mask, idx=None):
             # Handle only positives (tp or fp).
             if name[1] == 'p':
                 masked = itertools.compress(nodes, mask)
                 node = next(itertools.islice(masked, idx, None))
-                predicted_nodes.append(node)
+                match = name[0] == 't' # is it true positive?
+                predicted_nodes.append([match, node])
         self.model.predict_swde(
             inputs, self.ds.first_dataset.label_map[label], handle)
 
@@ -99,18 +100,22 @@ class Predictor:
         texts = page.get_groundtruth_texts(label)
         if texts is not None:
             return texts
-        return get_texts(self.ground_example(index, label))
+        return [n.text_content for n in self.ground_example(index, label)]
 
     def get_example_text(self, index: int, label: str):
         """Gets predicted and gold nodes for an example."""
-        predicted = get_texts(self.predict_example(index, label))
+        predicted = self.predict_example(index, label)
         if len(predicted) == 1:
             predicted = predicted[0]
+            tp = predicted[0] # is it true positive?
+            predicted = predicted[1].text_content
+            if tp:
+                return predicted
+        else:
+            predicted = [t[1].text_content for t in predicted]
         ground = self.ground_texts(index, label)
         if len(ground) == 1:
             ground = ground[0]
-        if predicted == ground:
-            return predicted
         return predicted, ground
 
     def get_example_texts(self, indices: Iterable[int]):
