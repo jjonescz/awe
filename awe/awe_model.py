@@ -266,7 +266,8 @@ class AweModel(pl.LightningModule):
             'loss': loss,
             'acc': acc,
             'f1': f1,
-            'swde_f1': swde_f1
+            'swde_f1': swde_f1,
+            'hp_metric': swde_f1 # used as main metric in TensorBoard
         }
         prefixed = { f'{prefix}_{key}': value for key, value in results.items() }
         self.log_dict(prefixed, prog_bar=(idx == 0), add_dataloader_idx=(idx != 0))
