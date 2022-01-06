@@ -55,7 +55,7 @@ def categorical(c: AttributeContext[str]):
     if c.freezed:
         i = c.context.visual_categorical[c.attribute.name].get(c.value)
         if i is None:
-            return 0
+            return [0]
     else:
         i = c.context.visual_categorical[c.attribute.name][c.value]
         i.count += 1
