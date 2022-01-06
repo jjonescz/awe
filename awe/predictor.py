@@ -32,19 +32,21 @@ class Predictor:
     def items(self):
         return self.ds[self.name]
 
+    def get_example_inputs(self, index: int):
+        batch: data.Batch = next(itertools.islice(self.dataloader, index, None))
+        return awe_model.ModelInputs(batch)
+
     def get_example(self, index: int):
         """Gets batch and its corresponding nodes."""
-        batch: data.Batch = next(itertools.islice(self.dataloader, index, None))
         page = self.items.pages[index]
         ctx = self.cached_page_contexts.get(page.identifier)
         if ctx is None:
             ctx = self.ds.prepare_page_context(page)
             self.cached_page_contexts[page.identifier] = ctx
-        inputs = awe_model.ModelInputs(batch)
-        return inputs, ctx.nodes
+        return self.get_example_inputs(index), ctx.nodes
 
     def evaluate_example(self, index: int, label: str):
-        inputs, _ = self.get_example(index)
+        inputs = self.get_example_inputs(index)
         return self.model.compute_swde_metrics(
             inputs, self.ds.first_dataset.label_map[label])
 
