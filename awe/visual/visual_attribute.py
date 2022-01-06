@@ -87,6 +87,11 @@ def select_shadow(c: AttributeContext[str]):
         c.value = 'rgb'
     return categorical(c)
 
+def select_z_index(c: AttributeContext[str]):
+    if c.value.isdecimal():
+        c.value = 'number'
+    return categorical(c)
+
 COLOR = {
     'selector': select_color,
     'parser': color.Color.parse,
@@ -199,7 +204,7 @@ _VISUAL_ATTRIBUTES: list[VisualAttribute[Any, Any]] = [
     VisualAttribute('text_shadow', select_shadow, default='none'),
     VisualAttribute('text_overflow', categorical, default='clip'),
     VisualAttribute('text_transform', categorical, default='none'),
-    VisualAttribute('z_index', categorical, default='auto'),
+    VisualAttribute('z_index', select_z_index, default='auto'),
 ]
 
 VISUAL_ATTRIBUTES = {
