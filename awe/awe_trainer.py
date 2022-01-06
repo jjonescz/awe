@@ -26,6 +26,8 @@ class AweTrainingParams:
     epochs: int = 10
 
 def train(params: AweTrainingParams):
+    pl.seed_everything(42, workers=True)
+
     # Split data.
     sds = swde.Dataset(suffix='-exact')
     websites = sds.verticals[0].websites
