@@ -82,6 +82,11 @@ def select_border(c: AttributeContext[list[str]]):
 
     return [get_pixels(v.split(maxsplit=1)[0]) for v in c.value]
 
+def select_shadow(c: AttributeContext[str]):
+    if c.value.startswith('rgb'):
+        c.value = 'rgb'
+    return categorical(c)
+
 COLOR = {
     'selector': select_color,
     'parser': color.Color.parse,
@@ -179,7 +184,7 @@ _VISUAL_ATTRIBUTES: list[VisualAttribute[Any, Any]] = [
     VisualAttribute('background_color', **COLOR, default='#00000000'),
     VisualAttribute('background_image', select_image, default='none'),
     VisualAttribute('border', **BORDER, default='none'),
-    VisualAttribute('box_shadow', categorical, default='none'),
+    VisualAttribute('box_shadow', select_shadow, default='none'),
     VisualAttribute('cursor', categorical, default='auto'),
     VisualAttribute('letter_spacing', load_types=(float, int), default=0),
         # In pixels.
@@ -191,7 +196,7 @@ _VISUAL_ATTRIBUTES: list[VisualAttribute[Any, Any]] = [
     VisualAttribute('outline', **BORDER, default='none'),
     VisualAttribute('overflow', categorical, default='auto'),
     VisualAttribute('pointer_events', categorical, default='auto'),
-    VisualAttribute('text_shadow', categorical, default='none'),
+    VisualAttribute('text_shadow', select_shadow, default='none'),
     VisualAttribute('text_overflow', categorical, default='clip'),
     VisualAttribute('text_transform', categorical, default='none'),
     VisualAttribute('z_index', categorical, default='auto'),
