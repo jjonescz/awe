@@ -108,11 +108,11 @@ class Predictor:
         if len(predicted) == 1:
             predicted = predicted[0]
             tp = predicted[0] # is it true positive?
-            predicted = predicted[1].text_content
+            predicted = (tp, predicted[1].text_content)
             if tp:
                 return predicted
         else:
-            predicted = [t[1].text_content for t in predicted]
+            predicted = [(t[0], t[1].text_content) for t in predicted]
         ground = self.ground_texts(index, label)
         if len(ground) == 1:
             ground = ground[0]
