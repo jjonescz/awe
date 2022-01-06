@@ -37,7 +37,7 @@ def train(params: AweTrainingParams):
     val_pages = [
         p for i in range(len(websites))
         if i not in params.training_website_indices
-        for p in websites[i].pages
+        for p in rng.choice(websites[i].pages, 50, replace=False)
     ]
 
     # Load data.
