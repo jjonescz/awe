@@ -15,6 +15,7 @@ def get_texts(nodes: list[awe_graph.HtmlNode]):
 class Predictor:
     """Can do example predictions on a `Dataset`."""
 
+    cached_batches: dict[int, data.Batch]
     cached_page_contexts: dict[str, features.PageContext]
 
     def __init__(self,
@@ -26,6 +27,7 @@ class Predictor:
         self.name = name
         self.dataloader = loader.DataLoader(ds[name])
         self.model = model
+        self.cached_batches = {}
         self.cached_page_contexts = {}
 
     @property
@@ -33,7 +35,10 @@ class Predictor:
         return self.ds[self.name]
 
     def get_example_inputs(self, index: int):
-        batch: data.Batch = next(itertools.islice(self.dataloader, index, None))
+        batch = self.cached_batches.get(index)
+        if batch is None:
+            batch = next(itertools.islice(self.dataloader, index, None))
+            self.cached_batches[index] = batch
         return awe_model.ModelInputs(batch)
 
     def get_example(self, index: int):
