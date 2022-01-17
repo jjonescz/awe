@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Sequence
+from typing import Any, Sequence
 
 import numpy as np
 import pytorch_lightning as pl
@@ -21,6 +21,7 @@ class AweTrainingParams:
 
     # Model
     label_weights: Sequence[int] = (1,) + (300,) * 4
+    lstm_args: dict[str, Any] = None
 
     # Training
     epochs: int = 10
@@ -71,7 +72,7 @@ def train(params: AweTrainingParams):
         use_gnn=True,
         use_lstm=True,
         use_cnn=False,
-        lstm_args={ 'bidirectional': True },
+        lstm_args=params.lstm_args,
         filter_node_words=True,
         label_smoothing=0.1
     )
