@@ -34,7 +34,7 @@ def remove_single_nodes(ctx: features.PageContextBase):
 class PageGraph:
     def __init__(self, ctx: features.PageContextBase):
         self.ctx = ctx
-        self.graph = nx.Graph()
+        self.graph = nx.DiGraph()
 
     def add_nodes(self):
         for node in self.ctx.nodes:
@@ -56,7 +56,7 @@ class PageGraph:
 
     def link_parent_of(self, node: awe_graph.HtmlNode):
         if node.parent is not None and node.parent.dataset_index is not None:
-            self.graph.add_edge(node.dataset_index, node.parent.dataset_index)
+            self.graph.add_edge(node.parent.dataset_index, node.dataset_index)
             return True
         return False
 
