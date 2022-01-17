@@ -266,11 +266,15 @@ class AweModel(pl.LightningModule):
             'loss': loss,
             'acc': acc,
             'f1': f1,
-            'swde_f1': swde_f1,
-            'hp_metric': swde_f1 # used as main metric in TensorBoard
+            'swde_f1': swde_f1
         }
         prefixed = { f'{prefix}_{key}': value for key, value in results.items() }
         self.log_dict(prefixed, prog_bar=(idx == 0), add_dataloader_idx=(idx != 0))
+
+        # Log `hp_metric` which is used as main metric in TensorBoard.
+        if prefix == 'val':
+            self.log('hp_metric', swde_f1)
+
         return prefixed
 
     def predict_step(self, batch: data.Batch, *_):
