@@ -27,6 +27,8 @@ RUN \
     zip \
     unzip \
     libpng-dev \
+    # Needed to work with processes using GPU.
+    psmisc \
     # Needed for SSH below.
     openssh-server \
     # Needed to unzip SWDE.
