@@ -104,8 +104,10 @@ class AweModel(pl.LightningModule):
         self.head = nn.Sequential(
             nn.Linear(input_features, 2 * D),
             nn.ReLU(),
+            nn.Dropout(),
             nn.Linear(2 * D, D),
             nn.ReLU(),
+            nn.Dropout(),
             nn.Linear(D, label_count)
         )
 
@@ -192,6 +194,7 @@ class AweModel(pl.LightningModule):
 
                 # Run through LSTM.
                 _, (word_state, _) = self.lstm(packed_nodes) # [1, num_masked_nodes, lstm_dim]
+                word_state = F.dropout(word_state)
 
                 # Keep only the last hidden state (whole text representation).
                 node_vectors = word_state[-1, ...] # [num_masked_nodes, lstm_dim]
