@@ -22,5 +22,10 @@ echo "http://localhost:8888/\?token\=${JUPYTER_TOKEN}"
 # Print domain exposed by Gradient for localhost:8888.
 echo ${PAPERSPACE_FQDN}
 
+# Start persistent Jupyter server on http://localhost:8890/ with no token set.
+nohup nice jupyter notebook --allow-root --port 8890 --NotebookApp.token='' \
+    --NotebookApp.disable_check_xsrf=True > /jupyter.out &
+
+# Start SSH server listening through huproxy.
 echo "root:${JUPYTER_TOKEN}" | chpasswd && /usr/sbin/sshd -eD &
 /huproxy/bin/huproxy -listen :8888

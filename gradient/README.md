@@ -63,3 +63,8 @@ This folder contains files used to setup development environment on
    ./sh/configure.sh
    ./gradient/install.sh
    ```
+
+7. Jupyter notebooks live only as long as VSCode is not disconnected. To use
+   persistent Jupyter server which lives as long as the Gradient machine,
+   instruct VSCode to connect to Jupyter remote server `http://localhost:8890/`
+   (it's started automatically in script `run.sh`).
