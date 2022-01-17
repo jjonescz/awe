@@ -64,7 +64,8 @@ class PageGraph:
         for node in self.ctx.nodes:
             self.link_parent_of(node)
 
-    def get_children(self, node: awe_graph.HtmlNode):
+    @staticmethod
+    def get_children(node: awe_graph.HtmlNode):
         return [n for n in node.children if n.dataset_index is not None]
 
     def link_children_of(self, node: awe_graph.HtmlNode):
