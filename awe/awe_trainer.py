@@ -86,6 +86,7 @@ def train(params: AweTrainingParams):
         callbacks=[gym.CustomProgressBar(refresh_rate=10)],
         resume_from_checkpoint=g.get_last_checkpoint_path(),
         logger=g.create_logger(),
+        gradient_clip_val=0.5,
     )
     g.trainer.fit(model, data_module.DataModule(ds))
 
