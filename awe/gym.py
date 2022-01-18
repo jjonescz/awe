@@ -1,7 +1,5 @@
-import dataclasses
 import os
 import re
-import shutil
 from dataclasses import dataclass
 from typing import Optional, Union
 
@@ -16,39 +14,71 @@ from awe.data import dataset
 
 LOG_DIR = 'logs'
 
-def get_version_path(version: Union[str, int]):
-    subdir = f'version_{version}' if isinstance(version, int) else version
-    return f'{LOG_DIR}/{subdir}'
-
 @dataclass
-class Checkpoint:
-    path: str
-    version: Union[str, int]
-    epoch: int
-    step: int
+class Version:
+    number: int
+    name: str
+
+    @staticmethod
+    def _iterate_all():
+        for dirname in os.listdir(LOG_DIR):
+            match = re.match(r'(\d+)-(.+)', dirname)
+            if match is not None:
+                number = int(match.group(1))
+                name = match.group(2)
+                yield Version(number, name)
+
+    @classmethod
+    def get_all(cls):
+        return list(cls._iterate_all())
 
     @property
-    def keys(self):
-        return (self.version, self.epoch, self.step)
+    def version_dir_name(self):
+        return f'{self.number}-{self.name}'
 
     @property
-    def version_path(self):
-        return get_version_path(self.version)
+    def version_dir_path(self):
+        return f'{LOG_DIR}/{self.version_dir_name}'
+
+    @property
+    def checkpoints_dir_path(self):
+        return f'{self.version_dir_path}/checkpoints'
+
+    def get_checkpoints(self):
+        if not os.path.exists(self.checkpoints_dir_path):
+            return []
+        for filename in os.listdir(self.checkpoints_dir_path):
+            match = re.match(r'epoch=(\d+)-step=(\d+)\.ckpt', filename)
+            epoch = int(match.group(1))
+            step = int(match.group(2))
+            yield Checkpoint(self, epoch, step)
 
     @property
     def model_path(self):
-        return f'{self.version_path}/model.pkl'
+        return f'{self.version_dir_path}/model.pkl'
 
     @property
     def model_text_path(self):
-        return f'{self.version_path}/model.txt'
+        return f'{self.version_dir_path}/model.txt'
 
     def get_results_path(self, dataset_name: str):
-        return f'{self.version_path}/results-{dataset_name}.txt'
+        return f'{self.version_dir_path}/results-{dataset_name}.txt'
 
     @property
     def inputs_path(self):
-        return f'{self.version_path}/inputs.txt'
+        return f'{self.version_dir_path}/inputs.txt'
+
+    def exists(self):
+        return os.path.exists(self.version_dir_path)
+
+    def create(self):
+        os.makedirs(self.version_dir_path, exist_ok=True)
+
+@dataclass
+class Checkpoint:
+    version: Version
+    epoch: int
+    step: int
 
 # pylint: disable=attribute-defined-outside-init, arguments-differ
 class CustomProgressBar(ProgressBar):
@@ -74,73 +104,30 @@ class CustomProgressBar(ProgressBar):
         return tqdm(disable=True)
 
 class Gym:
+    """Manages versions of log directories."""
+
     restore_checkpoint: Optional[Union[str, bool]] = None
     trainer: Optional[pl.Trainer] = None
 
     def __init__(self,
         ds: dataset.DatasetCollection,
-        model: awe_model.AweModel
+        model: awe_model.AweModel,
+        version_name: str
     ):
         self.ds = ds
         self.model = model
 
-    def get_versions(self):
-        for dirname in os.listdir(LOG_DIR):
-            match = re.match(r'version_(\d+)', dirname)
-            if match is not None:
-                yield int(match.group(1))
-
-    def get_checkpoints(self, base_path: str):
-        if not os.path.exists(base_path):
-            return []
-        for filename in os.listdir(base_path):
-            match = re.match(r'epoch=(\d+)-step=(\d+)\.ckpt', filename)
-            epoch = int(match.group(1))
-            step = int(match.group(2))
-            yield Checkpoint(f'{base_path}/{filename}', None, epoch, step)
-
-    def get_all_checkpoints(self):
-        """Obtains checkpoints across all versions."""
-        for version in self.get_versions():
-            checkpoints_dir = f'{get_version_path(version)}/checkpoints'
-            for ckpt in self.get_checkpoints(checkpoints_dir):
-                yield dataclasses.replace(ckpt, version=version)
-
-    def get_last_checkpoint(self):
-        """Latest of `get_all_checkpoints`."""
-        checkpoints = list(self.get_all_checkpoints())
-        if len(checkpoints) == 0:
-            return None
-
-        return utils.where_max(checkpoints, lambda c: c.keys)
-
-    def get_last_checkpoint_path(self):
-        if self.restore_checkpoint is not None:
-            if self.restore_checkpoint is False: # user disabled checkpoint
-                return None
-            return self.restore_checkpoint
-
-        last_checkpoint = self.get_last_checkpoint()
-        return last_checkpoint.path if last_checkpoint is not None else None
-
-    def get_last_checkpoint_version(self):
-        if self.restore_checkpoint is False: # user disabled checkpoint
-            return None
-
-        if self.restore_checkpoint is not None:
-            # Specific checkpoint restored, but unknown version.
-            return None
-
-        last_checkpoint = self.get_last_checkpoint()
-        return last_checkpoint.version if last_checkpoint is not None else None
-
-    def get_current_checkpoint(self):
-        result = Checkpoint(None, self.trainer.logger.version, None, None)
-        os.makedirs(result.version_path, exist_ok=True)
-        return result
+        # Create version.
+        existing_versions = Version.get_all()
+        if len(existing_versions) == 0:
+            self.version = Version(1, version_name)
+        else:
+            max_num = max(v.number for v in existing_versions)
+            self.version = Version(max_num + 1, version_name)
+        self.version.create()
 
     def save_model(self):
-        path = self.get_current_checkpoint().model_path
+        path = self.version.model_path
         torch.save(self.model, path)
         return path
 
@@ -149,7 +136,7 @@ class Gym:
         with log_utils.all_logging_disabled():
             summary = self.model.summarize(max_depth=1)
 
-        path = self.get_current_checkpoint().model_text_path
+        path = self.version.model_text_path
         model_text = f'{self.model}\n\n{summary}'
         return utils.save_or_check_file(path, model_text)
 
@@ -166,7 +153,7 @@ class Gym:
         # Restore logging.
         self.model.log_dict = log_dict
 
-        path = self.get_current_checkpoint().get_results_path(dataset_name)
+        path = self.version.get_results_path(dataset_name)
         return utils.save_or_check_file(path, str(results))
 
     def save_inputs(self):
@@ -174,32 +161,14 @@ class Gym:
         Saves inputs (list of pages, batch size) used for training and
         validation.
         """
-        path = self.get_current_checkpoint().inputs_path
+        path = self.version.inputs_path
         text = str(self.ds.extract_inputs())
         utils.save_or_check_file(path, text)
         return text
 
-    def save_named_version(self, name: str):
-        """Saves the last version with a name."""
-        current_checkpoint = self.get_current_checkpoint()
-        version_path = f'{LOG_DIR}/{name}-version_{current_checkpoint.version}'
-        if os.path.isdir(version_path):
-            raise RuntimeError(f'Directory already exists: {version_path}')
-        return shutil.copytree(current_checkpoint.version_path, version_path)
-
-    def get_next_version(self, name: Optional[str] = None):
-        if name is None:
-            return None
-
-        last_checkpoint = self.get_last_checkpoint()
-        if last_checkpoint is None:
-            return f'version_1-{name}'
-
-        return f'version_{last_checkpoint.version + 1}-{name}'
-
-    def create_logger(self, name: Optional[str] = None):
+    def create_logger(self):
         return TensorBoardLogger(
             save_dir=os.getcwd(),
             name=LOG_DIR,
-            version=self.get_next_version(name)
+            version=self.version.version_dir_name
         )

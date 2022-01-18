@@ -95,14 +95,12 @@ class AweTrainer:
         )
 
         # Prepare model for training.
-        self.g = gym.Gym(self.ds, model)
-        self.g.restore_checkpoint = False
+        self.g = gym.Gym(self.ds, model, self.params.version_name)
         self.g.trainer = pl.Trainer(
             gpus=torch.cuda.device_count(),
             max_epochs=self.params.epochs,
             callbacks=[gym.CustomProgressBar(refresh_rate=10)],
-            resume_from_checkpoint=self.g.get_last_checkpoint_path(),
-            logger=self.g.create_logger(name=self.params.version_name),
+            logger=self.g.create_logger(),
             gradient_clip_val=0.5,
         )
 
