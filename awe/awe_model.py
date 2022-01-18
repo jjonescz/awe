@@ -57,7 +57,8 @@ class AweModel(pl.LightningModule):
         filter_node_words: bool = True,
         label_smoothing: float = 0.0,
         pack_words: bool = False,
-        use_two_gcn_layers: bool = True
+        use_two_gcn_layers: bool = True,
+        disable_direct_features: bool = False,
     ):
         super().__init__()
 
@@ -124,10 +125,15 @@ class AweModel(pl.LightningModule):
         self.filter_node_words = filter_node_words
         self.pack_words = pack_words
         self.use_two_gcn_layers = use_two_gcn_layers
+        self.disable_direct_features = disable_direct_features
 
     def forward(self, batch: data.Batch):
         # x: [num_nodes, num_features]
         x, edge_index = batch.x, batch.edge_index
+
+        # Mask features to be all ones (useful to train only graph structure).
+        if self.disable_direct_features:
+            x = torch.ones_like(x)
 
         # Extract character identifiers for the batch.
         char_ids = getattr(batch, 'char_identifiers', None) if self.use_cnn else None
