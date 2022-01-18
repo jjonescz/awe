@@ -20,6 +20,7 @@ class AweTrainingParams:
     num_workers: int = 8
 
     # Model
+    use_lstm: bool = True
     label_weights: Sequence[int] = (1,) + (300,) * 4
     lstm_args: dict[str, Any] = None
 
@@ -78,7 +79,7 @@ class AweTrainer:
             label_weights=self.params.label_weights,
             char_count=len(self.ds.root.chars) + 1,
             use_gnn=True,
-            use_lstm=True,
+            use_lstm=self.params.use_lstm,
             use_cnn=False,
             lstm_args=self.params.lstm_args,
             filter_node_words=True,
