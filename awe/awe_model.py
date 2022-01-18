@@ -374,3 +374,13 @@ class AweModel(pl.LightningModule):
         else:
             f1 = 2 * (precision * recall) / (precision + recall)
         return SwdeMetrics(precision, recall, f1)
+
+    def get_progress_bar_dict(self):
+        # Parse version number properly.
+        version = self.trainer.logger.version
+        if isinstance(version, str):
+            version = version.split('-')[0]
+
+        items = super().get_progress_bar_dict()
+        items['v_num'] = version
+        return items
