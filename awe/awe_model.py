@@ -56,7 +56,8 @@ class AweModel(pl.LightningModule):
         lstm_args: Optional[dict] = None,
         filter_node_words: bool = True,
         label_smoothing: float = 0.0,
-        pack_words: bool = False
+        pack_words: bool = False,
+        use_two_gcn_layers: bool = True
     ):
         super().__init__()
 
@@ -122,6 +123,7 @@ class AweModel(pl.LightningModule):
         self.use_cnn = use_cnn
         self.filter_node_words = filter_node_words
         self.pack_words = pack_words
+        self.use_two_gcn_layers = use_two_gcn_layers
 
     def forward(self, batch: data.Batch):
         # x: [num_nodes, num_features]
@@ -220,7 +222,8 @@ class AweModel(pl.LightningModule):
             x = self.conv1(x, edge_index) # [num_nodes, D]
             x = F.relu(x)
             x = F.dropout(x, training=self.training)
-            x = self.conv2(x, edge_index)
+            if self.use_two_gcn_layers:
+                x = self.conv2(x, edge_index)
 
         # Filter target nodes (we want to propagate features through all edges
         # but classify only leaf nodes).
