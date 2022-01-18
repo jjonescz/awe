@@ -137,9 +137,13 @@ class AweModel(pl.LightningModule):
         # x: [num_nodes, num_features]
         x, edge_index = batch.x, batch.edge_index
 
-        # Mask features to be all ones (useful to train only graph structure).
+        # Discard feature vector (useful to train only graph structure).
         if self.disable_direct_features:
-            x = torch.ones_like(x)
+            discarded = torch.ones_like(x)
+            # Keep only the first feature (should be relative depth of the node)
+            # to keep node vectors at least partly independent.
+            discarded[:, 0] = x[:, 0]
+            x = discarded
 
         # Extract character identifiers for the batch.
         char_ids = getattr(batch, 'char_identifiers', None) if self.use_cnn else None
