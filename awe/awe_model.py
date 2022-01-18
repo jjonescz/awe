@@ -21,16 +21,23 @@ class AweModelParams:
     label_weights: Sequence[float] = (1,) + (300,) * 4
     use_gnn: bool = False
     use_lstm: bool = False
+    use_char_lstm: bool = False
     use_cnn: bool = False
     char_dim: int = 100
     lstm_dim: int = 100
+    char_lstm_dim: int = 100
     lstm_args: Optional[dict] = None
+    char_lstm_args: Optional[dict] = None
     filter_node_words: bool = True
     label_smoothing: float = 0.0
     pack_words: bool = False
     use_two_gcn_layers: bool = True
     disable_direct_features: bool = False
     use_word_vectors: bool = False
+
+    @property
+    def needs_char_embedding(self):
+        return self.use_cnn or self.use_char_lstm
 
 @dataclass
 class SwdeMetrics:
@@ -78,10 +85,13 @@ class AweModel(pl.LightningModule):
             embeddings, padding_idx=0)
         word_dim = embeddings.shape[1]
 
+        if params.needs_char_embedding:
+            self.char_embedding = torch.nn.Embedding(
+                char_count, params.char_dim)
+
         if params.use_cnn:
             assert params.use_lstm, 'Cannot use CNN without its parent LSTM'
 
-            self.char_embedding = torch.nn.Embedding(char_count, params.char_dim)
             self.char_conv = torch.nn.Conv1d(
                 in_channels=params.char_dim,
                 out_channels=word_dim,
@@ -91,6 +101,20 @@ class AweModel(pl.LightningModule):
 
             # CNN output will be appended to LSTM input.
             word_dim *= 2
+
+        if params.use_char_lstm:
+            assert params.use_lstm, \
+                'Cannot use char LSTM without its parent word LSTM'
+
+            self.char_lstm = torch.nn.LSTM(
+                params.char_dim,
+                params.char_lstm_dim,
+                batch_first=True,
+                **(params.char_lstm_args or {})
+            )
+
+            # Char-LSTM output will be appended to word-LSTM input.
+            word_dim += params.char_lstm_dim
 
         if params.use_lstm:
             self.lstm = torch.nn.LSTM(word_dim, params.lstm_dim,
@@ -143,8 +167,10 @@ class AweModel(pl.LightningModule):
             x = discarded
 
         # Extract character identifiers for the batch.
-        char_ids = getattr(batch, 'char_identifiers', None) if self.params.use_cnn else None
-        if char_ids is not None: # [num_nodes, max_num_words, max_word_len]
+        char_ids = getattr(batch, 'char_identifiers', None) \
+            if self.params.needs_char_embedding else None
+            # [num_nodes, max_num_words, max_word_len]
+        if char_ids is not None:
             if self.params.filter_node_words:
                 masked_char_ids = char_ids[batch.target, :, :]
                     # [num_masked_nodes, max_num_words, max_word_len]
@@ -155,22 +181,33 @@ class AweModel(pl.LightningModule):
                 # [num_masked_nodes, max_num_words, max_word_len, char_dim]
             num_masked_nodes, max_num_words, max_word_len, char_dim = embedded_chars.shape
 
-            char_inputs = torch.transpose(embedded_chars, 0, 2)
-                # [max_word_len, max_num_words, num_masked_nodes, char_dim]
-            char_inputs = torch.reshape(char_inputs,
-                (max_word_len, -1, char_dim))
-                # [max_word_len, ..., char_dim]
-            char_inputs = torch.transpose(char_inputs, 1, 2)
-                # [max_word_len, char_dim, ...]
-            char_vectors = self.char_conv(char_inputs)
-                # [max_word_len, word_dim, ...]
-            char_vectors = torch.max(char_vectors, dim=0).values
-                # [word_dim, ...]
-            char_vectors = torch.transpose(char_vectors, 0, 1)
-                # [..., word_dim]
-            char_vectors = torch.reshape(char_vectors,
-                (num_masked_nodes, max_num_words, -1))
-                # [num_masked_nodes, max_num_words, word_dim]
+            if self.params.use_cnn:
+                char_inputs = torch.transpose(embedded_chars, 0, 2)
+                    # [max_word_len, max_num_words, num_masked_nodes, char_dim]
+                char_inputs = torch.reshape(char_inputs,
+                    (max_word_len, -1, char_dim))
+                    # [max_word_len, ..., char_dim]
+                char_inputs = torch.transpose(char_inputs, 1, 2)
+                    # [max_word_len, char_dim, ...]
+                char_vectors = self.char_conv(char_inputs)
+                    # [max_word_len, word_dim, ...]
+                char_vectors = torch.max(char_vectors, dim=0).values
+                    # [word_dim, ...]
+                char_vectors = torch.transpose(char_vectors, 0, 1)
+                    # [..., word_dim]
+                char_vectors = torch.reshape(char_vectors,
+                    (num_masked_nodes, max_num_words, -1))
+                    # [num_masked_nodes, max_num_words, word_dim]
+            elif self.params.use_char_lstm:
+                char_inputs = torch.reshape(embedded_chars,
+                    (-1, max_word_len, char_dim))
+                    # [num_words, max_word_len, char_dim]
+                _, (char_state, _) = self.char_lstm(char_inputs)
+                    # [1, num_words, lstm_char_dim]
+                # Keep only the last hidden state (whole word representation).
+                char_vectors = char_state[-1, ...] # [num_words, char_lstm_dim]
+                char_vectors = torch.reshape(char_vectors,
+                    (num_masked_nodes, max_num_words, self.params.char_lstm_dim))
 
         # Extract word identifiers for the batch.
         word_ids = getattr(batch, 'word_identifiers', None) if self.params.use_word_vectors else None
