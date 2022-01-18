@@ -1,6 +1,6 @@
 import collections
 from dataclasses import dataclass
-from typing import Callable, Optional
+from typing import Callable, Optional, Sequence
 
 import numpy as np
 import pytorch_lightning as pl
@@ -15,6 +15,22 @@ from torchmetrics import functional as metrics
 from awe import utils
 from awe.data import glove
 
+
+@dataclass
+class AweModelParams:
+    label_weights: Sequence[float] = (1,) + (300,) * 4
+    use_gnn: bool = False
+    use_lstm: bool = False
+    use_cnn: bool = False
+    char_dim: int = 100
+    lstm_dim: int = 100
+    lstm_args: Optional[dict] = None
+    filter_node_words: bool = True
+    label_smoothing: float = 0.0
+    pack_words: bool = False
+    use_two_gcn_layers: bool = True
+    disable_direct_features: bool = False
+    use_word_vectors: bool = False
 
 @dataclass
 class SwdeMetrics:
@@ -46,20 +62,8 @@ class AweModel(pl.LightningModule):
     def __init__(self,
         feature_count: int,
         label_count: int,
-        label_weights: list[float],
         char_count: int,
-        use_gnn: bool,
-        use_lstm: bool,
-        use_cnn: bool,
-        char_dim: int = 100,
-        lstm_dim: int = 100,
-        lstm_args: Optional[dict] = None,
-        filter_node_words: bool = True,
-        label_smoothing: float = 0.0,
-        pack_words: bool = False,
-        use_two_gcn_layers: bool = True,
-        disable_direct_features: bool = False,
-        use_word_vectors: bool = True,
+        params: AweModelParams,
     ):
         super().__init__()
 
@@ -74,12 +78,12 @@ class AweModel(pl.LightningModule):
             embeddings, padding_idx=0)
         word_dim = embeddings.shape[1]
 
-        if use_cnn:
-            assert use_lstm, 'Cannot use CNN without its parent LSTM'
+        if params.use_cnn:
+            assert params.use_lstm, 'Cannot use CNN without its parent LSTM'
 
-            self.char_embedding = torch.nn.Embedding(char_count, char_dim)
+            self.char_embedding = torch.nn.Embedding(char_count, params.char_dim)
             self.char_conv = torch.nn.Conv1d(
-                in_channels=char_dim,
+                in_channels=params.char_dim,
                 out_channels=word_dim,
                 kernel_size=3,
                 padding='same'
@@ -88,21 +92,21 @@ class AweModel(pl.LightningModule):
             # CNN output will be appended to LSTM input.
             word_dim *= 2
 
-        if use_lstm:
-            self.lstm = torch.nn.LSTM(word_dim, lstm_dim,
+        if params.use_lstm:
+            self.lstm = torch.nn.LSTM(word_dim, params.lstm_dim,
                 batch_first=True,
-                **(lstm_args or {})
+                **(params.lstm_args or {})
             )
 
         # Word vector will be appended for each node.
         input_features = feature_count
-        if use_lstm:
-            input_features += lstm_dim
-        elif use_word_vectors:
+        if params.use_lstm:
+            input_features += params.lstm_dim
+        elif params.use_word_vectors:
             input_features += word_dim
 
         D = 64
-        if use_gnn:
+        if params.use_gnn:
             self.conv1 = gnn.GCNConv(input_features, D)
             self.conv2 = gnn.GCNConv(D, D)
             # GNN output will be appended to FNN input.
@@ -119,26 +123,19 @@ class AweModel(pl.LightningModule):
         )
 
         self.loss = torch.nn.CrossEntropyLoss(
-            weight=torch.FloatTensor(label_weights),
-            label_smoothing=label_smoothing
+            weight=torch.FloatTensor(params.label_weights),
+            label_smoothing=params.label_smoothing
         )
 
         self.label_count = label_count
-        self.use_gnn = use_gnn
-        self.use_lstm = use_lstm
-        self.use_cnn = use_cnn
-        self.filter_node_words = filter_node_words
-        self.pack_words = pack_words
-        self.use_two_gcn_layers = use_two_gcn_layers
-        self.disable_direct_features = disable_direct_features
-        self.use_word_vectors = use_word_vectors
+        self.params = params
 
     def forward(self, batch: data.Batch):
         # x: [num_nodes, num_features]
         x, edge_index = batch.x, batch.edge_index
 
         # Discard feature vector (useful to train only graph structure).
-        if self.disable_direct_features:
+        if self.params.disable_direct_features:
             discarded = torch.ones_like(x)
             # Keep only the first feature (should be relative depth of the node)
             # to keep node vectors at least partly independent.
@@ -146,9 +143,9 @@ class AweModel(pl.LightningModule):
             x = discarded
 
         # Extract character identifiers for the batch.
-        char_ids = getattr(batch, 'char_identifiers', None) if self.use_cnn else None
+        char_ids = getattr(batch, 'char_identifiers', None) if self.params.use_cnn else None
         if char_ids is not None: # [num_nodes, max_num_words, max_word_len]
-            if self.filter_node_words:
+            if self.params.filter_node_words:
                 masked_char_ids = char_ids[batch.target, :, :]
                     # [num_masked_nodes, max_num_words, max_word_len]
             else:
@@ -176,9 +173,9 @@ class AweModel(pl.LightningModule):
                 # [num_masked_nodes, max_num_words, word_dim]
 
         # Extract word identifiers for the batch.
-        word_ids = getattr(batch, 'word_identifiers', None) if self.use_word_vectors else None
+        word_ids = getattr(batch, 'word_identifiers', None) if self.params.use_word_vectors else None
         if word_ids is not None: # [num_nodes, max_num_words]
-            if self.filter_node_words:
+            if self.params.filter_node_words:
                 # Keep only sentences at leaf nodes.
                 masked_word_ids = word_ids[batch.target, :] # [num_masked_nodes, max_num_words]
             else:
@@ -189,17 +186,17 @@ class AweModel(pl.LightningModule):
                 # [num_masked_nodes, max_num_words, word_dim]
 
             # Concatenate with character embeddings.
-            if self.use_cnn:
+            if self.params.use_cnn:
                 embedded_nodes = torch.cat((embedded_words, char_vectors), dim=2)
                     # [num_masked_nodes, max_num_words, 2 * word_dim]
             else:
                 embedded_nodes = embedded_words
 
-            if self.use_lstm:
+            if self.params.use_lstm:
                 # Pack sequences (to let LSTM ignore pad words).
-                if self.pack_words:
+                if self.params.pack_words:
                     lengths = utils.sequence_lengths(masked_word_ids)
-                    if self.use_cnn:
+                    if self.params.use_cnn:
                         lengths += char_vectors.shape[-1]
                     packed_nodes = rnn.pack_padded_sequence(
                         embedded_nodes,
@@ -220,7 +217,7 @@ class AweModel(pl.LightningModule):
                 # If not using LSTM, use averaged word embeddings.
                 node_vectors = torch.mean(embedded_words, dim=1) # [num_masked_nodes, word_dim]
 
-            if self.filter_node_words:
+            if self.params.filter_node_words:
                 # Expand word vectors to the original shape.
                 full_node_vectors = torch.zeros(word_ids.shape[0], node_vectors.shape[1])
                     # [num_nodes, lstm_dim]
@@ -233,22 +230,22 @@ class AweModel(pl.LightningModule):
             x = torch.hstack((x, full_node_vectors)) # [num_nodes, num_features]
 
         # Propagate features through edges (graph convolution).
-        if self.use_gnn:
+        if self.params.use_gnn:
             orig = x # [num_nodes, num_features]
             x = self.conv1(x, edge_index) # [num_nodes, D]
             x = F.relu(x)
             x = F.dropout(x, training=self.training)
-            if self.use_two_gcn_layers:
+            if self.params.use_two_gcn_layers:
                 x = self.conv2(x, edge_index)
 
         # Filter target nodes (we want to propagate features through all edges
         # but classify only leaf nodes).
-        if self.use_gnn:
+        if self.params.use_gnn:
             orig = orig[batch.target] # [num_target_nodes, num_features]
         x = x[batch.target] # [num_target_nodes, D]
 
         # Concatenate original feature vector with convoluted feature vector.
-        if self.use_gnn:
+        if self.params.use_gnn:
             x = torch.hstack((orig, x)) # [num_target_nodes, num_features + D]
 
         # Classify using deep fully connected head.

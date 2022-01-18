@@ -1,5 +1,5 @@
-import dataclasses
-from typing import Any, Optional, Sequence
+from dataclasses import dataclass
+from typing import Optional, Sequence
 
 import numpy as np
 import pytorch_lightning as pl
@@ -9,7 +9,7 @@ from awe import awe_model, features, gym
 from awe.data import data_module, dataset, swde
 
 
-@dataclasses.dataclass
+@dataclass
 class AweTrainingParams:
     # Dataset split
     training_website_indices: Sequence[int] = (0, 3, 4, 5, 7)
@@ -20,12 +20,7 @@ class AweTrainingParams:
     num_workers: int = 8
 
     # Model
-    use_lstm: bool = True
-    label_weights: Sequence[int] = (1,) + (300,) * 4
-    lstm_args: dict[str, Any] = None
-    disable_direct_features: bool = False
-    use_two_gcn_layers: bool = True
-    use_word_vectors: bool = True
+    model: awe_model.AweModelParams = awe_model.AweModelParams()
 
     # Training
     epochs: int = 10
@@ -84,17 +79,8 @@ class AweTrainer:
         model = awe_model.AweModel(
             feature_count=self.ds.feature_dim,
             label_count=label_count,
-            label_weights=self.params.label_weights,
             char_count=len(self.ds.root.chars) + 1,
-            use_gnn=True,
-            use_lstm=self.params.use_lstm,
-            use_cnn=False,
-            lstm_args=self.params.lstm_args,
-            filter_node_words=True,
-            label_smoothing=0.1,
-            use_two_gcn_layers=self.params.use_two_gcn_layers,
-            disable_direct_features=self.params.disable_direct_features,
-            use_word_vectors=self.params.use_word_vectors,
+            params=self.params.model,
         )
 
         # Prepare model for training.
