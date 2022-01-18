@@ -280,7 +280,7 @@ class AweModel(pl.LightningModule):
 
         # Log `hp_metric` which is used as main metric in TensorBoard.
         if prefix == 'val':
-            self.log('hp_metric', **(log_args | {'prog_bar': False}))
+            self.log('hp_metric', swde_f1, **(log_args | {'prog_bar': False}))
 
         return prefixed
 
