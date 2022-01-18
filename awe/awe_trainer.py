@@ -25,6 +25,7 @@ class AweTrainingParams:
     lstm_args: dict[str, Any] = None
     disable_direct_features: bool = False
     use_two_gcn_layers: bool = True
+    use_word_vectors: bool = True
 
     # Training
     epochs: int = 10
@@ -92,6 +93,7 @@ class AweTrainer:
             label_smoothing=0.1,
             use_two_gcn_layers=self.params.use_two_gcn_layers,
             disable_direct_features=self.params.disable_direct_features,
+            use_word_vectors=self.params.use_word_vectors,
         )
 
         # Prepare model for training.

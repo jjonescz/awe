@@ -59,6 +59,7 @@ class AweModel(pl.LightningModule):
         pack_words: bool = False,
         use_two_gcn_layers: bool = True,
         disable_direct_features: bool = False,
+        use_word_vectors: bool = True,
     ):
         super().__init__()
 
@@ -94,7 +95,11 @@ class AweModel(pl.LightningModule):
             )
 
         # Word vector will be appended for each node.
-        input_features = feature_count + (lstm_dim if use_lstm else word_dim)
+        input_features = feature_count
+        if use_lstm:
+            input_features += lstm_dim
+        elif use_word_vectors:
+            input_features += word_dim
 
         D = 64
         if use_gnn:
@@ -126,6 +131,7 @@ class AweModel(pl.LightningModule):
         self.pack_words = pack_words
         self.use_two_gcn_layers = use_two_gcn_layers
         self.disable_direct_features = disable_direct_features
+        self.use_word_vectors = use_word_vectors
 
     def forward(self, batch: data.Batch):
         # x: [num_nodes, num_features]
@@ -166,7 +172,7 @@ class AweModel(pl.LightningModule):
                 # [num_masked_nodes, max_num_words, word_dim]
 
         # Extract word identifiers for the batch.
-        word_ids = getattr(batch, 'word_identifiers', None)
+        word_ids = getattr(batch, 'word_identifiers', None) if self.use_word_vectors else None
         if word_ids is not None: # [num_nodes, max_num_words]
             if self.filter_node_words:
                 # Keep only sentences at leaf nodes.
