@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Any, Sequence
+from typing import Any, Optional, Sequence
 
 import numpy as np
 import pytorch_lightning as pl
@@ -28,6 +28,9 @@ class AweTrainingParams:
 
     # Training
     epochs: int = 10
+
+    version_name: Optional[str] = None
+    """Suffix of version folder where logs are saved."""
 
 class AweTrainer:
     ds: dataset.DatasetCollection
@@ -99,7 +102,7 @@ class AweTrainer:
             max_epochs=self.params.epochs,
             callbacks=[gym.CustomProgressBar(refresh_rate=10)],
             resume_from_checkpoint=self.g.get_last_checkpoint_path(),
-            logger=self.g.create_logger(),
+            logger=self.g.create_logger(name=self.params.version_name),
             gradient_clip_val=0.5,
         )
 

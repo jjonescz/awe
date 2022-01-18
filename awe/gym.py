@@ -16,13 +16,14 @@ from awe.data import dataset
 
 LOG_DIR = 'logs'
 
-def get_version_path(version: int):
-    return f'{LOG_DIR}/version_{version}'
+def get_version_path(version: Union[str, int]):
+    subdir = f'version_{version}' if isinstance(version, int) else version
+    return f'{LOG_DIR}/{subdir}'
 
 @dataclass
 class Checkpoint:
     path: str
-    version: int
+    version: Union[str, int]
     epoch: int
     step: int
 
@@ -186,9 +187,19 @@ class Gym:
             raise RuntimeError(f'Directory already exists: {version_path}')
         return shutil.copytree(current_checkpoint.version_path, version_path)
 
-    def create_logger(self):
+    def get_next_version(self, name: Optional[str] = None):
+        if name is None:
+            return None
+
+        last_checkpoint = self.get_last_checkpoint()
+        if last_checkpoint is None:
+            return f'version_1-{name}'
+
+        return f'version_{last_checkpoint.version + 1}-{name}'
+
+    def create_logger(self, name: Optional[str] = None):
         return TensorBoardLogger(
             save_dir=os.getcwd(),
             name=LOG_DIR,
-            version=self.get_last_checkpoint_version()
+            version=self.get_next_version(name)
         )
