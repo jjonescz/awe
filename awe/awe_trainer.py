@@ -135,9 +135,9 @@ def train_grid(param_grid: list[AweTrainingParams]):
         if trainer.interrupted:
             print(f'Training of {params.version_name} interrupted')
             break
-        else:
-            status = trainer.g.trainer.state.status
-            print(f'Training of {params.version_name} {status}')
+
+        status = trainer.g.trainer.state.status
+        print(f'Training of {params.version_name} {status}')
 
 class InterruptDetectingCallback(pl.Callback):
     def __init__(self, trainer: AweTrainer):
