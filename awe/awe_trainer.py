@@ -29,6 +29,7 @@ class AweTrainingParams:
 
 class AweTrainer:
     ds: dataset.DatasetCollection
+    g: gym.Gym
 
     def __init__(self, params: AweTrainingParams):
         self.params = params
@@ -87,24 +88,24 @@ class AweTrainer:
         )
 
         # Prepare model for training.
-        g = gym.Gym(self.ds, model)
-        g.restore_checkpoint = False
-        g.trainer = pl.Trainer(
+        self.g = gym.Gym(self.ds, model)
+        self.g.restore_checkpoint = False
+        self.g.trainer = pl.Trainer(
             gpus=torch.cuda.device_count(),
             max_epochs=self.params.epochs,
             callbacks=[gym.CustomProgressBar(refresh_rate=10)],
-            resume_from_checkpoint=g.get_last_checkpoint_path(),
-            logger=g.create_logger(),
+            resume_from_checkpoint=self.g.get_last_checkpoint_path(),
+            logger=self.g.create_logger(),
             gradient_clip_val=0.5,
         )
 
         # Save training inputs.
-        g.save_inputs()
-        g.save_model_text()
+        self.g.save_inputs()
+        self.g.save_model_text()
 
         # Train model.
-        g.trainer.fit(model, data_module.DataModule(self.ds))
+        self.g.trainer.fit(model, data_module.DataModule(self.ds))
 
         # Save results.
-        g.save_results('val_unseen')
-        g.save_results('val_seen')
+        self.g.save_results('val_unseen')
+        self.g.save_results('val_seen')

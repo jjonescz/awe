@@ -10,6 +10,7 @@
         "bokeh",
         "ckpt",
         "conv",
+        "cuda",
         "curr",
         "dataloaders",
         "dtype",
