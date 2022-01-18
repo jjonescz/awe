@@ -11,7 +11,7 @@ from pytorch_lightning.callbacks.progress import ProgressBar
 from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 from tqdm.auto import tqdm
 
-from awe import awe_model, utils
+from awe import awe_model, log_utils, utils
 from awe.data import dataset
 
 LOG_DIR = 'logs'
@@ -144,8 +144,12 @@ class Gym:
         return path
 
     def save_model_text(self):
+        # Get model summary without logging it to console.
+        with log_utils.all_logging_disabled():
+            summary = self.model.summarize(max_depth=1)
+
         path = self.get_current_checkpoint().model_text_path
-        model_text = f'{self.model}\n\n{self.model.summarize(max_depth=1)}'
+        model_text = f'{self.model}\n\n{summary}'
         return utils.save_or_check_file(path, model_text)
 
     def save_results(self, dataset_name: str):
