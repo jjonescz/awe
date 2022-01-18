@@ -122,8 +122,14 @@ class Gym:
         if len(existing_versions) == 0:
             self.version = Version(1, version_name)
         else:
-            max_num = max(v.number for v in existing_versions)
-            self.version = Version(max_num + 1, version_name)
+            max_version = utils.where_max(existing_versions, lambda v: v.number)
+
+            if max_version.name == version_name:
+                raise RuntimeError(
+                    f'Last version {max_version.version_dir_name} has ' + \
+                    'unchanged name.')
+
+            self.version = Version(max_version.number + 1, version_name)
         self.version.create()
 
     def save_model(self):
