@@ -36,6 +36,7 @@ class AweTrainingParams:
 class AweTrainer:
     ds: dataset.DatasetCollection
     g: gym.Gym
+    interrupted: bool = False
 
     def __init__(self, params: AweTrainingParams):
         self.params = params
@@ -101,7 +102,10 @@ class AweTrainer:
         self.g.trainer = pl.Trainer(
             gpus=torch.cuda.device_count(),
             max_epochs=self.params.epochs,
-            callbacks=[gym.CustomProgressBar(refresh_rate=10)],
+            callbacks=[
+                gym.CustomProgressBar(refresh_rate=10),
+                InterruptDetectingCallback(self),
+            ],
             logger=self.g.create_logger(),
             gradient_clip_val=0.5,
         )
@@ -116,3 +120,28 @@ class AweTrainer:
         # Save results.
         self.g.save_results('val_unseen')
         self.g.save_results('val_seen')
+
+def train_grid(param_grid: list[AweTrainingParams]):
+    for params in param_grid:
+        print(f'*** Version: {params.version_name} ***')
+
+        trainer = AweTrainer(params)
+        lengths = trainer.load_data()
+        print(lengths)
+
+        trainer.train_model()
+
+        # End early if interrupted.
+        if trainer.interrupted:
+            print(f'Training of {params.version_name} interrupted')
+            break
+        else:
+            status = trainer.g.trainer.state.status
+            print(f'Training of {params.version_name} {status}')
+
+class InterruptDetectingCallback(pl.Callback):
+    def __init__(self, trainer: AweTrainer):
+        self.trainer = trainer
+
+    def on_keyboard_interrupt(self, *_):
+        self.trainer.interrupted = True
