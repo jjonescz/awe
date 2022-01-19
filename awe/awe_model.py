@@ -71,6 +71,7 @@ class AweModel(pl.LightningModule):
         label_count: int,
         char_count: int,
         params: AweModelParams,
+        lr: float = 1e-3,
     ):
         super().__init__()
 
@@ -158,6 +159,7 @@ class AweModel(pl.LightningModule):
 
         self.label_count = label_count
         self.params = params
+        self.lr = lr
 
     def forward(self, batch: data.Batch):
         # x: [num_nodes, num_features]
@@ -356,7 +358,7 @@ class AweModel(pl.LightningModule):
         return self.loss(z, y)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
         return optimizer
 
     def compute_swde_f1(self, inputs: ModelInputs):

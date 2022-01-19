@@ -60,6 +60,7 @@ class DataSplitter:
 
 class AweTrainer:
     ds: dataset.DatasetCollection
+    datamodule: data_module.DataModule
     g: gym.Gym
     interrupted: bool = False
 
@@ -68,6 +69,10 @@ class AweTrainer:
 
     def load_data(self):
         pl.seed_everything(42, workers=True)
+
+        # Delete existing version.
+        if self.params.delete_existing_version:
+            gym.Version.delete_last(self.params.version_name)
 
         # Split data.
         sds = swde.Dataset(suffix='-exact')
@@ -107,6 +112,7 @@ class AweTrainer:
             batch_size=self.params.batch_size,
             num_workers=self.params.num_workers
         )
+        self.datamodule = data_module.DataModule(self.ds)
         return self.ds.get_lengths()
 
     def extract_features(self):
@@ -125,7 +131,7 @@ class AweTrainer:
         # Compute features.
         self.ds.compute_features(parallelize=6)
 
-    def train_model(self):
+    def prepare_model(self):
         # Create model.
         label_count = len(self.ds.first_dataset.label_map)
         model = awe_model.AweModel(
@@ -134,10 +140,6 @@ class AweTrainer:
             char_count=len(self.ds.root.chars) + 1,
             params=self.params.model,
         )
-
-        # Delete existing version.
-        if self.params.delete_existing_version:
-            gym.Version.delete_last(self.params.version_name)
 
         # Prepare model for training.
         self.g = gym.Gym(self.ds, model, self.params.version_name)
@@ -152,12 +154,18 @@ class AweTrainer:
             gradient_clip_val=0.5,
         )
 
+    def find_lr(self):
+        lr_finder = self.g.trainer.tuner.lr_find(self.g.model, self.datamodule)
+        print(lr_finder.results)
+        lr_finder.plot(suggest=True, show=True)
+
+    def train_model(self):
         # Save training inputs.
         self.g.save_inputs()
         self.g.save_model_text()
 
         # Train model.
-        self.g.trainer.fit(model, data_module.DataModule(self.ds))
+        self.g.trainer.fit(self.g.model, self.datamodule)
 
         # Save results.
         self.g.save_results('val_unseen')
@@ -171,6 +179,7 @@ def train_grid(param_grid: list[AweTrainingParams]):
         lengths = trainer.load_data()
         print(lengths)
 
+        trainer.prepare_model()
         trainer.train_model()
 
         # End early if interrupted.
