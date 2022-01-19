@@ -1,6 +1,7 @@
 import os
 import re
 from dataclasses import dataclass
+import shutil
 from typing import Optional, Union
 
 import pytorch_lightning as pl
@@ -31,6 +32,42 @@ class Version:
     @classmethod
     def get_all(cls):
         return list(cls._iterate_all())
+
+    @classmethod
+    def get_latest(cls):
+        existing_versions = cls.get_all()
+        if len(existing_versions) == 0:
+            return None
+        return utils.where_max(existing_versions, lambda v: v.number)
+
+    @classmethod
+    def delete_last(cls, name: str):
+        """
+        If last version has the given `name`, deletes it.
+        """
+
+        latest_version = cls.get_latest()
+        if latest_version is not None and latest_version.name == name:
+            latest_version.delete()
+
+    @classmethod
+    def create_new(cls, name: str):
+        """
+        Creates new version with the given `name` and auto-incremented number.
+        """
+
+        latest_version = cls.get_latest()
+        if latest_version is None:
+            version = Version(1, name)
+        else:
+            if latest_version.name == name:
+                raise RuntimeError(
+                    f'Last version {latest_version.version_dir_name} has ' + \
+                    'unchanged name.')
+
+            version = Version(latest_version.number + 1, name)
+        version.create()
+        return version
 
     @property
     def version_dir_name(self):
@@ -74,6 +111,9 @@ class Version:
     def create(self):
         os.makedirs(self.version_dir_path, exist_ok=True)
 
+    def delete(self):
+        shutil.rmtree(self.version_dir_path)
+
 @dataclass
 class Checkpoint:
     version: Version
@@ -116,21 +156,7 @@ class Gym:
     ):
         self.ds = ds
         self.model = model
-
-        # Create version.
-        existing_versions = Version.get_all()
-        if len(existing_versions) == 0:
-            self.version = Version(1, version_name)
-        else:
-            max_version = utils.where_max(existing_versions, lambda v: v.number)
-
-            if max_version.name == version_name:
-                raise RuntimeError(
-                    f'Last version {max_version.version_dir_name} has ' + \
-                    'unchanged name.')
-
-            self.version = Version(max_version.number + 1, version_name)
-        self.version.create()
+        self.version = Version.create_new(version_name)
 
     def save_model(self):
         path = self.version.model_path
