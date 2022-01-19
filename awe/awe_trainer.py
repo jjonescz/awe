@@ -173,7 +173,7 @@ class AweTrainer:
         self.g.save_results('val_seen')
 
 def train_grid(param_grid: list[AweTrainingParams]):
-    for params in param_grid:
+    for idx, params in enumerate(param_grid):
         print(f'*** Version: {params.version_name} ***')
 
         trainer = AweTrainer(params)
@@ -186,6 +186,9 @@ def train_grid(param_grid: list[AweTrainingParams]):
         # End early if interrupted.
         if trainer.interrupted:
             print(f'Training of {params.version_name} interrupted')
+            if idx + 1 == len(param_grid):
+                # If this is the last one, we can end.
+                break
             print('Interrupt again or training will continue in 10 seconds...')
             try:
                 time.sleep(10)
