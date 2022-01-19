@@ -35,6 +35,7 @@ class AweModelParams:
     disable_direct_features: bool = False
     use_word_vectors: bool = False
     word_vector_function: str = 'sum' # e.g., 'mean'
+    freeze_word_vectors: bool = True
     learning_rate: float = 1e-3
 
     @property
@@ -85,7 +86,10 @@ class AweModel(pl.LightningModule):
         # Add one embedding at the top (for unknown and pad words).
         embeddings = F.pad(embeddings, (0, 0, 1, 0))
         self.word_embedding = torch.nn.Embedding.from_pretrained(
-            embeddings, padding_idx=0)
+            embeddings,
+            padding_idx=0,
+            freeze=params.freeze_word_vectors
+        )
         word_dim = embeddings.shape[1]
 
         if params.needs_char_embedding:
