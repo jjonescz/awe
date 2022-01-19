@@ -36,6 +36,7 @@ class AweModelParams:
     use_word_vectors: bool = False
     word_vector_function: str = 'sum' # e.g., 'mean'
     freeze_word_vectors: bool = True
+    pretrained_word_embeddings: bool = True
     learning_rate: float = 1e-3
 
     @property
@@ -83,14 +84,20 @@ class AweModel(pl.LightningModule):
         # Load pre-trained word embedding layer.
         glove_model = glove.LazyEmbeddings.get_or_create()
         embeddings = torch.FloatTensor(glove_model.vectors)
-        # Add one embedding at the top (for unknown and pad words).
-        embeddings = F.pad(embeddings, (0, 0, 1, 0))
-        self.word_embedding = torch.nn.Embedding.from_pretrained(
-            embeddings,
-            padding_idx=0,
-            freeze=params.freeze_word_vectors
-        )
-        word_dim = embeddings.shape[1]
+        word_num, word_dim = embeddings.shape
+        if params.pretrained_word_embeddings:
+            # Add one embedding at the top (for unknown and pad words).
+            embeddings = F.pad(embeddings, (0, 0, 1, 0))
+            self.word_embedding = torch.nn.Embedding.from_pretrained(
+                embeddings,
+                padding_idx=0,
+                freeze=params.freeze_word_vectors
+            )
+        else:
+            # Use only word indices of the pre-trained embeddings.
+            self.word_embedding = torch.nn.Embedding(word_num, word_dim,
+                padding_idx=0
+            )
 
         if params.needs_char_embedding:
             self.char_embedding = torch.nn.Embedding(
