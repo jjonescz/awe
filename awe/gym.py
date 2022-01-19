@@ -112,6 +112,7 @@ class Version:
         os.makedirs(self.version_dir_path, exist_ok=True)
 
     def delete(self):
+        print(f'Deleting {self.version_dir_path}')
         shutil.rmtree(self.version_dir_path)
 
 @dataclass
