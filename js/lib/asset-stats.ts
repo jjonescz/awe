@@ -1,3 +1,5 @@
+import puppeteer from 'puppeteer-core';
+
 export class AssetStats {
   /*** Maps page ID to its stats. */
   public readonly pages: Map<string, AssetPageStats> = new Map();
@@ -19,4 +21,15 @@ export class AssetStats {
 export class AssetPageStats {
   public cssSuccess = 0;
   public cssError = 0;
+
+  public success(
+    request: puppeteer.HTTPRequest,
+    response: Partial<puppeteer.ResponseForRequest>
+  ) {
+    console.log(`successful response ${request.url()}`);
+  }
+
+  public error(request: puppeteer.HTTPRequest) {
+    console.log(`unsuccessful request ${request.url()}`);
+  }
 }

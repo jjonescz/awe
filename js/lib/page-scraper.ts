@@ -1,5 +1,6 @@
 import puppeteer from 'puppeteer-core';
 import winston from 'winston';
+import { AssetPageStats } from './asset-stats';
 import { SWDE_TIMESTAMP } from './constants';
 import { cleanHeaders, ignoreUrl } from './ignore';
 import { logger } from './logging';
@@ -28,7 +29,8 @@ export class PageScraper {
     public readonly logger: winston.Logger,
     private readonly scraper: Scraper,
     private readonly swdePage: SwdePage,
-    public readonly page: puppeteer.Page
+    public readonly page: puppeteer.Page,
+    public readonly assetStats: AssetPageStats
   ) {
     // Handle events.
     this.page.on('request', this.onRequest);
@@ -43,7 +45,8 @@ export class PageScraper {
   public static async create(scraper: Scraper, swdePage: SwdePage) {
     const page = await scraper.pagePool.acquire();
     const pageLogger = logger.child({ page: swdePage.id });
-    return new PageScraper(pageLogger, scraper, swdePage, page);
+    const assetStats = scraper.assetStats.getPage(swdePage.id);
+    return new PageScraper(pageLogger, scraper, swdePage, page, assetStats);
   }
 
   private onError = (e: Error) => {
@@ -154,6 +157,7 @@ export class PageScraper {
         this.logger.debug('ignored', { url: request.url() });
         await request.abort();
         this.scraper.stats.ignored++;
+        this.assetStats.error(request);
         return;
       }
 
@@ -162,6 +166,7 @@ export class PageScraper {
         this.logger.debug('aborted', { url: request.url() });
         await request.abort();
         this.scraper.stats.aborted++;
+        this.assetStats.error(request);
         return;
       }
 
@@ -170,6 +175,7 @@ export class PageScraper {
         this.logger.verbose('disabled', { url: request.url() });
         await request.abort();
         this.scraper.stats.disabled++;
+        this.assetStats.error(request);
         return;
       }
 
@@ -194,6 +200,7 @@ export class PageScraper {
     await request.respond(offline);
     this.addToStats(offline);
     this.scraper.stats.offline++;
+    this.assetStats.success(request, offline);
   }
 
   /** Redirects request to WaybackMachine. */
@@ -265,6 +272,7 @@ export class PageScraper {
       contentType: headers['Content-Type'],
       body,
     };
+    this.assetStats.success(request, cached);
     if (!this.inProgress.delete(`${timestamp}:${url}`))
       throw new Error(`Failed to delete ${url} (${timestamp})`);
     if (this.scraper.allowOffline) {
