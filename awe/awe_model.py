@@ -122,10 +122,15 @@ class AweModel(pl.LightningModule):
                 **(params.lstm_args or {})
             )
 
+            lstm_out_dim = params.lstm_dim
+            if self.lstm.bidirectional:
+                # LSTM output will be twice as long.
+                lstm_out_dim *= 2
+
         # Word vector will be appended for each node.
         input_features = feature_count
         if params.use_lstm:
-            input_features += params.lstm_dim
+            input_features += lstm_out_dim
         elif params.use_word_vectors:
             input_features += word_dim
 
@@ -246,11 +251,11 @@ class AweModel(pl.LightningModule):
                     packed_nodes = embedded_nodes
 
                 # Run through LSTM.
-                _, (word_state, _) = self.lstm(packed_nodes) # [1, num_masked_nodes, lstm_dim]
-                word_state = F.dropout(word_state)
+                word_output, (_, _) = self.lstm(packed_nodes)
+                    # [num_masked_nodes, max_num_words, D * lstm_dim]
 
-                # Keep only the last hidden state (whole text representation).
-                node_vectors = word_state[-1, ...] # [num_masked_nodes, lstm_dim]
+                # Keep only the last word output (whole text representation).
+                node_vectors = word_output[:, -1, ...] # [num_masked_nodes, D * lstm_dim]
             else:
                 # If not using LSTM, use averaged word embeddings.
                 node_vectors = torch.mean(embedded_words, dim=1) # [num_masked_nodes, word_dim]
