@@ -23,6 +23,7 @@ class AweTrainingParams:
     model: awe_model.AweModelParams = awe_model.AweModelParams()
 
     # Training
+    use_gpu: bool = True
     epochs: int = 10
 
     version_name: Optional[str] = None
@@ -86,7 +87,7 @@ class AweTrainer:
         # Prepare model for training.
         self.g = gym.Gym(self.ds, model, self.params.version_name)
         self.g.trainer = pl.Trainer(
-            gpus=torch.cuda.device_count(),
+            gpus=torch.cuda.device_count() if self.params.use_gpu else 0,
             max_epochs=self.params.epochs,
             callbacks=[
                 gym.CustomProgressBar(refresh_rate=10),
