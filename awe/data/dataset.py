@@ -475,7 +475,7 @@ class DatasetCollection:
     def extract_inputs(self):
         """Extracts inputs in a serialization-friendly form."""
         return {
-            'root': self.root.extract_options(),
+            'root': self.root.options,
             'sets': dict(
                 (name, ds.extract_inputs())
                 for name, ds in self.datasets.items()
