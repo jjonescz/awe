@@ -23,7 +23,7 @@ echo "http://localhost:8888/\?token\=${JUPYTER_TOKEN}"
 echo ${PAPERSPACE_FQDN}
 
 # Start persistent Jupyter server on http://localhost:8890/ with no token set.
-nohup nice jupyter notebook --allow-root --port 8890 \
+nohup nice jupyter notebook --allow-root --no-browser --port 8890 \
     --NotebookApp.notebook_dir=/storage/awe/src --NotebookApp.token='' \
     --NotebookApp.disable_check_xsrf=True > /jupyter.out &
 
