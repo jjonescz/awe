@@ -1,4 +1,5 @@
 import collections
+import dataclasses
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 
@@ -24,12 +25,24 @@ def categorical_dict() -> dict[str, CategoryInfo]:
     d.default_factory = lambda: CategoryInfo(len(d) + 1, 0)
     return d
 
+@dataclass
+class AweFeatureOptions:
+    cutoff_words: Optional[int] = 15
+    """
+    Maximum number of words to preserve in each node (or `None` to preserve
+    all). Used by `CharacterIdentifiers` and `WordIdentifiers`.
+    """
+
+    cutoff_word_length: Optional[int] = 10
+    """
+    Maximum number of characters to preserve in each token (or `None` to
+    preserve all). Used by `CharacterIdentifiers`.
+    """
+
 class RootContext:
     """
     Data stored here are scoped to all pages. Initialized in `Feature.prepare`.
     """
-
-    OPTIONS = ['cutoff_words', 'cutoff_word_length']
 
     pages: set[str]
     """Identifiers of pages used for feature preparation against this object."""
@@ -48,17 +61,7 @@ class RootContext:
     `CharacterIdentifiers` and `WordIdentifiers`.
     """
 
-    cutoff_words: Optional[int] = None
-    """
-    Maximum number of words to preserve in each node (or `None` to preserve
-    all). Used by `CharacterIdentifiers` and `WordIdentifiers`.
-    """
-
-    cutoff_word_length: Optional[int] = None
-    """
-    Maximum number of characters to preserve in each token (or `None` to
-    preserve all). Used by `CharacterIdentifiers`.
-    """
+    options: AweFeatureOptions = AweFeatureOptions()
 
     visual_categorical: collections.defaultdict[str,
         collections.defaultdict[str, CategoryInfo]]
@@ -73,15 +76,12 @@ class RootContext:
         self.visual_categorical = collections.defaultdict(categorical_dict)
 
     def options_from(self, other: 'RootContext'):
-        for option in self.OPTIONS:
-            setattr(self, option, getattr(other, option))
+        self.options = dataclasses.replace(other.options) # clone
 
     def merge_with(self, other: 'RootContext'):
         # Check that options are consistent.
-        for option in self.OPTIONS:
-            assert getattr(self, option) == getattr(other, option), \
-                f'Option `{option}` does not match ' + \
-                f'({getattr(self, option)} vs. {getattr(other, option)})'
+        assert self.options == other.options, \
+            f'Options {self.options} do not match {other.options}'
 
         self.pages.update(other.pages)
         self.chars.update(other.chars)
@@ -100,12 +100,6 @@ class RootContext:
                         curr_category[l] = other_info
                     else:
                         curr_info.merge_with(other_info)
-
-    def extract_options(self):
-        return {
-            'cutoff_words': self.cutoff_words,
-            'cutoff_word_length': self.cutoff_word_length
-        }
 
     def describe_visual_categorical(self):
         return {

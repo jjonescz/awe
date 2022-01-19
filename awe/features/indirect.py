@@ -32,11 +32,11 @@ class CharIdentifiers(IndirectFeature):
             counter = 0
             for i, token in enumerate(self.tokenizer(node.text)):
                 if (
-                    context.cutoff_words is not None and
-                    i >= context.cutoff_words
+                    context.options.cutoff_words is not None and
+                    i >= context.options.cutoff_words
                 ):
                     break
-                token = token[:context.cutoff_word_length]
+                token = token[:context.options.cutoff_word_length]
                 context.chars.update(char for char in token)
                 context.max_word_len = max(context.max_word_len, len(token))
                 counter += 1
@@ -94,8 +94,8 @@ class WordIdentifiers(IndirectFeature):
             counter = 0
             for i, _ in enumerate(self.tokenizer(node.text)):
                 if (
-                    context.cutoff_words is not None and
-                    i >= context.cutoff_words
+                    context.options.cutoff_words is not None and
+                    i >= context.options.cutoff_words
                 ):
                     break
                 counter += 1
