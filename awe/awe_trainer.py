@@ -1,5 +1,6 @@
+import sys
 from dataclasses import dataclass
-from typing import Optional, Sequence
+from typing import Optional, Sequence, TypeVar
 
 import numpy as np
 import pytorch_lightning as pl
@@ -15,9 +16,16 @@ class AweTrainingParams:
     training_website_indices: Sequence[int] = (0, 3, 4, 5, 7)
     """Only `auto` vertical for now."""
 
+    train_pages_subset: Optional[int] = None
+    val_pages_subset: Optional[int] = 50
+    seen_pages_subset: Optional[int] = 200
+
     # Data loading
     batch_size: int = 64
     num_workers: int = 8
+
+    # Feature extraction
+    feat: features.AweFeatureOptions = features.AweFeatureOptions()
 
     # Model
     model: awe_model.AweModelParams = awe_model.AweModelParams()
@@ -31,6 +39,24 @@ class AweTrainingParams:
 
     delete_existing_version: bool = False
     """If version with the same name already exists, it'll be deleted."""
+
+T = TypeVar('T')
+
+class DataSplitterFactory:
+    def __init__(self):
+        self.rng = np.random.default_rng(42)
+
+    def create(self):
+        return DataSplitter(seed=self.rng.integers(0, sys.maxsize))
+
+class DataSplitter:
+    def __init__(self, seed: int):
+        self.rng = np.random.default_rng(seed)
+
+    def get_subset(self, data: list[T], amount: Optional[int]) -> list[T]:
+        if amount is None:
+            return data
+        return self.rng.choice(data, amount, replace=False)
 
 class AweTrainer:
     ds: dataset.DatasetCollection
@@ -46,15 +72,20 @@ class AweTrainer:
         # Split data.
         sds = swde.Dataset(suffix='-exact')
         websites = sds.verticals[0].websites
-        rng = np.random.default_rng(42)
+        rand = DataSplitterFactory()
+        train_rand = rand.create()
+        val_rand = rand.create()
+        seen_rand = rand.create()
         train_pages = [
             p for i in self.params.training_website_indices
-            for p in websites[i].pages
+            for p in train_rand.get_subset(
+                websites[i].pages, self.params.train_pages_subset)
         ]
         val_pages = [
             p for i in range(len(websites))
             if i not in self.params.training_website_indices
-            for p in rng.choice(websites[i].pages, 50, replace=False)
+            for p in val_rand.get_subset(
+                websites[i].pages, self.params.val_pages_subset)
         ]
 
         # Load data.
@@ -70,12 +101,29 @@ class AweTrainer:
         ]
         self.ds.create('train', train_pages, shuffle=True)
         self.ds.create('val_unseen', val_pages)
-        self.ds.create('val_seen', rng.choice(train_pages, 200, replace=False))
+        self.ds.create('val_seen',
+            seen_rand.get_subset(train_pages, self.params.seen_pages_subset))
         self.ds.create_dataloaders(
             batch_size=self.params.batch_size,
             num_workers=self.params.num_workers
         )
         return self.ds.get_lengths()
+
+    def extract_features(self):
+        # Prepare feature context (e.g., word dictionaries).
+        prev_root = self.ds.root.describe()
+        print(f'Before: {prev_root}')
+        self.ds.prepare_features(parallelize=8)
+        self.ds.root.freeze()
+        curr_root = self.ds.root.describe()
+        print(f'After: {curr_root}')
+        saved = self.ds.save_root_context(
+            overwrite_existing=(prev_root['pages'] != curr_root['pages'])
+        )
+        print(f'Saved: {saved}')
+
+        # Compute features.
+        self.ds.compute_features(parallelize=6)
 
     def train_model(self):
         # Create model.
