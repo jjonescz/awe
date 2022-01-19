@@ -34,6 +34,7 @@ class AweModelParams:
     use_two_gcn_layers: bool = True
     disable_direct_features: bool = False
     use_word_vectors: bool = False
+    word_vector_function: str = 'sum' # e.g., 'mean'
     learning_rate: float = 1e-3
 
     @property
@@ -260,8 +261,9 @@ class AweModel(pl.LightningModule):
                 # Keep only the last word output (whole text representation).
                 node_vectors = word_output[:, -1, ...] # [num_masked_nodes, D * lstm_dim]
             else:
-                # If not using LSTM, use averaged word embeddings.
-                node_vectors = torch.mean(embedded_words, dim=1) # [num_masked_nodes, word_dim]
+                # If not using LSTM, aggregate word embeddings.
+                f = getattr(torch, self.params.word_vector_function)
+                node_vectors = f(embedded_words, dim=1) # [num_masked_nodes, word_dim]
 
             if self.params.filter_node_words:
                 # Expand word vectors to the original shape.
