@@ -34,6 +34,7 @@ class AweModelParams:
     use_two_gcn_layers: bool = True
     disable_direct_features: bool = False
     use_word_vectors: bool = False
+    learning_rate: float = 1e-3
 
     @property
     def needs_char_embedding(self):
@@ -71,7 +72,7 @@ class AweModel(pl.LightningModule):
         label_count: int,
         char_count: int,
         params: AweModelParams,
-        lr: float = 1e-3,
+        lr: Optional[float] = None,
     ):
         super().__init__()
 
@@ -358,7 +359,9 @@ class AweModel(pl.LightningModule):
         return self.loss(z, y)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
+        optimizer = torch.optim.Adam(self.parameters(),
+            lr=(self.lr or self.params.learning_rate)
+        )
         return optimizer
 
     def compute_swde_f1(self, inputs: ModelInputs):
