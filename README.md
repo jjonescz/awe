@@ -28,3 +28,5 @@ See available commands via `doit list`. Their source code is in `dodo.py`.
 **Adding new Python package:** Add the package to `gradient/requirements.txt`
 and run `./sh/install.sh` (if using Dev Containers) or rebuild the Docker image
 (if using Remote SSH).
+
+**Debugging training code:** Set `num_workers=0`. GPUs can be enabled.
