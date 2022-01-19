@@ -210,7 +210,8 @@ class AweModel(pl.LightningModule):
                     (num_masked_nodes, max_num_words, self.params.char_lstm_dim))
 
         # Extract word identifiers for the batch.
-        word_ids = getattr(batch, 'word_identifiers', None) if self.params.use_word_vectors else None
+        word_ids = getattr(batch, 'word_identifiers', None) \
+            if self.params.use_word_vectors else None
         if word_ids is not None: # [num_nodes, max_num_words]
             if self.params.filter_node_words:
                 # Keep only sentences at leaf nodes.
@@ -315,7 +316,11 @@ class AweModel(pl.LightningModule):
         preds = torch.argmax(z, dim=1)
 
         acc = metrics.accuracy(preds, y)
-        f1 = metrics.f1(preds, y, average="weighted", num_classes=self.label_count, ignore_index=0)
+        f1 = metrics.f1_score(preds, y,
+            average="weighted",
+            num_classes=self.label_count,
+            ignore_index=0
+        )
         swde_f1 = self.compute_swde_f1(ModelInputs(batch, y, z))
 
         results = {
