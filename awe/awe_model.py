@@ -223,7 +223,7 @@ class AweModel(pl.LightningModule):
                 # [num_masked_nodes, max_num_words, word_dim]
 
             # Concatenate with character embeddings.
-            if self.params.use_cnn:
+            if self.params.needs_char_embedding:
                 embedded_nodes = torch.cat((embedded_words, char_vectors), dim=2)
                     # [num_masked_nodes, max_num_words, 2 * word_dim]
             else:
