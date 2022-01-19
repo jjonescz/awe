@@ -29,6 +29,9 @@ class AweTrainingParams:
     version_name: Optional[str] = None
     """Suffix of version folder where logs are saved."""
 
+    delete_existing_version: bool = False
+    """If version with the same name already exists, it'll be deleted."""
+
 class AweTrainer:
     ds: dataset.DatasetCollection
     g: gym.Gym
@@ -83,6 +86,10 @@ class AweTrainer:
             char_count=len(self.ds.root.chars) + 1,
             params=self.params.model,
         )
+
+        # Delete existing version.
+        if self.params.delete_existing_version:
+            gym.Version.delete_last(self.params.version_name)
 
         # Prepare model for training.
         self.g = gym.Gym(self.ds, model, self.params.version_name)
