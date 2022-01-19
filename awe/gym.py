@@ -43,11 +43,13 @@ class Version:
     @classmethod
     def delete_last(cls, name: str):
         """
-        If last version has the given `name`, deletes it.
+        If last version has the given `name` or no name, deletes it.
         """
 
         latest_version = cls.get_latest()
-        if latest_version is not None and latest_version.name == name:
+        if latest_version is not None and (
+            latest_version.name == name or latest_version.name == ''
+        ):
             latest_version.delete()
 
     @classmethod
