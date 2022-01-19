@@ -1,4 +1,5 @@
 import sys
+import time
 from dataclasses import dataclass
 from typing import Optional, Sequence, TypeVar
 
@@ -185,7 +186,13 @@ def train_grid(param_grid: list[AweTrainingParams]):
         # End early if interrupted.
         if trainer.interrupted:
             print(f'Training of {params.version_name} interrupted')
-            break
+            print('Interrupt again or training will continue in 10 seconds...')
+            try:
+                time.sleep(10)
+                continue
+            except KeyboardInterrupt:
+                print('Training grid interrupted')
+                break
 
         status = trainer.g.trainer.state.status
         print(f'Training of {params.version_name} {status}')
