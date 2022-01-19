@@ -1,4 +1,5 @@
 import puppeteer from 'puppeteer-core';
+import { AssetStats } from './asset-stats';
 import { Cache } from './cache';
 import { logger } from './logging';
 import { createPagePool, PagePoolOptions } from './page-pool';
@@ -18,6 +19,7 @@ export class Scraper {
   /** Avoid retrying requests aborted in previous runs. */
   public rememberAborted = false;
   public readonly stats = new ScrapingStats();
+  public readonly assetStats = new AssetStats();
   public readonly pagePool;
 
   private constructor(
