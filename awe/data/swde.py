@@ -473,7 +473,7 @@ class Dataset:
                 with awe_graph.HtmlPageCaching():
                     page.validate()
                 return None
-            except (AssertionError, RuntimeError) as e:
+            except (AssertionError, RuntimeError, ValueError) as e:
                 if end_after_first_error:
                     found = True
                 if error_callback is not None:
