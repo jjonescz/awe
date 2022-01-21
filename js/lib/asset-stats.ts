@@ -26,10 +26,10 @@ export class AssetPageStats {
     request: puppeteer.HTTPRequest,
     response: Partial<puppeteer.ResponseForRequest>
   ) {
-    console.log(`successful response ${request.url()}`);
+    // TBD.
   }
 
   public error(request: puppeteer.HTTPRequest) {
-    console.log(`unsuccessful request ${request.url()}`);
+    // TBD.
   }
 }
