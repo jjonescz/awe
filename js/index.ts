@@ -127,6 +127,10 @@ class Program extends Command {
       char: 'S',
       description: 'disable JavaScript execution on pages',
     }),
+    fromEachFolder: flags.integer({
+      char: 'F',
+      description: 'take only this many pages from each folder',
+    }),
   };
 
   async run() {
@@ -153,12 +157,30 @@ class Program extends Command {
       allFiles = await glob(fullGlob);
     }
     logger.debug('found files', { count: allFiles.length });
-    const files = allFiles
+    let files = allFiles
       .sort()
       .slice(
         flags.skip,
         flags.maxNumber === undefined ? undefined : flags.skip + flags.maxNumber
       );
+
+    // Take only N pages from each folder.
+    if (flags.fromEachFolder !== undefined) {
+      const groups: Map<string, string[]> = new Map();
+      if (flags.fromEachFolder > 0) {
+        for (const file of files) {
+          const directory = path.dirname(file);
+          let group = groups.get(directory);
+          if (group === undefined) {
+            group = [file];
+            groups.set(directory, group);
+          } else if (group.length < flags.fromEachFolder) {
+            group.push(file);
+          }
+        }
+      }
+      files = [...groups.values()].flat();
+    }
 
     // Clean files if asked.
     if (flags.clean) {
