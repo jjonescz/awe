@@ -106,7 +106,7 @@ class Program extends Command {
     }),
     devtools: flags.boolean({
       char: 'D',
-      description: 'Run Chrome in headless mode with DevTools open',
+      description: 'Run Chrome in non-headless mode with DevTools open',
     }),
     timeout: flags.integer({
       char: 'T',

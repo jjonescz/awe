@@ -27,6 +27,7 @@
         "nbsp",
         "ncols",
         "nelement",
+        "networkidle",
         "networkx",
         "noscript",
         "optim",
