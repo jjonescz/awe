@@ -28,3 +28,17 @@ and start your command with:
 ```bash
 node -r ts-node/register/transpile-only index.ts
 ```
+
+## Execution
+
+Scraping was executed on a Windows computer using command:
+
+```ps1
+pnpm start -- -j=8 -e="C:\Program Files\Google\Chrome\Application\chrome.exe" -T=1000 -S -x
+```
+
+Re-scraping invalid pages was performed via:
+
+```ps1
+pnpm start -- -j=8 -e="C:\Program Files\Google\Chrome\Application\chrome.exe" -T=1000 -S --files="..\data\swde\invalid_pages.txt"
+```
