@@ -1,6 +1,7 @@
 import glob
 import os
 import re
+import warnings
 from dataclasses import dataclass
 from typing import Callable, Optional
 
@@ -155,9 +156,10 @@ class Website:
                 result[page.index] = page
 
         # Verify all pages were created.
-        non_existent = [str(i) for i, p in enumerate(result) if p is None]
-        assert len(non_existent) == 0, 'Some pages were not created for ' + \
-            f'site {self.dir_name} ({", ".join(non_existent)}).'
+        non_existent = [i for i, p in enumerate(result) if p is None]
+        if len(non_existent) != 0:
+            warnings.warn('Some pages were not created for site ' + \
+                f'{self.dir_name} ({utils.to_ranges(non_existent)}).')
 
         return result
 
