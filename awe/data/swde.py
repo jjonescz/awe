@@ -492,12 +492,15 @@ class Dataset:
 
             # Keep only pages from previous list of invalid pages.
             if read_list:
-                with open(INVALID_PAGES_PATH, mode='r', encoding='utf-8') as f:
-                    page_paths = { l.rstrip() for l in f.readlines() }
-                pages = [
-                    p for p in pages
-                    if p.relative_original_path in page_paths
-                ]
+                if os.path.exists(INVALID_PAGES_PATH):
+                    with open(INVALID_PAGES_PATH, mode='r', encoding='utf-8') as f:
+                        page_paths = { l.rstrip() for l in f.readlines() }
+                    pages = [
+                        p for p in pages
+                        if p.relative_original_path in page_paths
+                    ]
+                else:
+                    print(f'List file not found ({INVALID_PAGES_PATH})')
 
         target_pages = list(enumerate(pages))[skip:]
 
