@@ -238,6 +238,10 @@ class Page(awe_graph.HtmlPage):
         return self.file_path.removesuffix('.htm') + '.pt'
 
     @property
+    def screenshot_preview_path(self):
+        return self.file_path.removesuffix('.htm') + '-preview.png'
+
+    @property
     def dom_data(self):
         json_path = self.file_path.removesuffix('.htm') + '.json'
         return dom_data.DomData(json_path)
