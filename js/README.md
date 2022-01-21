@@ -37,7 +37,8 @@ Scraping was executed on a Windows computer using command:
 pnpm start -- -j=8 -e="C:\Program Files\Google\Chrome\Application\chrome.exe" -T=1000 -S -x
 ```
 
-Re-scraping invalid pages was performed via:
+Re-scraping invalid pages (as determined by script `../validate.py`) was
+performed via:
 
 ```ps1
 pnpm start -- -j=8 -e="C:\Program Files\Google\Chrome\Application\chrome.exe" -T=1000 -S --files="..\data\swde\invalid_pages.txt"
