@@ -43,3 +43,9 @@ performed via:
 ```ps1
 pnpm start -- -j=8 -e="C:\Program Files\Google\Chrome\Application\chrome.exe" -T=1000 -S --files="..\data\swde\invalid_pages.txt"
 ```
+
+Taking screenshots of 10 pages of each website of `auto` vertical:
+
+```ps1
+pnpm start -- -j=8 -e="C:\Program Files\Google\Chrome\Application\chrome.exe" -RSot -T=1000 -F 10 -g "auto/*/????.htm"
+```
