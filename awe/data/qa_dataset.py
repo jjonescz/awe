@@ -72,10 +72,11 @@ def prepare_dataset(pages: list[awe_graph.HtmlPage]):
                 progress.update(1)
 
             # Append data.
-            df = df.append(pd.DataFrame(new_data))
+            if len(new_data['id']) != 0:
+                df = df.append(pd.DataFrame(new_data))
 
-            # Save dataframe.
-            df.to_csv(df_path, index=False)
+                # Save dataframe.
+                df.to_csv(df_path, index=False)
 
 def extract_text(page: awe_graph.HtmlPage):
     """Converts page's HTML to text."""
