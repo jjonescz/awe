@@ -83,6 +83,9 @@ RUN go get github.com/google/huproxy
 COPY requirements.txt /requirements.txt
 RUN pip install -r requirements.txt
 
+# Persist HuggingFace cache.
+ENV TRANSFORMERS_CACHE=/storage/.cache/huggingface/transformers
+
 WORKDIR /storage/awe/src
 
 COPY run.sh /run.sh
