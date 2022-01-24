@@ -37,7 +37,7 @@ class QaEntry:
                 values_str = ', '.join(f'"{value}"' for value in values)
                 raise RuntimeError(f'Expected to find at least {expected} ' + \
                     f'value{plural} for label "{label}" ({values_str}) but ' + \
-                    f'found {actual}.')
+                    f'found {actual} ({self.id}).')
 
 class QaDataset:
     """Dataset for question answering."""
