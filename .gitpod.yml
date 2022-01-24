@@ -1,0 +1,14 @@
+# See https://www.gitpod.io/docs/references/gitpod-yml.
+
+image: janjones/awe-gradient:latest
+
+vscode:
+  extensions:
+    - editorconfig.editorconfig
+    - esbenp.prettier-vscode
+    - ms-python.python
+    - ms-python.vscode-pylance
+    - ms-toolsai.jupyter
+    - streetsidesoftware.code-spell-checker
+    - mutantdino.resourcemonitor
+    - innerlee.nvidia-smi
