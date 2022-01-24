@@ -28,6 +28,17 @@ class QaEntry:
             for start in utils.find_all(self.text, value)
         ]
 
+    def validate(self):
+        for label, values in self.labels.items():
+            expected = len(values)
+            actual = len(self.get_answer_spans(label))
+            if actual < expected:
+                plural = 's' if expected > 1 else ''
+                values_str = ', '.join(f'"{value}"' for value in values)
+                raise RuntimeError(f'Expected to find at least {expected} ' + \
+                    f'value{plural} for label "{label}" ({values_str}) but ' + \
+                    f'found {actual}.')
+
 class QaDataset:
     """Dataset for question answering."""
 
@@ -37,11 +48,7 @@ class QaDataset:
 
     def __getitem__(self, idx: int):
         page = self.pages[idx]
-        folder = os.path.dirname(page.data_point_path)
-        df = self.get_df(folder)
-        row = df[df['id'] == page.identifier].iloc[0]
-        labels = json.loads(row['labels'])
-        return QaEntry(page.identifier, row['text'], labels)
+        return self.get_entry(page)
 
     def __len__(self):
         return len(self.pages)
@@ -52,6 +59,17 @@ class QaDataset:
             _, df = load_dataframe(folder)
             self.dfs[folder] = df
         return df
+
+    def get_entry(self, page: awe_graph.HtmlPage):
+        folder = os.path.dirname(page.data_point_path)
+        df = self.get_df(folder)
+        row = df[df['id'] == page.identifier].iloc[0]
+        labels = json.loads(row['labels'])
+        return QaEntry(page.identifier, row['text'], labels)
+
+    def validate(self):
+        for page in tqdm(self.pages, desc='pages'):
+            self.get_entry(page).validate()
 
 def prepare_dataset(pages: list[awe_graph.HtmlPage]):
     """Saves page texts to disk so that `QaDataset` can load them on demand."""
