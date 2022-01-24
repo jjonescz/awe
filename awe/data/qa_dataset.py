@@ -1,5 +1,6 @@
 import collections
 import dataclasses
+import html
 import json
 import re
 
@@ -26,6 +27,17 @@ class QaEntry:
 
     labels: dict[str, list[str]]
     """Mapping from label classes to their values."""
+
+    @staticmethod
+    def create(page: awe_graph.HtmlPage):
+        text = extract_text(page)
+        labels = {
+            # Note that labels may contain HTML entities (e.g., `&amp;`), that's
+            # why we call `html.unescape` on them.
+            f: [html.unescape(v) for v in page.get_groundtruth_texts(f)]
+            for f in page.fields
+        }
+        return QaEntry(page.identifier, text, labels)
 
     def get_answer_spans(self, label: str):
         return [span
@@ -123,14 +135,10 @@ def prepare_dataset(pages: list[awe_graph.HtmlPage], *,
                     continue
 
                 # Process page.
-                text = extract_text(page)
-                labels = {
-                    f: page.get_groundtruth_texts(f)
-                    for f in page.fields
-                }
-                new_data_idx.append(page.identifier)
-                new_data['text'].append(text)
-                new_data['labels'].append(json.dumps(labels))
+                entry = QaEntry.create(page)
+                new_data_idx.append(entry.id)
+                new_data['text'].append(entry.text)
+                new_data['labels'].append(json.dumps(entry.labels))
                 progress.update(1)
 
             # Append data.
