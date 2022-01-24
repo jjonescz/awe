@@ -10,23 +10,23 @@ This repository contains source code for AI-based structured web data extractor.
 
 ## Usage
 
-We use [VS Code](https://code.visualstudio.com/) with [Dev
-Containers](https://code.visualstudio.com/docs/remote/containers). For training
-on GPU in cloud, we have [instructions](gradient/README.md) to run on
-[Gradient](https://gradient.run) via [Remote
-SSH](https://code.visualstudio.com/docs/remote/ssh).
+We use [VS Code IDE](https://code.visualstudio.com/).
+- For training on GPU in cloud, we have [instructions](gradient/README.md) to
+run on [Gradient](https://gradient.run) via [Remote
+SSH](https://code.visualstudio.com/docs/remote/ssh) (the same container can be
+also setup locally for testing).
 
 ### Running
 
 See available commands via `doit list`. Their source code is in `dodo.py`.
 
 1. Prepare dataset by running `doit`.
-2. See `notebook.ipynb`.
+2. See `*.ipynb` Jupyter notebooks.
 
 ## Development
 
-**Adding new Python package:** Add the package to `gradient/requirements.txt`
-and run `./sh/install.sh` (if using Dev Containers) or rebuild the Docker image
-(if using Remote SSH).
+**Adding new Python package:** Add the package to `gradient/requirements.txt`,
+try if it works by running `pip install -r gradient/requirements.txt`, and
+rebuild the Docker image.
 
 **Debugging training code:** Set `num_workers=0`. GPUs can be enabled.
