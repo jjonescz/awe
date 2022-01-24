@@ -7,13 +7,26 @@ import selectolax.parser
 from black import os
 from tqdm.auto import tqdm
 
-from awe import awe_graph
+from awe import awe_graph, utils
+
 
 @dataclasses.dataclass
 class QaEntry:
     id: str
     text: str
     labels: dict[str, list[str]]
+
+    def get_answer_spans(self, label: str):
+        return [span
+            for value in self.labels[label]
+            for span in self.get_spans(value)
+        ]
+
+    def get_spans(self, value: str):
+        return [
+            (start, start + len(value))
+            for start in utils.find_all(self.text, value)
+        ]
 
 class QaDataset:
     """Dataset for question answering."""

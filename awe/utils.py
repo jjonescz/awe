@@ -138,3 +138,20 @@ def reload(*modules: list[str]):
         for k, v in list(sys.modules.items()):
             if k.startswith(module):
                 importlib.reload(v)
+
+def find_all(string: str, substring: str, overlap: bool = False):
+    """Finds all `substring` occurrences (start indices) in `string`."""
+    return list(_iterate_all(
+        string=string,
+        substring=substring,
+        overlap=overlap
+    ))
+
+def _iterate_all(string: str, substring: str, overlap: bool):
+    start = 0
+    while True:
+        start = string.find(substring, start)
+        if start < 0:
+            break
+        yield start
+        start += 1 if overlap else len(substring)
