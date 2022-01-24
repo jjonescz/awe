@@ -11,9 +11,10 @@ pytorch-lightning==1.4.9
 torch-tb-profiler==0.2.1
 # DoIt (job automation)
 doit==0.33.1
-# Parsel (HTML parsing)
+# HTML parsing
 parsel==1.6.0
 beautifulsoup4==4.10.0
+selectolax==0.3.6
 # Gensim (word embeddings)
 gensim==4.1.2
 # Python formatting and linting
