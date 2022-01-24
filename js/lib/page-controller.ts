@@ -78,12 +78,14 @@ export class PageController {
       return;
     }
 
-    if (!this.controller.skipExtraction) {
+    if (!this.controller.skipSave) {
       // Save page HTML (can be different from original due to JavaScript
       // dynamically updating the DOM).
       const html = await this.pageScraper.page.content();
       await this.page.withHtml(html).saveAs(recipe.htmlPath);
+    }
 
+    if (!this.controller.skipExtraction) {
       // Extract visual attributes.
       await extractor.extract();
       await extractor.save();

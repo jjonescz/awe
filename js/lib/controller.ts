@@ -17,6 +17,8 @@ export class Controller {
   public takeScreenshot = true;
   /** Skip already-scraped pages. */
   public skipExisting = false;
+  /** Skip HTML page saving. */
+  public skipSave = false;
   /** Skip extraction (perform only page loading). */
   public skipExtraction = false;
   /** Only validate existing extraction outcomes. */

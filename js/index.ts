@@ -91,6 +91,10 @@ class Program extends Command {
       char: 'x',
       description: 'skip already-scraped pages',
     }),
+    skipSave: flags.boolean({
+      char: 'H',
+      description: 'skip HTML saving',
+    }),
     skipExtraction: flags.boolean({
       char: 'R',
       description: 'skip feature extraction',
@@ -222,6 +226,7 @@ class Program extends Command {
     scraper.rememberAborted = flags.rememberAborted;
     controller.takeScreenshot = flags.screenshot;
     controller.skipExisting = flags.skipExisting;
+    controller.skipSave = flags.skipSave;
     controller.skipExtraction = flags.skipExtraction;
     controller.validateOnly = flags.validateOnly;
 
