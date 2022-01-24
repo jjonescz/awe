@@ -29,7 +29,7 @@ def prepare_dataset(pages: list[awe_graph.HtmlPage]):
     """Saves page texts to disk so that `QaDataset` can load them on demand."""
 
     with tqdm(desc='pages', total=len(pages)) as progress:
-        skipped = 0
+        progress_data = collections.defaultdict(int)
 
         # Group by folder.
         folders: dict[str, list[awe_graph.HtmlPage]] = \
@@ -39,6 +39,10 @@ def prepare_dataset(pages: list[awe_graph.HtmlPage]):
             folders[folder].append(page)
 
         for folder, files in folders.items():
+            # Update progress bar.
+            progress_data['folder'] = folder
+            progress.set_postfix(progress_data)
+
             # Load existing dataframe.
             df_path = os.path.join(folder, 'qa.csv')
             if os.path.exists(df_path):
@@ -51,8 +55,8 @@ def prepare_dataset(pages: list[awe_graph.HtmlPage]):
             for page in files:
                 # Skip existing.
                 if (df['id'] == page.identifier).any():
-                    skipped += 1
-                    progress.set_postfix({ 'skipped': skipped }, refresh=False)
+                    progress_data['skipped'] += 1
+                    progress.set_postfix(progress_data, refresh=False)
                     progress.update(1)
                     continue
 
