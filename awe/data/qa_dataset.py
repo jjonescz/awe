@@ -16,9 +16,16 @@ WHITESPACE_REGEX = r'(\s|[\u200b])+'
 
 @dataclasses.dataclass
 class QaEntry:
+    """Question answering example corresponding to one `HtmlPage`."""
+
     id: str
+    """Corresponds to `HtmlPage.identity`."""
+
     text: str
+    """Text extracted from the page's HTML."""
+
     labels: dict[str, list[str]]
+    """Mapping from label classes to their values."""
 
     def get_answer_spans(self, label: str):
         return [span
@@ -149,7 +156,6 @@ def extract_text(page: awe_graph.HtmlPage):
     for tag in ['script', 'style', 'head', '[document]', 'noscript', 'iframe']:
         for element in tree.css(tag):
             element.decompose()
-
 
     text = tree.body.text(separator=' ')
 
