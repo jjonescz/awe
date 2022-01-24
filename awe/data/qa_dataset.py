@@ -26,6 +26,12 @@ class QaEntry:
             for span in self.get_spans(value)
         ]
 
+    def get_all_answer_spans(self):
+        return {
+            label: self.get_answer_spans(label)
+            for label in self.labels.keys()
+        }
+
     def get_spans(self, value: str):
         return [
             (start, start + len(value))
