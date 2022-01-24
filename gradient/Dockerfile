@@ -84,7 +84,7 @@ COPY requirements.txt /requirements.txt
 RUN pip install -r requirements.txt
 
 # Persist HuggingFace cache.
-ENV TRANSFORMERS_CACHE=/storage/.cache/huggingface/transformers
+ENV HF_HOME=/storage/.cache/huggingface
 
 WORKDIR /storage/awe/src
 
