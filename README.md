@@ -15,6 +15,7 @@ We use [VS Code IDE](https://code.visualstudio.com/).
 run on [Gradient](https://gradient.run) via [Remote
 SSH](https://code.visualstudio.com/docs/remote/ssh) (the same container can be
 also setup locally for testing).
+- When CPU is enough, [Gitpod](https://www.gitpod.io/) can be used.
 
 ### Running
 
@@ -23,7 +24,7 @@ See available commands via `doit list`. Their source code is in `dodo.py`.
 1. Prepare dataset by running `doit`.
 2. See `*.ipynb` Jupyter notebooks.
 
-## Development
+### Development
 
 **Adding new Python package:** Add the package to `gradient/requirements.txt`,
 try if it works by running `pip install -r gradient/requirements.txt`, and
