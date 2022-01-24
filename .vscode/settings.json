@@ -21,6 +21,7 @@
         "hparams",
         "hstack",
         "iframe",
+        "iloc",
         "LSTM",
         "lxml",
         "MPAA",

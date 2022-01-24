@@ -1,4 +1,5 @@
 import collections
+import dataclasses
 import json
 
 import pandas as pd
@@ -8,22 +9,36 @@ from tqdm.auto import tqdm
 
 from awe import awe_graph
 
+@dataclasses.dataclass
+class QaEntry:
+    id: str
+    text: str
+    labels: dict[str, list[str]]
 
 class QaDataset:
     """Dataset for question answering."""
 
-    def __init__(self,
-        name: str,
-        df: pd.DataFrame
-    ):
-        self.name = name
-        self.df = df
+    def __init__(self, pages: list[awe_graph.HtmlPage]):
+        self.pages = pages
+        self.dfs: dict[str, pd.DataFrame] = {}
 
     def __getitem__(self, idx: int):
-        return self.df.iloc[idx]
+        page = self.pages[idx]
+        folder = os.path.dirname(page.data_point_path)
+        df = self.get_df(folder)
+        row = df[df['id'] == page.identifier].iloc[0]
+        labels = json.loads(row['labels'])
+        return QaEntry(page.identifier, row['text'], labels)
 
     def __len__(self):
-        return len(self.df)
+        return len(self.pages)
+
+    def get_df(self, folder: str):
+        df = self.dfs.get(folder)
+        if df is None:
+            _, df = load_dataframe(folder)
+            self.dfs[folder] = df
+        return df
 
 def prepare_dataset(pages: list[awe_graph.HtmlPage]):
     """Saves page texts to disk so that `QaDataset` can load them on demand."""
@@ -44,11 +59,7 @@ def prepare_dataset(pages: list[awe_graph.HtmlPage]):
             progress.set_postfix(progress_data)
 
             # Load existing dataframe.
-            df_path = os.path.join(folder, 'qa.csv')
-            if os.path.exists(df_path):
-                df = pd.read_csv(df_path, index_col=False)
-            else:
-                df = pd.DataFrame(columns=['id', 'text', 'labels'])
+            df_path, df = load_dataframe(folder)
 
             # Add pages.
             new_data = {'id': [], 'text': [], 'labels': []}
@@ -77,6 +88,12 @@ def prepare_dataset(pages: list[awe_graph.HtmlPage]):
 
                 # Save dataframe.
                 df.to_csv(df_path, index=False)
+
+def load_dataframe(folder: str):
+    df_path = os.path.join(folder, 'qa.csv')
+    if os.path.exists(df_path):
+        return df_path, pd.read_csv(df_path, index_col=False)
+    return df_path, pd.DataFrame(columns=['id', 'text', 'labels'])
 
 def extract_text(page: awe_graph.HtmlPage):
     """Converts page's HTML to text."""
