@@ -1,6 +1,7 @@
 import collections
 import dataclasses
 import json
+import re
 
 import pandas as pd
 import selectolax.parser
@@ -8,6 +9,9 @@ from black import os
 from tqdm.auto import tqdm
 
 from awe import awe_graph, utils
+
+WHITESPACE_REGEX = r'(\s|[\u200b])+'
+"""Matches whitespace characters."""
 
 
 @dataclasses.dataclass
@@ -63,7 +67,7 @@ class QaDataset:
     def get_entry(self, page: awe_graph.HtmlPage):
         folder = os.path.dirname(page.data_point_path)
         df = self.get_df(folder)
-        row = df[df['id'] == page.identifier].iloc[0]
+        row = df[df.index == page.identifier].iloc[0]
         labels = json.loads(row['labels'])
         return QaEntry(page.identifier, row['text'], labels)
 
@@ -71,7 +75,9 @@ class QaDataset:
         for page in tqdm(self.pages, desc='pages'):
             self.get_entry(page).validate()
 
-def prepare_dataset(pages: list[awe_graph.HtmlPage]):
+def prepare_dataset(pages: list[awe_graph.HtmlPage], *,
+    skip_existing: bool = True
+):
     """Saves page texts to disk so that `QaDataset` can load them on demand."""
 
     with tqdm(desc='pages', total=len(pages)) as progress:
@@ -93,10 +99,11 @@ def prepare_dataset(pages: list[awe_graph.HtmlPage]):
             df_path, df = load_dataframe(folder)
 
             # Add pages.
-            new_data = {'id': [], 'text': [], 'labels': []}
+            new_data_idx = []
+            new_data = { 'text': [], 'labels': [] }
             for page in files:
                 # Skip existing.
-                if (df['id'] == page.identifier).any():
+                if skip_existing and (df.index == page.identifier).any():
                     progress_data['skipped'] += 1
                     progress.set_postfix(progress_data, refresh=False)
                     progress.update(1)
@@ -108,23 +115,23 @@ def prepare_dataset(pages: list[awe_graph.HtmlPage]):
                     f: page.get_groundtruth_texts(f)
                     for f in page.fields
                 }
-                new_data['id'].append(page.identifier)
+                new_data_idx.append(page.identifier)
                 new_data['text'].append(text)
                 new_data['labels'].append(json.dumps(labels))
                 progress.update(1)
 
             # Append data.
-            if len(new_data['id']) != 0:
-                df = df.append(pd.DataFrame(new_data))
+            if len(new_data_idx) != 0:
+                df.update(pd.DataFrame(new_data, index=new_data_idx))
 
                 # Save dataframe.
-                df.to_csv(df_path, index=False)
+                df.to_csv(df_path, index_label='id')
 
 def load_dataframe(folder: str):
     df_path = os.path.join(folder, 'qa.csv')
     if os.path.exists(df_path):
-        return df_path, pd.read_csv(df_path, index_col=False)
-    return df_path, pd.DataFrame(columns=['id', 'text', 'labels'])
+        return df_path, pd.read_csv(df_path, index_col='id')
+    return df_path, pd.DataFrame(columns=['text', 'labels'])
 
 def extract_text(page: awe_graph.HtmlPage):
     """Converts page's HTML to text."""
@@ -137,4 +144,10 @@ def extract_text(page: awe_graph.HtmlPage):
         for element in tree.css(tag):
             element.decompose()
 
-    return tree.body.text(separator='\n')
+
+    text = tree.body.text(separator=' ')
+
+    # Collapse whitespace.
+    text = re.sub(WHITESPACE_REGEX, ' ', text)
+
+    return text
