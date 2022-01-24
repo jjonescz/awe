@@ -272,10 +272,6 @@ class Page(awe_graph.HtmlPage):
         return self.parse()[1]
 
     @property
-    def dom(self):
-        return html_utils.parse_html(self.html)
-
-    @property
     def labels(self):
         return PageLabels(self)
 

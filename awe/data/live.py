@@ -1,16 +1,15 @@
 from dataclasses import dataclass
 from typing import Optional
 
-import parsel
 import requests
 
-from awe import awe_graph, html_utils, utils
+from awe import awe_graph, utils
 
 
 @dataclass
 class Page(awe_graph.HtmlPage):
     url: str
-    _dom: Optional[parsel.Selector] = utils.cache_field()
+    _html: Optional[str] = utils.cache_field()
 
     @property
     def identifier(self):
@@ -29,10 +28,10 @@ class Page(awe_graph.HtmlPage):
         return 0
 
     @property
-    def dom(self):
-        if self._dom is None:
-            self._dom = self._download_dom()
-        return self._dom
+    def html(self):
+        if self._html is None:
+            self._html = self._download_html()
+        return self._html
 
     @property
     def labels(self):
@@ -45,9 +44,8 @@ class Page(awe_graph.HtmlPage):
     def count_label(self, _: str):
         return 0
 
-    def _download_dom(self):
-        text = requests.get(self.url).text
-        return html_utils.parse_html(text)
+    def _download_html(self):
+        return requests.get(self.url).text
 
 class PageLabels(awe_graph.HtmlLabels):
     def get_labels(self, _):

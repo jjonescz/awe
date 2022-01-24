@@ -59,8 +59,12 @@ class HtmlPage(ABC):
 
     @property
     @abstractmethod
+    def html(self) -> str:
+        """HTML of the page as plain text."""
+
+    @property
     def dom(self) -> parsel.Selector:
-        pass
+        return html_utils.parse_html(self.html)
 
     @property
     def has_dom_data(self) -> bool:
