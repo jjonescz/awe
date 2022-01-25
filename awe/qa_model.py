@@ -45,7 +45,9 @@ class QaModel(pl.LightningModule):
     def configure_optimizers(self):
         return transformers.AdamW(self.parameters(), lr=1e-5)
 
-    def forward(self, encodings) -> BigBirdForQuestionAnsweringModelOutput:
+    def forward(self,
+        encodings: transformers.BatchEncoding
+    ) -> BigBirdForQuestionAnsweringModelOutput:
         return self.model(**encodings)
 
     def training_step(self, batch, *_):
@@ -59,25 +61,39 @@ class QaModel(pl.LightningModule):
         return self._shared_eval_step(self, batch)
 
     def _shared_eval_step(self, prefix: str, batch):
-        outputs = self.forward(batch)
-        loss = outputs.loss
-        logits = outputs.logits
-        predictions = torch.argmax(logits, dim=-1)
-        accuracy = self.metric.compute(
-            predictions=predictions,
-            references=batch['labels']
-        )
-
-        results = {
-            'loss': loss,
-            'acc': accuracy,
-        }
-        prefixed = { f'{prefix}_{k}': v for k, v in results.items() }
+        metrics = self.compute_metrics(batch)
+        prefixed = { f'{prefix}_{k}': v for k, v in metrics.items() }
 
         self.log_dict(prefixed)
 
         # Log `hp_metric` which is used as main metric in TensorBoard.
         if prefix == 'val':
-            self.log('hp_metric', accuracy, prog_bar=False)
+            # TODO: Use mean of start and end accuracy.
+            hp_metric = metrics['start_acc']
+            self.log('hp_metric', hp_metric, prog_bar=False)
 
         return prefixed
+
+    def compute_metrics(self, batch: transformers.BatchEncoding):
+        outputs = self.forward(batch)
+        loss = outputs.loss
+        start_acc = self._compute_accuracy(
+            logits=outputs.start_logits,
+            labels=batch['start_positions'],
+        )
+        end_acc = self._compute_accuracy(
+            logits=outputs.end_logits,
+            labels=batch['end_positions'],
+        )
+        return {
+            'loss': loss,
+            'start_acc': start_acc,
+            'end_acc': end_acc
+        }
+
+    def _compute_accuracy(self, logits, labels):
+        predictions = torch.argmax(logits, dim=-1)
+        return self.metric.compute(
+            predictions=predictions,
+            references=labels
+        )
