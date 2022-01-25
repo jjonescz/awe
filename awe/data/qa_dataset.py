@@ -121,8 +121,8 @@ class QaTorchDataset(torch.utils.data.Dataset):
         loader_or_pages: Union[QaEntryLoader, list[awe_graph.HtmlPage]],
         tokenizer: transformers.PreTrainedTokenizerBase
     ):
-        if isinstance(loader_or_pages, QaEntryLoader):
-            self.loader =  loader_or_pages
+        if hasattr(loader_or_pages, 'pages'):
+            self.loader = loader_or_pages
         else:
             self.loader = QaEntryLoader(loader_or_pages)
         self.tokenizer = tokenizer
