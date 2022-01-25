@@ -34,7 +34,10 @@ class QaEntry:
         labels = {
             # Note that labels may contain HTML entities (e.g., `&amp;`), that's
             # why we call `html.unescape` on them.
-            f: [html.unescape(v) for v in page.get_groundtruth_texts(f)]
+            f: [
+                collapse_whitespace(html.unescape(v))
+                for v in page.get_groundtruth_texts(f)
+            ]
             for f in page.fields
         }
         return QaEntry(page.identifier, text, labels)
@@ -166,8 +169,8 @@ def extract_text(page: awe_graph.HtmlPage):
             element.decompose()
 
     text = tree.body.text(separator=' ')
-
-    # Collapse whitespace.
-    text = re.sub(WHITESPACE_REGEX, ' ', text)
-
+    text = collapse_whitespace(text)
     return text
+
+def collapse_whitespace(text: str):
+    return re.sub(WHITESPACE_REGEX, ' ', text)
