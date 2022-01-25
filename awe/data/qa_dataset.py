@@ -141,16 +141,16 @@ class QaTorchDataset(torch.utils.data.Dataset):
 
         # Find start/end positions.
         spans = entry.get_answer_spans(label)
-        encodings['start_positions'] = [
+        encodings['start_positions'] = torch.tensor([
             encodings.char_to_token(start, sequence_index=1)
             or self.tokenizer.model_max_length
             for start, _ in spans
-        ]
-        encodings['end_positions'] = [
+        ])
+        encodings['end_positions'] = torch.tensor([
             encodings.char_to_token(end - 1, sequence_index=1)
             or self.tokenizer.model_max_length
             for _, end in spans
-        ]
+        ])
 
         return encodings
 
