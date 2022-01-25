@@ -1,8 +1,8 @@
 import os
 import re
-from dataclasses import dataclass
 import shutil
-from typing import Optional, Union
+from dataclasses import dataclass
+from typing import Optional
 
 import pytorch_lightning as pl
 import torch
@@ -149,7 +149,6 @@ class CustomProgressBar(ProgressBar):
 class Gym:
     """Manages versions of log directories."""
 
-    restore_checkpoint: Optional[Union[str, bool]] = None
     trainer: Optional[pl.Trainer] = None
 
     def __init__(self,
