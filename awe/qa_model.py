@@ -39,9 +39,6 @@ class QaPipeline:
 class QaModel(pl.LightningModule):
     def __init__(self, pipeline: QaPipeline):
         super().__init__()
-
-        self.save_hyperparameters()
-
         self.model = pipeline.model
         self.metric = datasets.load_metric('accuracy')
 
