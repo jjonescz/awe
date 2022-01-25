@@ -17,18 +17,16 @@ def unescape(text: str, with_html_entities: bool = False):
         # `%u2013` (UTF-8). This is needed for using XPath against HTML that
         # contains such entities, because XPath sees `&#150;` normally as
         # `\x96`.
-        if not getattr(html, '_hacked', False):
+        try:
             # pylint: disable-next=protected-access
             invalid_charrefs = html._invalid_charrefs
             for key in invalid_charrefs:
                 invalid_charrefs[key] = chr(key)
-            setattr(html, '_hacked', True)
-    else:
-        # Revert hack.
-        if getattr(html, '_hacked', False):
+            return html.unescape(text)
+        finally:
+            # Revert hack.
             # pylint: disable-next=protected-access
             html._invalid_charrefs = invalid_charrefs_backup
-            setattr(html, '_hacked', False)
     return html.unescape(text)
 
 def get_el_xpath(node: etree._Element) -> str:
