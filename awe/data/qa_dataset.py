@@ -256,7 +256,8 @@ def prepare_entries(pages: list[awe_graph.HtmlPage], *,
 
             # Append data.
             if len(new_data_idx) != 0:
-                df.update(pd.DataFrame(new_data, index=new_data_idx))
+                new_df = pd.DataFrame(new_data, index=new_data_idx)
+                df = df.combine_first(new_df)
 
                 # Save dataframe.
                 df.to_csv(df_path, index_label='id')
