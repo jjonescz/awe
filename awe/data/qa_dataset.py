@@ -5,7 +5,7 @@ import json
 import os
 import re
 import warnings
-from typing import Optional, Union
+from typing import Iterable, Optional, Union
 
 import pandas as pd
 import selectolax.parser
@@ -150,18 +150,29 @@ class QaTorchDataset(torch.utils.data.Dataset):
 
         # Find start/end positions.
         spans = entry.get_answer_spans(label)
-        encodings['start_positions'] = [
-            encodings.char_to_token(start, sequence_index=1)
-            or self.tokenizer.model_max_length
-            for start, _ in spans
-        ]
-        encodings['end_positions'] = [
-            encodings.char_to_token(end - 1, sequence_index=1)
-            or self.tokenizer.model_max_length
-            for _, end in spans
-        ]
+        encodings['start_positions'] = self.spans_to_positions(
+            encodings, (start for start, _ in spans)
+        )
+        encodings['end_positions'] = self.spans_to_positions(
+            encodings, (end - 1 for _, end in spans)
+        )
 
         return encodings
+
+    def spans_to_positions(self,
+        encodings: transformers.BatchEncoding,
+        spans: Iterable[int]
+    ):
+        positions = [
+            encodings.char_to_token(i, sequence_index=1)
+            # Handle when answer is truncated from the context.
+            or self.tokenizer.model_max_length
+            for i in spans
+        ]
+        if len(positions) == 0:
+            # Return something even if there is no value for the label.
+            return [self.tokenizer.model_max_length]
+        return positions
 
     def __len__(self):
         return len(self.loader) * self.label_count
