@@ -115,6 +115,7 @@ class QaEntryLoader:
 class QaTorchDataset(torch.utils.data.Dataset):
     """PyTorch dataset for question answering."""
 
+    loader: QaEntryLoader
     label_to_question: Optional[dict[str, str]] = None
 
     def __init__(self,
