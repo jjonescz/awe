@@ -172,8 +172,10 @@ class QaTorchDataset(torch.utils.data.Dataset):
         ]
         if len(positions) == 0:
             # Return something even if there is no value for the label.
-            return [self.tokenizer.model_max_length]
-        return positions
+            positions = [self.tokenizer.model_max_length]
+        # TODO: We limit the number of answers to one for now, because the model
+        # head doesn't support more.
+        return positions[0]
 
     def __len__(self):
         return len(self.loader) * self.label_count
