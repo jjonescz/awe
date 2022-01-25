@@ -136,6 +136,9 @@ class QaTorchDataset(torch.utils.data.Dataset):
         self.label_count = min_label_count
 
     def __getitem__(self, idx: int):
+        return self.get_encodings(idx).convert_to_tensors('pt')
+
+    def get_encodings(self, idx: int):
         entry, label, _ = self.at(idx)
 
         # Tokenize.
@@ -158,7 +161,7 @@ class QaTorchDataset(torch.utils.data.Dataset):
             for _, end in spans
         ]
 
-        return encodings.convert_to_tensors('pt')
+        return encodings
 
     def __len__(self):
         return len(self.loader) * self.label_count
