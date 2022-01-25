@@ -4,6 +4,7 @@ import html
 import json
 import os
 import re
+import warnings
 
 import pandas as pd
 import selectolax.parser
@@ -176,8 +177,13 @@ class QaTorchDataset(torch.utils.data.Dataset):
         entry, label, values = self.at(idx)
         encodings = self[idx]
         answers = self.decode(encodings)
-        if set(values) != set(answers):
-            raise RuntimeError(f'Inconsistency at {idx} ({entry.id}): ' + \
+
+        # Ignore repetition and spaces.
+        values = set(remove_whitespace(v) for v in values)
+        answers = set(remove_whitespace(a) for a in answers)
+
+        if values != answers:
+            warnings.warn(f'Inconsistency at {idx} ({entry.id}): ' + \
                 f'{label=}, {values=}, {answers=}.')
 
     def validate_all(self):
@@ -257,3 +263,6 @@ def extract_text(page: awe_graph.HtmlPage):
 
 def collapse_whitespace(text: str):
     return re.sub(WHITESPACE_REGEX, ' ', text)
+
+def remove_whitespace(text: str):
+    return re.sub(WHITESPACE_REGEX, '', text)
