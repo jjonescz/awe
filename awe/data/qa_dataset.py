@@ -64,6 +64,9 @@ class QaEntry:
             for start in utils.find_all(self.text, value)
         ]
 
+    def get_label_at(self, idx: int):
+        return utils.at_index(self.labels.items(), idx)
+
     def validate(self):
         for label, values in self.labels.items():
             expected = len(values)
@@ -183,9 +186,12 @@ class QaTorchDataset(torch.utils.data.Dataset):
     def at(self, idx: int):
         # For each label, give separate question-answer example.
         entry = self.loader[idx // self.label_count]
-        label_idx = idx % self.label_count
-        label, values = utils.at_index(entry.labels.items(), label_idx)
+        label_idx = self.to_label_idx(idx)
+        label, values = entry.get_label_at(label_idx)
         return entry, label, values
+
+    def to_label_idx(self, idx: int):
+        return idx % self.label_count
 
     def get_question(self, label: str):
         if self.label_to_question is None:
