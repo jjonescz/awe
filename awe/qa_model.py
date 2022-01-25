@@ -53,9 +53,14 @@ class QaModel(pl.LightningModule):
         return transformers.AdamW(self.parameters(), lr=1e-5)
 
     def forward(self,
-        encodings: transformers.BatchEncoding
+        batch: transformers.BatchEncoding
     ) -> BigBirdForQuestionAnsweringModelOutput:
-        return self.model(**encodings)
+        return self.model(
+            input_ids=batch['input_ids'],
+            attention_mask=batch['attention_mask'],
+            start_positions=batch['start_positions'],
+            end_positions=batch['end_positions'],
+        )
 
     def training_step(self, batch, *_):
         outputs = self.forward(batch)
