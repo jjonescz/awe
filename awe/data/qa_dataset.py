@@ -5,7 +5,7 @@ import json
 import os
 import re
 import warnings
-from typing import Optional
+from typing import Optional, Union
 
 import pandas as pd
 import selectolax.parser
@@ -118,13 +118,16 @@ class QaTorchDataset(torch.utils.data.Dataset):
     label_to_question: Optional[dict[str, str]] = None
 
     def __init__(self,
-        loader: QaEntryLoader,
+        loader_or_pages: Union[QaEntryLoader, list[awe_graph.HtmlPage]],
         tokenizer: transformers.PreTrainedTokenizerBase
     ):
-        self.loader = loader
+        if not isinstance(loader_or_pages, QaEntryLoader):
+            self.loader = QaEntryLoader(loader_or_pages)
+        else:
+            self.loader =  loader_or_pages
         self.tokenizer = tokenizer
 
-        label_counts = lambda: (len(p.fields) for p in loader.pages)
+        label_counts = lambda: (len(p.fields) for p in self.loader.pages)
         min_label_count = min(label_counts())
         max_label_count = max(label_counts())
         assert min_label_count == max_label_count, 'Every page should have ' + \
