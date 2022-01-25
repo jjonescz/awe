@@ -1,6 +1,7 @@
 # See https://www.gitpod.io/docs/references/gitpod-yml.
 
-image: janjones/awe-gradient:latest
+image:
+  file: gitpod/Dockerfile
 
 vscode:
   extensions:
