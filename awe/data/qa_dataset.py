@@ -5,6 +5,7 @@ import json
 import os
 import re
 import warnings
+from typing import Optional
 
 import pandas as pd
 import selectolax.parser
@@ -114,6 +115,8 @@ class QaEntryLoader:
 class QaTorchDataset(torch.utils.data.Dataset):
     """PyTorch dataset for question answering."""
 
+    label_to_question: Optional[dict[str, str]] = None
+
     def __init__(self,
         loader: QaEntryLoader,
         tokenizer: transformers.AutoTokenizer
@@ -133,7 +136,8 @@ class QaTorchDataset(torch.utils.data.Dataset):
         entry, label, _ = self.at(idx)
 
         # Tokenize.
-        encodings = self.tokenizer(label, entry.text,
+        question = self.get_question(label)
+        encodings = self.tokenizer(question, entry.text,
             truncation=True,
             padding=True,
             return_tensors='pt'
@@ -163,6 +167,18 @@ class QaTorchDataset(torch.utils.data.Dataset):
         label_idx = idx % self.label_count
         label, values = utils.at_index(entry.labels.items(), label_idx)
         return entry, label, values
+
+    def get_question(self, label: str):
+        if self.label_to_question is None:
+            return self.get_default_question(label)
+        question = self.label_to_question.get(label)
+        if question is None:
+            warnings.warn(f'No question mapping for label {repr(label)}')
+            return self.get_default_question(label)
+        return question
+
+    def get_default_question(self, label: str):
+        return f'What is the {label}?'
 
     def decode(self, encodings):
         return [
