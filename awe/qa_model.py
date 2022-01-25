@@ -1,6 +1,7 @@
 from typing import Optional
 
 import datasets
+import numpy as np
 import pytorch_lightning as pl
 import torch
 import transformers
@@ -88,7 +89,7 @@ class QaModel(pl.LightningModule):
             'loss': loss,
             'start_acc': start_acc,
             'end_acc': end_acc,
-            'acc': torch.mean([start_acc, end_acc])
+            'acc': np.mean([start_acc, end_acc])
         }
 
     def _compute_accuracy(self, logits, labels):
