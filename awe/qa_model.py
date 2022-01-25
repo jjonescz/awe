@@ -56,10 +56,10 @@ class QaModel(pl.LightningModule):
         return outputs.loss
 
     def validation_step(self, batch, *_):
-        return self._shared_eval_step(self, batch)
+        return self._shared_eval_step('val', batch)
 
     def test_step(self, batch, *_):
-        return self._shared_eval_step(self, batch)
+        return self._shared_eval_step('test', batch)
 
     def _shared_eval_step(self, prefix: str, batch):
         metrics = self.compute_metrics(batch)
