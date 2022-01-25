@@ -119,7 +119,7 @@ class QaTorchDataset(torch.utils.data.Dataset):
 
     def __init__(self,
         loader: QaEntryLoader,
-        tokenizer: transformers.AutoTokenizer
+        tokenizer: transformers.PreTrainedTokenizerBase
     ):
         self.loader = loader
         self.tokenizer = tokenizer
@@ -142,6 +142,11 @@ class QaTorchDataset(torch.utils.data.Dataset):
             padding=True,
             return_tensors='pt'
         )
+
+        # Un-batch tensors.
+        encodings['input_ids'] = torch.reshape(encodings['input_ids'], (-1,))
+        encodings['attention_mask'] = torch.reshape(
+            encodings['attention_mask'], (-1,))
 
         # Find start/end positions.
         spans = entry.get_answer_spans(label)
