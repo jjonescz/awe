@@ -7,6 +7,8 @@ ipywidgets==7.6.5
 # PyTorch
 torchtext==0.11.0
 pytorch-lightning==1.4.9
+# HACK: https://github.com/PyTorchLightning/pytorch-lightning/issues/11524
+torchmetrics<0.7
 # TensorBoard
 torch-tb-profiler==0.2.1
 # DoIt (job automation)
@@ -24,6 +26,7 @@ pylint==2.12.2
 bokeh==2.4.2
 # Basics
 matplotlib==3.5.1
-# Transformers
+# HuggingFace (Transformers)
 transformers==4.15.0
 sentencepiece==0.1.96
+datasets==1.18.0
