@@ -146,7 +146,7 @@ class QaTorchDataset(torch.utils.data.Dataset):
             for start, _ in spans
         ]
         encodings['end_positions'] = [
-            encodings.char_to_token(end, sequence_index=1)
+            encodings.char_to_token(end - 1, sequence_index=1)
             or self.tokenizer.model_max_length
             for _, end in spans
         ]
@@ -162,6 +162,27 @@ class QaTorchDataset(torch.utils.data.Dataset):
         label_idx = idx % self.label_count
         label, values = utils.at_index(entry.labels.items(), label_idx)
         return entry, label, values
+
+    def decode(self, encodings):
+        return [
+            self.tokenizer.decode(encodings['input_ids'][0, start:end + 1])
+            for start, end in zip(
+                encodings['start_positions'],
+                encodings['end_positions']
+            )
+        ]
+
+    def validate(self, idx: int):
+        entry, label, values = self.at(idx)
+        encodings = self[idx]
+        answers = self.decode(encodings)
+        if set(values) != set(answers):
+            raise RuntimeError(f'Inconsistency at {idx} ({entry.id}): ' + \
+                f'{label=}, {values=}, {answers=}.')
+
+    def validate_all(self):
+        for i in tqdm(range(len(self))):
+            self.validate(i)
 
 def prepare_entries(pages: list[awe_graph.HtmlPage], *,
     skip_existing: bool = True
