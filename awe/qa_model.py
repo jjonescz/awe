@@ -1,3 +1,4 @@
+import dataclasses
 from typing import Optional
 
 import datasets
@@ -8,6 +9,11 @@ import transformers
 from transformers.models.big_bird.modeling_big_bird import \
     BigBirdForQuestionAnsweringModelOutput
 
+
+@dataclasses.dataclass
+class QaModelPrediction:
+    batch: transformers.BatchEncoding
+    outputs: BigBirdForQuestionAnsweringModelOutput
 
 class QaPipeline:
     _model: Optional[transformers.BigBirdForQuestionAnswering] = None
@@ -99,3 +105,7 @@ class QaModel(pl.LightningModule):
             references=labels
         )
         return results['accuracy']
+
+    def predict_step(self, batch, *_):
+        outputs = self(batch)
+        return QaModelPrediction(batch, outputs)

@@ -13,7 +13,7 @@ import torch
 import transformers
 from tqdm.auto import tqdm
 
-from awe import awe_graph, utils
+from awe import awe_graph, qa_model, utils
 
 WHITESPACE_REGEX = r'(\s|[\u200b])+'
 """Matches whitespace characters."""
@@ -224,6 +224,26 @@ class QaTorchDataset(torch.utils.data.Dataset):
     def validate_all(self):
         for i in tqdm(range(len(self))):
             self.validate(i)
+
+    def decode_predictions(self, predictions: list[qa_model.QaModelPrediction]):
+        return list(self._iterate_decode_predictions(predictions))
+
+    def _iterate_decode_predictions(self,
+        predictions: list[qa_model.QaModelPrediction]
+    ):
+        for pred in predictions:
+            gold_start = pred.batch['start_positions'][0]
+            gold_end = pred.batch['end_positions'][0]
+            pred_start = torch.argmax(pred.outputs.start_logits)
+            pred_end = torch.argmax(pred.outputs.end_logits)
+            input_ids: torch.LongTensor = pred.batch['input_ids'][0, :]
+            gold_answer = self.tokenizer.decode(
+                input_ids[gold_start:gold_end + 1]
+            )
+            pred_answer = self.tokenizer.decode(
+                input_ids[pred_start:pred_end + 1]
+            )
+            yield gold_answer, pred_answer
 
 def prepare_entries(pages: list[awe_graph.HtmlPage], *,
     skip_existing: bool = True
