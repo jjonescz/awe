@@ -260,6 +260,7 @@ def prepare_entries(pages: list[awe_graph.HtmlPage], *,
 
                 # Save dataframe.
                 df.to_csv(df_path, index_label='id')
+                print(f'Saved {df_path}')
 
 def load_dataframe(folder: str):
     df_path = os.path.join(folder, 'qa.csv')
