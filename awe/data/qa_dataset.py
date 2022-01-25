@@ -121,10 +121,10 @@ class QaTorchDataset(torch.utils.data.Dataset):
         loader_or_pages: Union[QaEntryLoader, list[awe_graph.HtmlPage]],
         tokenizer: transformers.PreTrainedTokenizerBase
     ):
-        if not isinstance(loader_or_pages, QaEntryLoader):
-            self.loader = QaEntryLoader(loader_or_pages)
-        else:
+        if isinstance(loader_or_pages, QaEntryLoader):
             self.loader =  loader_or_pages
+        else:
+            self.loader = QaEntryLoader(loader_or_pages)
         self.tokenizer = tokenizer
 
         label_counts = lambda: (len(p.fields) for p in self.loader.pages)
