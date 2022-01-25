@@ -142,29 +142,23 @@ class QaTorchDataset(torch.utils.data.Dataset):
         question = self.get_question(label)
         encodings = self.tokenizer(question, entry.text,
             truncation=True,
-            padding=True,
-            return_tensors='pt'
+            padding=True
         )
-
-        # Un-batch tensors.
-        encodings['input_ids'] = torch.reshape(encodings['input_ids'], (-1,))
-        encodings['attention_mask'] = torch.reshape(
-            encodings['attention_mask'], (-1,))
 
         # Find start/end positions.
         spans = entry.get_answer_spans(label)
-        encodings['start_positions'] = torch.tensor([
+        encodings['start_positions'] = [
             encodings.char_to_token(start, sequence_index=1)
             or self.tokenizer.model_max_length
             for start, _ in spans
-        ])
-        encodings['end_positions'] = torch.tensor([
+        ]
+        encodings['end_positions'] = [
             encodings.char_to_token(end - 1, sequence_index=1)
             or self.tokenizer.model_max_length
             for _, end in spans
-        ])
+        ]
 
-        return encodings
+        return encodings.convert_to_tensors('pt')
 
     def __len__(self):
         return len(self.loader) * self.label_count
