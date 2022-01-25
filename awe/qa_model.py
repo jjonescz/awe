@@ -68,8 +68,7 @@ class QaModel(pl.LightningModule):
 
         # Log `hp_metric` which is used as main metric in TensorBoard.
         if prefix == 'val':
-            # TODO: Use mean of start and end accuracy.
-            hp_metric = metrics['start_acc']
+            hp_metric = metrics['acc']
             self.log('hp_metric', hp_metric, prog_bar=False)
 
         return prefixed
@@ -88,12 +87,14 @@ class QaModel(pl.LightningModule):
         return {
             'loss': loss,
             'start_acc': start_acc,
-            'end_acc': end_acc
+            'end_acc': end_acc,
+            'acc': torch.mean([start_acc, end_acc])
         }
 
     def _compute_accuracy(self, logits, labels):
         predictions = torch.argmax(logits, dim=-1)
-        return self.metric.compute(
+        results = self.metric.compute(
             predictions=predictions,
             references=labels
         )
+        return results['accuracy']
