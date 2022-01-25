@@ -2,11 +2,13 @@ import collections
 import dataclasses
 import html
 import json
+import os
 import re
 
 import pandas as pd
 import selectolax.parser
-from black import os
+import torch
+import transformers
 from tqdm.auto import tqdm
 
 from awe import awe_graph, utils
@@ -71,8 +73,8 @@ class QaEntry:
                     f'value{plural} for label "{label}" ({values_str}) but ' + \
                     f'found {actual} ({self.id}).')
 
-class QaDataset:
-    """Dataset for question answering."""
+class QaEntryLoader:
+    """Can load prepared `QaEntry`s for an `HtmlPage`."""
 
     def __init__(self, pages: list[awe_graph.HtmlPage]):
         self.pages = pages
@@ -103,10 +105,70 @@ class QaDataset:
         for page in tqdm(self.pages, desc='pages'):
             self.get_entry(page).validate()
 
-def prepare_dataset(pages: list[awe_graph.HtmlPage], *,
+    @property
+    def max_label_count(self):
+        return max(len(p.fields) for p in self.pages)
+
+# Inspired by https://huggingface.co/transformers/v3.2.0/custom_datasets.html.
+class QaTorchDataset(torch.utils.data.Dataset):
+    """PyTorch dataset for question answering."""
+
+    def __init__(self,
+        loader: QaEntryLoader,
+        tokenizer: transformers.AutoTokenizer
+    ):
+        self.loader = loader
+        self.tokenizer = tokenizer
+
+        label_counts = lambda: (len(p.fields) for p in loader.pages)
+        min_label_count = min(label_counts())
+        max_label_count = max(label_counts())
+        assert min_label_count == max_label_count, 'Every page should have ' + \
+            'the same number of label classes, but found range ' + \
+            f'[{min_label_count}, {max_label_count}].'
+        self.label_count = min_label_count
+
+    def __getitem__(self, idx: int):
+        entry, label, _ = self.at(idx)
+
+        # Tokenize.
+        encodings = self.tokenizer(label, entry.text,
+            truncation=True,
+            padding=True,
+            return_tensors='pt'
+        )
+
+        # Find start/end positions.
+        spans = entry.get_answer_spans(label)
+        encodings['start_positions'] = [
+            encodings.char_to_token(start, sequence_index=1)
+            or self.tokenizer.model_max_length
+            for start, _ in spans
+        ]
+        encodings['end_positions'] = [
+            encodings.char_to_token(end, sequence_index=1)
+            or self.tokenizer.model_max_length
+            for _, end in spans
+        ]
+
+        return encodings
+
+    def __len__(self):
+        return len(self.loader) * self.label_count
+
+    def at(self, idx: int):
+        # For each label, give separate question-answer example.
+        entry = self.loader[idx // self.label_count]
+        label_idx = idx % self.label_count
+        label, values = utils.at_index(entry.labels.items(), label_idx)
+        return entry, label, values
+
+def prepare_entries(pages: list[awe_graph.HtmlPage], *,
     skip_existing: bool = True
 ):
-    """Saves page texts to disk so that `QaDataset` can load them on demand."""
+    """
+    Saves page texts to disk so that `QaEntryLoader` can load them on demand.
+    """
 
     with tqdm(desc='pages', total=len(pages)) as progress:
         progress_data = collections.defaultdict(int)

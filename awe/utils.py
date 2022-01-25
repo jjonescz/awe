@@ -155,3 +155,6 @@ def _iterate_all(string: str, substring: str, overlap: bool):
             break
         yield start
         start += 1 if overlap else len(substring)
+
+def at_index(collection: Iterable[T], idx: int):
+    return next(itertools.islice(collection, idx, None))
