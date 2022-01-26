@@ -14,6 +14,7 @@ class QaTrainerParams:
     train_subset: int = 2000
     val_subset: int = 50
     epochs: int = 5
+    version_name: str = ''
 
 class QaTrainer:
     train_ds: qa_dataset.QaTorchDataset
@@ -71,7 +72,7 @@ class QaTrainer:
         self.model = qa_model.QaModel(self.pipeline)
 
     def train(self):
-        g = gym.Gym(None, None, version_name='')
+        g = gym.Gym(None, None, version_name=self.params.version_name)
         trainer = pl.Trainer(
             gpus=torch.cuda.device_count(),
             max_epochs=self.params.epochs,
