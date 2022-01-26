@@ -298,9 +298,14 @@ def extract_text(page: awe_graph.HtmlPage):
     tree = selectolax.parser.HTMLParser(page.html)
 
     # Ignore some tags.
-    for tag in ['script', 'style', 'head', '[document]', 'noscript', 'iframe']:
-        for element in tree.css(tag):
-            element.decompose()
+    tree.strip_tags([
+        'script',
+        'style',
+        'head',
+        '[document]',
+        'noscript',
+        'iframe'
+    ])
 
     text = tree.body.text(separator=' ')
     text = collapse_whitespace(text)
