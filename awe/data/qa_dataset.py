@@ -145,7 +145,8 @@ class QaCollater:
         texts = [entry.text for entry, _ in samples]
         encodings = self.tokenizer(questions, texts,
             truncation=True,
-            padding=True
+            padding='max_length',
+            max_length=1024,
         )
 
         # Find start/end positions.
