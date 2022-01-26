@@ -26,6 +26,8 @@ class QaTrainer:
     train_loader: torch.utils.data.DataLoader
     val_loader: torch.utils.data.DataLoader
     model: qa_model.QaModel
+    g: gym.Gym
+    trainer: pl.Trainer
 
     def __init__(self, params: QaTrainerParams):
         self.params = params
@@ -88,10 +90,40 @@ class QaTrainer:
         gym.Version.delete_last(self.params.version_name)
 
     def train(self):
-        g = gym.Gym(None, None, version_name=self.params.version_name)
-        trainer = pl.Trainer(
+        self.g = gym.Gym(None, None, version_name=self.params.version_name)
+        self.trainer = pl.Trainer(
             gpus=torch.cuda.device_count(),
             max_epochs=self.params.epochs,
-            logger=g.create_logger(),
+            logger=self.g.create_logger(),
         )
-        trainer.fit(self.model, self.train_loader, self.val_loader)
+        self.trainer.fit(self.model, self.train_loader, self.val_loader)
+
+    def restore(self, checkpoint_name: str):
+        # Load model from checkpoint.
+        self.g = gym.Gym(None, None, version_name='')
+        self.trainer = pl.Trainer(
+            gpus=torch.cuda.device_count(),
+            max_epochs=self.params.epochs,
+            logger=self.g.create_logger(),
+            resume_from_checkpoint=checkpoint_name
+        )
+        self.trainer.fit(self.model, self.train_loader)
+
+    def validate(self):
+        self.trainer.validate(self.model, self.val_loader)
+
+    def validate_seen(self):
+        loader = self.create_dataloader(self.train_pages[:2])
+        self.trainer.validate(self.model, loader)
+
+    def predict_examples(self):
+        loader = self.create_dataloader(self.val_pages[:2])
+        preds = self.trainer.predict(self.model, loader)
+        decoder = qa_dataset.QaDecoder(self.pipeline.tokenizer)
+        return decoder.decode_predictions(preds)
+
+    def predict_seen_examples(self):
+        loader = self.create_dataloader(self.train_pages[:2])
+        preds = self.trainer.predict(self.model, loader)
+        decoder = qa_dataset.QaDecoder(self.pipeline.tokenizer)
+        return decoder.decode_predictions(preds)
