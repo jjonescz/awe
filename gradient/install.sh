@@ -9,6 +9,11 @@ cat << EOF > ~/.vscode-server/data/Machine/settings.json
 }
 EOF
 
+# Setup `tmux`.
+cat << EOF > ~/.tmux.conf
+set -g mouse on
+EOF
+
 # Install extensions.
 code --install-extension editorconfig.editorconfig
 code --install-extension esbenp.prettier-vscode
