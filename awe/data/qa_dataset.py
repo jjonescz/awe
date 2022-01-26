@@ -103,7 +103,10 @@ class QaEntryLoader:
     def get_entry(self, page: awe_graph.HtmlPage):
         folder = os.path.dirname(page.data_point_path)
         df = self.get_df(folder)
-        row = df[df.index == page.identifier].iloc[0]
+        rows = df[df.index == page.identifier]
+        if len(rows) == 0:
+            raise RuntimeError(f'Cannot find entry for page {page.identifier}.')
+        row = rows.iloc[0]
         labels = json.loads(row['labels'])
         return QaEntry(page.identifier, row['text'], labels)
 
