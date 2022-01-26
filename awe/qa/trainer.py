@@ -60,8 +60,8 @@ class QaTrainer:
         print(f'{len(train_pages)=}, {len(val_pages)=}')
 
         # Create dataloaders.
-        self.train_loader = self.create_dataloader(train_pages, shuffle=True)
-        self.val_loader = self.create_dataloader(val_pages, shuffle=True)
+        self.train_loader = self.create_dataloader(self.train_pages, shuffle=True)
+        self.val_loader = self.create_dataloader(self.val_pages, shuffle=True)
 
     def create_dataloader(self,
         pages: list[awe_graph.HtmlPage],
