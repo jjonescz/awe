@@ -1,4 +1,5 @@
 import dataclasses
+import warnings
 
 import numpy as np
 import pytorch_lightning as pl
@@ -8,6 +9,8 @@ import torch.utils.data
 from awe import awe_graph, gym, qa_model
 from awe.data import qa_dataset, swde
 
+#  Ignore warnings.
+warnings.filterwarnings('ignore', message='__floordiv__ is deprecated')
 
 @dataclasses.dataclass
 class QaTrainerParams:
