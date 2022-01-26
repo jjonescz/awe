@@ -31,3 +31,5 @@ try if it works by running `pip install -r gradient/requirements.txt`, and
 rebuild the Docker image.
 
 **Debugging training code:** Set `num_workers=0`. GPUs can be enabled.
+
+**Kill processes taking up GPU:** Run `fuser -k /dev/nvidia0`.

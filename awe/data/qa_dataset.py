@@ -5,7 +5,7 @@ import json
 import os
 import re
 import warnings
-from typing import Iterable, Optional, Union
+from typing import Iterable, Optional
 
 import numpy as np
 import pandas as pd
@@ -115,89 +115,51 @@ class QaEntryLoader:
     def max_label_count(self):
         return max(len(p.fields) for p in self.pages)
 
-    def prepare_entries(self,
-        skip_existing: bool = True
-    ):
-        prepare_entries(self.pages, skip_existing=skip_existing)
-
 # Inspired by https://huggingface.co/transformers/v3.2.0/custom_datasets.html.
-class QaTorchDataset(torch.utils.data.Dataset):
-    """PyTorch dataset for question answering."""
-
-    loader: QaEntryLoader
+class QaCollater:
     label_to_question: Optional[dict[str, str]] = None
 
     def __init__(self,
-        loader_or_pages: Union[QaEntryLoader, list[awe_graph.HtmlPage]],
         tokenizer: transformers.PreTrainedTokenizerBase
     ):
-        if hasattr(loader_or_pages, 'pages'):
-            self.loader = loader_or_pages
-        else:
-            self.loader = QaEntryLoader(loader_or_pages)
         self.tokenizer = tokenizer
 
-        label_counts = lambda: (len(p.fields) for p in self.loader.pages)
-        min_label_count = min(label_counts())
-        max_label_count = max(label_counts())
-        assert min_label_count == max_label_count, 'Every page should have ' + \
-            'the same number of label classes, but found range ' + \
-            f'[{min_label_count}, {max_label_count}].'
-        self.label_count = min_label_count
+    def __call__(self, entries: list[QaEntry]):
+        return self.get_encodings(entries).convert_to_tensors('pt')
 
-    def __getitem__(self, idx: int):
-        return self.get_encodings(idx).convert_to_tensors('pt')
+    def get_encodings(self, entries: list[QaEntry]):
+        # Expand each entry into multiple training samples (one question-answer
+        # per label).
+        samples = [
+            (entry, label)
+            for entry in entries
+            for label, values in entry.labels.items()
+            if len(values) != 0
+        ]
 
-    def get_encodings(self, idx: int):
-        entry, label, _ = self.at(idx)
-
-        # Tokenize.
-        question = self.get_question(label)
-        encodings = self.tokenizer(question, entry.text,
+        # Tokenize batch.
+        questions = [self.get_question(label) for _, label in samples]
+        texts = [entry.text for entry, _ in samples]
+        encodings = self.tokenizer(questions, texts,
             truncation=True,
             padding=True
         )
 
         # Find start/end positions.
-        spans = entry.get_answer_spans(label)
-        encodings['start_positions'] = self.spans_to_positions(
-            encodings, (start for start, _ in spans)
-        )
-        encodings['end_positions'] = self.spans_to_positions(
-            encodings, (end - 1 for _, end in spans)
-        )
+        start_positions = []
+        end_positions = []
+        for entry, label in samples:
+            spans = entry.get_answer_spans(label)
+            start_positions.append(self.spans_to_positions(
+                encodings, (start for start, _ in spans)
+            ))
+            end_positions.append(self.spans_to_positions(
+                encodings, (end - 1 for _, end in spans)
+            ))
+        encodings['start_positions'] = start_positions
+        encodings['end_positions'] = end_positions
 
         return encodings
-
-    def spans_to_positions(self,
-        encodings: transformers.BatchEncoding,
-        spans: Iterable[int]
-    ):
-        positions = [
-            encodings.char_to_token(i, sequence_index=1)
-            # Handle when answer is truncated from the context.
-            or self.tokenizer.model_max_length
-            for i in spans
-        ]
-        if len(positions) == 0:
-            # Return something even if there is no value for the label.
-            positions = [self.tokenizer.model_max_length]
-        # TODO: We limit the number of answers to one for now, because the model
-        # head doesn't support more.
-        return positions[0]
-
-    def __len__(self):
-        return len(self.loader) * self.label_count
-
-    def at(self, idx: int):
-        # For each label, give separate question-answer example.
-        entry = self.loader[idx // self.label_count]
-        label_idx = self.to_label_idx(idx)
-        label, values = entry.get_label_at(label_idx)
-        return entry, label, values
-
-    def to_label_idx(self, idx: int):
-        return idx % self.label_count
 
     def get_question(self, label: str):
         if self.label_to_question is None:
@@ -211,31 +173,28 @@ class QaTorchDataset(torch.utils.data.Dataset):
     def get_default_question(self, label: str):
         return f'What is the {label}?'
 
-    def decode(self, encodings):
-        return [
-            self.tokenizer.decode(encodings['input_ids'][0, start:end + 1])
-            for start, end in zip(
-                encodings['start_positions'],
-                encodings['end_positions']
-            )
+    def spans_to_positions(self,
+        encodings: transformers.BatchEncoding,
+        spans: Iterable[int]
+    ) -> int:
+        positions = [
+            encodings.char_to_token(i, sequence_index=1)
+            # Handle when answer is truncated from the context.
+            or self.tokenizer.model_max_length
+            for i in spans
         ]
+        if len(positions) == 0:
+            # Return something even if there is no value for the label.
+            positions = [self.tokenizer.model_max_length]
+        # TODO: We limit the number of answers to one for now, because the model
+        # head doesn't support more.
+        return positions[0]
 
-    def validate(self, idx: int):
-        entry, label, values = self.at(idx)
-        encodings = self[idx]
-        answers = self.decode(encodings)
-
-        # Ignore repetition and spaces.
-        values = set(remove_whitespace(v) for v in values)
-        answers = set(remove_whitespace(a) for a in answers)
-
-        if values != answers:
-            warnings.warn(f'Inconsistency at {idx} ({entry.id}): ' + \
-                f'{label=}, {values=}, {answers=}.')
-
-    def validate_all(self):
-        for i in tqdm(range(len(self))):
-            self.validate(i)
+class QaDecoder:
+    def __init__(self,
+        tokenizer: transformers.PreTrainedTokenizerBase
+    ):
+        self.tokenizer = tokenizer
 
     def decode_predictions(self, predictions: list[qa_model.QaModelPrediction]):
         return list(self._iterate_decode_predictions(predictions))

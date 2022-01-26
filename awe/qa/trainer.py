@@ -5,7 +5,7 @@ import pytorch_lightning as pl
 import torch
 import torch.utils.data
 
-from awe import gym, qa_model
+from awe import awe_graph, gym, qa_model
 from awe.data import qa_dataset, swde
 
 
@@ -15,10 +15,11 @@ class QaTrainerParams:
     val_subset: int = 50
     epochs: int = 5
     version_name: str = ''
+    batch_size: int = 16
 
 class QaTrainer:
-    train_ds: qa_dataset.QaTorchDataset
-    val_ds: qa_dataset.QaTorchDataset
+    train_pages: list[awe_graph.HtmlPage]
+    val_pages: list[awe_graph.HtmlPage]
     train_loader: torch.utils.data.DataLoader
     val_loader: torch.utils.data.DataLoader
     model: qa_model.QaModel
@@ -54,22 +55,34 @@ class QaTrainer:
 
         # Take subset.
         rng = np.random.default_rng(42)
-        train_pages = rng.choice(train_pages, self.params.train_subset, replace=False)
-        val_pages = rng.choice(val_pages, self.params.val_subset, replace=False)
+        self.train_pages = rng.choice(train_pages, self.params.train_subset, replace=False)
+        self.val_pages = rng.choice(val_pages, self.params.val_subset, replace=False)
         print(f'{len(train_pages)=}, {len(val_pages)=}')
 
         # Create dataloaders.
-        self.train_ds = qa_dataset.QaTorchDataset(train_pages, self.pipeline.tokenizer)
-        self.val_ds = qa_dataset.QaTorchDataset(val_pages, self.pipeline.tokenizer)
-        self.train_loader = torch.utils.data.DataLoader(self.train_ds, batch_size=1, shuffle=True)
-        self.val_loader = torch.utils.data.DataLoader(self.val_ds, batch_size=1)
+        self.train_loader = self.create_dataloader(train_pages, shuffle=True)
+        self.val_loader = self.create_dataloader(val_pages, shuffle=True)
+
+    def create_dataloader(self,
+        pages: list[awe_graph.HtmlPage],
+        shuffle: bool = False
+    ):
+        return torch.utils.data.DataLoader(
+            qa_dataset.QaEntryLoader(pages),
+            batch_size=self.params.batch_size,
+            collate_fn=qa_dataset.QaCollater(self.pipeline.tokenizer),
+            shuffle=shuffle,
+        )
 
     def prepare_data(self):
-        self.train_ds.loader.prepare_entries()
-        self.val_ds.loader.prepare_entries()
+        qa_dataset.prepare_entries(self.train_pages)
+        qa_dataset.prepare_entries(self.val_pages)
 
     def create_model(self):
         self.model = qa_model.QaModel(self.pipeline)
+
+    def delete_previous_version(self):
+        gym.Version.delete_last(self.params.version_name)
 
     def train(self):
         g = gym.Gym(None, None, version_name=self.params.version_name)
