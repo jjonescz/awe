@@ -152,13 +152,13 @@ class QaCollater:
         # Find start/end positions.
         start_positions = []
         end_positions = []
-        for entry, label in samples:
+        for idx, (entry, label) in enumerate(samples):
             spans = entry.get_answer_spans(label)
             start_positions.append(self.spans_to_positions(
-                encodings, (start for start, _ in spans)
+                encodings, idx, (start for start, _ in spans)
             ))
             end_positions.append(self.spans_to_positions(
-                encodings, (end - 1 for _, end in spans)
+                encodings, idx, (end - 1 for _, end in spans)
             ))
         encodings['start_positions'] = start_positions
         encodings['end_positions'] = end_positions
@@ -179,10 +179,11 @@ class QaCollater:
 
     def spans_to_positions(self,
         encodings: transformers.BatchEncoding,
+        batch_idx: int,
         spans: Iterable[int]
     ) -> int:
         positions = [
-            encodings.char_to_token(i, sequence_index=1)
+            encodings.char_to_token(batch_idx, i, sequence_index=1)
             # Handle when answer is truncated from the context.
             or self.tokenizer.model_max_length
             for i in spans
