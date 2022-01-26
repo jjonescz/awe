@@ -27,6 +27,7 @@ RUN \
     zip \
     unzip \
     libpng-dev \
+    tmux \
     # Needed to work with processes using GPU.
     psmisc \
     # Needed for SSH below.
