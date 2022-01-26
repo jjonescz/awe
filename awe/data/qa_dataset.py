@@ -115,6 +115,11 @@ class QaEntryLoader:
     def max_label_count(self):
         return max(len(p.fields) for p in self.pages)
 
+    def prepare_entries(self,
+        skip_existing: bool = True
+    ):
+        prepare_entries(self.pages, skip_existing=skip_existing)
+
 # Inspired by https://huggingface.co/transformers/v3.2.0/custom_datasets.html.
 class QaTorchDataset(torch.utils.data.Dataset):
     """PyTorch dataset for question answering."""
