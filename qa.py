@@ -40,7 +40,8 @@ def main():
 
     # Prepare data.
     if PREPARE_DATA:
-        qa_dataset.prepare_entries(train_pages + val_pages)
+        qa_dataset.prepare_entries(train_pages)
+        qa_dataset.prepare_entries(val_pages)
 
     # Load pre-trained models.
     pipeline = qa_model.QaPipeline()
