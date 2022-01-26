@@ -20,6 +20,10 @@ class Page(awe_graph.HtmlPage):
         return self.url
 
     @property
+    def file_path(self):
+        return self.url
+
+    @property
     def group_key(self):
         return self.identifier
 

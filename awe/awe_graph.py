@@ -49,6 +49,13 @@ class HtmlPage(ABC):
 
     @property
     @abstractmethod
+    def file_path(self) -> str:
+        """
+        Path to source file (HTML).
+        """
+
+    @property
+    @abstractmethod
     def group_key(self) -> str:
         """Identifier of page group (e.g., folder in dataset)."""
 
