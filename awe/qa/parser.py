@@ -31,7 +31,7 @@ def _find_all(words: list[str], needle: str):
     start = 0
     for word in words:
         yield from (start + i for i in utils.find_all(word, needle))
-        start += len(word)
+        start += len(word) + 1 # add one for space between words
 
 def get_page_words(page: awe_graph.HtmlPage):
     tree = parse_page(page)
