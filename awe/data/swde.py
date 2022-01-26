@@ -115,9 +115,10 @@ class GroundTruthField:
             parsed_values = [] if values == ['<NULL>'] else values
             assert int(expected_nonnull_count) == len(parsed_values)
             page = self.site.pages[index]
-            assert page is not None, \
-                f'No page at {index} in {self.site.dir_name}.'
-            assert page.index == index
+            if page is None:
+                warnings.warn(f'No page at {index} in {self.site.dir_name}.')
+            else:
+                assert page.index == index
             yield GroundTruthEntry(self, page, parsed_values)
 
 @dataclass
