@@ -64,7 +64,7 @@ class QaTrainer:
 
         # Create dataloaders.
         self.train_loader = self.create_dataloader(self.train_pages, shuffle=True)
-        self.val_loader = self.create_dataloader(self.val_pages, shuffle=True)
+        self.val_loader = self.create_dataloader(self.val_pages)
 
     def create_dataloader(self,
         pages: list[awe_graph.HtmlPage],
