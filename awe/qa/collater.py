@@ -4,11 +4,11 @@ from typing import Iterable, Optional
 import transformers
 
 import awe.qa.parser
-from awe import awe_graph
+import awe.qa.sampler
 
 
 # Inspired by https://huggingface.co/transformers/v3.2.0/custom_datasets.html.
-class QaCollater:
+class Collater:
     label_to_question: Optional[dict[str, str]] = None
 
     def __init__(self,
@@ -18,23 +18,13 @@ class QaCollater:
         self.tokenizer = tokenizer
         self.max_length = max_length
 
-    def __call__(self, pages: list[awe_graph.HtmlPage]):
-        return self.get_encodings(pages).convert_to_tensors('pt')
+    def __call__(self, samples: list[awe.qa.sampler.Sample]):
+        return self.get_encodings(samples).convert_to_tensors('pt')
 
-    def get_encodings(self, pages: list[awe_graph.HtmlPage]):
-        # Expand each page into multiple training samples (one question-answer
-        # per label).
-        label_maps = [awe.qa.parser.get_page_labels(page) for page in pages]
-        samples = [
-            (page, label, values)
-            for page, label_map in zip(pages, label_maps)
-            for label, values in label_map.items()
-            if len(values) != 0
-        ]
-
+    def get_encodings(self, samples: list[awe.qa.sampler.Sample]):
         # Tokenize batch.
-        questions = [[self.get_question(label)] for _, label, _ in samples]
-        texts = [awe.qa.parser.get_page_words(page) for page, _, _ in samples]
+        questions = [[self.get_question(sample.label)] for sample in samples]
+        texts = [awe.qa.parser.get_page_words(sample.page) for sample in samples]
         encodings = self.tokenizer(questions, texts,
             is_split_into_words=True,
             truncation=True,
@@ -45,10 +35,10 @@ class QaCollater:
         # Find start/end positions.
         start_positions = []
         end_positions = []
-        for idx, ((_, _, values), words) in enumerate(zip(samples, texts)):
+        for idx, (sample, words) in enumerate(zip(samples, texts)):
             spans = [
                 span
-                for value in values
+                for value in sample.values
                 for span in awe.qa.parser.get_spans(words, value)
             ]
             start_positions.append(self.spans_to_positions(
