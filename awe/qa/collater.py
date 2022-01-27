@@ -35,18 +35,20 @@ class Collater:
         # Find start/end positions.
         start_positions = []
         end_positions = []
-        for idx, (sample, words) in enumerate(zip(samples, texts)):
+        for batch_idx, (sample, words) in enumerate(zip(samples, texts)):
             spans = [
-                span
+                encodings.word_to_tokens(
+                    batch_idx, word_idx, sequence_index=1
+                )
                 for value in sample.values
-                for span in awe.qa.parser.get_spans(words, value)
+                for word_idx in awe.qa.parser.iter_word_indices(words, value)
             ]
-            start_positions.append(self.spans_to_positions(
-                encodings, idx, (start for start, _ in spans)
-            ))
-            end_positions.append(self.spans_to_positions(
-                encodings, idx, (end - 1 for _, end in spans)
-            ))
+            start_positions.append(
+                self.normalize_positions(span.start for span in spans)
+            )
+            end_positions.append(
+                self.normalize_positions(span.end - 1 for span in spans)
+            )
         encodings['start_positions'] = start_positions
         encodings['end_positions'] = end_positions
 
@@ -65,16 +67,11 @@ class Collater:
         humanized_label = label.replace('_', ' ')
         return f'What is the {humanized_label}?'
 
-    def spans_to_positions(self,
-        encodings: transformers.BatchEncoding,
-        batch_idx: int,
-        spans: Iterable[int]
-    ) -> int:
+    def normalize_positions(self, positions: Iterable[Optional[int]]) -> int:
         positions = [
-            encodings.char_to_token(batch_idx, i, sequence_index=1)
             # Handle when answer is truncated from the context.
-            or self.tokenizer.model_max_length
-            for i in spans
+            idx or self.tokenizer.model_max_length
+            for idx in positions
         ]
         if len(positions) == 0:
             # Return something even if there is no value for the label.

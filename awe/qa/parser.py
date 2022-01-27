@@ -4,7 +4,7 @@ import re
 import selectolax
 import selectolax.parser
 
-from awe import awe_graph, selectolax_utils, utils
+from awe import awe_graph, selectolax_utils
 
 WHITESPACE_REGEX = r'(\s|[\u200b])+'
 """Matches whitespace characters."""
@@ -20,18 +20,18 @@ def get_page_labels(page: awe_graph.HtmlPage):
         for f in page.fields
     }
 
-def get_spans(words: list[str], needle: str):
-    return [
-        (start, start + len(needle))
-        for start in _find_all(words, needle)
-    ]
+def iter_word_indices(words: list[str], needle: str):
+    # Try exact match first.
+    for i, w in enumerate(words):
+        if w == needle:
+            yield i
 
-def _find_all(words: list[str], needle: str):
-    """Like calling `utils.find_all(' '.join(words), needle)`."""
-    start = 0
-    for word in words:
-        yield from (start + i for i in utils.find_all(word, needle))
-        start += len(word) + 1 # add one for space between words
+    # Then try again but ignore whitespace and casing (this has lower priority,
+    # hence it's tried afterward, so if choosing top K, only exact matches are
+    # considered whenever possible).
+    for i, w in enumerate(words):
+        if remove_whitespace(w.lower()) == remove_whitespace(needle.lower()):
+            yield i
 
 def get_page_words(page: awe_graph.HtmlPage):
     tree = parse_page(page)
@@ -74,3 +74,6 @@ def parse_page(page: awe_graph.HtmlPage):
 
 def collapse_whitespace(text: str):
     return re.sub(WHITESPACE_REGEX, ' ', text)
+
+def remove_whitespace(text: str):
+    return re.sub(WHITESPACE_REGEX, '', text)
