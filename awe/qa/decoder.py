@@ -3,7 +3,7 @@ import pandas as pd
 import torch
 import transformers
 
-from awe import qa_model
+import awe.qa.model
 
 
 class Decoder:
@@ -12,11 +12,11 @@ class Decoder:
     ):
         self.tokenizer = tokenizer
 
-    def decode_predictions(self, predictions: list[qa_model.QaModelPrediction]):
+    def decode_predictions(self, predictions: list[awe.qa.model.Prediction]):
         return pd.DataFrame(self._iterate_decode_predictions(predictions))
 
     def _iterate_decode_predictions(self,
-        predictions: list[qa_model.QaModelPrediction]
+        predictions: list[awe.qa.model.Prediction]
     ):
         for pred in predictions:
             for row in range(pred.batch['input_ids'].shape[0]):

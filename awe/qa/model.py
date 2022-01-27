@@ -1,5 +1,4 @@
 import dataclasses
-from typing import Optional
 
 import datasets
 import numpy as np
@@ -11,42 +10,15 @@ from transformers.models.big_bird.modeling_big_bird import \
 
 
 @dataclasses.dataclass
-class QaModelPrediction:
+class Prediction:
     batch: transformers.BatchEncoding
     outputs: BigBirdForQuestionAnsweringModelOutput
 
-class QaPipeline:
-    _model: Optional[transformers.BigBirdForQuestionAnswering] = None
-    _tokenizer: Optional[transformers.PreTrainedTokenizerBase] = None
-
-    def __init__(self,
-        model_id = 'vasudevgupta/bigbird-roberta-natural-questions'
-    ):
-        self.model_id = model_id
-
-    def load(self):
-        _ = self.model
-        _ = self.tokenizer
-
-    @property
-    def model(self) -> transformers.BigBirdForQuestionAnswering:
-        if self._model is None:
-            self._model = transformers.AutoModelForQuestionAnswering \
-                .from_pretrained(self.model_id)
-        return self._model
-
-    @property
-    def tokenizer(self) -> transformers.PreTrainedTokenizerBase:
-        if self._tokenizer is None:
-            self._tokenizer = transformers.AutoTokenizer.from_pretrained(
-                self.model_id)
-        return self._tokenizer
-
 # pylint: disable=arguments-differ, unused-argument
-class QaModel(pl.LightningModule):
-    def __init__(self, pipeline: QaPipeline):
+class Model(pl.LightningModule):
+    def __init__(self, model: transformers.BigBirdForQuestionAnswering):
         super().__init__()
-        self.model = pipeline.model
+        self.model = model
         self.metric = datasets.load_metric('accuracy')
 
     def configure_optimizers(self):
@@ -113,4 +85,4 @@ class QaModel(pl.LightningModule):
 
     def predict_step(self, batch, *_):
         outputs = self(batch)
-        return QaModelPrediction(batch, outputs)
+        return Prediction(batch, outputs)

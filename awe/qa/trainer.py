@@ -6,8 +6,12 @@ import pytorch_lightning as pl
 import torch
 import torch.utils.data
 
-from awe import awe_graph, gym, qa_model
-from awe.data import qa_dataset, swde
+import awe.qa.collater
+import awe.qa.model
+import awe.qa.pipeline
+import awe.qa.sampler
+from awe import awe_graph, gym
+from awe.data import swde
 
 #  Ignore warnings.
 warnings.filterwarnings('ignore', message='__floordiv__ is deprecated')
@@ -25,13 +29,13 @@ class QaTrainer:
     val_pages: list[awe_graph.HtmlPage]
     train_loader: torch.utils.data.DataLoader
     val_loader: torch.utils.data.DataLoader
-    model: qa_model.QaModel
+    model: awe.qa.model.Model
     g: gym.Gym
     trainer: pl.Trainer
 
     def __init__(self, params: QaTrainerParams):
         self.params = params
-        self.pipeline = qa_model.QaPipeline()
+        self.pipeline = awe.qa.pipeline.Pipeline()
 
     def load_pipeline(self):
         self.pipeline.load()
@@ -72,19 +76,16 @@ class QaTrainer:
         pages: list[awe_graph.HtmlPage],
         shuffle: bool = False
     ):
+        samples = awe.qa.sampler.get_samples(pages)
         return torch.utils.data.DataLoader(
-            qa_dataset.QaEntryLoader(pages),
+            samples,
             batch_size=self.params.batch_size,
-            collate_fn=qa_dataset.QaCollater(self.pipeline.tokenizer),
+            collate_fn=awe.qa.collater.Collater(self.pipeline.tokenizer),
             shuffle=shuffle,
         )
 
-    def prepare_data(self):
-        qa_dataset.prepare_entries(self.train_pages)
-        qa_dataset.prepare_entries(self.val_pages)
-
     def create_model(self):
-        self.model = qa_model.QaModel(self.pipeline)
+        self.model = awe.qa.model.Model(self.pipeline.model)
 
     def delete_previous_version(self):
         gym.Version.delete_last(self.params.version_name)
@@ -119,11 +120,11 @@ class QaTrainer:
     def predict_examples(self):
         loader = self.create_dataloader(self.val_pages[:2])
         preds = self.trainer.predict(self.model, loader)
-        decoder = qa_dataset.QaDecoder(self.pipeline.tokenizer)
+        decoder = awe.qa.decoder.Decoder(self.pipeline.tokenizer)
         return decoder.decode_predictions(preds)
 
     def predict_seen_examples(self):
         loader = self.create_dataloader(self.train_pages[:2])
         preds = self.trainer.predict(self.model, loader)
-        decoder = qa_dataset.QaDecoder(self.pipeline.tokenizer)
+        decoder = awe.qa.decoder.Decoder(self.pipeline.tokenizer)
         return decoder.decode_predictions(preds)
