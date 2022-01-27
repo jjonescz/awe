@@ -74,6 +74,10 @@ class Version:
         return f'{LOG_DIR}/{self.version_dir_name}'
 
     @property
+    def bak_dir_path(self):
+        return f'{self.version_dir_path}.bak'
+
+    @property
     def checkpoints_dir_path(self):
         return f'{self.version_dir_path}/checkpoints'
 
@@ -108,8 +112,10 @@ class Version:
         os.makedirs(self.version_dir_path, exist_ok=True)
 
     def delete(self):
-        print(f'Deleting {self.version_dir_path}')
-        shutil.rmtree(self.version_dir_path)
+        if os.path.exists(self.bak_dir_path):
+            print(f'Deleting {self.bak_dir_path}')
+            shutil.rmtree(self.bak_dir_path)
+        os.rename(self.version_dir_path, self.bak_dir_path)
 
     def create_logger(self):
         return TensorBoardLogger(
