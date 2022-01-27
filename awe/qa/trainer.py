@@ -7,6 +7,7 @@ import torch
 import torch.utils.data
 
 import awe.qa.collater
+import awe.qa.decoder
 import awe.qa.model
 import awe.qa.pipeline
 import awe.qa.sampler
@@ -17,14 +18,14 @@ from awe.data import swde
 warnings.filterwarnings('ignore', message='__floordiv__ is deprecated')
 
 @dataclasses.dataclass
-class QaTrainerParams:
+class TrainerParams:
     train_subset: int = 2000
     val_subset: int = 50
     epochs: int = 5
     version_name: str = ''
     batch_size: int = 16
 
-class QaTrainer:
+class Trainer:
     train_pages: list[awe_graph.HtmlPage]
     val_pages: list[awe_graph.HtmlPage]
     train_loader: torch.utils.data.DataLoader
@@ -33,7 +34,7 @@ class QaTrainer:
     g: gym.Gym
     trainer: pl.Trainer
 
-    def __init__(self, params: QaTrainerParams):
+    def __init__(self, params: TrainerParams):
         self.params = params
         self.pipeline = awe.qa.pipeline.Pipeline()
 
