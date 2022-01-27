@@ -5,8 +5,8 @@ import awe.qa.trainer
 def main():
     params = awe.qa.trainer.QaTrainerParams(
         batch_size=1,
-        train_subset=500,
-        version_name='qa-train-500'
+        train_subset=1000,
+        version_name='qa-train-1000'
     )
     trainer = awe.qa.trainer.QaTrainer(params)
     trainer.load_pipeline()
