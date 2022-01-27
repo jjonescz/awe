@@ -72,7 +72,8 @@ class QaCollater:
         return question
 
     def get_default_question(self, label: str):
-        return f'What is the {label}?'
+        humanized_label = label.replace('_', ' ')
+        return f'What is the {humanized_label}?'
 
     def spans_to_positions(self,
         encodings: transformers.BatchEncoding,
