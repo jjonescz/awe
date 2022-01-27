@@ -62,7 +62,7 @@ class QaTrainer:
         rng = np.random.default_rng(42)
         self.train_pages = rng.choice(train_pages, self.params.train_subset, replace=False)
         self.val_pages = rng.choice(val_pages, self.params.val_subset, replace=False)
-        print(f'{len(train_pages)=}, {len(val_pages)=}')
+        print(f'{len(self.train_pages)=}, {len(self.val_pages)=}')
 
         # Create dataloaders.
         self.train_loader = self.create_dataloader(self.train_pages, shuffle=True)
