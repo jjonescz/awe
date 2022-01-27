@@ -11,7 +11,8 @@ import awe.qa.decoder
 import awe.qa.model
 import awe.qa.pipeline
 import awe.qa.sampler
-from awe import awe_graph, gym
+import awe.training.logging
+from awe import awe_graph
 from awe.data import swde
 
 #  Ignore warnings.
@@ -31,7 +32,7 @@ class Trainer:
     train_loader: torch.utils.data.DataLoader
     val_loader: torch.utils.data.DataLoader
     model: awe.qa.model.Model
-    g: gym.Gym
+    version: awe.training.logging.Version
     trainer: pl.Trainer
 
     def __init__(self, params: TrainerParams):
@@ -89,24 +90,26 @@ class Trainer:
         self.model = awe.qa.model.Model(self.pipeline.model)
 
     def delete_previous_version(self):
-        gym.Version.delete_last(self.params.version_name)
+        awe.training.logging.Version.delete_last(self.params.version_name)
 
     def train(self):
-        self.g = gym.Gym(None, None, version_name=self.params.version_name)
+        self.version = awe.training.logging.Version.create_new(
+            self.params.version_name
+        )
         self.trainer = pl.Trainer(
             gpus=torch.cuda.device_count(),
             max_epochs=self.params.epochs,
-            logger=self.g.create_logger(),
+            logger=self.version.create_logger(),
         )
         self.trainer.fit(self.model, self.train_loader, self.val_loader)
 
     def restore(self, checkpoint_name: str):
         # Load model from checkpoint.
-        self.g = gym.Gym(None, None, version_name='')
+        self.version = awe.training.logging.Version.create_new('')
         self.trainer = pl.Trainer(
             gpus=torch.cuda.device_count(),
             max_epochs=self.params.epochs,
-            logger=self.g.create_logger(),
+            logger=self.version.create_logger(),
             resume_from_checkpoint=checkpoint_name
         )
         self.trainer.fit(self.model, self.train_loader)
