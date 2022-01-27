@@ -112,9 +112,14 @@ class Version:
         os.makedirs(self.version_dir_path, exist_ok=True)
 
     def delete(self):
+        if not os.path.exists(self.version_dir_path):
+            return
+
         if os.path.exists(self.bak_dir_path):
             print(f'Deleting {self.bak_dir_path}')
             shutil.rmtree(self.bak_dir_path)
+
+        print(f'Trashing {self.version_dir_path}')
         os.rename(self.version_dir_path, self.bak_dir_path)
 
     def create_logger(self):
