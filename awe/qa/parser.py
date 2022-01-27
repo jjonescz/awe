@@ -30,8 +30,14 @@ def iter_word_indices(words: list[str], needle: str):
     # hence it's tried afterward, so if choosing top K, only exact matches are
     # considered whenever possible).
     for i, w in enumerate(words):
-        if remove_whitespace(w.lower()) == remove_whitespace(needle.lower()):
+        if coarse_words_equal(w, needle):
             yield i
+
+def coarse_words_equal(a: str, b: str):
+    return coarsen_word(a) == coarsen_word(b)
+
+def coarsen_word(s: str):
+    return remove_whitespace(s.lower())
 
 def get_page_words(page: awe_graph.HtmlPage):
     tree = parse_page(page)
