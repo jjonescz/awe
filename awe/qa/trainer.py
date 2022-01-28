@@ -140,21 +140,12 @@ class Trainer:
             resume_from_checkpoint=resume_from_checkpoint
         )
 
-    def validate(self):
-        self.trainer.validate(self.model, self.val_loader)
-
-    def validate_seen(self):
-        loader = self.create_dataloader(self.train_pages[:2])
+    def validate(self, pages: list[awe_graph.HtmlPage]):
+        loader = self.create_dataloader(pages)
         self.trainer.validate(self.model, loader)
 
-    def predict_examples(self):
-        loader = self.create_dataloader(self.val_pages[:2])
-        preds = self.trainer.predict(self.model, loader)
-        decoder = awe.qa.decoder.Decoder(self.pipeline.tokenizer)
-        return decoder.decode_predictions(preds)
-
-    def predict_seen_examples(self):
-        loader = self.create_dataloader(self.train_pages[:2])
+    def predict_examples(self, pages: list[awe_graph.HtmlPage]):
+        loader = self.create_dataloader(pages)
         preds = self.trainer.predict(self.model, loader)
         decoder = awe.qa.decoder.Decoder(self.pipeline.tokenizer)
         return decoder.decode_predictions(preds)
