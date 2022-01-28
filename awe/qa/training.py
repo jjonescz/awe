@@ -3,16 +3,14 @@
 import awe.qa.trainer
 
 def main():
-    params = awe.qa.trainer.TrainerParams(
-        batch_size=1,
-        train_subset=1000,
-        version_name='qa-train-1000'
-    )
+    params = awe.qa.trainer.TrainerParams.load_user()
+    if params is None:
+        return
     trainer = awe.qa.trainer.Trainer(params)
+    trainer.create_version()
     trainer.load_pipeline()
     trainer.load_data()
     trainer.create_model()
-    trainer.delete_previous_version()
     trainer.train()
 
 if __name__ == '__main__':

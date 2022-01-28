@@ -1,5 +1,6 @@
 import dataclasses
 import json
+import os
 import warnings
 from typing import Optional
 
@@ -16,7 +17,7 @@ import awe.qa.pipeline
 import awe.qa.sampler
 import awe.training.logging
 from awe import awe_graph
-from awe.data import swde
+from awe.data import constants, swde
 
 #  Ignore warnings.
 warnings.filterwarnings('ignore', message='__floordiv__ is deprecated')
@@ -29,13 +30,31 @@ class TrainerParams:
     version_name: str = ''
     batch_size: int = 16
 
+    @classmethod
+    def load_version(cls, version: awe.training.logging.Version):
+        return cls.load_file(version.params_path)
+
+    @classmethod
+    def load_user(cls):
+        """Loads params from user-provided file."""
+        path = f'{constants.DATA_DIR}/qa-params.json'
+        if not os.path.exists(path):
+            # Create file with default params as template.
+            warnings.warn(f'No params file, creating one at {repr(path)}.')
+            TrainerParams().save_file(path)
+            return None
+        return cls.load_file(path)
+
     @staticmethod
-    def load(version: awe.training.logging.Version):
-        with open(version.params_path, mode='r', encoding='utf-8') as f:
+    def load_file(path: str):
+        with open(path, mode='r', encoding='utf-8') as f:
             return TrainerParams(**json.load(f))
 
-    def save(self, version: awe.training.logging.Version):
-        with open(version.params_path, mode='w', encoding='utf-8') as f:
+    def save_version(self, version: awe.training.logging.Version):
+        self.save_file(version.params_path)
+
+    def save_file(self, path: str):
+        with open(path, mode='w', encoding='utf-8') as f:
             json.dump(dataclasses.asdict(self), f,
                 indent=2,
                 sort_keys=True
@@ -64,7 +83,7 @@ class Trainer:
         )
 
         # Save params.
-        self.params.save(self.version)
+        self.params.save_version(self.version)
 
     def load_pipeline(self):
         self.pipeline.load()
