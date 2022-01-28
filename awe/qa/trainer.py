@@ -1,11 +1,13 @@
 import dataclasses
 import json
 import warnings
+from typing import Optional
 
 import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.utils.data
+from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 
 import awe.qa.collater
 import awe.qa.decoder
@@ -27,6 +29,21 @@ class TrainerParams:
     version_name: str = ''
     batch_size: int = 16
 
+    @staticmethod
+    def load(version: awe.training.logging.Version):
+        with open(version.params_path, mode='r', encoding='utf-8') as f:
+            return TrainerParams(**json.load(f))
+
+    def save(self, version: awe.training.logging.Version):
+        with open(version.params_path, mode='w', encoding='utf-8') as f:
+            json.dump(dataclasses.asdict(self), f,
+                indent=2,
+                sort_keys=True
+            )
+
+    def update_from(self, checkpoint: awe.training.logging.Checkpoint):
+        self.epochs = checkpoint.epoch + 1
+
 class Trainer:
     train_pages: list[awe_graph.HtmlPage]
     val_pages: list[awe_graph.HtmlPage]
@@ -47,11 +64,7 @@ class Trainer:
         )
 
         # Save params.
-        with open(self.version.params_path, mode='w', encoding='utf-8') as f:
-            json.dump(dataclasses.asdict(self.params), f,
-                indent=2,
-                sort_keys=True
-            )
+        self.params.save(self.version)
 
     def load_pipeline(self):
         self.pipeline.load()
@@ -104,23 +117,28 @@ class Trainer:
         self.model = awe.qa.model.Model(self.pipeline.model)
 
     def train(self):
-        self.trainer = pl.Trainer(
-            gpus=torch.cuda.device_count(),
-            max_epochs=self.params.epochs,
-            logger=self.version.create_logger(),
+        self._create_trainer(
+            logger=self.version.create_logger()
         )
         self.trainer.fit(self.model, self.train_loader, self.val_loader)
 
-    def restore(self, checkpoint_name: str):
-        # Load model from checkpoint.
-        self.version = awe.training.logging.Version.create_new('')
+    def restore(self, checkpoint: awe.training.logging.Checkpoint):
+        self.params.update_from(checkpoint)
+        self._create_trainer(
+            resume_from_checkpoint=checkpoint.file_path
+        )
+        self.trainer.fit(self.model, self.train_loader)
+
+    def _create_trainer(self,
+        logger: Optional[TensorBoardLogger] = None,
+        resume_from_checkpoint: Optional[str] = None
+    ):
         self.trainer = pl.Trainer(
             gpus=torch.cuda.device_count(),
             max_epochs=self.params.epochs,
-            logger=self.version.create_logger(),
-            resume_from_checkpoint=checkpoint_name
+            logger=logger,
+            resume_from_checkpoint=resume_from_checkpoint
         )
-        self.trainer.fit(self.model, self.train_loader)
 
     def validate(self):
         self.trainer.validate(self.model, self.val_loader)

@@ -138,3 +138,11 @@ class Checkpoint:
     version: Version
     epoch: int
     step: int
+
+    @property
+    def file_name(self):
+        return f'epoch={self.epoch}-step={self.step}.ckpt'
+
+    @property
+    def file_path(self):
+        return f'{self.version.checkpoints_dir_path}/{self.file_name}'
