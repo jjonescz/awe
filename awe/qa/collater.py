@@ -67,13 +67,15 @@ class Collater:
         sample: awe.qa.sampler.Sample,
         words: list[str]
     ) -> list[transformers.TokenSpan]:
-        return [
+        # Sort spans, so that positions closer to start are preferred (e.g.,
+        # when choosing only first span out of all possible ones).
+        return sorted([
             encodings.word_to_tokens(
                 batch_idx, word_idx, sequence_index=1
             )
             for value in sample.values
             for word_idx in awe.qa.parser.iter_word_indices(words, value)
-        ]
+        ])
 
     def normalize_positions(self, positions: Iterable[Optional[int]]) -> int:
         positions = [
