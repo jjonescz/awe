@@ -1,4 +1,5 @@
 import dataclasses
+import json
 import warnings
 
 import numpy as np
@@ -38,6 +39,19 @@ class Trainer:
     def __init__(self, params: TrainerParams):
         self.params = params
         self.pipeline = awe.qa.pipeline.Pipeline()
+
+    def create_version(self):
+        awe.training.logging.Version.delete_last(self.params.version_name)
+        self.version = awe.training.logging.Version.create_new(
+            self.params.version_name
+        )
+
+        # Save params.
+        with open(self.version.params_path, mode='w', encoding='utf-8') as f:
+            json.dump(dataclasses.asdict(self.params), f,
+                indent=2,
+                sort_keys=True
+            )
 
     def load_pipeline(self):
         self.pipeline.load()
@@ -89,13 +103,7 @@ class Trainer:
     def create_model(self):
         self.model = awe.qa.model.Model(self.pipeline.model)
 
-    def delete_previous_version(self):
-        awe.training.logging.Version.delete_last(self.params.version_name)
-
     def train(self):
-        self.version = awe.training.logging.Version.create_new(
-            self.params.version_name
-        )
         self.trainer = pl.Trainer(
             gpus=torch.cuda.device_count(),
             max_epochs=self.params.epochs,

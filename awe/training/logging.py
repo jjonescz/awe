@@ -105,6 +105,10 @@ class Version:
     def inputs_path(self):
         return f'{self.version_dir_path}/inputs.txt'
 
+    @property
+    def params_path(self):
+        return f'{self.version_dir_path}/params.json'
+
     def exists(self):
         return os.path.exists(self.version_dir_path)
 
