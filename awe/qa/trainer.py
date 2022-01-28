@@ -29,6 +29,7 @@ class TrainerParams:
     epochs: int = 5
     version_name: str = ''
     batch_size: int = 16
+    max_length: Optional[int] = None
 
     @classmethod
     def load_version(cls, version: awe.training.logging.Version):
@@ -128,7 +129,10 @@ class Trainer:
         return torch.utils.data.DataLoader(
             samples,
             batch_size=self.params.batch_size,
-            collate_fn=awe.qa.collater.Collater(self.pipeline.tokenizer),
+            collate_fn=awe.qa.collater.Collater(
+                self.pipeline.tokenizer,
+                max_length=self.params.max_length,
+            ),
             shuffle=shuffle,
         )
 
