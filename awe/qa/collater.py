@@ -36,13 +36,7 @@ class Collater:
         start_positions = []
         end_positions = []
         for batch_idx, (sample, words) in enumerate(zip(samples, texts)):
-            spans = [
-                encodings.word_to_tokens(
-                    batch_idx, word_idx, sequence_index=1
-                )
-                for value in sample.values
-                for word_idx in awe.qa.parser.iter_word_indices(words, value)
-            ]
+            spans = self.get_spans(encodings, batch_idx, sample, words)
             start_positions.append(
                 self.normalize_positions(span.start for span in spans)
             )
@@ -66,6 +60,20 @@ class Collater:
     def get_default_question(self, label: str):
         humanized_label = label.replace('_', ' ')
         return f'What is the {humanized_label}?'
+
+    def get_spans(self,
+        encodings: transformers.BatchEncoding,
+        batch_idx: int,
+        sample: awe.qa.sampler.Sample,
+        words: list[str]
+    ) -> list[transformers.TokenSpan]:
+        return [
+            encodings.word_to_tokens(
+                batch_idx, word_idx, sequence_index=1
+            )
+            for value in sample.values
+            for word_idx in awe.qa.parser.iter_word_indices(words, value)
+        ]
 
     def normalize_positions(self, positions: Iterable[Optional[int]]) -> int:
         positions = [

@@ -1,3 +1,5 @@
+import pandas as pd
+import transformers
 from tqdm.auto import tqdm
 
 import awe.qa.collater
@@ -35,3 +37,26 @@ def validate(
                         f'Inconsistent words ({decoded=}, {expected=}, ' +
                         f'{page.file_path=}).'
                     )
+
+def decode(
+    collater: awe.qa.collater.Collater,
+    samples: list[awe.qa.sampler.Sample],
+    encodings: transformers.BatchEncoding
+):
+    return pd.DataFrame(
+        {
+            'label': s.label,
+            'values': s.values,
+            'possible_spans': collater.get_spans(
+                encodings, i, s, awe.qa.parser.get_page_words(s.page)
+            ),
+            'decoded_span': (
+                (start := encodings['start_positions'][i].item()),
+                (end := (encodings['end_positions'][i] + 1).item())
+            ),
+            'decoded_value': collater.tokenizer.decode(
+                encodings['input_ids'][i, start:end]
+            )
+        }
+        for i, s in enumerate(samples)
+    )
