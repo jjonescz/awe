@@ -6,6 +6,7 @@ def main():
     params = awe.qa.trainer.TrainerParams.load_user()
     if params is None:
         return
+    print(f'{params=}')
     trainer = awe.qa.trainer.Trainer(params)
     trainer.create_version()
     trainer.load_pipeline()
