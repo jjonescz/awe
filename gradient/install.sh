@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# This script should be run once after VSCode is connected.
+# This script should be run once after VSCode is connected. Note that settings
+# applied here are persisted by `run.sh`.
 
 # Set remote-machine-specific settings.
 cat << EOF > ~/.vscode-server/data/Machine/settings.json

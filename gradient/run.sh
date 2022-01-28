@@ -2,9 +2,10 @@
 
 # This script should be run after source code is mounted.
 
-# Persist VSCode directory.
+# Persist VSCode directory and other config directories (used in `install.sh`).
 mkdir -p /storage/awe/.vscode-server
 ln -s /storage/awe/.vscode-server ~/.vscode-server
+ln -s /storage/.tmux.conf ~/.tmux.conf
 
 # Generate a random alphanumeric string of length 48 (like Jupyter notebook
 # token, e.g., `c8de56fa4deed24899803e93c227592aef6538f93025fe01`). Inspired by
