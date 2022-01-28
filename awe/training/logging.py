@@ -75,7 +75,9 @@ class Version:
 
     @property
     def bak_dir_path(self):
-        return f'{self.version_dir_path}.bak'
+        # We use separate subfolder so that the trashed logdirs don't get loaded
+        # alongside normal versions.
+        return f'{LOG_DIR}/bak/{self.version_dir_name}'
 
     @property
     def checkpoints_dir_path(self):
