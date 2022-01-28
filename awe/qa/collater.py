@@ -73,13 +73,15 @@ class Collater:
             encodings.word_to_tokens(
                 batch_idx, word_idx, sequence_index=1
             )
+            # Handle when the whole answer is truncated from the context.
+            or transformers.TokenSpan(0, 0)
             for value in sample.values
             for word_idx in awe.qa.parser.iter_word_indices(words, value)
         ])
 
     def normalize_positions(self, positions: Iterable[Optional[int]]) -> int:
         positions = [
-            # Handle when answer is truncated from the context.
+            # Handle when end of the answer is truncated from the context.
             idx or self.tokenizer.model_max_length
             for idx in positions
         ]
