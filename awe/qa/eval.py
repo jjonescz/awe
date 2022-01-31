@@ -55,10 +55,10 @@ class ModelEvaluator:
                 )
                 if target_label_id == label_id
             ]
-            l = len(matches)
-            acc = 0.0 if l == 0 else sum(matches) / l
+            if len(matches) == 0:
+                return {}
             return {
-                f'{target_label}_{prefix}_acc': acc
+                f'{target_label}_{prefix}_acc': sum(matches) / len(matches)
             }
         label_matches = {
             k: v
