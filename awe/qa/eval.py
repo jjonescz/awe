@@ -1,11 +1,15 @@
+from typing import TYPE_CHECKING
+
 import datasets
 import numpy as np
 import torch
 
-import awe.qa.model
 import awe.qa.postprocess
 import awe.qa.sampler
 import awe.utils
+
+if TYPE_CHECKING:
+    import awe.qa.model
 
 
 class ModelEvaluator:
@@ -13,7 +17,7 @@ class ModelEvaluator:
         self.label_map = label_map
         self.metric = datasets.load_metric('accuracy')
 
-    def compute_metrics(self, pred: awe.qa.model.Prediction):
+    def compute_metrics(self, pred: 'awe.qa.model.Prediction'):
         loss = pred.outputs.loss
         return {
             'loss': loss,
@@ -22,7 +26,7 @@ class ModelEvaluator:
         }
 
     def _compute_accuracies(self,
-        pred: awe.qa.model.Prediction,
+        pred: 'awe.qa.model.Prediction',
         prefix: str,
         clamp: bool = False
     ):

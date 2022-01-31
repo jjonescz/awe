@@ -1,4 +1,5 @@
 import dataclasses
+from typing import TYPE_CHECKING
 
 import pytorch_lightning as pl
 import transformers
@@ -6,7 +7,9 @@ from transformers.models.big_bird.modeling_big_bird import \
     BigBirdForQuestionAnsweringModelOutput
 
 import awe.qa.eval
-import awe.qa.trainer
+
+if TYPE_CHECKING:
+    import awe.qa.trainer
 
 ModelOutput = BigBirdForQuestionAnsweringModelOutput
 
@@ -19,7 +22,7 @@ class Prediction:
 class Model(pl.LightningModule):
     def __init__(self,
         model: transformers.BigBirdForQuestionAnswering,
-        params: awe.qa.trainer.TrainerParams,
+        params: 'awe.qa.trainer.TrainerParams',
         evaluator: awe.qa.eval.ModelEvaluator,
     ):
         super().__init__()
