@@ -64,7 +64,7 @@ class Model(pl.LightningModule):
 
         # Log `hp_metric` which is used as main metric in TensorBoard.
         if is_val:
-            hp_metric = metrics['mean_acc']
+            hp_metric = metrics['mean_post_acc']
             self.log('hp_metric', hp_metric, prog_bar=False)
 
         return prefixed
