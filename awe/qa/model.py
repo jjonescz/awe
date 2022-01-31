@@ -58,10 +58,11 @@ class Model(pl.LightningModule):
         metrics = self.compute_metrics(batch)
         prefixed = { f'{prefix}_{k}': v for k, v in metrics.items() }
 
-        self.log_dict(prefixed)
+        is_val = prefix == 'val'
+        self.log_dict(prefixed, prog_bar=is_val)
 
         # Log `hp_metric` which is used as main metric in TensorBoard.
-        if prefix == 'val':
+        if is_val:
             hp_metric = metrics['mean_acc']
             self.log('hp_metric', hp_metric, prog_bar=False)
 
