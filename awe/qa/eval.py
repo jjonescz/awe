@@ -45,7 +45,7 @@ class ModelEvaluator:
         )['accuracy']
 
         # Compute match per label.
-        def compute_per_label(label: str):
+        def compute_per_label(target_label_id: int):
             matches = [
                 start_pred == start_gold and end_pred == end_gold
                 for start_pred, start_gold, end_pred, end_gold, label_id in zip(
@@ -53,14 +53,14 @@ class ModelEvaluator:
                     end_preds, pred.batch['end_positions'],
                     pred.batch['label_ids']
                 )
-                if self.label_map.label_to_id[label] == label_id
+                if target_label_id == label_id
             ]
             if len(matches) == 0:
                 return 0.0
             return sum(matches) / len(matches)
         matches = {
-            f'{label}_acc': compute_per_label(label)
-            for label in self.label_map.label_to_id.keys()
+            f'{label}_{prefix}_acc': compute_per_label(label_id)
+            for label_id, label in self.label_map.id_to_label.items()
         }
 
         return {
