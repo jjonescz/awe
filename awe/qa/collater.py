@@ -13,11 +13,12 @@ class Collater:
 
     def __init__(self,
         tokenizer: transformers.PreTrainedTokenizerBase,
+        label_map: awe.qa.sampler.LabelMap,
         max_length: Optional[int] = None,
     ):
         self.tokenizer = tokenizer
+        self.label_map = label_map
         self.max_length = max_length
-        self.label_map = awe.qa.sampler.LabelMap()
 
     def __call__(self, samples: list[awe.qa.sampler.Sample]):
         return self.get_encodings(samples).convert_to_tensors('pt')

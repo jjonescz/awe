@@ -12,6 +12,7 @@ from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 
 import awe.qa.collater
 import awe.qa.decoder
+import awe.qa.eval
 import awe.qa.model
 import awe.qa.pipeline
 import awe.qa.sampler
@@ -77,6 +78,7 @@ class Trainer:
     def __init__(self, params: TrainerParams):
         self.params = params
         self.pipeline = awe.qa.pipeline.Pipeline()
+        self.label_map = awe.qa.sampler.LabelMap()
 
     def create_version(self):
         awe.training.logging.Version.delete_last(self.params.version_name)
@@ -132,13 +134,18 @@ class Trainer:
             batch_size=self.params.batch_size,
             collate_fn=awe.qa.collater.Collater(
                 self.pipeline.tokenizer,
+                self.label_map,
                 max_length=self.params.max_length,
             ),
             shuffle=shuffle,
         )
 
     def create_model(self):
-        self.model = awe.qa.model.Model(self.pipeline.model)
+        self.model = awe.qa.model.Model(
+            self.pipeline.model,
+            self.params,
+            awe.qa.eval.ModelEvaluator(self.label_map),
+        )
 
     def train(self):
         self._create_trainer(

@@ -20,11 +20,12 @@ class Model(pl.LightningModule):
     def __init__(self,
         model: transformers.BigBirdForQuestionAnswering,
         params: awe.qa.trainer.TrainerParams,
+        evaluator: awe.qa.eval.ModelEvaluator,
     ):
         super().__init__()
         self.model = model
         self.params = params
-        self.evaluator = awe.qa.eval.ModelEvaluator()
+        self.evaluator = evaluator
 
     def configure_optimizers(self):
         return transformers.AdamW(self.parameters(), lr=1e-5)
