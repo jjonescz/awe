@@ -10,8 +10,6 @@ import awe.qa.sampler
 # Inspired by https://huggingface.co/transformers/v3.2.0/custom_datasets.html.
 class Collater:
     label_to_question: Optional[dict[str, str]] = None
-    label_to_id: dict[str, int]
-    id_to_label: dict[int, str]
 
     def __init__(self,
         tokenizer: transformers.PreTrainedTokenizerBase,
@@ -19,8 +17,7 @@ class Collater:
     ):
         self.tokenizer = tokenizer
         self.max_length = max_length
-        self.label_to_id = {}
-        self.id_to_label = {}
+        self.label_map = awe.qa.sampler.LabelMap()
 
     def __call__(self, samples: list[awe.qa.sampler.Sample]):
         return self.get_encodings(samples).convert_to_tensors('pt')
@@ -52,7 +49,7 @@ class Collater:
 
         # Remember labels.
         encodings['label_ids'] = [
-            self.map_label_to_id(sample.label)
+            self.label_map.map_label_to_id(sample.label)
             for sample in samples
         ]
 
@@ -101,11 +98,3 @@ class Collater:
         # TODO: We limit the number of answers to one for now, because the model
         # head doesn't support more.
         return positions[0]
-
-    def map_label_to_id(self, label: str):
-        id = self.label_to_id.get(label)
-        if id is None:
-            id = len(self.label_to_id) + 1
-            self.label_to_id[label] = id
-            self.id_to_label[id] = label
-        return id
