@@ -45,7 +45,7 @@ class Model(pl.LightningModule):
         outputs = self.forward(batch)
         loss = outputs.loss
 
-        if batch_idx % self.params.eval_every_n_steps == 0:
+        if batch_idx % self.params.log_every_n_steps == 0:
             self._shared_eval_step('train', batch)
         else:
             self.log('train_loss', loss)
