@@ -126,6 +126,7 @@ class Version:
             shutil.rmtree(self.bak_dir_path)
 
         print(f'Trashing {self.version_dir_path}')
+        os.makedirs(self.bak_dir_path, exist_ok=True)
         os.rename(self.version_dir_path, self.bak_dir_path)
 
     def create_logger(self):
