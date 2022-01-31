@@ -158,3 +158,8 @@ def _iterate_all(string: str, substring: str, overlap: bool):
 
 def at_index(collection: Iterable[T], idx: int):
     return next(itertools.islice(collection, idx, None))
+
+T1 = TypeVar('T1')
+T2 = TypeVar('T2')
+def unzip(collection: Iterable[tuple[T1, T2]]):
+    return tuple(zip(*collection))
