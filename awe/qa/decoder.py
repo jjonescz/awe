@@ -4,6 +4,7 @@ import torch
 import transformers
 
 import awe.qa.model
+import awe.qa.postprocess
 
 
 class Decoder:
@@ -43,10 +44,15 @@ class Decoder:
                     input_ids[pred_start:pred_end + 1]
                 )
 
+                post_span = awe.qa.postprocess.clamp_span(
+                    pred_start, pred_end, pred.batch, row
+                )
+
                 yield {
                     'question': question,
                     'gold_span': (gold_start.item(), gold_end.item()),
                     'pred_span': (pred_start.item(), pred_end.item()),
+                    'post_span': post_span,
                     'gold_answer': gold_answer,
                     'pred_answer': pred_answer,
                 }
