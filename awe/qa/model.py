@@ -1,32 +1,30 @@
 import dataclasses
 
-import datasets
-import numpy as np
 import pytorch_lightning as pl
-import torch
 import transformers
 from transformers.models.big_bird.modeling_big_bird import \
     BigBirdForQuestionAnsweringModelOutput
 
+import awe.qa.eval
+
+ModelOutput = BigBirdForQuestionAnsweringModelOutput
 
 @dataclasses.dataclass
 class Prediction:
     batch: transformers.BatchEncoding
-    outputs: BigBirdForQuestionAnsweringModelOutput
+    outputs: ModelOutput
 
 # pylint: disable=arguments-differ, unused-argument
 class Model(pl.LightningModule):
     def __init__(self, model: transformers.BigBirdForQuestionAnswering):
         super().__init__()
         self.model = model
-        self.metric = datasets.load_metric('accuracy')
+        self.evaluator = awe.qa.eval.ModelEvaluator()
 
     def configure_optimizers(self):
         return transformers.AdamW(self.parameters(), lr=1e-5)
 
-    def forward(self,
-        batch: transformers.BatchEncoding
-    ) -> BigBirdForQuestionAnsweringModelOutput:
+    def forward(self, batch: transformers.BatchEncoding) -> ModelOutput:
         return self.model(
             input_ids=batch['input_ids'],
             attention_mask=batch['attention_mask'],
@@ -59,29 +57,7 @@ class Model(pl.LightningModule):
 
     def compute_metrics(self, batch: transformers.BatchEncoding):
         outputs = self.forward(batch)
-        loss = outputs.loss
-        start_acc = self._compute_accuracy(
-            logits=outputs.start_logits,
-            labels=batch['start_positions'],
-        )
-        end_acc = self._compute_accuracy(
-            logits=outputs.end_logits,
-            labels=batch['end_positions'],
-        )
-        return {
-            'loss': loss,
-            'start_acc': start_acc,
-            'end_acc': end_acc,
-            'acc': np.mean([start_acc, end_acc])
-        }
-
-    def _compute_accuracy(self, logits, labels):
-        predictions = torch.argmax(logits, dim=-1)
-        results = self.metric.compute(
-            predictions=predictions,
-            references=labels
-        )
-        return results['accuracy']
+        return self.evaluator.compute_metrics(Prediction(batch, outputs))
 
     def predict_step(self, batch, *_):
         outputs = self(batch)
