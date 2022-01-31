@@ -66,6 +66,10 @@ class ModelEvaluator:
             for k, v in compute_per_label(label, label_id).items()
         }
 
+        # Add total label accuracy.
+        label_accuracies = torch.FloatTensor(list(label_matches.values()))
+        label_matches[f'label_{prefix}_acc'] = torch.mean(label_accuracies)
+
         return {
             f'start_{prefix}_acc': start_acc,
             f'end_{prefix}_acc': end_acc,
