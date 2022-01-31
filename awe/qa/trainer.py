@@ -30,6 +30,7 @@ class TrainerParams:
     version_name: str = ''
     batch_size: int = 16
     max_length: Optional[int] = None
+    eval_every_n_steps: int = 10
 
     @classmethod
     def load_version(cls, version: awe.training.logging.Version):

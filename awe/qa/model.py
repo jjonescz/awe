@@ -6,6 +6,7 @@ from transformers.models.big_bird.modeling_big_bird import \
     BigBirdForQuestionAnsweringModelOutput
 
 import awe.qa.eval
+import awe.qa.trainer
 
 ModelOutput = BigBirdForQuestionAnsweringModelOutput
 
@@ -16,9 +17,13 @@ class Prediction:
 
 # pylint: disable=arguments-differ, unused-argument
 class Model(pl.LightningModule):
-    def __init__(self, model: transformers.BigBirdForQuestionAnswering):
+    def __init__(self,
+        model: transformers.BigBirdForQuestionAnswering,
+        params: awe.qa.trainer.TrainerParams,
+    ):
         super().__init__()
         self.model = model
+        self.params = params
         self.evaluator = awe.qa.eval.ModelEvaluator()
 
     def configure_optimizers(self):
@@ -32,9 +37,16 @@ class Model(pl.LightningModule):
             end_positions=batch['end_positions'],
         )
 
-    def training_step(self, batch, *_):
+    def training_step(self, batch, batch_idx: int, *_):
         outputs = self.forward(batch)
-        return outputs.loss
+        loss = outputs.loss
+
+        if batch_idx % self.params.eval_every_n_steps == 0:
+            self._shared_eval_step('train', batch)
+        else:
+            self.log('train_loss', loss)
+
+        return loss
 
     def validation_step(self, batch, *_):
         return self._shared_eval_step('val', batch)
