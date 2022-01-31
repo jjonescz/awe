@@ -15,13 +15,13 @@ class ModelEvaluator:
         loss = pred.outputs.loss
         return {
             'loss': loss,
-            **self._compute_accuracies(pred),
-            **self._compute_accuracies(pred, 'post_acc', clamp=True),
+            **self._compute_accuracies(pred, 'pre'),
+            **self._compute_accuracies(pred, 'post', clamp=True),
         }
 
     def _compute_accuracies(self,
         pred: awe.qa.model.Prediction,
-        name: str = 'acc',
+        prefix: str,
         clamp: bool = False
     ):
         start_preds = torch.argmax(pred.outputs.start_logits, dim=-1)
@@ -41,8 +41,9 @@ class ModelEvaluator:
             predictions=end_preds,
             references=pred.batch['end_positions']
         )['accuracy']
+
         return {
-            f'start_{name}': start_acc,
-            f'end_{name}': end_acc,
-            f'mean_{name}': np.mean([start_acc, end_acc])
+            f'start_{prefix}_acc': start_acc,
+            f'end_{prefix}_acc': end_acc,
+            f'mean_{prefix}_acc': np.mean([start_acc, end_acc])
         }
