@@ -165,10 +165,12 @@ class Trainer:
 
     def validate(self, pages: list[awe_graph.HtmlPage]):
         loader = self.create_dataloader(pages)
-        self.trainer.validate(self.model, loader)
+        return self.trainer.validate(self.model, loader)
 
-    def predict_examples(self, pages: list[awe_graph.HtmlPage]):
+    def predict(self, pages: list[awe_graph.HtmlPage]):
         loader = self.create_dataloader(pages)
-        preds = self.trainer.predict(self.model, loader)
+        return self.trainer.predict(self.model, loader)
+
+    def decode(self, preds: list[awe.qa.model.Prediction]):
         decoder = awe.qa.decoder.Decoder(self.pipeline.tokenizer)
         return decoder.decode_predictions(preds)
