@@ -55,6 +55,8 @@ class ModelEvaluator:
                 )
                 if self.label_map.label_to_id[label] == label_id
             ]
+            if len(matches) == 0:
+                return 0.0
             return sum(matches) / len(matches)
         matches = {
             f'{label}_acc': compute_per_label(label)
