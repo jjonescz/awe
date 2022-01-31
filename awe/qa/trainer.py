@@ -8,7 +8,9 @@ import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.utils.data
+import torch.utils.tensorboard
 from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
+from tqdm.auto import tqdm
 
 import awe.qa.collater
 import awe.qa.decoder
@@ -16,6 +18,7 @@ import awe.qa.eval
 import awe.qa.model
 import awe.qa.pipeline
 import awe.qa.sampler
+import awe.training.callbacks
 import awe.training.logging
 from awe import awe_graph
 from awe.data import constants, swde
@@ -32,6 +35,7 @@ class TrainerParams:
     batch_size: int = 16
     max_length: Optional[int] = None
     log_every_n_steps: int = 10
+    eval_every_n_steps: int = 50
 
     @classmethod
     def load_version(cls, version: awe.training.logging.Version):
@@ -74,11 +78,15 @@ class Trainer:
     model: awe.qa.model.Model
     version: awe.training.logging.Version
     trainer: pl.Trainer
+    optim: torch.optim.Optimizer
+    metrics: dict[str, dict[str, float]]
 
     def __init__(self, params: TrainerParams):
         self.params = params
         self.pipeline = awe.qa.pipeline.Pipeline()
         self.label_map = awe.qa.sampler.LabelMap()
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.metrics = {}
 
     def create_version(self):
         awe.training.logging.Version.delete_last(self.params.version_name)
@@ -143,15 +151,71 @@ class Trainer:
     def create_model(self):
         self.model = awe.qa.model.Model(
             self.pipeline.model,
-            self.params,
+            self,
             awe.qa.eval.ModelEvaluator(self.label_map),
-        )
+        ).to(self.device)
 
     def train(self):
-        self._create_trainer(
-            logger=self.version.create_logger()
+        self.writer = torch.utils.tensorboard.SummaryWriter(
+            log_dir=self.version.version_dir_path,
         )
-        self.trainer.fit(self.model, self.train_loader, self.val_loader)
+        self.metrics['train'] = {
+            'running_loss': 0.0,
+        }
+        self.metrics['val'] = {
+            'running_loss': 0.0,
+        }
+        self.optim = self.model.configure_optimizers()
+        for epoch_idx in tqdm(range(self.params.epochs), desc='train'):
+            avg_train_loss = self._train_epoch(epoch_idx)
+            avg_val_loss = self._validate_epoch(epoch_idx)
+
+            # Log metrics.
+            self.writer.add_scalar('epoch/train/loss', avg_train_loss)
+            self.writer.add_scalar('epoch/val/loss', avg_val_loss)
+            self.writer.flush()
+
+    def _train_epoch(self, epoch_idx: int):
+        self.model.train()
+        self.train_progress = tqdm(self.train_loader, desc='epoch')
+        for batch_idx, batch in enumerate(self.train_progress):
+            self._train_batch(batch, batch_idx, epoch_idx)
+        return self._train_loss(len(self.train_loader) - 1, epoch_idx)
+
+    def _validate_epoch(self, epoch_idx: int):
+        self.model.eval()
+        self.val_progress = tqdm(self.val_loader, desc='val')
+        for batch_idx, batch in enumerate(self.val_progress):
+            self._validate_batch(batch, batch_idx, epoch_idx)
+        return self.metrics['val']['running_loss'] / len(self.val_loader)
+
+    def _train_batch(self, batch, batch_idx: int, epoch_idx: int):
+        batch = batch.to(self.device)
+        self.optim.zero_grad()
+        loss = self.model.training_step(batch, batch_idx)
+        loss.backward()
+        self.optim.step()
+
+        # Gather metrics.
+        self.metrics['train']['running_loss'] += loss.item()
+        if batch_idx % self.params.log_every_n_steps == 0:
+            self._train_loss(batch_idx, epoch_idx)
+
+        # TODO: Validate during training.
+        if batch_idx % self.params.eval_every_n_steps == 0:
+            pass
+
+    def _train_loss(self, batch_idx: int, epoch_idx: int):
+        last_loss = self.metrics['train']['running_loss'] / self.params.log_every_n_steps
+        self.writer.add_scalar('train/loss', last_loss)
+        self.metrics['train']['running_loss'] = 0.0
+        self.train_progress.set_postfix({ 'loss': last_loss })
+        return last_loss
+
+    def _validate_batch(self, batch, batch_idx: int, epoch_idx: int):
+        batch = batch.to(self.device)
+        metrics = self.model.validation_step(batch, batch_idx)
+        self.metrics['val']['running_loss'] += metrics['loss']
 
     def restore(self, checkpoint: awe.training.logging.Checkpoint):
         self.params.update_from(checkpoint)
@@ -168,7 +232,8 @@ class Trainer:
             gpus=torch.cuda.device_count(),
             max_epochs=self.params.epochs,
             logger=logger,
-            resume_from_checkpoint=resume_from_checkpoint
+            resume_from_checkpoint=resume_from_checkpoint,
+            callbacks=[awe.training.callbacks.EvalDuringTraining(self)],
         )
 
     def validate(self, pages: list[awe_graph.HtmlPage]):
