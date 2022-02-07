@@ -35,7 +35,7 @@ class TrainerParams:
     batch_size: int = 16
     max_length: Optional[int] = None
     log_every_n_steps: int = 10
-    eval_every_n_steps: int = 50
+    eval_every_n_steps: Optional[int] = 50
 
     @classmethod
     def load_version(cls, version: awe.training.logging.Version):
@@ -169,7 +169,8 @@ class Trainer:
         self.optim = self.model.configure_optimizers()
         for epoch_idx in tqdm(range(self.params.epochs), desc='train'):
             avg_train_loss = self._train_epoch(epoch_idx)
-            avg_val_loss = self._validate_epoch(epoch_idx)
+            with torch.no_grad():
+                avg_val_loss = self._validate_epoch(epoch_idx)
 
             # Log metrics.
             self.writer.add_scalar('epoch/train/loss', avg_train_loss, epoch_idx)
@@ -182,6 +183,14 @@ class Trainer:
         for batch_idx, batch in enumerate(self.train_progress):
             self._train_batch(batch, batch_idx, epoch_idx)
             self.step += 1
+
+            # Validate during training.
+            if (self.params.eval_every_n_steps is not None and
+                batch_idx % self.params.eval_every_n_steps == 0):
+                with torch.no_grad():
+                    self._validate_epoch(epoch_idx)
+                self.model.train()
+
         return self._train_loss(len(self.train_loader) - 1, epoch_idx)
 
     def _validate_epoch(self, epoch_idx: int):
@@ -193,8 +202,8 @@ class Trainer:
         return self.metrics['val']['running_loss'] / len(self.val_loader)
 
     def _train_batch(self, batch, batch_idx: int, epoch_idx: int):
-        batch = batch.to(self.device)
         self.optim.zero_grad()
+        batch = batch.to(self.device)
         loss = self.model.training_step(batch, batch_idx)
         loss.backward()
         self.optim.step()
@@ -203,10 +212,6 @@ class Trainer:
         self.metrics['train']['running_loss'] += loss.item()
         if batch_idx % self.params.log_every_n_steps == 0:
             self._train_loss(batch_idx, epoch_idx)
-
-        # TODO: Validate during training.
-        if batch_idx % self.params.eval_every_n_steps == 0:
-            pass
 
     def _train_loss(self, batch_idx: int, epoch_idx: int):
         last_loss = self.metrics['train']['running_loss'] / self.params.log_every_n_steps
