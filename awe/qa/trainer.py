@@ -77,12 +77,14 @@ class Trainer:
     val_loader: torch.utils.data.DataLoader
     model: awe.qa.model.Model
     version: awe.training.logging.Version
+    writer: torch.utils.tensorboard.SummaryWriter
     trainer: pl.Trainer
     optim: torch.optim.Optimizer
     running_loss: dict[str, float]
     metrics: dict[str, dict[str, float]]
     train_progress: Optional[tqdm] = None
     val_progress: Optional[tqdm] = None
+    step: int
 
     def __init__(self, params: TrainerParams):
         self.params = params
@@ -100,6 +102,11 @@ class Trainer:
 
         # Save params.
         self.params.save_version(self.version)
+
+        # Initialize TensorBoard logger.
+        self.writer = torch.utils.tensorboard.SummaryWriter(
+            log_dir=self.version.version_dir_path,
+        )
 
     def load_pipeline(self):
         self.pipeline.load()
@@ -160,9 +167,6 @@ class Trainer:
         ).to(self.device)
 
     def train(self):
-        self.writer = torch.utils.tensorboard.SummaryWriter(
-            log_dir=self.version.version_dir_path,
-        )
         self.step = 0
         self.running_loss.clear()
         self.train_progress = None
