@@ -10,7 +10,6 @@ import pytorch_lightning as pl
 import torch
 import torch.utils.data
 import torch.utils.tensorboard
-from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 from tqdm.auto import tqdm
 
 import awe.qa.collater
@@ -165,41 +164,44 @@ class Trainer:
         )
         self.step = 0
         self.running_loss.clear()
+        self.val_progress = None
         self.optim = self.model.configure_optimizers()
         for epoch_idx in tqdm(range(self.params.epochs), desc='train'):
-            avg_train_loss = self._train_epoch(epoch_idx)
-            with torch.no_grad():
-                avg_val_loss = self._validate_epoch(epoch_idx)
+            avg_train_loss = self._train_epoch()
+            avg_val_loss = self._validate_epoch(self.val_loader)
 
             # Log metrics.
             self.writer.add_scalar('epoch/train/loss', avg_train_loss, epoch_idx)
             self.writer.add_scalar('epoch/val/loss', avg_val_loss, epoch_idx)
             self.writer.flush()
 
-    def _train_epoch(self, epoch_idx: int):
+    def _train_epoch(self):
         self.model.train()
         self.train_progress = tqdm(self.train_loader, desc='epoch')
         for batch_idx, batch in enumerate(self.train_progress):
-            self._train_batch(batch, batch_idx, epoch_idx)
+            self._train_batch(batch, batch_idx)
             self.step += 1
 
             # Validate during training.
             if (self.params.eval_every_n_steps is not None and
                 batch_idx % self.params.eval_every_n_steps == 0):
-                with torch.no_grad():
-                    self._validate_epoch(epoch_idx)
+                self._validate_epoch(self.val_loader)
                 self.model.train()
 
-        return self._train_loss(len(self.train_loader) - 1, epoch_idx)
+        return self._train_loss()
 
-    def _validate_epoch(self, epoch_idx: int):
+    def _validate_epoch(self, loader: torch.utils.data.DataLoader):
+        with torch.no_grad():
+            return self._validate_epoch_core(loader)
+
+    def _validate_epoch_core(self, loader: torch.utils.data.DataLoader):
         self.model.eval()
         if self.val_progress is None:
             self.val_progress = tqdm(desc='val')
-        self.val_progress.reset(total=len(self.val_loader))
+        self.val_progress.reset(total=len(loader))
         metrics: list[dict[str, float]] = []
-        for batch_idx, batch in enumerate(self.val_loader):
-            metrics.append(self._validate_batch(batch, batch_idx, epoch_idx))
+        for batch_idx, batch in enumerate(loader):
+            metrics.append(self._validate_batch(batch, batch_idx))
             self.step += 1
             self.val_progress.update()
 
@@ -211,9 +213,9 @@ class Trainer:
             self.writer.add_scalar(f'val_{key}', value, self.step)
         self.metrics['val'].clear()
 
-        return self.running_loss['val'] / len(self.val_loader)
+        return self.running_loss['val'] / len(loader)
 
-    def _train_batch(self, batch, batch_idx: int, epoch_idx: int):
+    def _train_batch(self, batch, batch_idx: int):
         self.optim.zero_grad()
         batch = batch.to(self.device)
         loss = self.model.training_step(batch, batch_idx)
@@ -223,10 +225,10 @@ class Trainer:
         # Gather metrics.
         self.running_loss['train'] += loss.item()
         if batch_idx % self.params.log_every_n_steps == 0:
-            self._train_loss(batch_idx, epoch_idx)
+            self._train_loss()
             self._log_metrics('train')
 
-    def _train_loss(self, batch_idx: int, epoch_idx: int):
+    def _train_loss(self):
         last_loss = self.running_loss['train'] / self.params.log_every_n_steps
         self.writer.add_scalar('train_loss', last_loss, self.step)
         self.running_loss['train'] = 0.0
@@ -238,38 +240,23 @@ class Trainer:
             self.writer.add_scalar(f'{prefix}_{key}', value, self.step)
         self.metrics[prefix].clear()
 
-    def _validate_batch(self, batch, batch_idx: int, epoch_idx: int):
+    def _validate_batch(self, batch, batch_idx: int):
         batch = batch.to(self.device)
         metrics = self.model.validation_step(batch, batch_idx)
         self.running_loss['val'] += metrics['loss']
         return metrics
 
-    def restore(self, checkpoint: awe.training.logging.Checkpoint):
-        self.params.update_from(checkpoint)
-        self._create_trainer(
-            resume_from_checkpoint=checkpoint.file_path
-        )
-        self.trainer.fit(self.model, self.train_loader)
-
-    def _create_trainer(self,
-        logger: Optional[TensorBoardLogger] = None,
-        resume_from_checkpoint: Optional[str] = None
-    ):
-        self.trainer = pl.Trainer(
-            gpus=torch.cuda.device_count(),
-            max_epochs=self.params.epochs,
-            logger=logger,
-            resume_from_checkpoint=resume_from_checkpoint,
-            callbacks=[awe.training.callbacks.EvalDuringTraining(self)],
-        )
-
     def validate(self, pages: list[awe_graph.HtmlPage]):
+        self.val_progress = None
         loader = self.create_dataloader(pages)
-        return self.trainer.validate(self.model, loader)
+        self._validate_epoch(loader)
 
     def predict(self, pages: list[awe_graph.HtmlPage]):
         loader = self.create_dataloader(pages)
-        return self.trainer.predict(self.model, loader)
+        self.model.eval()
+        for batch in tqdm(loader, desc='predict'):
+            batch = batch.to(self.device)
+            yield self.model.predict_step(batch)
 
     def decode(self, preds: list[awe.qa.model.Prediction]):
         decoder = awe.qa.decoder.Decoder(self.pipeline.tokenizer)
