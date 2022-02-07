@@ -59,16 +59,16 @@ class Model(torch.nn.Module):
 
     def _shared_eval_step(self, prefix: str, batch):
         metrics = self.compute_metrics(batch)
-        prefixed = { f'{prefix}_{k}': v for k, v in metrics.items() }
 
-        self.trainer.writer.add_scalars(prefix, metrics)
+        for k, v in metrics.items():
+            self.trainer.writer.add_scalar(f'{prefix}_{k}', v)
 
         # Log `hp_metric` which is used as main metric in TensorBoard.
         if prefix == 'val':
             hp_metric = metrics['mean_post_acc']
             self.trainer.writer.add_scalar('hp_metric', hp_metric)
 
-        return prefixed
+        return metrics
 
     def compute_metrics(self, batch: transformers.BatchEncoding):
         outputs = self.forward(batch)
