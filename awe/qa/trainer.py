@@ -208,7 +208,7 @@ class Trainer:
         for key in keys:
             values = [v for m in metrics if (v := m.get(key)) is not None]
             value = sum(values) / len(values)
-            self.writer.add_scalar(f'val/{key}', value, self.step)
+            self.writer.add_scalar(f'val_{key}', value, self.step)
         self.metrics['val'].clear()
 
         return self.running_loss['val'] / len(self.val_loader)
@@ -228,14 +228,14 @@ class Trainer:
 
     def _train_loss(self, batch_idx: int, epoch_idx: int):
         last_loss = self.running_loss['train'] / self.params.log_every_n_steps
-        self.writer.add_scalar('train/loss', last_loss, self.step)
+        self.writer.add_scalar('train_loss', last_loss, self.step)
         self.running_loss['train'] = 0.0
         self.train_progress.set_postfix({ 'loss': last_loss })
         return last_loss
 
     def _log_metrics(self, prefix: str):
         for key, value in self.metrics[prefix].items():
-            self.writer.add_scalar(f'{prefix}/{key}', value, self.step)
+            self.writer.add_scalar(f'{prefix}_{key}', value, self.step)
         self.metrics[prefix].clear()
 
     def _validate_batch(self, batch, batch_idx: int, epoch_idx: int):

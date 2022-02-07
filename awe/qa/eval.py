@@ -62,7 +62,7 @@ class ModelEvaluator:
             if len(matches) == 0:
                 return {}
             return {
-                f'{target_label}_{prefix}_acc': sum(matches) / len(matches)
+                f'{prefix}_label_acc/{target_label}': sum(matches) / len(matches)
             }
         label_matches = {
             k: v
@@ -72,11 +72,11 @@ class ModelEvaluator:
 
         # Add total label accuracy.
         label_accuracies = torch.FloatTensor(list(label_matches.values()))
-        label_matches[f'label_{prefix}_acc'] = torch.mean(label_accuracies)
+        label_matches[f'{prefix}_label_acc/total'] = torch.mean(label_accuracies)
 
         return {
-            f'start_{prefix}_acc': start_acc,
-            f'end_{prefix}_acc': end_acc,
-            f'mean_{prefix}_acc': np.mean([start_acc, end_acc]),
+            f'{prefix}_acc/start': start_acc,
+            f'{prefix}_acc/end': end_acc,
+            f'{prefix}_acc/mean': np.mean([start_acc, end_acc]),
             **label_matches,
         }
