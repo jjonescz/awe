@@ -17,7 +17,7 @@ class ModelEvaluator:
         self.label_map = label_map
         self.metric = datasets.load_metric('accuracy')
 
-    def compute_metrics(self, pred: 'awe.qa.model.Prediction'):
+    def compute_metrics(self, pred: 'awe.qa.model.Prediction') -> dict[str, float]:
         loss = pred.outputs.loss
         return {
             'loss': loss,

@@ -1,3 +1,4 @@
+import collections
 import dataclasses
 import json
 import os
@@ -79,6 +80,7 @@ class Trainer:
     version: awe.training.logging.Version
     trainer: pl.Trainer
     optim: torch.optim.Optimizer
+    running_loss: dict[str, float]
     metrics: dict[str, dict[str, float]]
     val_progress: Optional[tqdm] = None
 
@@ -87,7 +89,8 @@ class Trainer:
         self.pipeline = awe.qa.pipeline.Pipeline()
         self.label_map = awe.qa.sampler.LabelMap()
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        self.metrics = {}
+        self.running_loss = collections.defaultdict(float)
+        self.metrics = collections.defaultdict(dict)
 
     def create_version(self):
         awe.training.logging.Version.delete_last(self.params.version_name)
@@ -161,12 +164,7 @@ class Trainer:
             log_dir=self.version.version_dir_path,
         )
         self.step = 0
-        self.metrics['train'] = {
-            'running_loss': 0.0,
-        }
-        self.metrics['val'] = {
-            'running_loss': 0.0,
-        }
+        self.running_loss.clear()
         self.optim = self.model.configure_optimizers()
         for epoch_idx in tqdm(range(self.params.epochs), desc='train'):
             avg_train_loss = self._train_epoch(epoch_idx)
@@ -199,11 +197,21 @@ class Trainer:
         if self.val_progress is None:
             self.val_progress = tqdm(desc='val')
         self.val_progress.reset(total=len(self.val_loader))
+        metrics: list[dict[str, float]] = []
         for batch_idx, batch in enumerate(self.val_loader):
-            self._validate_batch(batch, batch_idx, epoch_idx)
+            metrics.append(self._validate_batch(batch, batch_idx, epoch_idx))
             self.step += 1
             self.val_progress.update()
-        return self.metrics['val']['running_loss'] / len(self.val_loader)
+
+        # Aggregate metrics.
+        keys = { k for m in metrics for k in m.keys() }
+        for key in keys:
+            values = [v for m in metrics if (v := m.get(key)) is not None]
+            value = sum(values) / len(values)
+            self.writer.add_scalar(f'val/{key}', value, self.step)
+        self.metrics['val'].clear()
+
+        return self.running_loss['val'] / len(self.val_loader)
 
     def _train_batch(self, batch, batch_idx: int, epoch_idx: int):
         self.optim.zero_grad()
@@ -213,21 +221,28 @@ class Trainer:
         self.optim.step()
 
         # Gather metrics.
-        self.metrics['train']['running_loss'] += loss.item()
+        self.running_loss['train'] += loss.item()
         if batch_idx % self.params.log_every_n_steps == 0:
             self._train_loss(batch_idx, epoch_idx)
+            self._log_metrics('train')
 
     def _train_loss(self, batch_idx: int, epoch_idx: int):
-        last_loss = self.metrics['train']['running_loss'] / self.params.log_every_n_steps
+        last_loss = self.running_loss['train'] / self.params.log_every_n_steps
         self.writer.add_scalar('train/loss', last_loss, self.step)
-        self.metrics['train']['running_loss'] = 0.0
+        self.running_loss['train'] = 0.0
         self.train_progress.set_postfix({ 'loss': last_loss })
         return last_loss
+
+    def _log_metrics(self, prefix: str):
+        for key, value in self.metrics[prefix].items():
+            self.writer.add_scalar(f'{prefix}/{key}', value, self.step)
+        self.metrics[prefix].clear()
 
     def _validate_batch(self, batch, batch_idx: int, epoch_idx: int):
         batch = batch.to(self.device)
         metrics = self.model.validation_step(batch, batch_idx)
-        self.metrics['val']['running_loss'] += metrics['loss']
+        self.running_loss['val'] += metrics['loss']
+        return metrics
 
     def restore(self, checkpoint: awe.training.logging.Checkpoint):
         self.params.update_from(checkpoint)
