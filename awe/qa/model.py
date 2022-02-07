@@ -51,10 +51,10 @@ class Model(torch.nn.Module):
 
         return loss
 
-    def validation_step(self, batch):
+    def validation_step(self, batch, batch_idx: int):
         return self._shared_eval_step('val', batch)
 
-    def test_step(self, batch):
+    def test_step(self, batch, batch_idx: int):
         return self._shared_eval_step('test', batch)
 
     def _shared_eval_step(self, prefix: str, batch):
