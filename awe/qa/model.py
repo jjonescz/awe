@@ -47,7 +47,7 @@ class Model(torch.nn.Module):
         if batch_idx % self.trainer.params.log_every_n_steps == 0:
             self._shared_eval_step('train', batch)
         else:
-            self.trainer.writer.add_scalar('train_loss', loss)
+            self.trainer.writer.add_scalar('train_loss', loss, self.trainer.step)
 
         return loss
 
@@ -61,12 +61,12 @@ class Model(torch.nn.Module):
         metrics = self.compute_metrics(batch)
 
         for k, v in metrics.items():
-            self.trainer.writer.add_scalar(f'{prefix}_{k}', v)
+            self.trainer.writer.add_scalar(f'{prefix}_{k}', v, self.trainer.step)
 
         # Log `hp_metric` which is used as main metric in TensorBoard.
         if prefix == 'val':
             hp_metric = metrics['mean_post_acc']
-            self.trainer.writer.add_scalar('hp_metric', hp_metric)
+            self.trainer.writer.add_scalar('hp_metric', hp_metric, self.trainer.step)
 
         return metrics
 

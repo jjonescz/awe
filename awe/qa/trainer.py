@@ -159,6 +159,7 @@ class Trainer:
         self.writer = torch.utils.tensorboard.SummaryWriter(
             log_dir=self.version.version_dir_path,
         )
+        self.step = 0
         self.metrics['train'] = {
             'running_loss': 0.0,
         }
@@ -171,8 +172,8 @@ class Trainer:
             avg_val_loss = self._validate_epoch(epoch_idx)
 
             # Log metrics.
-            self.writer.add_scalar('epoch/train/loss', avg_train_loss)
-            self.writer.add_scalar('epoch/val/loss', avg_val_loss)
+            self.writer.add_scalar('epoch/train/loss', avg_train_loss, epoch_idx)
+            self.writer.add_scalar('epoch/val/loss', avg_val_loss, epoch_idx)
             self.writer.flush()
 
     def _train_epoch(self, epoch_idx: int):
@@ -180,6 +181,7 @@ class Trainer:
         self.train_progress = tqdm(self.train_loader, desc='epoch')
         for batch_idx, batch in enumerate(self.train_progress):
             self._train_batch(batch, batch_idx, epoch_idx)
+            self.step += 1
         return self._train_loss(len(self.train_loader) - 1, epoch_idx)
 
     def _validate_epoch(self, epoch_idx: int):
@@ -187,6 +189,7 @@ class Trainer:
         self.val_progress = tqdm(self.val_loader, desc='val')
         for batch_idx, batch in enumerate(self.val_progress):
             self._validate_batch(batch, batch_idx, epoch_idx)
+            self.step += 1
         return self.metrics['val']['running_loss'] / len(self.val_loader)
 
     def _train_batch(self, batch, batch_idx: int, epoch_idx: int):
@@ -207,7 +210,7 @@ class Trainer:
 
     def _train_loss(self, batch_idx: int, epoch_idx: int):
         last_loss = self.metrics['train']['running_loss'] / self.params.log_every_n_steps
-        self.writer.add_scalar('train/loss', last_loss)
+        self.writer.add_scalar('train/loss', last_loss, self.step)
         self.metrics['train']['running_loss'] = 0.0
         self.train_progress.set_postfix({ 'loss': last_loss })
         return last_loss
