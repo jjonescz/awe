@@ -80,6 +80,7 @@ class Trainer:
     trainer: pl.Trainer
     optim: torch.optim.Optimizer
     metrics: dict[str, dict[str, float]]
+    val_progress: Optional[tqdm] = None
 
     def __init__(self, params: TrainerParams):
         self.params = params
@@ -195,10 +196,13 @@ class Trainer:
 
     def _validate_epoch(self, epoch_idx: int):
         self.model.eval()
-        self.val_progress = tqdm(self.val_loader, desc='val')
-        for batch_idx, batch in enumerate(self.val_progress):
+        if self.val_progress is None:
+            self.val_progress = tqdm(desc='val')
+        self.val_progress.reset(total=len(self.val_loader))
+        for batch_idx, batch in enumerate(self.val_loader):
             self._validate_batch(batch, batch_idx, epoch_idx)
             self.step += 1
+            self.val_progress.update()
         return self.metrics['val']['running_loss'] / len(self.val_loader)
 
     def _train_batch(self, batch, batch_idx: int, epoch_idx: int):
