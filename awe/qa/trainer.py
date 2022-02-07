@@ -81,6 +81,7 @@ class Trainer:
     optim: torch.optim.Optimizer
     running_loss: dict[str, float]
     metrics: dict[str, dict[str, float]]
+    train_progress: Optional[tqdm] = None
     val_progress: Optional[tqdm] = None
 
     def __init__(self, params: TrainerParams):
@@ -164,6 +165,7 @@ class Trainer:
         )
         self.step = 0
         self.running_loss.clear()
+        self.train_progress = None
         self.val_progress = None
         self.optim = self.model.configure_optimizers()
         for epoch_idx in tqdm(range(self.params.epochs), desc='train'):
@@ -177,10 +179,13 @@ class Trainer:
 
     def _train_epoch(self):
         self.model.train()
-        self.train_progress = tqdm(self.train_loader, desc='epoch')
-        for batch_idx, batch in enumerate(self.train_progress):
+        if self.train_progress is None:
+            self.train_progress = tqdm(desc='epoch')
+        self.train_progress.reset(total=len(self.train_loader))
+        for batch_idx, batch in enumerate(self.train_loader):
             self._train_batch(batch, batch_idx)
             self.step += 1
+            self.train_progress.update()
 
             # Validate during training.
             if (self.params.eval_every_n_steps is not None and
