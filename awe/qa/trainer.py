@@ -182,22 +182,31 @@ class Trainer:
         train_run = RunInput(self.train_loader, 'train')
         val_run = RunInput(self.val_loader, 'val')
         for epoch_idx in tqdm(range(self.params.epochs), desc='train'):
-            self._train_epoch(train_run, val_run)
-            self._validate_epoch(val_run)
+            train_metrics = self._train_epoch(train_run, val_run)
+            val_metrics = self._validate_epoch(val_run)
+
             self.writer.add_scalar('epoch/per_step', epoch_idx, self.step)
+
+            # Log per-epoch loss for comparison.
+            for key, train_value in train_metrics.items():
+                val_value = val_metrics[key]
+                self.writer.add_scalar(f'epoch/{train_run.prefix}_{key}', train_value, self.step)
+                self.writer.add_scalar(f'epoch/{val_run.prefix}_{key}', val_value, self.step)
 
     def _train_epoch(self, run: RunInput, val_run: RunInput):
         self.model.train()
         if self.train_progress is None:
             self.train_progress = tqdm(desc='epoch')
         self.train_progress.reset(total=len(run.loader))
-        fast_eval = self.evaluator.start_evaluation() # collected every step
+        fast_eval = self.evaluator.start_evaluation() # cleared every Nth step
+        total_eval = self.evaluator.start_evaluation() # collected every step
         slow_eval = self.evaluator.start_evaluation() # collected every Nth step
         for batch_idx, batch in enumerate(run.loader):
             self.optim.zero_grad()
             batch = batch.to(self.device)
             outputs = self.model.forward(batch)
             fast_eval.add_fast(outputs)
+            total_eval.add_fast(outputs)
             outputs.loss.backward()
             self.optim.step()
             self.step += 1
@@ -217,8 +226,10 @@ class Trainer:
                 self._validate_epoch(val_run)
                 self.model.train()
 
-        # Aggregate collected training metrics.
-        return self._eval(run, fast_eval) | self._eval(run, slow_eval)
+        # Log aggregate metrics.
+        self._eval(run, fast_eval)
+        self._eval(run, slow_eval)
+        return total_eval.compute()
 
     def _validate_epoch(self, run: RunInput):
         with torch.no_grad():
