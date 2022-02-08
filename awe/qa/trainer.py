@@ -38,6 +38,7 @@ class TrainerParams:
     save_every_n_epochs: Optional[int] = 1
     log_every_n_steps: int = 10
     eval_every_n_steps: Optional[int] = 50
+    use_gpu: bool = True
 
     @classmethod
     def load_version(cls, version: awe.training.logging.Version):
@@ -99,7 +100,8 @@ class Trainer:
         self.params = params
         self.pipeline = awe.qa.pipeline.Pipeline()
         self.label_map = awe.qa.sampler.LabelMap()
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        use_gpu = self.params.use_gpu and torch.cuda.is_available()
+        self.device = torch.device('cuda:0' if use_gpu else 'cpu')
         self.evaluator = awe.qa.eval.ModelEvaluator(self.label_map)
         self.running_loss = collections.defaultdict(float)
         self.metrics = collections.defaultdict(dict)
