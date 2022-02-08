@@ -179,12 +179,14 @@ class Trainer:
         self._reset_loop()
         self.running_loss.clear()
         self.optim = self.model.configure_optimizers()
+        train_run = RunInput(self.train_loader, 'train')
+        val_run = RunInput(self.val_loader, 'val')
         for epoch_idx in tqdm(range(self.params.epochs), desc='train'):
-            self._train_epoch(RunInput(self.train_loader, 'train'))
-            self._validate_epoch(RunInput(self.val_loader, 'val'))
+            self._train_epoch(train_run, val_run)
+            self._validate_epoch(val_run)
             self.writer.add_scalar('epoch/per_step', epoch_idx, self.step)
 
-    def _train_epoch(self, run: RunInput):
+    def _train_epoch(self, run: RunInput, val_run: RunInput):
         self.model.train()
         if self.train_progress is None:
             self.train_progress = tqdm(desc='epoch')
@@ -212,7 +214,7 @@ class Trainer:
             # Validate during training.
             if (self.params.eval_every_n_steps is not None and
                 batch_idx % self.params.eval_every_n_steps == 0):
-                self._validate_epoch(RunInput(self.val_loader, 'valtrain'))
+                self._validate_epoch(val_run)
                 self.model.train()
 
         # Aggregate collected training metrics.
