@@ -9,6 +9,7 @@ def main():
     print(f'{params=}')
     trainer = awe.qa.trainer.Trainer(params)
     trainer.create_version()
+    trainer.create_writer()
     trainer.load_pipeline()
     trainer.load_data()
     trainer.create_model()

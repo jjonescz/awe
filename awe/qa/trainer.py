@@ -88,7 +88,7 @@ class Trainer:
     val_loader: torch.utils.data.DataLoader
     model: awe.qa.model.Model
     version: awe.training.logging.Version
-    writer: torch.utils.tensorboard.SummaryWriter
+    writer: Optional[torch.utils.tensorboard.SummaryWriter] = None
     trainer: pl.Trainer
     optim: torch.optim.Optimizer
     train_progress: Optional[tqdm] = None
@@ -113,7 +113,9 @@ class Trainer:
         # Save params.
         self.params.save_version(self.version)
 
-        # Initialize TensorBoard logger.
+    def create_writer(self):
+        """Initializes TensorBoard logger."""
+
         self.writer = torch.utils.tensorboard.SummaryWriter(
             log_dir=self.version.version_dir_path,
         )
@@ -181,7 +183,8 @@ class Trainer:
         self.val_progress = None
 
     def _finalize(self):
-        self.writer.flush()
+        if self.writer is not None:
+            self.writer.flush()
         if self.train_progress is not None:
             self.train_progress.close()
         if self.val_progress is not None:
