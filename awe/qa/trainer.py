@@ -193,6 +193,10 @@ class Trainer:
                 self.writer.add_scalar(f'epoch/{train_run.prefix}_{key}', train_value, self.step)
                 self.writer.add_scalar(f'epoch/{val_run.prefix}_{key}', val_value, self.step)
 
+            # Save model checkpoint.
+            ckpt = self.version.create_checkpoint(epoch=epoch_idx, step=self.step)
+            torch.save(self.model.state_dict(), ckpt.file_path)
+
     def _train_epoch(self, run: RunInput, val_run: RunInput):
         self.model.train()
         if self.train_progress is None:

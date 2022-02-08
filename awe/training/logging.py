@@ -92,6 +92,11 @@ class Version:
             step = int(match.group(2))
             yield Checkpoint(self, epoch, step)
 
+    def create_checkpoint(self, epoch: int, step: int):
+        # Create directory for checkpoints.
+        os.makedirs(self.checkpoints_dir_path, exist_ok=True)
+        return Checkpoint(self, epoch=epoch, step=step)
+
     @property
     def model_path(self):
         return f'{self.version_dir_path}/model.pkl'
