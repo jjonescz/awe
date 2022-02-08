@@ -16,6 +16,7 @@
         "dataloaders",
         "dtype",
         "gdata",
+        "gelu",
         "gigaword",
         "gloader",
         "groundtruth",
