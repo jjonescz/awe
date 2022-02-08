@@ -170,6 +170,9 @@ class Trainer:
     def create_model(self):
         self.model = awe.qa.model.Model(self.pipeline.model).to(self.device)
 
+    def restore(self, checkpoint: awe.training.logging.Checkpoint):
+        self.model.load_state_dict(torch.load(checkpoint.file_path))
+
     def _reset_loop(self):
         self.step = 0
         self.train_progress = None
