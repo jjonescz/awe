@@ -178,6 +178,13 @@ class Trainer:
         self.train_progress = None
         self.val_progress = None
 
+    def _finalize(self):
+        self.writer.flush()
+        if self.train_progress is not None:
+            self.train_progress.close()
+        if self.val_progress is not None:
+            self.val_progress.close()
+
     def train(self):
         self._reset_loop()
         self.running_loss.clear()
@@ -199,6 +206,7 @@ class Trainer:
             # Save model checkpoint.
             ckpt = self.version.create_checkpoint(epoch=epoch_idx, step=self.step)
             torch.save(self.model.state_dict(), ckpt.file_path)
+        self._finalize()
 
     def _train_epoch(self, run: RunInput, val_run: RunInput):
         self.model.train()
@@ -266,7 +274,9 @@ class Trainer:
 
     def validate(self, run: RunInput):
         self._reset_loop()
-        return self._validate_epoch(run)
+        metrics = self._validate_epoch(run)
+        self._finalize()
+        return metrics
 
     def predict(self, run: RunInput):
         predictions: list[awe.qa.model.Prediction] = []
