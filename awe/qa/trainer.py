@@ -70,6 +70,15 @@ class TrainerParams:
     def update_from(self, checkpoint: awe.training.logging.Checkpoint):
         self.epochs = checkpoint.epoch + 1
 
+@dataclasses.dataclass
+class RunInput:
+    loader: torch.utils.data.DataLoader
+
+    prefix: Optional[str] = None
+    """
+    Prefix used in TensorBoard. When `None`, logging to TensorBoard is disabled.
+    """
+
 class Trainer:
     train_pages: list[awe_graph.HtmlPage]
     val_pages: list[awe_graph.HtmlPage]
@@ -80,8 +89,6 @@ class Trainer:
     writer: torch.utils.tensorboard.SummaryWriter
     trainer: pl.Trainer
     optim: torch.optim.Optimizer
-    running_loss: dict[str, float]
-    metrics: dict[str, dict[str, float]]
     train_progress: Optional[tqdm] = None
     val_progress: Optional[tqdm] = None
     step: int
@@ -91,6 +98,7 @@ class Trainer:
         self.pipeline = awe.qa.pipeline.Pipeline()
         self.label_map = awe.qa.sampler.LabelMap()
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.evaluator = awe.qa.eval.ModelEvaluator(self.label_map)
         self.running_loss = collections.defaultdict(float)
         self.metrics = collections.defaultdict(dict)
 
@@ -160,112 +168,95 @@ class Trainer:
         )
 
     def create_model(self):
-        self.model = awe.qa.model.Model(
-            self.pipeline.model,
-            self,
-            awe.qa.eval.ModelEvaluator(self.label_map),
-        ).to(self.device)
+        self.model = awe.qa.model.Model(self.pipeline.model).to(self.device)
 
-    def train(self):
+    def _reset_loop(self):
         self.step = 0
-        self.running_loss.clear()
         self.train_progress = None
         self.val_progress = None
+
+    def train(self):
+        self._reset_loop()
+        self.running_loss.clear()
         self.optim = self.model.configure_optimizers()
         for epoch_idx in tqdm(range(self.params.epochs), desc='train'):
-            avg_train_loss = self._train_epoch()
-            avg_val_loss = self._validate_epoch(self.val_loader)
+            self._train_epoch(RunInput(self.train_loader, 'train'))
+            self._validate_epoch(RunInput(self.val_loader, 'val'))
+            self.writer.add_scalar('epoch/per_step', epoch_idx, self.step)
 
-            # Log metrics.
-            self.writer.add_scalar('epoch/train/loss', avg_train_loss, epoch_idx)
-            self.writer.add_scalar('epoch/val/loss', avg_val_loss, epoch_idx)
-            self.writer.flush()
-
-    def _train_epoch(self):
+    def _train_epoch(self, run: RunInput):
         self.model.train()
         if self.train_progress is None:
             self.train_progress = tqdm(desc='epoch')
-        self.train_progress.reset(total=len(self.train_loader))
-        for batch_idx, batch in enumerate(self.train_loader):
-            self._train_batch(batch, batch_idx)
+        self.train_progress.reset(total=len(run.loader))
+        loss_eval = self.evaluator.start_evaluation()
+        evaluation = self.evaluator.start_evaluation()
+        for batch_idx, batch in enumerate(run.loader):
+            self.optim.zero_grad()
+            batch = batch.to(self.device)
+            outputs = self.model.forward(batch)
+            loss_eval.add_fast(outputs)
+            outputs.loss.backward()
+            self.optim.step()
             self.step += 1
             self.train_progress.update()
+
+            if batch_idx % self.params.log_every_n_steps == 0:
+                # Log train loss.
+                self._eval(run, loss_eval)
+                loss_eval.clear()
+
+                # Compute all metrics every once in a while.
+                evaluation.add(awe.qa.model.Prediction(batch, outputs))
 
             # Validate during training.
             if (self.params.eval_every_n_steps is not None and
                 batch_idx % self.params.eval_every_n_steps == 0):
-                self._validate_epoch(self.val_loader)
+                self._validate_epoch(RunInput(self.val_loader, 'valtrain'))
                 self.model.train()
 
-        return self._train_loss()
+        # Aggregate collected training metrics.
+        return self._eval(run, evaluation)
 
-    def _validate_epoch(self, loader: torch.utils.data.DataLoader):
+    def _validate_epoch(self, run: RunInput):
         with torch.no_grad():
-            return self._validate_epoch_core(loader)
+            return self._validate_epoch_core(run)
 
-    def _validate_epoch_core(self, loader: torch.utils.data.DataLoader):
+    def _validate_epoch_core(self, run: RunInput):
         self.model.eval()
         if self.val_progress is None:
             self.val_progress = tqdm(desc='val')
-        self.val_progress.reset(total=len(loader))
-        metrics: list[dict[str, float]] = []
-        for batch_idx, batch in enumerate(loader):
-            metrics.append(self._validate_batch(batch, batch_idx))
+        self.val_progress.reset(total=len(run.loader))
+        evaluation = self.evaluator.start_evaluation()
+        for batch in run.loader:
+            batch = batch.to(self.device)
+            outputs = self.model.forward(batch)
+            evaluation.add(awe.qa.model.Prediction(batch, outputs))
             self.step += 1
             self.val_progress.update()
+        return self._eval(run, evaluation)
 
-        # Aggregate metrics.
-        keys = { k for m in metrics for k in m.keys() }
-        for key in keys:
-            values = [v for m in metrics if (v := m.get(key)) is not None]
-            value = sum(values) / len(values)
-            self.writer.add_scalar(f'val_{key}', value, self.step)
-        self.metrics['val'].clear()
-
-        return self.running_loss['val'] / len(loader)
-
-    def _train_batch(self, batch, batch_idx: int):
-        self.optim.zero_grad()
-        batch = batch.to(self.device)
-        loss = self.model.training_step(batch, batch_idx)
-        loss.backward()
-        self.optim.step()
-
-        # Gather metrics.
-        self.running_loss['train'] += loss.item()
-        if batch_idx % self.params.log_every_n_steps == 0:
-            self._train_loss()
-            self._log_metrics('train')
-
-    def _train_loss(self):
-        last_loss = self.running_loss['train'] / self.params.log_every_n_steps
-        self.writer.add_scalar('train_loss', last_loss, self.step)
-        self.running_loss['train'] = 0.0
-        self.train_progress.set_postfix({ 'loss': last_loss })
-        return last_loss
-
-    def _log_metrics(self, prefix: str):
-        for key, value in self.metrics[prefix].items():
-            self.writer.add_scalar(f'{prefix}_{key}', value, self.step)
-        self.metrics[prefix].clear()
-
-    def _validate_batch(self, batch, batch_idx: int):
-        batch = batch.to(self.device)
-        metrics = self.model.validation_step(batch, batch_idx)
-        self.running_loss['val'] += metrics['loss']
+    def _eval(self, run: RunInput, evaluation: awe.qa.eval.ModelEvaluation):
+        # Log aggregate metrics to TensorBoard.
+        metrics = evaluation.compute()
+        if run.prefix is not None:
+            for k, v in metrics.items():
+                self.writer.add_scalar(f'{run.prefix}_{k}', v, self.step)
         return metrics
 
-    def validate(self, pages: list[awe_graph.HtmlPage]):
-        self.val_progress = None
-        loader = self.create_dataloader(pages)
-        self._validate_epoch(loader)
+    def validate(self, run: RunInput):
+        self._reset_loop()
+        return self._validate_epoch(run)
 
-    def predict(self, pages: list[awe_graph.HtmlPage]):
-        loader = self.create_dataloader(pages)
+    def predict(self, run: RunInput):
+        predictions: list[awe.qa.model.Prediction] = []
         self.model.eval()
-        for batch in tqdm(loader, desc='predict'):
-            batch = batch.to(self.device)
-            yield self.model.predict_step(batch)
+        with torch.no_grad():
+            for batch in tqdm(run.loader, desc='predict'):
+                batch = batch.to(self.device)
+                outputs = self.model.forward(batch)
+                predictions.append(awe.qa.model.Prediction(batch, outputs))
+        return predictions
 
     def decode(self, preds: list[awe.qa.model.Prediction]):
         decoder = awe.qa.decoder.Decoder(self.pipeline.tokenizer)
