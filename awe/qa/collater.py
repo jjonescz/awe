@@ -20,6 +20,7 @@ class Collater:
         self.tokenizer = tokenizer
         self.label_map = label_map
         self.max_length = max_length
+        self.seq_length = max_length or tokenizer.model_max_length
 
     def __call__(self, samples: list[awe.qa.sampler.Sample]):
         return self.get_encodings(samples)
@@ -104,12 +105,12 @@ class Collater:
     def normalize_positions(self, positions: Iterable[Optional[int]]) -> int:
         positions = [
             # Handle when end of the answer is truncated from the context.
-            idx or self.tokenizer.model_max_length
+            idx or self.seq_length
             for idx in positions
         ]
         if len(positions) == 0:
             # Return something even if there is no value for the label.
-            positions = [self.tokenizer.model_max_length]
+            positions = [0]
         # TODO: We limit the number of answers to one for now, because the model
         # head doesn't support more.
         return positions[0]
