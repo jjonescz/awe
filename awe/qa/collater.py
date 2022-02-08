@@ -1,6 +1,7 @@
 import warnings
 from typing import Iterable, Optional
 
+import torch
 import transformers
 
 import awe.qa.parser
@@ -21,7 +22,7 @@ class Collater:
         self.max_length = max_length
 
     def __call__(self, samples: list[awe.qa.sampler.Sample]):
-        return self.get_encodings(samples).convert_to_tensors('pt')
+        return self.get_encodings(samples)
 
     def get_encodings(self, samples: list[awe.qa.sampler.Sample]):
         # Tokenize batch.
@@ -53,6 +54,19 @@ class Collater:
             self.label_map.map_label_to_id(sample.label)
             for sample in samples
         ]
+
+        encodings = encodings.convert_to_tensors('pt')
+
+        # Compute question lengths.
+        sep_token_mask = encodings.input_ids.eq(self.tokenizer.sep_token_id)
+        question_lens = torch.argmax(sep_token_mask.int(), dim=-1) + 1
+        question_lens.unsqueeze_(1)
+
+        # Create mask for questions.
+        seq_len = encodings.input_ids.shape[1]
+        question_mask = torch.arange(0, seq_len) < question_lens
+        question_mask.unsqueeze(0)
+        encodings['question_mask'] = question_mask
 
         return encodings
 
