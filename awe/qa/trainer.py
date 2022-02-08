@@ -2,6 +2,7 @@ import collections
 import dataclasses
 import json
 import os
+import sys
 import warnings
 from typing import Optional
 
@@ -34,6 +35,7 @@ class TrainerParams:
     version_name: str = ''
     batch_size: int = 16
     max_length: Optional[int] = None
+    save_every_n_epochs: Optional[int] = 1
     log_every_n_steps: int = 10
     eval_every_n_steps: Optional[int] = 50
 
@@ -191,6 +193,7 @@ class Trainer:
         self.optim = self.model.configure_optimizers()
         train_run = RunInput(self.train_loader, 'train')
         val_run = RunInput(self.val_loader, 'val')
+        best_val_loss = sys.maxsize
         for epoch_idx in tqdm(range(self.params.epochs), desc='train'):
             train_metrics = self._train_epoch(train_run, val_run)
             val_metrics = self._validate_epoch(val_run)
@@ -203,9 +206,18 @@ class Trainer:
                 self.writer.add_scalar(f'epoch/{train_run.prefix}_{key}', train_value, self.step)
                 self.writer.add_scalar(f'epoch/{val_run.prefix}_{key}', val_value, self.step)
 
-            # Save model checkpoint.
-            ckpt = self.version.create_checkpoint(epoch=epoch_idx, step=self.step)
-            torch.save(self.model.state_dict(), ckpt.file_path)
+            # Keep track of best validation loss.
+            is_better_val_loss = val_metrics['loss'] < best_val_loss
+            if is_better_val_loss:
+                best_val_loss = val_metrics['loss']
+
+            # Save model checkpoint if better loss reached or if Nth epoch.
+            if is_better_val_loss or (
+                self.params.save_every_n_epochs is not None and
+                epoch_idx % self.params.save_every_n_epochs == 0
+            ):
+                ckpt = self.version.create_checkpoint(epoch=epoch_idx, step=self.step)
+                torch.save(self.model.state_dict(), ckpt.file_path)
         self._finalize()
 
     def _train_epoch(self, run: RunInput, val_run: RunInput):
