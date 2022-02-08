@@ -2,6 +2,9 @@
 
 This repository contains source code for AI-based structured web data extractor.
 
+- Author: [Jan Joneš](https://github.com/jjonescz)
+- Thesis: [assignment](https://is.cuni.cz/studium/dipl_st/index.php?id=&tid=&do=main&doo=detail&did=241832)
+
 ## Directory structure
 
 - [`awe`](awe): Python source code (data loading and machine learning).
