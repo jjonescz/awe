@@ -45,11 +45,14 @@ class ModelEvaluation:
     def compute(self):
         return { k: v.compute() for k, v in self.metrics.items() }
 
+    def add(self, pred: 'awe.qa.model.Prediction'):
+        self.add_fast(pred.outputs)
+        self.add_slow(pred)
+
     def add_fast(self, outputs: 'awe.qa.model.ModelOutput'):
         self.metrics['loss'].add(outputs.loss.item())
 
-    def add(self, pred: 'awe.qa.model.Prediction'):
-        self.add_fast(pred.outputs)
+    def add_slow(self, pred: 'awe.qa.model.Prediction'):
         self._add_accuracies(pred, 'pre')
         self._add_accuracies(pred, 'post', clamp=True)
 

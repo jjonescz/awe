@@ -189,25 +189,25 @@ class Trainer:
         if self.train_progress is None:
             self.train_progress = tqdm(desc='epoch')
         self.train_progress.reset(total=len(run.loader))
-        loss_eval = self.evaluator.start_evaluation()
-        evaluation = self.evaluator.start_evaluation()
+        fast_eval = self.evaluator.start_evaluation() # collected every step
+        slow_eval = self.evaluator.start_evaluation() # collected every Nth step
         for batch_idx, batch in enumerate(run.loader):
             self.optim.zero_grad()
             batch = batch.to(self.device)
             outputs = self.model.forward(batch)
-            loss_eval.add_fast(outputs)
+            fast_eval.add_fast(outputs)
             outputs.loss.backward()
             self.optim.step()
             self.step += 1
             self.train_progress.update()
 
             if batch_idx % self.params.log_every_n_steps == 0:
-                # Log train loss.
-                self._eval(run, loss_eval)
-                loss_eval.clear()
+                # Log aggregate train loss.
+                self._eval(run, fast_eval)
+                fast_eval.clear()
 
                 # Compute all metrics every once in a while.
-                evaluation.add(awe.qa.model.Prediction(batch, outputs))
+                slow_eval.add_slow(awe.qa.model.Prediction(batch, outputs))
 
             # Validate during training.
             if (self.params.eval_every_n_steps is not None and
@@ -216,7 +216,7 @@ class Trainer:
                 self.model.train()
 
         # Aggregate collected training metrics.
-        return self._eval(run, evaluation)
+        return self._eval(run, fast_eval) | self._eval(run, slow_eval)
 
     def _validate_epoch(self, run: RunInput):
         with torch.no_grad():
