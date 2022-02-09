@@ -34,8 +34,7 @@ echo "root:${JUPYTER_TOKEN}" | chpasswd && /usr/sbin/sshd -eD &
 # Start Tailscale proxy.
 mkdir -p /storage/awe/tailscale
 tailscaled --tun=userspace-networking --statedir /storage/awe/tailscale &
-tailscale up
-tailscale ip -4
+(tailscale up && tailscale ip -4) &
 
 # Listen through huproxy.
 /huproxy/bin/huproxy -listen :8888
