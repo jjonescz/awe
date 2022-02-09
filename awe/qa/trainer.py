@@ -39,6 +39,8 @@ class TrainerParams:
     log_every_n_steps: int = 10
     eval_every_n_steps: Optional[int] = 50
     use_gpu: bool = True
+    add_boundary_info: bool = False
+    mask_questions: bool = False
 
     @classmethod
     def load_version(cls, version: awe.training.logging.Version):
@@ -166,6 +168,7 @@ class Trainer:
             samples,
             batch_size=self.params.batch_size,
             collate_fn=awe.qa.collater.Collater(
+                self.params,
                 self.pipeline.tokenizer,
                 self.label_map,
                 max_length=self.params.max_length,
@@ -174,7 +177,10 @@ class Trainer:
         )
 
     def create_model(self):
-        self.model = awe.qa.model.Model(self.pipeline.model).to(self.device)
+        self.model = awe.qa.model.Model(
+            self.params,
+            self.pipeline.model
+        ).to(self.device)
 
     def restore(self, checkpoint: awe.training.logging.Checkpoint):
         self.model.load_state_dict(torch.load(checkpoint.file_path))
