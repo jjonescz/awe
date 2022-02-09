@@ -66,7 +66,6 @@ class Collater:
         # Create mask for questions.
         seq_len = encodings.input_ids.shape[1]
         question_mask = torch.arange(0, seq_len) < question_lens
-        question_mask.unsqueeze(0)
         encodings['question_mask'] = question_mask
 
         return encodings

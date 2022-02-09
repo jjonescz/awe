@@ -51,7 +51,7 @@ class Model(torch.nn.Module):
         logits = self.qa_outputs(x) # [batch, seq_length, 2]
 
         # Effectively ignore question tokens.
-        logits = logits - batch.question_mask.int().unsqueeze(2) * 1e6
+        logits[batch.question_mask, :] = 0
 
         start_logits = logits[:, :, 0] # [batch, seq_length]
         end_logits = logits[:, :, 1] # [batch, seq_length]
