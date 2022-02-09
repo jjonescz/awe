@@ -105,7 +105,7 @@ class Collater:
     def normalize_positions(self, positions: Iterable[Optional[int]]) -> int:
         positions = [
             # Handle when end of the answer is truncated from the context.
-            idx or self.seq_length
+            idx or (self.seq_length - 1)
             for idx in positions
         ]
         if len(positions) == 0:
