@@ -80,6 +80,13 @@ ENV GOPATH=/huproxy \
     PATH=/usr/local/go/bin:$PATH
 RUN go get github.com/google/huproxy
 
+# Install Tailscaled proxy.
+RUN curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/focal.gpg | apt-key add - \
+    && curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/focal.list | tee /etc/apt/sources.list.d/tailscale.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends tailscale \
+    && rm -rf /var/lib/{apt,dpkg,cache,log}
+
 # Install Python packages.
 COPY requirements.txt /requirements.txt
 RUN pip install -r requirements.txt

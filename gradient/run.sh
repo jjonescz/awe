@@ -28,6 +28,14 @@ nohup nice jupyter notebook --allow-root --no-browser --port 8890 \
     --NotebookApp.notebook_dir=/storage/awe/src --NotebookApp.token='' \
     --NotebookApp.disable_check_xsrf=True > /jupyter.out &
 
-# Start SSH server listening through huproxy.
+# Start SSH server.
 echo "root:${JUPYTER_TOKEN}" | chpasswd && /usr/sbin/sshd -eD &
+
+# Start Tailscale proxy.
+mkdir -p /storage/awe/tailscale
+tailscaled --statedir /storage/awe/tailscale &
+tailscale up
+tailscale ip -4
+
+# Listen through huproxy.
 /huproxy/bin/huproxy -listen :8888
