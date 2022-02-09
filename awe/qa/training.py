@@ -1,4 +1,5 @@
-# Run: `python -m awe.qa.training`
+# 1. Set parameters in `data/qa-params.json`.
+# 2. Run `python -m awe.qa.training`.
 
 import awe.qa.trainer
 
