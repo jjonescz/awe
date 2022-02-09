@@ -84,6 +84,9 @@ class Version:
         return f'{self.version_dir_path}/checkpoints'
 
     def get_checkpoints(self):
+        return sorted(self._iter_checkpoints(), key=lambda c: c.file_path)
+
+    def _iter_checkpoints(self):
         if not os.path.exists(self.checkpoints_dir_path):
             return
         for filename in os.listdir(self.checkpoints_dir_path):
