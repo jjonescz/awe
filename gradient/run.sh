@@ -33,7 +33,7 @@ echo "root:${JUPYTER_TOKEN}" | chpasswd && /usr/sbin/sshd -eD &
 
 # Start Tailscale proxy.
 mkdir -p /storage/awe/tailscale
-tailscaled --statedir /storage/awe/tailscale &
+tailscaled --tun=userspace-networking --statedir /storage/awe/tailscale &
 tailscale up
 tailscale ip -4
 
