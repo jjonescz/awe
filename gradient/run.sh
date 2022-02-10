@@ -36,7 +36,7 @@ echo "root:${JUPYTER_TOKEN}" | chpasswd && /usr/sbin/sshd -eD &
 # Start Tailscale proxy.
 mkdir -p /storage/awe/tailscale
 tailscaled --tun=userspace-networking &> /tailscaled.out.txt &
-(tailscale up --hostname "${PAPERSPACE_NOTEBOOK_REPO_ID_2:-$HOSTNAME}" && tailscale ip -4) &
+(tailscale up --hostname "${PAPERSPACE_NOTEBOOK_REPO_ID:-$HOSTNAME}" && tailscale ip -4) &
 
 # Listen through huproxy.
 /huproxy/bin/huproxy -listen :8888
