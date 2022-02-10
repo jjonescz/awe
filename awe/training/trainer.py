@@ -1,9 +1,6 @@
 import collections
 import dataclasses
-import json
-import os
 import sys
-import warnings
 from typing import Optional
 
 import numpy as np
@@ -13,67 +10,15 @@ import torch.utils.data
 import torch.utils.tensorboard
 from tqdm.auto import tqdm
 
-import awe.qa.collater
-import awe.qa.decoder
-import awe.qa.eval
-import awe.qa.model
-import awe.qa.pipeline
-import awe.qa.sampler
-import awe.training.callbacks
+import awe.data.sampling
+import awe.model.classifier
+import awe.model.eval
+import awe.training.context
 import awe.training.logging
+import awe.training.params
 from awe import awe_graph
-from awe.data import constants, swde
+from awe.data import swde
 
-#  Ignore warnings.
-warnings.filterwarnings('ignore', message='__floordiv__ is deprecated')
-
-@dataclasses.dataclass
-class TrainerParams:
-    train_subset: int = 2000
-    val_subset: int = 50
-    epochs: int = 5
-    version_name: str = ''
-    batch_size: int = 16
-    max_length: Optional[int] = None
-    save_every_n_epochs: Optional[int] = 1
-    log_every_n_steps: int = 10
-    eval_every_n_steps: Optional[int] = 50
-    use_gpu: bool = True
-    add_boundary_info: bool = False
-    mask_questions: bool = False
-
-    @classmethod
-    def load_version(cls, version: awe.training.logging.Version):
-        return cls.load_file(version.params_path)
-
-    @classmethod
-    def load_user(cls):
-        """Loads params from user-provided file."""
-        path = f'{constants.DATA_DIR}/qa-params.json'
-        if not os.path.exists(path):
-            # Create file with default params as template.
-            warnings.warn(f'No params file, creating one at {repr(path)}.')
-            TrainerParams().save_file(path)
-            return None
-        return cls.load_file(path)
-
-    @staticmethod
-    def load_file(path: str):
-        with open(path, mode='r', encoding='utf-8') as f:
-            return TrainerParams(**json.load(f))
-
-    def save_version(self, version: awe.training.logging.Version):
-        self.save_file(version.params_path)
-
-    def save_file(self, path: str):
-        with open(path, mode='w', encoding='utf-8') as f:
-            json.dump(dataclasses.asdict(self), f,
-                indent=2,
-                sort_keys=True
-            )
-
-    def update_from(self, checkpoint: awe.training.logging.Checkpoint):
-        self.epochs = checkpoint.epoch + 1
 
 @dataclasses.dataclass
 class RunInput:
@@ -89,7 +34,7 @@ class Trainer:
     val_pages: list[awe_graph.HtmlPage]
     train_loader: torch.utils.data.DataLoader
     val_loader: torch.utils.data.DataLoader
-    model: awe.qa.model.Model
+    model: awe.model.classifier.Model
     version: awe.training.logging.Version
     writer: Optional[torch.utils.tensorboard.SummaryWriter] = None
     trainer: pl.Trainer
@@ -98,15 +43,15 @@ class Trainer:
     val_progress: Optional[tqdm] = None
     step: int
 
-    def __init__(self, params: TrainerParams):
+    def __init__(self, params: awe.training.params.Params):
         self.params = params
-        self.pipeline = awe.qa.pipeline.Pipeline()
-        self.label_map = awe.qa.sampler.LabelMap()
+        self.label_map = awe.training.context.LabelMap()
         use_gpu = self.params.use_gpu and torch.cuda.is_available()
         self.device = torch.device('cuda:0' if use_gpu else 'cpu')
-        self.evaluator = awe.qa.eval.ModelEvaluator(self.label_map)
+        self.evaluator = awe.model.eval.Evaluator(self.label_map)
         self.running_loss = collections.defaultdict(float)
         self.metrics = collections.defaultdict(dict)
+        self.pretrained = None
 
     def create_version(self):
         awe.training.logging.Version.delete_last(self.params.version_name)
@@ -124,8 +69,8 @@ class Trainer:
             log_dir=self.version.version_dir_path,
         )
 
-    def load_pipeline(self):
-        self.pipeline.load()
+    def load_pretrained(self):
+        pass
 
     def load_data(self):
         # Load websites from one vertical.
@@ -163,24 +108,15 @@ class Trainer:
         pages: list[awe_graph.HtmlPage],
         shuffle: bool = False
     ):
-        samples = awe.qa.sampler.get_samples(pages)
         return torch.utils.data.DataLoader(
-            samples,
+            pages,
             batch_size=self.params.batch_size,
-            collate_fn=awe.qa.collater.Collater(
-                self.params,
-                self.pipeline.tokenizer,
-                self.label_map,
-                max_length=self.params.max_length,
-            ),
+            collate_fn=awe.data.sampling.Collater(),
             shuffle=shuffle,
         )
 
     def create_model(self):
-        self.model = awe.qa.model.Model(
-            self.params,
-            self.pipeline.model
-        ).to(self.device)
+        self.model = awe.model.classifier.Model(self.params).to(self.device)
 
     def restore(self, checkpoint: awe.training.logging.Checkpoint):
         self.model.load_state_dict(torch.load(checkpoint.file_path))
@@ -201,7 +137,7 @@ class Trainer:
     def train(self):
         self._reset_loop()
         self.running_loss.clear()
-        self.optim = self.model.configure_optimizers()
+        self.optim = self.model.create_optimizer()
         train_run = RunInput(self.train_loader, 'train')
         val_run = RunInput(self.val_loader, 'val')
         best_val_loss = sys.maxsize
@@ -256,7 +192,7 @@ class Trainer:
                 fast_eval.clear()
 
                 # Compute all metrics every once in a while.
-                slow_eval.add_slow(awe.qa.model.Prediction(batch, outputs))
+                slow_eval.add_slow(awe.model.classifier.Prediction(batch, outputs))
 
             # Validate during training.
             if (self.params.eval_every_n_steps is not None and
@@ -282,12 +218,12 @@ class Trainer:
         for batch in run.loader:
             batch = batch.to(self.device)
             outputs = self.model.forward(batch)
-            evaluation.add(awe.qa.model.Prediction(batch, outputs))
+            evaluation.add(awe.model.classifier.Prediction(batch, outputs))
             self.step += 1
             self.val_progress.update()
         return self._eval(run, evaluation)
 
-    def _eval(self, run: RunInput, evaluation: awe.qa.eval.ModelEvaluation):
+    def _eval(self, run: RunInput, evaluation: awe.model.eval.Evaluation):
         # Log aggregate metrics to TensorBoard.
         metrics = evaluation.compute()
         if run.prefix is not None:
@@ -302,15 +238,14 @@ class Trainer:
         return metrics
 
     def predict(self, run: RunInput):
-        predictions: list[awe.qa.model.Prediction] = []
+        predictions: list[awe.model.classifier.Prediction] = []
         self.model.eval()
         with torch.no_grad():
             for batch in tqdm(run.loader, desc='predict'):
                 batch = batch.to(self.device)
                 outputs = self.model.forward(batch)
-                predictions.append(awe.qa.model.Prediction(batch, outputs))
+                predictions.append(awe.model.classifier.Prediction(batch, outputs))
         return predictions
 
-    def decode(self, preds: list[awe.qa.model.Prediction]):
-        decoder = awe.qa.decoder.Decoder(self.pipeline.tokenizer)
-        return decoder.decode_predictions(preds)
+    def decode(self, preds: list[awe.model.classifier.Prediction]):
+        raise NotImplementedError()
