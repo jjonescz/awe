@@ -51,6 +51,15 @@ This folder contains files used to setup development environment on
 
    Note that the first is for Gradient.run and the second is for local testing.
 
+   Alternatively, [Tailscale](https://tailscale.com/) is also installed in the
+   container and can be used. It can be more resilient than huproxy, although it
+   requires login and the connection is routed through some peer nodes. Simply
+   install and start it on your local machine, then you can connect to the
+   remote machine directly (the first time, you will need to authenticate the
+   remote machine through a link displayed in Gradient machine output). You can
+   either use its IP or (more persistent) host name if MagicDNS is enabled in
+   Tailscale configuration.
+
 5. Connect via [VS Code](https://code.visualstudio.com/) with [Remote
    SSH](https://code.visualstudio.com/docs/remote/ssh) and open directory
    `/storage/awe/src`.
