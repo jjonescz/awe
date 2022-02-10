@@ -4,8 +4,10 @@
 
 # Persist VSCode directory and other config directories (used in `install.sh`).
 mkdir -p /storage/awe/.vscode-server
-ln -s /storage/awe/.vscode-server ~/.vscode-server
-ln -s /storage/.tmux.conf ~/.tmux.conf
+ln -sT /storage/awe/.vscode-server ~/.vscode-server
+ln -sT /storage/.tmux.conf ~/.tmux.conf
+mkdir -p /storage/awe/tailscale
+ln -sT /storage/awe/tailscale /var/lib/tailscale
 
 # Generate a random alphanumeric string of length 48 (like Jupyter notebook
 # token, e.g., `c8de56fa4deed24899803e93c227592aef6538f93025fe01`). Inspired by
@@ -33,7 +35,7 @@ echo "root:${JUPYTER_TOKEN}" | chpasswd && /usr/sbin/sshd -eD &
 
 # Start Tailscale proxy.
 mkdir -p /storage/awe/tailscale
-tailscaled --tun=userspace-networking --statedir /storage/awe/tailscale &
+tailscaled --tun=userspace-networking &
 (tailscale up && tailscale ip -4) &
 
 # Listen through huproxy.
