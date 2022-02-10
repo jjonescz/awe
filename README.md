@@ -18,7 +18,6 @@ We use [VS Code IDE](https://code.visualstudio.com/).
 run on [Gradient](https://gradient.run) via [Remote
 SSH](https://code.visualstudio.com/docs/remote/ssh) (the same container can be
 also setup locally for testing).
-- When CPU is enough, [Gitpod](https://www.gitpod.io/) can be used.
 
 ### Running
 
