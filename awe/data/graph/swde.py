@@ -1,4 +1,5 @@
 import dataclasses
+import glob
 import os
 import re
 import warnings
@@ -6,6 +7,7 @@ from typing import Optional
 
 import awe.data.constants
 import awe.data.graph.pages
+import awe.data.graph.swde_labels
 import awe.utils
 
 DIR = f'{awe.data.constants.DATA_DIR}/swde'
@@ -57,6 +59,14 @@ class Vertical(awe.data.graph.pages.Vertical):
     def dir_path(self):
         return f'{self.dataset.dir_path}/{self.name}'
 
+    @property
+    def groundtruth_dir(self):
+        return f'{self.dataset.dir_path}/groundtruth/{self.name}'
+
+    @property
+    def groundtruth_path_prefix(self):
+        return f'{self.groundtruth_dir}/{self.name}'
+
     def _iterate_websites(self):
         if not os.path.exists(self.dir_path):
             warnings.warn(
@@ -79,6 +89,8 @@ class Website(awe.data.graph.pages.Website):
     vertical: Vertical
     pages: list['Page'] = dataclasses.field(repr=False)
     page_count: int = None
+    groundtruth_files: dict[str, awe.data.graph.swde_labels.GroundtruthFile] = \
+        dataclasses.field(repr=False, default=None)
 
     def __init__(self, vertical: Vertical, dir_name: str):
         match = re.search(WEBSITE_REGEX, dir_name)
@@ -99,6 +111,10 @@ class Website(awe.data.graph.pages.Website):
             warnings.warn('Some pages were not created for site ' + \
                 f'{self.dir_name} ({awe.utils.to_ranges(missing)}).')
 
+        self.groundtruth_files = {
+            g.label_key: g for g in self._iterate_groundtruth()
+        }
+
     @property
     def dir_name(self):
         return f'{self.vertical.name}-{self.name}({self.page_count})'
@@ -107,12 +123,37 @@ class Website(awe.data.graph.pages.Website):
     def dir_path(self):
         return f'{self.vertical.dir_path}/{self.dir_name}'
 
+    @property
+    def groundtruth_path_prefix(self):
+        return f'{self.vertical.groundtruth_path_prefix}-{self.name}'
+
     def _iterate_pages(self):
         for file in sorted(os.listdir(f'{self.dir_path}')):
             page = Page.try_create(website=self, file_name=file)
             if page is not None:
                 assert page.html_file_name == file
                 yield page
+
+    def _iterate_groundtruth(self):
+        for file in glob.glob(f'{self.groundtruth_path_prefix}-*.txt'):
+            file_name = os.path.basename(file)
+            groundtruth = awe.data.graph.swde_labels.GroundtruthFile(
+                website=self,
+                file_name=file_name,
+            )
+            assert os.path.samefile(groundtruth.file_path, file)
+            yield groundtruth
+
+    def get_page_at(self, idx: int):
+        # Hot path: try indexing directly.
+        if idx < len(self.pages) and (page := self.pages[idx]).index == idx:
+            return page
+
+        # Slow path: find the page manually.
+        for page in self.pages:
+            if page.index == idx:
+                return page
+        return None
 
 @dataclasses.dataclass
 class Page(awe.data.graph.pages.Page):
