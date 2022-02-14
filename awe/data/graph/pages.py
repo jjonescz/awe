@@ -1,5 +1,9 @@
 import abc
 import dataclasses
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import awe.data.graph.labels
 
 
 @dataclasses.dataclass
@@ -45,3 +49,7 @@ class Page(abc.ABC):
 
         with open(self.html_path, encoding='utf-8') as f:
             return f.read()
+
+    @abc.abstractmethod
+    def get_labels(self) -> 'awe.data.graph.labels.PageLabels':
+        """Groundtruth labeling for the page."""

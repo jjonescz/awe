@@ -1,11 +1,31 @@
 import dataclasses
+import html
 import re
 from typing import TYPE_CHECKING
+
+import awe.data.graph.labels
+import awe.data.parsing
 
 if TYPE_CHECKING:
     import awe.data.graph.swde
 
 GROUNDTRUTH_REGEX = r'^(\w+)-(\w+)-(\w+)\.txt$'
+
+class PageLabels(awe.data.graph.labels.TextPageLabels):
+    page: 'awe.data.graph.swde.Page'
+
+    @property
+    def label_keys(self) -> list[str]:
+        return self.page.groundtruth_entries.keys()
+
+    def get_label_values(self, label_key: str) -> list[str]:
+        groundtruth_entry = self.page.groundtruth_entries[label_key]
+        return [
+            # Note that labels may contain HTML entities (e.g., `&amp;`), that's
+            # why we call `html.unescape` on them.
+            html.unescape(value)
+            for value in groundtruth_entry.label_values
+        ]
 
 @dataclasses.dataclass
 class GroundtruthFile:

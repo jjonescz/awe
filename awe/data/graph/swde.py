@@ -207,3 +207,6 @@ class Page(awe.data.graph.pages.Page):
             # Discard first line with URL.
             _ = f.readline()
             return f.read()
+
+    def get_labels(self):
+        return awe.data.graph.swde_labels.PageLabels(self)
