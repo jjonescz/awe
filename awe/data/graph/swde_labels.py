@@ -15,7 +15,7 @@ class GroundtruthFile:
 
     website: 'awe.data.graph.swde.Website'
     label_key: str
-    entries: list['GroundtruthEntry']
+    entries: list['GroundtruthEntry'] = dataclasses.field(repr=False)
 
     def __init__(self, website: 'awe.data.graph.swde.Website', file_name: str):
         self.website = website
@@ -60,7 +60,7 @@ class GroundtruthFile:
 
 @dataclasses.dataclass
 class GroundtruthEntry:
-    file: GroundtruthFile
+    file: GroundtruthFile = dataclasses.field(repr=False)
     index: int
 
     label_values: list[str]
