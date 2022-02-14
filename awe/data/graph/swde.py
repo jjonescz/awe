@@ -27,6 +27,7 @@ VERTICAL_NAMES = [
 ]
 WEBSITE_REGEX = r'^(\w+)-(\w+)\((\d+)\)$'
 PAGE_REGEX = r'^(\d{4})(-.*)?\.htm$'
+BASE_TAG_REGEX = r'^<base href="([^\n]*)"/>\w*\n$'
 
 @dataclasses.dataclass
 class Dataset(awe.data.graph.pages.Dataset):
@@ -117,6 +118,7 @@ class Website(awe.data.graph.pages.Website):
 class Page(awe.data.graph.pages.Page):
     website: Website
     index: int = None
+    _url: Optional[str] = dataclasses.field(repr=False, init=False, default=None)
 
     @staticmethod
     def try_create(website: Website, file_name: str):
@@ -140,3 +142,20 @@ class Page(awe.data.graph.pages.Page):
     @property
     def html_path(self):
         return f'{self.website.dir_path}/{self.html_file_name}'
+
+    @property
+    def url(self):
+        if self._url is None:
+            # Note that there is a `<base />` tag appended before each HTML
+            # document in SWDE with the actual crawled URL.
+            with open(self.html_path, 'r', encoding='utf-8-sig') as f:
+                link = f.readline()
+            match = re.search(BASE_TAG_REGEX, link)
+            self._url = match.group(1)
+        return self._url
+
+    def get_html_text(self):
+        with open(self.html_path, 'r', encoding='utf-8-sig') as f:
+            # Discard first line with URL.
+            _ = f.readline()
+            return f.read()

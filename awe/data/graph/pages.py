@@ -34,3 +34,14 @@ class Page(abc.ABC):
     @abc.abstractmethod
     def html_path(self) -> str:
         """Path to HTML file stored locally, relative to `Dataset.dir_path`."""
+
+    @property
+    @abc.abstractmethod
+    def url(self) -> str:
+        """Original URL of the page."""
+
+    def get_html_text(self) -> str:
+        """Obtains HTML of the page as text."""
+
+        with open(self.html_path, encoding='utf-8') as f:
+            return f.read()
