@@ -39,8 +39,8 @@ def coarse_words_equal(a: str, b: str):
 def coarsen_word(s: str):
     return remove_whitespace(s.lower())
 
-def get_page_words(page: awe_graph.HtmlPage):
-    tree = parse_page(page)
+def get_page_words(html_text: str):
+    tree = parse_html(html_text)
     fragments = get_fragments(tree)
     return [text for _, text in fragments]
 
@@ -62,9 +62,9 @@ def is_empty_or_space(text: str):
 def get_node_text(node: selectolax.parser.Node):
     return collapse_whitespace(node.text())
 
-def parse_page(page: awe_graph.HtmlPage):
+def parse_html(html_text: str):
     # pylint: disable-next=c-extension-no-member
-    tree = selectolax.parser.HTMLParser(page.html)
+    tree = selectolax.parser.HTMLParser(html_text)
 
     # Ignore some tags.
     tree.strip_tags([
