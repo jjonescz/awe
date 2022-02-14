@@ -1,6 +1,5 @@
 import dataclasses
 import re
-import warnings
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -54,18 +53,15 @@ class GroundtruthFile:
             assert int(expected_index) == index
             parsed_values = [] if values == ['<NULL>'] else values
             assert int(expected_nonnull_count) == len(parsed_values)
-            page = self.website.get_page_at(index)
-            if page is None:
-                warnings.warn(
-                    f'No page at {index} in {repr(self.website.dir_name)}.')
-            else:
-                assert page.index == index
-            yield GroundtruthEntry(self, page, parsed_values)
+            yield GroundtruthEntry(self, index, parsed_values)
+
+    def get_entry_for(self, page: awe.data.graph.swde.Page):
+        return self.entries[page.index]
 
 @dataclasses.dataclass
 class GroundtruthEntry:
     file: GroundtruthFile
-    page: 'awe.data.graph.swde.Page'
+    index: int
 
     label_values: list[str]
     """Label values as loaded from the groundtruth `field` file."""

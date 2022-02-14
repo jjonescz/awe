@@ -100,6 +100,9 @@ class Website(awe.data.graph.pages.Website):
             name=match.group(2)
         )
         self.page_count = int(match.group(3))
+        self.groundtruth_files = {
+            g.label_key: g for g in self._iterate_groundtruth()
+        }
         self.pages = list(self._iterate_pages())
 
         if len(self.pages) != self.page_count:
@@ -110,10 +113,6 @@ class Website(awe.data.graph.pages.Website):
             ]
             warnings.warn('Some pages were not created for site ' + \
                 f'{self.dir_name} ({awe.utils.to_ranges(missing)}).')
-
-        self.groundtruth_files = {
-            g.label_key: g for g in self._iterate_groundtruth()
-        }
 
     @property
     def dir_name(self):
@@ -160,6 +159,8 @@ class Page(awe.data.graph.pages.Page):
     website: Website
     index: int = None
     _url: Optional[str] = dataclasses.field(repr=False, init=False, default=None)
+    groundtruth_entries: dict[str, awe.data.graph.swde_labels.GroundtruthEntry] = \
+        dataclasses.field(repr=False, default=None)
 
     @staticmethod
     def try_create(website: Website, file_name: str):
@@ -170,6 +171,12 @@ class Page(awe.data.graph.pages.Page):
         suffix = match.group(2)
         if suffix != page.suffix:
             return None
+
+        page.groundtruth_entries = {
+            f.label_key: f.get_entry_for(page)
+            for f in website.groundtruth_files.values()
+        }
+
         return page
 
     @property
