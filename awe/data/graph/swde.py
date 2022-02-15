@@ -70,7 +70,7 @@ class Vertical(awe.data.graph.pages.Vertical):
     def _iterate_websites(self):
         if not os.path.exists(self.dir_path):
             warnings.warn(
-                f'Website directory does not exist ({self.dir_path}).')
+                f'Vertical directory does not exist ({self.dir_path}).')
             return
 
         for subdir in sorted(os.listdir(self.dir_path)):
