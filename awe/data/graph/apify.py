@@ -5,9 +5,11 @@ import warnings
 import pandas as pd
 
 import awe.data.constants
+import awe.data.graph.labels
 import awe.data.graph.pages
 
 DIR = f'{awe.data.constants.DATA_DIR}/apify'
+SELECTOR_PREFIX = 'selector_'
 
 @dataclasses.dataclass
 class Dataset(awe.data.graph.pages.Dataset):
@@ -46,7 +48,7 @@ class Vertical(awe.data.graph.pages.Vertical):
 @dataclasses.dataclass
 class Website(awe.data.graph.pages.Website):
     vertical: Vertical
-    df: pd.DataFrame = None
+    df: pd.DataFrame = dataclasses.field(repr=False, default=None)
 
     def __init__(self, vertical: Vertical, dir_name: str):
         super().__init__(
@@ -101,4 +103,23 @@ class Page(awe.data.graph.pages.Page):
         return self.row.html
 
     def get_labels(self):
-        return None
+        return PageLabels(self)
+
+class PageLabels(awe.data.graph.labels.PageLabels):
+    page: Page
+
+    @property
+    def label_keys(self):
+        keys: list[str] = self.page.row.keys()
+        return [
+            k[len(SELECTOR_PREFIX):]
+            for k in keys
+            if k.startswith(SELECTOR_PREFIX)
+        ]
+
+    def get_label_values(self, label_key: str):
+        return [self.page.row[label_key]]
+
+    def get_labeled_nodes(self, label_key: str):
+        selector = self.page.row[f'{SELECTOR_PREFIX}{label_key}']
+        return self.dom.tree.css(selector)
