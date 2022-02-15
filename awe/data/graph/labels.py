@@ -1,7 +1,7 @@
 import abc
 
 import selectolax
-import selectolax.parser
+import selectolax.lexbor
 
 import awe.data.graph.dom
 import awe.data.graph.pages
@@ -31,7 +31,7 @@ class PageLabels(abc.ABC):
 
     @abc.abstractmethod
     # pylint: disable-next=c-extension-no-member
-    def get_labeled_nodes(self, label_key: str) -> list[selectolax.parser.Node]:
+    def get_labeled_nodes(self, label_key: str) -> list[selectolax.lexbor.LexborNode]:
         """
         Groundtruth DOM nodes that are labeled with the specified `label_key`.
         """

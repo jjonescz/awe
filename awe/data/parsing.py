@@ -1,7 +1,7 @@
 import re
 
 import selectolax
-import selectolax.parser
+import selectolax.lexbor
 
 import awe.selectolax_utils
 
@@ -9,7 +9,7 @@ WHITESPACE_REGEX = r'(\s|[\u200b])+'
 """Matches whitespace characters."""
 
 # pylint: disable-next=c-extension-no-member
-def find_nodes_with_text(tree: selectolax.parser.HTMLParser, needle: str):
+def find_nodes_with_text(tree: selectolax.lexbor.LexborHTMLParser, needle: str):
     """
     Finds nodes containing the specified `needle` as their text content.
     """
@@ -24,8 +24,12 @@ def find_nodes_with_text(tree: selectolax.parser.HTMLParser, needle: str):
     ]
 
 def parse_html(html_text: str):
+    # Note that unlike the default selectolax parser, the Lexbor parser can
+    # correctly extract text fragments `X`, `Y`, `Z` from HTML
+    # `<p>X<br>Y<br>Z</p>`.
+
     # pylint: disable-next=c-extension-no-member
-    tree = selectolax.parser.HTMLParser(html_text)
+    tree = selectolax.lexbor.LexborHTMLParser(html_text)
 
     # Ignore some tags.
     tree.strip_tags([
