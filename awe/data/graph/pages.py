@@ -1,5 +1,6 @@
 import abc
 import dataclasses
+import itertools
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -15,11 +16,22 @@ class Dataset:
 
     verticals: list['Vertical'] = dataclasses.field(repr=False, default_factory=list)
 
+    def get_all_pages(self, *, zip_verticals: bool = False, zip_websites: bool = False):
+        page_lists = (
+            v.get_all_pages(zip_websites=zip_websites)
+            for v in self.verticals
+        )
+        return get_all_pages(page_lists, zip_lists=zip_verticals)
+
 @dataclasses.dataclass
 class Vertical:
     dataset: Dataset
     name: str
     websites: list['Website'] = dataclasses.field(repr=False, default_factory=list)
+
+    def get_all_pages(self, *, zip_websites: bool = False):
+        page_lists = (w.pages for w in self.websites)
+        return get_all_pages(page_lists, zip_lists=zip_websites)
 
 @dataclasses.dataclass
 class Website:
@@ -53,3 +65,13 @@ class Page(abc.ABC):
     @abc.abstractmethod
     def get_labels(self) -> 'awe.data.graph.labels.PageLabels':
         """Groundtruth labeling for the page."""
+
+def get_all_pages(page_lists: list[list[Page]], *, zip_lists: bool = False):
+    if zip_lists:
+        return [
+            page
+            for pages in itertools.zip_longest(*page_lists)
+            for page in pages
+            if page is not None
+        ]
+    return [page for pages in page_lists for page in pages]
