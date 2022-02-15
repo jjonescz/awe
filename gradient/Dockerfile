@@ -87,6 +87,9 @@ RUN curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/focal.gpg | apt-key add 
     && apt-get install -y --no-install-recommends tailscale \
     && rm -rf /var/lib/{apt,dpkg,cache,log}
 
+# Install Google Drive CLI.
+RUN curl -fsSL https://github.com/prasmussen/gdrive/releases/download/2.1.1/gdrive_2.1.1_linux_386.tar.gz | tar zxf - -C /usr/bin
+
 # Install Python packages.
 COPY requirements.txt /requirements.txt
 RUN pip install -r requirements.txt
