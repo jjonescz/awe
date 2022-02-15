@@ -1,16 +1,13 @@
-import selectolax
-import selectolax.parser
+import awe.data.parsing
 
 TEXT_TAG = '-text'
 
-# pylint: disable-next=c-extension-no-member
-def iter_prev(node: selectolax.parser.Node):
+def iter_prev(node: awe.data.parsing.Node):
     while node.prev is not None:
         yield node.prev
         node = node.prev
 
-# pylint: disable-next=c-extension-no-member
-def get_xpath(node: selectolax.parser.Node):
+def get_xpath(node: awe.data.parsing.Node):
     xpath = ''
     while node.parent is not None:
         # How many nodes of the same tag are there?
@@ -34,10 +31,8 @@ def get_xpath(node: selectolax.parser.Node):
         node = node.parent
     return xpath
 
-# pylint: disable-next=c-extension-no-member
-def is_text(node: selectolax.parser.Node):
+def is_text(node: awe.data.parsing.Node):
     return node.tag == TEXT_TAG
 
-# pylint: disable-next=c-extension-no-member
-def get_xpath_tag(node: selectolax.parser.Node):
+def get_xpath_tag(node: awe.data.parsing.Node):
     return 'text()' if is_text(node) else node.tag

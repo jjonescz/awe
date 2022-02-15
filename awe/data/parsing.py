@@ -9,6 +9,9 @@ WHITESPACE_REGEX = r'(\s|[\u200b])+'
 """Matches whitespace characters."""
 
 # pylint: disable-next=c-extension-no-member
+Node = selectolax.lexbor.LexborNode
+
+# pylint: disable-next=c-extension-no-member
 def find_nodes_with_text(tree: selectolax.lexbor.LexborHTMLParser, needle: str):
     """
     Finds nodes containing the specified `needle` as their text content.
