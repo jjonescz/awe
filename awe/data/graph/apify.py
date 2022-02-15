@@ -46,6 +46,7 @@ class Vertical(awe.data.graph.pages.Vertical):
 @dataclasses.dataclass
 class Website(awe.data.graph.pages.Website):
     vertical: Vertical
+    df: pd.DataFrame = None
 
     def __init__(self, vertical: Vertical, dir_name: str):
         super().__init__(
@@ -55,13 +56,17 @@ class Website(awe.data.graph.pages.Website):
 
         # Convert dataset.
         if not os.path.exists(self.dataset_pickle_path):
-            warnings.warn('Saving dataset in efficient binary format ' + \
+            print('Saving dataset in efficient binary format ' + \
                 f'({self.dataset_pickle_path}).')
             json_df = pd.read_json(self.dataset_json_path)
             json_df.to_pickle(self.dataset_pickle_path)
 
         # Load dataset.
         self.df = pd.read_pickle(self.dataset_pickle_path)
+        self.pages = [
+            Page(website=self, index=idx)
+            for idx in range(len(self.df))
+        ]
 
     @property
     def dir_path(self):
@@ -74,3 +79,26 @@ class Website(awe.data.graph.pages.Website):
     @property
     def dataset_pickle_path(self):
         return f'{self.dir_path}/dataset.pkl'
+
+@dataclasses.dataclass
+class Page(awe.data.graph.pages.Page):
+    website: Website
+    index: int
+
+    @property
+    def row(self):
+        return self.website.df.iloc[self.index]
+
+    @property
+    def html_path(self):
+        return None
+
+    @property
+    def url(self) -> str:
+        return self.row.url
+
+    def get_html_text(self):
+        return self.row.html
+
+    def get_labels(self):
+        return None
