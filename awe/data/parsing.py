@@ -3,7 +3,7 @@ import re
 import selectolax
 import selectolax.lexbor
 
-import awe.selectolax_utils
+import awe.data.html_utils
 
 WHITESPACE_REGEX = r'(\s|[\u200b])+'
 """Matches whitespace characters."""
@@ -22,7 +22,7 @@ def find_nodes_with_text(tree: Tree, needle: str):
     return [
         node for node in tree.body.traverse(include_text=True)
         if (
-            awe.selectolax_utils.is_text(node) and
+            awe.data.html_utils.is_text(node) and
             normalize_node_text(node.text()) == needle
         )
     ]
