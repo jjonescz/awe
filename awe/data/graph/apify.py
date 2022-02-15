@@ -3,6 +3,7 @@ import os
 import warnings
 
 import pandas as pd
+import slugify
 
 import awe.data.constants
 import awe.data.graph.labels
@@ -92,8 +93,16 @@ class Page(awe.data.graph.pages.Page):
         return self.website.df.iloc[self.index]
 
     @property
+    def url_slug(self):
+        return slugify.slugify(self.url)
+
+    @property
+    def html_file_name(self):
+        return f'original_html_{self.url_slug}.htm'
+
+    @property
     def html_path(self):
-        return None
+        return f'{self.website.dir_path}/pages/{self.html_file_name}'
 
     @property
     def url(self) -> str:
