@@ -75,7 +75,7 @@ class GroundtruthFile:
             assert int(expected_nonnull_count) == len(parsed_values)
             yield GroundtruthEntry(self, index, parsed_values)
 
-    def get_entry_for(self, page: awe.data.graph.swde.Page):
+    def get_entry_for(self, page: 'awe.data.graph.swde.Page'):
         return self.entries[page.index]
 
 @dataclasses.dataclass
