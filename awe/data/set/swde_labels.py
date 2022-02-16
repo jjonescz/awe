@@ -3,16 +3,16 @@ import html
 import re
 from typing import TYPE_CHECKING
 
-import awe.data.graph.labels
+import awe.data.set.labels
 import awe.data.parsing
 
 if TYPE_CHECKING:
-    import awe.data.graph.swde
+    import awe.data.set.swde
 
 GROUNDTRUTH_REGEX = r'^(\w+)-(\w+)-(\w+)\.txt$'
 
-class PageLabels(awe.data.graph.labels.TextPageLabels):
-    page: 'awe.data.graph.swde.Page'
+class PageLabels(awe.data.set.labels.TextPageLabels):
+    page: 'awe.data.set.swde.Page'
 
     @property
     def label_keys(self) -> list[str]:
@@ -33,11 +33,11 @@ class GroundtruthFile:
     Represents the file with groundtruth key-value pairs for an SWDE website.
     """
 
-    website: 'awe.data.graph.swde.Website'
+    website: 'awe.data.set.swde.Website'
     label_key: str
     entries: list['GroundtruthEntry'] = dataclasses.field(repr=False)
 
-    def __init__(self, website: 'awe.data.graph.swde.Website', file_name: str):
+    def __init__(self, website: 'awe.data.set.swde.Website', file_name: str):
         self.website = website
         match = re.search(GROUNDTRUTH_REGEX, file_name)
         assert match.group(1) == website.vertical.name
@@ -75,7 +75,7 @@ class GroundtruthFile:
             assert int(expected_nonnull_count) == len(parsed_values)
             yield GroundtruthEntry(self, index, parsed_values)
 
-    def get_entry_for(self, page: 'awe.data.graph.swde.Page'):
+    def get_entry_for(self, page: 'awe.data.set.swde.Page'):
         return self.entries[page.index]
 
 @dataclasses.dataclass

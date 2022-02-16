@@ -6,8 +6,8 @@ import warnings
 from typing import Optional
 
 import awe.data.constants
-import awe.data.graph.pages
-import awe.data.graph.swde_labels
+import awe.data.set.pages
+import awe.data.set.swde_labels
 import awe.utils
 
 DIR = f'{awe.data.constants.DATA_DIR}/swde'
@@ -32,7 +32,7 @@ PAGE_REGEX = r'^(\d{4})(-.*)?\.htm$'
 BASE_TAG_REGEX = r'^<base href="([^\n]*)"/>\w*\n$'
 
 @dataclasses.dataclass
-class Dataset(awe.data.graph.pages.Dataset):
+class Dataset(awe.data.set.pages.Dataset):
     verticals: list['Vertical'] = dataclasses.field(repr=False)
     suffix: Optional[str] = None
 
@@ -48,7 +48,7 @@ class Dataset(awe.data.graph.pages.Dataset):
         ]
 
 @dataclasses.dataclass
-class Vertical(awe.data.graph.pages.Vertical):
+class Vertical(awe.data.set.pages.Vertical):
     dataset: Dataset
     websites: list['Website'] = dataclasses.field(repr=False, default_factory=list)
 
@@ -85,11 +85,11 @@ class Vertical(awe.data.graph.pages.Vertical):
             yield website
 
 @dataclasses.dataclass
-class Website(awe.data.graph.pages.Website):
+class Website(awe.data.set.pages.Website):
     vertical: Vertical
     pages: list['Page'] = dataclasses.field(repr=False)
     page_count: int = None
-    groundtruth_files: dict[str, awe.data.graph.swde_labels.GroundtruthFile] = \
+    groundtruth_files: dict[str, awe.data.set.swde_labels.GroundtruthFile] = \
         dataclasses.field(repr=False, default=None)
 
     def __init__(self, vertical: Vertical, dir_name: str):
@@ -136,7 +136,7 @@ class Website(awe.data.graph.pages.Website):
     def _iterate_groundtruth(self):
         for file in glob.glob(f'{self.groundtruth_path_prefix}-*.txt'):
             file_name = os.path.basename(file)
-            groundtruth = awe.data.graph.swde_labels.GroundtruthFile(
+            groundtruth = awe.data.set.swde_labels.GroundtruthFile(
                 website=self,
                 file_name=file_name,
             )
@@ -155,11 +155,11 @@ class Website(awe.data.graph.pages.Website):
         return None
 
 @dataclasses.dataclass
-class Page(awe.data.graph.pages.Page):
+class Page(awe.data.set.pages.Page):
     website: Website
     index: int = None
     _url: Optional[str] = dataclasses.field(repr=False, init=False, default=None)
-    groundtruth_entries: dict[str, awe.data.graph.swde_labels.GroundtruthEntry] = \
+    groundtruth_entries: dict[str, awe.data.set.swde_labels.GroundtruthEntry] = \
         dataclasses.field(repr=False, default=None)
 
     @staticmethod
@@ -209,4 +209,4 @@ class Page(awe.data.graph.pages.Page):
             return f.read()
 
     def get_labels(self):
-        return awe.data.graph.swde_labels.PageLabels(self)
+        return awe.data.set.swde_labels.PageLabels(self)

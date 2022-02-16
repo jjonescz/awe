@@ -4,7 +4,7 @@ import itertools
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    import awe.data.graph.labels
+    import awe.data.set.labels
 
 
 @dataclasses.dataclass
@@ -63,7 +63,7 @@ class Page(abc.ABC):
             return f.read()
 
     @abc.abstractmethod
-    def get_labels(self) -> 'awe.data.graph.labels.PageLabels':
+    def get_labels(self) -> 'awe.data.set.labels.PageLabels':
         """Groundtruth labeling for the page."""
 
 def get_all_pages(page_lists: list[list[Page]], *, zip_lists: bool = False):

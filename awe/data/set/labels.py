@@ -1,14 +1,14 @@
 import abc
 
-import awe.data.graph.dom
-import awe.data.graph.pages
 import awe.data.parsing
+import awe.data.set.dom
+import awe.data.set.pages
 
 
 class PageLabels(abc.ABC):
-    def __init__(self, page: awe.data.graph.pages.Page):
+    def __init__(self, page: awe.data.set.pages.Page):
         self.page = page
-        self.dom = awe.data.graph.dom.Dom(page)
+        self.dom = awe.data.set.dom.Dom(page)
 
     @property
     @abc.abstractmethod

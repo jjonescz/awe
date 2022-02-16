@@ -6,15 +6,15 @@ import pandas as pd
 import slugify
 
 import awe.data.constants
-import awe.data.graph.labels
-import awe.data.graph.pages
 import awe.data.parsing
+import awe.data.set.labels
+import awe.data.set.pages
 
 DIR = f'{awe.data.constants.DATA_DIR}/apify'
 SELECTOR_PREFIX = 'selector_'
 
 @dataclasses.dataclass
-class Dataset(awe.data.graph.pages.Dataset):
+class Dataset(awe.data.set.pages.Dataset):
     verticals: list['Vertical'] = dataclasses.field(repr=False)
 
     def __init__(self):
@@ -27,7 +27,7 @@ class Dataset(awe.data.graph.pages.Dataset):
         ]
 
 @dataclasses.dataclass
-class Vertical(awe.data.graph.pages.Vertical):
+class Vertical(awe.data.set.pages.Vertical):
     dataset: Dataset
     websites: list['Website'] = dataclasses.field(repr=False, default_factory=list)
 
@@ -48,7 +48,7 @@ class Vertical(awe.data.graph.pages.Vertical):
             yield Website(self, subdir)
 
 @dataclasses.dataclass
-class Website(awe.data.graph.pages.Website):
+class Website(awe.data.set.pages.Website):
     vertical: Vertical
     df: pd.DataFrame = dataclasses.field(repr=False, default=None)
 
@@ -85,7 +85,7 @@ class Website(awe.data.graph.pages.Website):
         return f'{self.dir_path}/dataset.pkl'
 
 @dataclasses.dataclass
-class Page(awe.data.graph.pages.Page):
+class Page(awe.data.set.pages.Page):
     website: Website
     index: int
 
@@ -115,7 +115,7 @@ class Page(awe.data.graph.pages.Page):
     def get_labels(self):
         return PageLabels(self)
 
-class PageLabels(awe.data.graph.labels.PageLabels):
+class PageLabels(awe.data.set.labels.PageLabels):
     page: Page
 
     @property
