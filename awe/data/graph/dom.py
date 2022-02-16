@@ -11,11 +11,12 @@ class Dom:
         self.tree = awe.data.parsing.parse_html(page.get_html_text())
 
         # Get all nodes.
-        self.root = Node(parsed=self.tree.body, parent=None)
+        self.root = Node(dom=self, parsed=self.tree.body, parent=None)
         self.nodes = list(self.root.traverse())
 
 @dataclasses.dataclass
 class Node:
+    dom: Dom = dataclasses.field(repr=False)
     parsed: awe.data.parsing.Node
     parent: Optional['Node'] = dataclasses.field(repr=False)
     children: list['Node'] = dataclasses.field(repr=False, default_factory=list)
@@ -25,7 +26,7 @@ class Node:
 
     def _iterate_children(self):
         for parsed_node in self.parsed.iter(include_text=True):
-            yield Node(parsed=parsed_node, parent=self)
+            yield Node(dom=self.dom, parsed=parsed_node, parent=self)
 
     def traverse(self,
         shallow_predicate: Callable[['Node'], bool] = lambda _: True,
