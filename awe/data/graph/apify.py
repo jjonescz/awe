@@ -127,11 +127,24 @@ class PageLabels(awe.data.graph.labels.PageLabels):
             if k.startswith(SELECTOR_PREFIX)
         ]
 
+    def get_selector(self, label_key: str):
+        return self.page.row[f'{SELECTOR_PREFIX}{label_key}']
+
+    def has_label(self, label_key: str):
+        return self.get_selector(label_key) != ''
+
     def get_label_values(self, label_key: str):
-        return [self.page.row[label_key]]
+        label_value = self.page.row[label_key]
+        if not self.has_label(label_key):
+            assert label_value == '', \
+                f'Unexpected non-empty {label_value=} for {label_key=}.'
+            return []
+        return [label_value]
 
     def get_labeled_nodes(self, label_key: str):
-        selector = self.page.row[f'{SELECTOR_PREFIX}{label_key}']
+        if not self.has_label(label_key):
+            return []
+        selector = self.get_selector(label_key)
         try:
             return self.dom.tree.css(selector)
         except awe.data.parsing.Error as e:
