@@ -26,7 +26,7 @@ pylint==2.12.2
 bokeh==2.4.2
 # Basics
 matplotlib==3.5.1
-awesome-slugify==1.6.5
+python-slugify==5.0.2
 # HuggingFace (Transformers)
 transformers==4.15.0
 sentencepiece==0.1.96
