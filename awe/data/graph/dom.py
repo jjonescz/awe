@@ -9,6 +9,8 @@ if TYPE_CHECKING:
 
 
 class Dom:
+    root: Optional['Node'] = None
+    nodes: Optional[list['Node']] = None
     labeled_parsed_nodes: dict[str, list[awe.data.parsing.Node]]
     labeled_nodes: dict[str, list['Node']]
 
@@ -22,6 +24,7 @@ class Dom:
         self.labeled_nodes = {}
         self.tree = awe.data.parsing.parse_html(page.get_html_text())
 
+    def init_nodes(self):
         # Get all nodes.
         self.root = Node(dom=self, parsed=self.tree.body, parent=None)
         self.nodes = list(self.root.traverse())
