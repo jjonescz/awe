@@ -11,6 +11,7 @@ WHITESPACE_REGEX = r'(\s|[\u200b])+'
 # pylint: disable=c-extension-no-member
 Node = selectolax.lexbor.LexborNode
 Tree = selectolax.lexbor.LexborHTMLParser
+Error = selectolax.lexbor.SelectolaxError
 # pylint: enable=c-extension-no-member
 
 def find_nodes_with_text(tree: Tree, needle: str):

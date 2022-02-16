@@ -8,6 +8,7 @@ import slugify
 import awe.data.constants
 import awe.data.graph.labels
 import awe.data.graph.pages
+import awe.data.parsing
 
 DIR = f'{awe.data.constants.DATA_DIR}/apify'
 SELECTOR_PREFIX = 'selector_'
@@ -131,4 +132,10 @@ class PageLabels(awe.data.graph.labels.PageLabels):
 
     def get_labeled_nodes(self, label_key: str):
         selector = self.page.row[f'{SELECTOR_PREFIX}{label_key}']
-        return self.dom.tree.css(selector)
+        try:
+            return self.dom.tree.css(selector)
+        except awe.data.parsing.Error as e:
+            page_html_path = self.page.html_path
+            raise RuntimeError(
+                f'Invalid selector {repr(selector)} for {label_key=} ' + \
+                f'({page_html_path}).') from e
