@@ -163,3 +163,16 @@ T1 = TypeVar('T1')
 T2 = TypeVar('T2')
 def unzip(collection: Iterable[tuple[T1, T2]]):
     return tuple(zip(*collection))
+
+def change_dir_to_project_root():
+    while not os.path.exists('awe'):
+        print(os.getcwd())
+        os.chdir('..')
+    print(os.getcwd())
+
+def test_tqdm():
+    _ = list(tqdm(range(1)))
+
+def init_notebook():
+    change_dir_to_project_root()
+    test_tqdm()
