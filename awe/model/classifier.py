@@ -20,7 +20,7 @@ class Prediction:
 
 class Model(torch.nn.Module):
     def __init__(self,
-        params: 'awe.training.params.TrainerParams',
+        params: 'awe.training.params.Params',
     ):
         super().__init__()
         self.params = params
