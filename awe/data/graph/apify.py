@@ -135,10 +135,23 @@ class PageLabels(awe.data.graph.labels.PageLabels):
 
     def get_label_values(self, label_key: str):
         label_value = self.page.row[label_key]
+
+        # Check that when CSS selector is empty string, gold value is empty.
         if not self.has_label(label_key):
             assert label_value == '', \
                 f'Unexpected non-empty {label_value=} for {label_key=}.'
             return []
+
+        # HACK: Sometimes in the dataset, the node does not exist even though it
+        # has a selector specified. Then we don't want to return `['']` (one
+        # empty node), but `[]` (no nodes) instead. Prerequisite for this
+        # situation is that the value is empty (but it can be string or list).
+        if not label_value and len(self.get_labeled_nodes(label_key)) == 0:
+            selector = self.get_selector(label_key)
+            warnings.warn(f'Ignoring non-existent {selector=} for ' + \
+                f'{label_key=} ({self.page.url}).')
+            return []
+
         return [label_value]
 
     def get_labeled_nodes(self, label_key: str):
@@ -148,7 +161,6 @@ class PageLabels(awe.data.graph.labels.PageLabels):
         try:
             return self.dom.tree.css(selector)
         except awe.data.parsing.Error as e:
-            page_html_path = self.page.html_path
             raise RuntimeError(
                 f'Invalid selector {repr(selector)} for {label_key=} ' + \
-                f'({page_html_path}).') from e
+                f'({self.page.url}).') from e
