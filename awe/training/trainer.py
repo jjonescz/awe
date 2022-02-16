@@ -11,13 +11,13 @@ import torch.utils.tensorboard
 from tqdm.auto import tqdm
 
 import awe.data.sampling
+import awe.data.set.pages
+import awe.data.set.swde
 import awe.model.classifier
 import awe.model.eval
 import awe.training.context
 import awe.training.logging
 import awe.training.params
-from awe import awe_graph
-from awe.data import swde
 
 
 @dataclasses.dataclass
@@ -30,8 +30,8 @@ class RunInput:
     """
 
 class Trainer:
-    train_pages: list[awe_graph.HtmlPage]
-    val_pages: list[awe_graph.HtmlPage]
+    train_pages: list[awe.data.set.pages.Page]
+    val_pages: list[awe.data.set.pages.Page]
     train_loader: torch.utils.data.DataLoader
     val_loader: torch.utils.data.DataLoader
     model: awe.model.classifier.Model
@@ -74,8 +74,8 @@ class Trainer:
 
     def load_data(self):
         # Load websites from one vertical.
-        sds = swde.Dataset(suffix='-exact')
-        websites = sds.verticals[0].websites
+        ds = awe.data.set.swde.Dataset(suffix='-exact')
+        websites = ds.verticals[0].websites
 
         # Split websites.
         train_website_indices = [0, 3, 4, 5, 7]
@@ -105,7 +105,7 @@ class Trainer:
         self.val_loader = self.create_dataloader(self.val_pages)
 
     def create_dataloader(self,
-        pages: list[awe_graph.HtmlPage],
+        pages: list[awe.data.set.pages.Page],
         shuffle: bool = False
     ):
         return torch.utils.data.DataLoader(

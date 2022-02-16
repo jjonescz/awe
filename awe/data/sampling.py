@@ -1,4 +1,4 @@
-from awe import awe_graph
+import awe.data.set.pages
 
 class Collater:
     """
@@ -6,5 +6,5 @@ class Collater:
     batch of model inputs.
     """
 
-    def __call__(self, samples: list[awe_graph.HtmlPage]):
+    def __call__(self, samples: list[awe.data.set.pages.Page]):
         return []
