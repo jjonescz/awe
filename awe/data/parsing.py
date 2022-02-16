@@ -19,14 +19,21 @@ def find_nodes_with_text(tree: Tree, needle: str):
     Finds nodes containing the specified `needle` as their text content.
     """
 
-    needle = normalize_node_text(needle)
+    normalized_needle = normalize_node_text(needle)
     return [
         node for node in tree.body.traverse(include_text=True)
-        if (
-            awe.data.html_utils.is_text(node) and
-            normalize_node_text(node.text()) == needle
-        )
+        if node_contains_normalized_text(node, normalized_needle)
     ]
+
+def node_contains_text(node: Node, needle: str):
+    normalized_needle = normalize_node_text(needle)
+    return node_contains_normalized_text(node, normalized_needle)
+
+def node_contains_normalized_text(node: Node, normalized_needle: str):
+    return (
+        awe.data.html_utils.is_text(node) and
+        normalize_node_text(node.text()) == normalized_needle
+    )
 
 def parse_html(html_text: str):
     # Note that unlike the default selectolax parser, the Lexbor parser can
