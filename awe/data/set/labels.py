@@ -8,7 +8,7 @@ import awe.data.set.pages
 class PageLabels(abc.ABC):
     def __init__(self, page: awe.data.set.pages.Page):
         self.page = page
-        self.dom = awe.data.graph.dom.Dom(page)
+        self.dom = awe.data.graph.dom.Dom(page, self)
 
     @property
     @abc.abstractmethod

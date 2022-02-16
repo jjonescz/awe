@@ -1,18 +1,40 @@
 import dataclasses
-from typing import Callable, Optional
+from typing import TYPE_CHECKING, Callable, Optional
 
 import awe.data.parsing
 import awe.data.set.pages
 
+if TYPE_CHECKING:
+    import awe.data.set.labels
+
 
 class Dom:
-    def __init__(self, page: awe.data.set.pages.Page):
+    labeled_parsed_nodes: dict[str, list[awe.data.parsing.Node]]
+    labeled_nodes: dict[str, list['Node']]
+
+    def __init__(self,
+        page: awe.data.set.pages.Page,
+        labels: 'awe.data.set.labels.PageLabels'
+    ):
         self.page = page
+        self.labels = labels
+        self.labeled_parsed_nodes = {}
+        self.labeled_nodes = {}
         self.tree = awe.data.parsing.parse_html(page.get_html_text())
 
         # Get all nodes.
         self.root = Node(dom=self, parsed=self.tree.body, parent=None)
         self.nodes = list(self.root.traverse())
+
+    def init_labels(self):
+        # Get labeled parsed nodes.
+        self.labeled_parsed_nodes = {
+            k: self.labels.get_labeled_nodes(k)
+            for k in self.labels.label_keys
+        }
+
+        for node in self.nodes:
+            node.init_labels()
 
 @dataclasses.dataclass
 class Node:
@@ -21,8 +43,23 @@ class Node:
     parent: Optional['Node'] = dataclasses.field(repr=False)
     children: list['Node'] = dataclasses.field(repr=False, default_factory=list)
 
+    label_keys: list[str] = dataclasses.field(default_factory=list)
+    """
+    Label keys of the node or `[]` if the node doesn't correspond to any target
+    attribute.
+    """
+
     def __post_init__(self):
         self.children = list(self._iterate_children())
+
+    def init_labels(self):
+        self.label_keys = [
+            k
+            for k in self.dom.labeled_parsed_nodes.keys()
+            if self.parsed in self.dom.labeled_parsed_nodes[k]
+        ]
+        for key in self.label_keys:
+            self.dom.labeled_nodes.setdefault(key, []).append(self)
 
     def _iterate_children(self):
         for parsed_node in self.parsed.iter(include_text=True):
