@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Callable, Optional
 
 import awe.data.parsing
 import awe.data.set.pages
+import awe.data.html_utils
 
 if TYPE_CHECKING:
     import awe.data.set.labels
@@ -54,6 +55,15 @@ class Node:
 
     def __post_init__(self):
         self.children = list(self._iterate_children())
+
+    @property
+    def is_text(self):
+        return awe.data.html_utils.is_text(self.parsed)
+
+    @property
+    def text(self):
+        assert self.is_text
+        return self.parsed.text(deep=False)
 
     def init_labels(self):
         self.label_keys = [
