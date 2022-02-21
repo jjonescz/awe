@@ -22,11 +22,14 @@ class Params:
     use_gpu: bool = True
 
     @classmethod
-    def load_version(cls, version: awe.training.logging.Version):
-        return cls.load_file(version.params_path)
+    def load_version(cls,
+        version: awe.training.logging.Version,
+        normalize: bool = False
+    ):
+        return cls.load_file(version.params_path, normalize=normalize)
 
     @classmethod
-    def load_user(cls):
+    def load_user(cls, normalize: bool = False):
         """Loads params from user-provided file."""
         path = f'{awe.data.constants.DATA_DIR}/params.json'
         if not os.path.exists(path):
@@ -34,12 +37,19 @@ class Params:
             warnings.warn(f'No params file, creating one at {repr(path)}.')
             Params().save_file(path)
             return None
-        return cls.load_file(path)
+        return cls.load_file(path, normalize=normalize)
 
     @staticmethod
-    def load_file(path: str):
+    def load_file(path: str, normalize: bool = False):
         with open(path, mode='r', encoding='utf-8') as f:
-            return Params(**json.load(f))
+            result = Params(**json.load(f))
+
+        if normalize:
+            # Saving the params back adds default values of missing (new)
+            # attributes and sorts attributes by key.
+            result.save_file(path)
+
+        return result
 
     def save_version(self, version: awe.training.logging.Version):
         self.save_file(version.params_path)
