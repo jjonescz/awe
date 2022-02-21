@@ -10,7 +10,9 @@ import awe.training.logging
 
 @dataclasses.dataclass
 class Params:
-    # General training
+    """Hyper parameters with persistence."""
+
+    # Trainer
     train_subset: int = 2000
     val_subset: int = 50
     epochs: int = 5
@@ -20,6 +22,9 @@ class Params:
     log_every_n_steps: int = 10
     eval_every_n_steps: Optional[int] = 50
     use_gpu: bool = True
+
+    # Classifier
+    learning_rate: float = 1e-3
 
     @classmethod
     def load_version(cls,

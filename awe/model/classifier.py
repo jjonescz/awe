@@ -1,5 +1,5 @@
 import dataclasses
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import torch
 from torch_geometric import data
@@ -21,9 +21,11 @@ class Prediction:
 class Model(torch.nn.Module):
     def __init__(self,
         params: 'awe.training.params.Params',
+        lr: Optional[float] = None,
     ):
         super().__init__()
         self.params = params
+        self.lr = lr
 
     def create_optimizer(self):
         return torch.optim.Adam(self.parameters(),
