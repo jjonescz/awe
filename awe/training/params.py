@@ -23,6 +23,19 @@ class Params:
     eval_every_n_steps: Optional[int] = 50
     use_gpu: bool = True
 
+    # Features
+    cutoff_words: Optional[int] = 15
+    """
+    Maximum number of words to preserve in each node (or `None` to preserve
+    all). Used by `CharacterIdentifiers` and `WordIdentifiers`.
+    """
+
+    cutoff_word_length: Optional[int] = 10
+    """
+    Maximum number of characters to preserve in each token (or `None` to
+    preserve all). Used by `CharacterIdentifiers`.
+    """
+
     # Classifier
     learning_rate: float = 1e-3
 

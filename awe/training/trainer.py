@@ -13,6 +13,7 @@ from tqdm.auto import tqdm
 import awe.data.sampling
 import awe.data.set.pages
 import awe.data.set.swde
+import awe.features.extraction
 import awe.model.classifier
 import awe.model.eval
 import awe.training.context
@@ -52,6 +53,8 @@ class Trainer:
         self.running_loss = collections.defaultdict(float)
         self.metrics = collections.defaultdict(dict)
         self.pretrained = None
+        self.extractor = awe.features.extraction.Extractor(self.params)
+        self.sampler = awe.data.sampling.Sampler(self)
 
     def create_version(self):
         awe.training.logging.Version.delete_last(self.params.version_name)
@@ -101,22 +104,23 @@ class Trainer:
         print(f'{len(self.train_pages)=}, {len(self.val_pages)=}')
 
         # Create dataloaders.
-        self.train_loader = self.create_dataloader(self.train_pages, shuffle=True)
-        self.val_loader = self.create_dataloader(self.val_pages)
+        self.train_loader = self.create_dataloader(self.train_pages, 'train', shuffle=True)
+        self.val_loader = self.create_dataloader(self.val_pages, 'val')
 
     def create_dataloader(self,
         pages: list[awe.data.set.pages.Page],
+        desc: str,
         shuffle: bool = False
     ):
         return torch.utils.data.DataLoader(
-            pages,
+            self.sampler(pages, desc=desc),
             batch_size=self.params.batch_size,
             collate_fn=awe.data.sampling.Collater(),
             shuffle=shuffle,
         )
 
     def create_model(self):
-        self.model = awe.model.classifier.Model(self.params).to(self.device)
+        self.model = awe.model.classifier.Model(self).to(self.device)
 
     def restore(self, checkpoint: awe.training.logging.Checkpoint):
         self.model.load_state_dict(torch.load(checkpoint.file_path))

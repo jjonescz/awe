@@ -65,6 +65,10 @@ class Node:
         assert self.is_text
         return self.parsed.text(deep=False)
 
+    @property
+    def html_tag(self):
+        return self.parsed.tag
+
     def init_labels(self):
         self.label_keys = [
             k
