@@ -141,6 +141,22 @@ class Trainer:
             shuffle=shuffle,
         )
 
+    def create_run(self,
+        pages: list[awe.data.set.pages.Page],
+        desc: str,
+        log: bool = False,
+        shuffle: bool = False
+    ):
+        return RunInput(
+            pages=pages,
+            loader=self.create_dataloader(
+                pages=pages,
+                desc=desc,
+                shuffle=shuffle
+            ),
+            prefix=desc if log else None,
+        )
+
     def create_model(self):
         self.evaluator = awe.model.eval.Evaluator(self)
 
