@@ -61,6 +61,7 @@ class Trainer:
             print('Loading previous trainer.')
             for key, value in vars(prev_trainer).items():
                 setattr(self, key, value)
+            self.params = params
             return
 
         self.params = params
