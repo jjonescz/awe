@@ -34,6 +34,10 @@ class Dataset:
         for page in self.get_all_pages():
             page.clear_cache(request)
 
+    def clear_predictions(self):
+        for page in self.get_all_pages():
+            page.dom.clear_predictions()
+
 @dataclasses.dataclass
 class Vertical:
     dataset: Dataset

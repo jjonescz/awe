@@ -171,6 +171,7 @@ class Trainer:
         self.step = 0
         self.train_progress = None
         self.val_progress = None
+        self.ds.clear_predictions()
 
     def _finalize(self):
         if self.writer is not None:

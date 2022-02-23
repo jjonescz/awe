@@ -41,6 +41,10 @@ class Dom:
         for node in self.nodes:
             node.init_labels()
 
+    def clear_predictions(self):
+        self.node_predictions.clear()
+        self.num_predicted_nodes = 0
+
 @dataclasses.dataclass
 class Node:
     dom: Dom = dataclasses.field(repr=False)
