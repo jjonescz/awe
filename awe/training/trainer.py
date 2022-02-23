@@ -31,6 +31,7 @@ class RunInput:
     """
 
 class Trainer:
+    ds: awe.data.set.swde.Dataset
     train_pages: list[awe.data.set.pages.Page]
     val_pages: list[awe.data.set.pages.Page]
     train_loader: torch.utils.data.DataLoader
@@ -90,10 +91,12 @@ class Trainer:
     def load_pretrained(self):
         pass
 
+    def load_dataset(self):
+        self.ds = awe.data.set.swde.Dataset(suffix='-exact')
+
     def load_data(self):
         # Load websites from one vertical.
-        ds = awe.data.set.swde.Dataset(suffix='-exact')
-        websites = ds.verticals[0].websites
+        websites = self.ds.verticals[0].websites
 
         # Split websites.
         train_website_indices = [0, 3, 4, 5, 7]
