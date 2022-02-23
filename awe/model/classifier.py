@@ -34,7 +34,7 @@ class Model(torch.nn.Module):
         input_features = 0
 
         # HTML tag name embedding
-        num_html_tags = len(self.trainer.extractor.context.html_tags)
+        num_html_tags = len(self.trainer.extractor.context.html_tags) + 1
         if num_html_tags > 0:
             embedding_dim = 32
             self.tag_embedding = torch.nn.Embedding(
@@ -70,23 +70,26 @@ class Model(torch.nn.Module):
         # Embed HTML tag names.
         html_tag = self.trainer.extractor.get_feature(awe.features.dom.HtmlTag)
         if html_tag is not None:
-            tag_ids = torch.IntTensor(
+            tag_ids = torch.tensor(
                 [
                     html_tag.compute(node)
                     for node in batch
                 ],
-                device=self.device
-            )
-            x = self.tag_embedding(tag_ids)
+                device=self.trainer.device
+            ) # [N]
+            x = self.tag_embedding(tag_ids) # [N, embedding_dim]
 
         # Classify features.
-        x = self.head(x)
+        x = self.head(x) # [N, num_labels]
 
         # Find out gold labels.
-        gold_labels = [
-            self.trainer.label_map.get_label_id(node)
-            for node in batch
-        ]
+        gold_labels = torch.tensor(
+            [
+                self.trainer.label_map.get_label_id(node)
+                for node in batch
+            ],
+            device=self.trainer.device
+        ) # [num_labels]
         loss = self.loss(x, gold_labels)
 
         return ModelOutput(loss=loss)
