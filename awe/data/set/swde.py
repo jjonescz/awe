@@ -107,7 +107,7 @@ class Vertical(awe.data.set.pages.Vertical):
             assert website.dir_name == subdir
 
             # HACK: Skip website careerbuilder.com whose groundtruth values are
-            # in HTML comments (that's bug in the dataset).
+            # in HTML comments (that's a bug in the dataset).
             if self.name == 'job' and website.name == 'careerbuilder':
                 continue
 

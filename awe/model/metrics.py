@@ -4,6 +4,13 @@ import torch
 
 
 @dataclasses.dataclass
+class PredStats:
+    true_positives: int = 0
+    true_negatives: int = 0
+    false_positives: int = 0
+    false_negatives: int = 0
+
+@dataclasses.dataclass
 class F1Metrics:
     precision: float
     recall: float

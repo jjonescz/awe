@@ -140,7 +140,7 @@ class Trainer:
         )
 
     def create_model(self):
-        self.evaluator = awe.model.eval.Evaluator(self.label_map)
+        self.evaluator = awe.model.eval.Evaluator(self)
 
         use_gpu = self.params.use_gpu and torch.cuda.is_available()
         self.device = torch.device('cuda:0' if use_gpu else 'cpu')

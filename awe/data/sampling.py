@@ -35,8 +35,8 @@ class Sampler:
 
             page.dom.init_labels()
 
-            for label_key in page.labels.label_keys:
-                self.trainer.label_map.map_label_to_id(label_key)
+        for label_key in page.labels.label_keys:
+            self.trainer.label_map.map_label_to_id(label_key)
 
         self.trainer.extractor.prepare_page(page.dom)
 

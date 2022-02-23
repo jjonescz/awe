@@ -16,6 +16,12 @@ ModelInput = list[awe.data.graph.dom.Node]
 @dataclasses.dataclass
 class ModelOutput:
     loss: torch.FloatTensor
+    logits: torch.FloatTensor
+    gold_labels: torch.FloatTensor
+
+    @property
+    def pred_labels(self):
+        return torch.argmax(self.logits, dim=-1)
 
 @dataclasses.dataclass
 class Prediction:
@@ -92,4 +98,8 @@ class Model(torch.nn.Module):
         ) # [num_labels]
         loss = self.loss(x, gold_labels)
 
-        return ModelOutput(loss=loss)
+        return ModelOutput(
+            loss=loss,
+            logits=x,
+            gold_labels=gold_labels
+        )
