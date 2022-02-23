@@ -100,7 +100,7 @@ class Evaluation:
                 awe.model.metrics.F1Metrics.compute(stats).to_vector()
                 for stats in per_label.values()) / len(per_label))
 
-            metrics_dict.update(page_metrics.to_dict(prefix='page'))
+            metrics_dict.update(page_metrics.to_dict(prefix='page_'))
 
         return metrics_dict
 
