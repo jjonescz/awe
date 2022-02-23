@@ -181,7 +181,6 @@ class Trainer:
         slow_eval = self.evaluator.start_evaluation() # collected every Nth step
         for batch_idx, batch in enumerate(run.loader):
             self.optim.zero_grad()
-            batch = batch.to(self.device)
             outputs = self.model.forward(batch)
             fast_eval.add_fast(outputs)
             total_eval.add_fast(outputs)
@@ -220,7 +219,6 @@ class Trainer:
         self.val_progress.reset(total=len(run.loader))
         evaluation = self.evaluator.start_evaluation()
         for batch in run.loader:
-            batch = batch.to(self.device)
             outputs = self.model.forward(batch)
             evaluation.add(awe.model.classifier.Prediction(batch, outputs))
             self.step += 1
@@ -246,7 +244,6 @@ class Trainer:
         self.model.eval()
         with torch.no_grad():
             for batch in tqdm(run.loader, desc='predict'):
-                batch = batch.to(self.device)
                 outputs = self.model.forward(batch)
                 predictions.append(awe.model.classifier.Prediction(batch, outputs))
         return predictions

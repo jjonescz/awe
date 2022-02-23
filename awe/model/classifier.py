@@ -67,15 +67,16 @@ class Model(torch.nn.Module):
         )
 
     def forward(self, batch: ModelInput) -> ModelOutput:
-        x = torch.zeros(0)
-
         # Embed HTML tag names.
         html_tag = self.trainer.extractor.get_feature(awe.features.dom.HtmlTag)
         if html_tag is not None:
-            tag_ids = torch.IntTensor([
-                html_tag.compute(node, self.trainer.extractor)
-                for node in batch
-            ])
+            tag_ids = torch.IntTensor(
+                [
+                    html_tag.compute(node)
+                    for node in batch
+                ],
+                device=self.device
+            )
             x = self.tag_embedding(tag_ids)
 
         # Classify features.
