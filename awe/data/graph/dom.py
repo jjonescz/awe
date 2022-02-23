@@ -2,11 +2,11 @@ import dataclasses
 from typing import TYPE_CHECKING, Callable, Optional
 
 import awe.data.parsing
-import awe.data.set.pages
 import awe.data.html_utils
 
 if TYPE_CHECKING:
     import awe.data.set.labels
+    import awe.data.set.pages
 
 
 class Dom:
@@ -16,11 +16,9 @@ class Dom:
     labeled_nodes: dict[str, list['Node']]
 
     def __init__(self,
-        page: awe.data.set.pages.Page,
-        labels: 'awe.data.set.labels.PageLabels'
+        page: 'awe.data.set.pages.Page'
     ):
         self.page = page
-        self.labels = labels
         self.labeled_parsed_nodes = {}
         self.labeled_nodes = {}
         self.tree = awe.data.parsing.parse_html(page.get_html_text())
@@ -33,8 +31,8 @@ class Dom:
     def init_labels(self):
         # Get labeled parsed nodes.
         self.labeled_parsed_nodes = {
-            k: self.labels.get_labeled_nodes(k)
-            for k in self.labels.label_keys
+            k: self.page.labels.get_labeled_nodes(k)
+            for k in self.page.labels.label_keys
         }
 
         for node in self.nodes:

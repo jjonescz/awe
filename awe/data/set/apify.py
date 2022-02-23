@@ -87,7 +87,7 @@ class Website(awe.data.set.pages.Website):
 @dataclasses.dataclass
 class Page(awe.data.set.pages.Page):
     website: Website
-    index: int
+    index: int = None
 
     @property
     def row(self):

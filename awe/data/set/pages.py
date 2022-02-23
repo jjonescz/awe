@@ -3,6 +3,8 @@ import dataclasses
 import itertools
 from typing import TYPE_CHECKING
 
+import awe.data.graph.dom
+
 if TYPE_CHECKING:
     import awe.data.set.labels
 
@@ -45,6 +47,8 @@ class Website:
 @dataclasses.dataclass
 class Page(abc.ABC):
     website: Website = dataclasses.field(repr=False)
+    _labels = None
+    _dom = None
 
     @property
     @abc.abstractmethod
@@ -55,6 +59,18 @@ class Page(abc.ABC):
     @abc.abstractmethod
     def url(self) -> str:
         """Original URL of the page."""
+
+    @property
+    def labels(self):
+        if self._labels is None:
+            self._labels = self.get_labels()
+        return self._labels
+
+    @property
+    def dom(self):
+        if self._dom is None:
+            self._dom = awe.data.graph.dom.Dom(self)
+        return self._dom
 
     def get_html_text(self) -> str:
         """Obtains HTML of the page as text."""

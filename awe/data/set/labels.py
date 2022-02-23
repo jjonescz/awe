@@ -8,7 +8,6 @@ import awe.data.set.pages
 class PageLabels(abc.ABC):
     def __init__(self, page: awe.data.set.pages.Page):
         self.page = page
-        self.dom = awe.data.graph.dom.Dom(page, self)
 
     @property
     @abc.abstractmethod
@@ -39,6 +38,6 @@ class TextPageLabels(PageLabels):
             node
             for value in self.get_label_values(label_key)
             for node in awe.data.parsing.find_nodes_with_text(
-                self.dom.tree, value
+                self.page.dom.tree, value
             )
         ]

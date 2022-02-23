@@ -193,7 +193,7 @@ class FileWebsite(Website):
 class PickleWebsite(Website):
     def _iterate_pages(self):
         for idx in range(self.page_count):
-            yield PicklePage(self, idx)
+            yield PicklePage(website=self, index=idx)
 
 @dataclasses.dataclass
 class Page(awe.data.set.pages.Page):

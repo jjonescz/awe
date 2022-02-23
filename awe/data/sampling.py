@@ -30,20 +30,17 @@ class Sampler:
         return result
 
     def get_nodes_for_page(self, page: awe.data.set.pages.Page) -> list[Sample]:
-        page_labels = page.get_labels()
-        page_dom = page_labels.dom
+        if page.dom.root is None:
+            page.dom.init_nodes()
 
-        if page_dom.root is None:
-            page_dom.init_nodes()
+            page.dom.init_labels()
 
-            page_dom.init_labels()
-
-            for label_key in page_labels.label_keys:
+            for label_key in page.labels.label_keys:
                 self.trainer.label_map.map_label_to_id(label_key)
 
-        self.trainer.extractor.prepare_page(page_dom)
+        self.trainer.extractor.prepare_page(page.dom)
 
-        return page_dom.nodes
+        return page.dom.nodes
 
 class Collater:
     """
