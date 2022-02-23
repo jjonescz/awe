@@ -26,26 +26,40 @@ class FloatMetric:
     def compute(self):
         return self.total / self.count
 
+class Metrics:
+    """Wrapper for `MetricCollection` handling some edge cases."""
+
+    updated: bool = False
+
+    def __init__(self, evaluator: Evaluator, *args, **kwargs):
+        self.collection = torchmetrics.MetricCollection(*args, **kwargs) \
+            .to(evaluator.trainer.device)
+
+    def update(self, *args, **kwargs):
+        self.collection.update(*args, **kwargs)
+        self.updated = True
+
+    def compute(self):
+        d = self.collection.compute() if self.updated else {}
+        return { k: v.item() for k, v in d.items() }
+
 class Evaluation:
     metrics: dict[str, FloatMetric]
-    total_stats_updated: bool = False
 
     def __init__(self, evaluator: Evaluator):
         self.evaluator = evaluator
         self.metrics = collections.defaultdict(FloatMetric)
-        self.total_stats = torchmetrics.MetricCollection([
-            torchmetrics.Accuracy(),
-            torchmetrics.F1()
-        ]).to(evaluator.trainer.device)
+        self.nodes = Metrics(evaluator, [
+            torchmetrics.Accuracy(ignore_index=0),
+            torchmetrics.F1(ignore_index=0)
+        ])
 
     def clear(self):
         self.metrics.clear()
 
     def compute(self):
         metrics_dict = { k: v.compute() for k, v in self.metrics.items() }
-        total_stats_dict = self.total_stats.compute() if self.total_stats_updated else {}
-        total_stats_dict = { k: v.item() for k, v in total_stats_dict.items() }
-        return metrics_dict | total_stats_dict
+        return metrics_dict | self.nodes.compute()
 
     def add(self, pred: 'awe.model.classifier.Prediction'):
         self.add_fast(pred.outputs)
@@ -55,5 +69,4 @@ class Evaluation:
         self.metrics['loss'].add(outputs.loss.item())
 
     def add_slow(self, pred: 'awe.model.classifier.Prediction'):
-        self.total_stats.update(preds=pred.outputs.logits, target=pred.outputs.gold_labels)
-        self.total_stats_updated = True
+        self.nodes.update(preds=pred.outputs.logits, target=pred.outputs.gold_labels)
