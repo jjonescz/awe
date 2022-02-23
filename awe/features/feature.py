@@ -11,10 +11,14 @@ if TYPE_CHECKING:
 
 
 class Feature(abc.ABC):
-    def prepare(self,
-        node: awe.data.graph.dom.Node,
-        extractor: 'awe.features.extraction.Extractor'
-    ):
+    def __init__(self, extractor: 'awe.features.extraction.Extractor'):
+        self.extractor = extractor
+        self.__post_init__()
+
+    def __post_init__(self):
+        """Can be used by derived classes to do initialization."""
+
+    def prepare(self, node: awe.data.graph.dom.Node):
         """
         Prepares this feature for the given `node`.
 
@@ -23,7 +27,7 @@ class Feature(abc.ABC):
         """
 
     @abc.abstractmethod
-    def initialize(self, extractor: 'awe.features.extraction.Extractor') -> int:
+    def initialize(self) -> int:
         """
         Work needed to be done so that this feature can be computed.
 
@@ -31,8 +35,5 @@ class Feature(abc.ABC):
         """
 
     @abc.abstractmethod
-    def compute(self,
-        node: awe.data.graph.dom.Node,
-        extractor: 'awe.features.extraction.Extractor'
-    ) -> torch.FloatTensor:
+    def compute(self, node: awe.data.graph.dom.Node) -> torch.FloatTensor:
         """Computes a feature vector for the given `node`."""
