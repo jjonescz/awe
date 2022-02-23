@@ -44,6 +44,7 @@ class Evaluation:
     def compute(self):
         metrics_dict = { k: v.compute() for k, v in self.metrics.items() }
         total_stats_dict = self.total_stats.compute() if self.total_stats_updated else {}
+        total_stats_dict = { k: v.item() for k, v in total_stats_dict.items() }
         return metrics_dict | total_stats_dict
 
     def add(self, pred: 'awe.model.classifier.Prediction'):
