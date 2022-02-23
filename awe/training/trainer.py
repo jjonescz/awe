@@ -32,10 +32,14 @@ class RunInput:
 
 class Trainer:
     ds: awe.data.set.swde.Dataset
+    label_map: awe.training.context.LabelMap
+    extractor: awe.features.extraction.Extractor
+    sampler: awe.data.sampling.Sampler
     train_pages: list[awe.data.set.pages.Page]
     val_pages: list[awe.data.set.pages.Page]
     train_loader: torch.utils.data.DataLoader
     val_loader: torch.utils.data.DataLoader
+    evaluator: awe.model.eval.Evaluator
     device: torch.device
     model: awe.model.classifier.Model
     version: awe.training.logging.Version
@@ -62,15 +66,8 @@ class Trainer:
             print('Loading previous trainer.')
             for key, value in vars(prev_trainer).items():
                 setattr(self, key, value)
-            self.params = params
-            return
 
         self.params = params
-        self.label_map = awe.training.context.LabelMap()
-        self.evaluator = awe.model.eval.Evaluator(self.label_map)
-        self.pretrained = None
-        self.extractor = awe.features.extraction.Extractor(self.params)
-        self.sampler = awe.data.sampling.Sampler(self)
 
     def create_version(self):
         awe.training.logging.Version.delete_last(self.params.version_name)
@@ -96,6 +93,10 @@ class Trainer:
         self.ds = awe.data.set.swde.Dataset(suffix='-exact')
 
     def load_data(self):
+        self.label_map = awe.training.context.LabelMap()
+        self.extractor = awe.features.extraction.Extractor(self.params)
+        self.sampler = awe.data.sampling.Sampler(self)
+
         # Load websites from one vertical.
         websites = self.ds.verticals[0].websites
 
@@ -139,6 +140,8 @@ class Trainer:
         )
 
     def create_model(self):
+        self.evaluator = awe.model.eval.Evaluator(self.label_map)
+
         use_gpu = self.params.use_gpu and torch.cuda.is_available()
         self.device = torch.device('cuda:0' if use_gpu else 'cpu')
         self.model = awe.model.classifier.Model(self).to(self.device)
