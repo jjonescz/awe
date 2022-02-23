@@ -23,7 +23,7 @@ class Dataset(awe.data.set.pages.Dataset):
             dir_path=DIR,
         )
         self.verticals = [
-            Vertical(dataset=self, name='products')
+            Vertical(dataset=self, name='products', prev_page_count=0)
         ]
 
 @dataclasses.dataclass
@@ -44,18 +44,26 @@ class Vertical(awe.data.set.pages.Vertical):
                 f'Dataset directory does not exist ({self.dir_path}).')
             return
 
+        page_count = 0
         for subdir in sorted(os.listdir(self.dir_path)):
-            yield Website(self, subdir)
+            website = Website(
+                vertical=self,
+                dir_name=subdir,
+                prev_page_count=page_count
+            )
+            yield website
+            page_count += website.page_count
 
 @dataclasses.dataclass
 class Website(awe.data.set.pages.Website):
     vertical: Vertical
     df: pd.DataFrame = dataclasses.field(repr=False, default=None)
 
-    def __init__(self, vertical: Vertical, dir_name: str):
+    def __init__(self, vertical: Vertical, dir_name: str, prev_page_count: int):
         super().__init__(
             vertical=vertical,
             name=dir_name,
+            prev_page_count=prev_page_count,
         )
 
         # Convert dataset.
@@ -71,6 +79,7 @@ class Website(awe.data.set.pages.Website):
             Page(website=self, index=idx)
             for idx in range(len(self.df))
         ]
+        self.page_count = len(self.pages)
 
     @property
     def dir_path(self):
@@ -159,7 +168,7 @@ class PageLabels(awe.data.set.labels.PageLabels):
             return []
         selector = self.get_selector(label_key)
         try:
-            return self.dom.tree.css(selector)
+            return self.page.dom.tree.css(selector)
         except awe.data.parsing.Error as e:
             raise RuntimeError(
                 f'Invalid selector {repr(selector)} for {label_key=} ' + \

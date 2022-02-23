@@ -46,10 +46,18 @@ class Dataset(awe.data.set.pages.Dataset):
             dir_path=DATA_DIR,
         )
         self.suffix = suffix
-        self.verticals = [
-            Vertical(dataset=self, name=name)
-            for name in tqdm(VERTICAL_NAMES, desc='verticals')
-        ]
+        self.verticals = list(self._iterate_verticals())
+
+    def _iterate_verticals(self):
+        page_count = 0
+        for name in tqdm(VERTICAL_NAMES, desc='verticals'):
+            vertical = Vertical(
+                dataset=self,
+                name=name,
+                prev_page_count=page_count
+            )
+            yield vertical
+            page_count += vertical.page_count
 
 @dataclasses.dataclass
 class Vertical(awe.data.set.pages.Vertical):
@@ -60,6 +68,7 @@ class Vertical(awe.data.set.pages.Vertical):
         if not os.path.exists(self.dir_path):
             warnings.warn(
                 f'Vertical directory does not exist ({self.dir_path}).')
+            self.page_count = 0
             return
 
         # Convert vertical to a DataFrame. It is faster than reading from files
@@ -83,6 +92,7 @@ class Vertical(awe.data.set.pages.Vertical):
             self.df = pd.read_pickle(self.pickle_path)
 
         self.websites = list(self._iterate_websites(PickleWebsite))
+        self.page_count = len(self.df)
 
     @property
     def dir_path(self):
@@ -103,7 +113,11 @@ class Vertical(awe.data.set.pages.Vertical):
     def _iterate_websites(self, cls: type['Website']):
         page_count = 0
         for subdir in sorted(os.listdir(self.dir_path)):
-            website = cls(self, subdir, page_count)
+            website = cls(
+                vertical=self,
+                dir_name=subdir,
+                prev_page_count=page_count
+            )
             assert website.dir_name == subdir
 
             # HACK: Skip website careerbuilder.com whose groundtruth values are
@@ -118,7 +132,6 @@ class Vertical(awe.data.set.pages.Vertical):
 class Website(awe.data.set.pages.Website):
     vertical: Vertical
     pages: list['Page'] = dataclasses.field(repr=False)
-    page_count: int = None
     groundtruth_files: dict[str, awe.data.set.swde_labels.GroundtruthFile] = \
         dataclasses.field(repr=False, default=None)
 
@@ -127,10 +140,10 @@ class Website(awe.data.set.pages.Website):
         assert vertical.name == match.group(1)
         super().__init__(
             vertical=vertical,
-            name=match.group(2)
+            name=match.group(2),
+            prev_page_count=prev_page_count,
+            page_count=int(match.group(3))
         )
-        self.prev_page_count = prev_page_count
-        self.page_count = int(match.group(3))
         self.groundtruth_files = {
             g.label_key: g for g in self._iterate_groundtruth()
         }
@@ -198,7 +211,6 @@ class PickleWebsite(Website):
 @dataclasses.dataclass
 class Page(awe.data.set.pages.Page):
     website: Website
-    index: int = None
     _url: Optional[str] = dataclasses.field(repr=False, init=False, default=None)
     groundtruth_entries: dict[str, awe.data.set.swde_labels.GroundtruthEntry] = \
         dataclasses.field(repr=False, default=None)
@@ -220,10 +232,6 @@ class Page(awe.data.set.pages.Page):
     @property
     def html_path(self):
         return f'{self.website.dir_path}/{self.html_file_name}'
-
-    @property
-    def index_in_vertical(self):
-        return self.website.prev_page_count + self.index
 
     def get_labels(self):
         return awe.data.set.swde_labels.PageLabels(self)

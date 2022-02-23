@@ -39,6 +39,8 @@ class Vertical:
     dataset: Dataset
     name: str
     websites: list['Website'] = dataclasses.field(repr=False, default_factory=list)
+    prev_page_count: int = dataclasses.field(repr=False, default=None)
+    page_count: int = dataclasses.field(repr=False, default=None)
 
     def get_all_pages(self, *, zip_websites: bool = False):
         page_lists = (w.pages for w in self.websites)
@@ -53,9 +55,13 @@ class Website:
 
     pages: list['Page'] = dataclasses.field(repr=False, default_factory=list)
 
+    prev_page_count: int = dataclasses.field(repr=False, default=None)
+    page_count: int = dataclasses.field(repr=False, default=None)
+
 @dataclasses.dataclass
 class Page(abc.ABC):
     website: Website = dataclasses.field(repr=False)
+    index: int = dataclasses.field(repr=False, default=None)
     _labels = None
     _dom = None
 
@@ -68,6 +74,14 @@ class Page(abc.ABC):
     @abc.abstractmethod
     def url(self) -> str:
         """Original URL of the page."""
+
+    @property
+    def index_in_vertical(self):
+        return self.website.prev_page_count + self.index
+
+    @property
+    def index_in_dataset(self):
+        return self.website.vertical.prev_page_count + self.index_in_vertical
 
     @property
     def labels(self):
