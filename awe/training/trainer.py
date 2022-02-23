@@ -23,6 +23,8 @@ import awe.training.params
 
 @dataclasses.dataclass
 class RunInput:
+    pages: list[awe.data.set.pages.Page]
+
     loader: torch.utils.data.DataLoader
 
     prefix: Optional[str] = None
@@ -165,8 +167,8 @@ class Trainer:
     def train(self):
         self._reset_loop()
         self.optim = self.model.create_optimizer()
-        train_run = RunInput(self.train_loader, 'train')
-        val_run = RunInput(self.val_loader, 'val')
+        train_run = RunInput(self.train_pages, self.train_loader, 'train')
+        val_run = RunInput(self.val_pages, self.val_loader, 'val')
         best_val_loss = sys.maxsize
         for epoch_idx in tqdm(range(self.params.epochs), desc='train'):
             train_metrics = self._train_epoch(train_run, val_run)
@@ -246,11 +248,15 @@ class Trainer:
             evaluation.add(awe.model.classifier.Prediction(batch, outputs))
             self.step += 1
             self.val_progress.update()
-        return self._eval(run, evaluation)
+        return self._eval(run, evaluation, page_wide=True)
 
-    def _eval(self, run: RunInput, evaluation: awe.model.eval.Evaluation):
+    def _eval(self,
+        run: RunInput,
+        evaluation: awe.model.eval.Evaluation,
+        page_wide: bool = False
+    ):
         # Log aggregate metrics to TensorBoard.
-        metrics = evaluation.compute()
+        metrics = evaluation.compute(pages=run.pages if page_wide else None)
         if run.prefix is not None:
             for k, v in metrics.items():
                 self.writer.add_scalar(f'{run.prefix}_{k}', v, self.step)

@@ -14,6 +14,8 @@ class Dom:
     nodes: Optional[list['Node']] = None
     labeled_parsed_nodes: dict[str, list[awe.data.parsing.Node]]
     labeled_nodes: dict[str, list['Node']]
+    node_predictions: dict[str, list['NodePrediction']]
+    num_predicted_nodes = 0
 
     def __init__(self,
         page: 'awe.data.set.pages.Page'
@@ -21,6 +23,7 @@ class Dom:
         self.page = page
         self.labeled_parsed_nodes = {}
         self.labeled_nodes = {}
+        self.node_predictions = {}
         self.tree = awe.data.parsing.parse_html(page.get_html_text())
 
     def init_nodes(self):
@@ -91,3 +94,16 @@ class Node:
                 yield node
             if deep_predicate(node):
                 stack.extend(node.children)
+
+    def predict_as(self, label_key: str, confidence: float):
+        """Marks the node as predicted with the given `label_key`."""
+        l = self.dom.node_predictions.setdefault(label_key, [])
+        l.append(NodePrediction(node=self, confidence=confidence))
+
+    def mark_predicted(self):
+        self.dom.num_predicted_nodes += 1
+
+@dataclasses.dataclass
+class NodePrediction:
+    node: Node
+    confidence: float

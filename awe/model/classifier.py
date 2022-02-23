@@ -19,8 +19,7 @@ class ModelOutput:
     logits: torch.FloatTensor
     gold_labels: torch.FloatTensor
 
-    @property
-    def pred_labels(self):
+    def get_pred_labels(self):
         return torch.argmax(self.logits, dim=-1)
 
 @dataclasses.dataclass
