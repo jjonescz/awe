@@ -35,6 +35,7 @@ class Trainer:
     val_pages: list[awe.data.set.pages.Page]
     train_loader: torch.utils.data.DataLoader
     val_loader: torch.utils.data.DataLoader
+    device: torch.device
     model: awe.model.classifier.Model
     version: awe.training.logging.Version
     writer: Optional[torch.utils.tensorboard.SummaryWriter] = None
@@ -64,8 +65,6 @@ class Trainer:
 
         self.params = params
         self.label_map = awe.training.context.LabelMap()
-        use_gpu = self.params.use_gpu and torch.cuda.is_available()
-        self.device = torch.device('cuda:0' if use_gpu else 'cpu')
         self.evaluator = awe.model.eval.Evaluator(self.label_map)
         self.pretrained = None
         self.extractor = awe.features.extraction.Extractor(self.params)
@@ -135,6 +134,8 @@ class Trainer:
         )
 
     def create_model(self):
+        use_gpu = self.params.use_gpu and torch.cuda.is_available()
+        self.device = torch.device('cuda:0' if use_gpu else 'cpu')
         self.model = awe.model.classifier.Model(self).to(self.device)
 
     def restore(self, checkpoint: awe.training.logging.Checkpoint):
