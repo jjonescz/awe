@@ -73,6 +73,7 @@ class Params:
         self.save_file(version.params_path)
 
     def save_file(self, path: str):
+        print(f'Saving {path!r}.')
         with open(path, mode='w', encoding='utf-8') as f:
             json.dump(dataclasses.asdict(self), f,
                 indent=2,
