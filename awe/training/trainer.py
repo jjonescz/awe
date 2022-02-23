@@ -1,7 +1,7 @@
-import collections
 import dataclasses
 import sys
 from typing import Optional
+import warnings
 
 import numpy as np
 import pytorch_lightning as pl
@@ -44,14 +44,29 @@ class Trainer:
     val_progress: Optional[tqdm] = None
     step: int
 
-    def __init__(self, params: awe.training.params.Params):
+    def __init__(self,
+        params: awe.training.params.Params,
+        prev_trainer: Optional['Trainer'] = None
+    ):
+        # Preserve previously loaded data and pretrained models (enables faster
+        # iteration during code changes and reloading in development).
+        if prev_trainer is not None:
+            prev = set(dataclasses.asdict(prev_trainer.params).items())
+            provided = set(dataclasses.asdict(params).items())
+            difference = prev.symmetric_difference(provided)
+            if difference:
+                warnings.warn('Params of previous trainer differ from ' + \
+                    f'provided params ({difference}).')
+            print('Loading previous trainer.')
+            for key, value in vars(prev_trainer).items():
+                setattr(self, key, value)
+            return
+
         self.params = params
         self.label_map = awe.training.context.LabelMap()
         use_gpu = self.params.use_gpu and torch.cuda.is_available()
         self.device = torch.device('cuda:0' if use_gpu else 'cpu')
         self.evaluator = awe.model.eval.Evaluator(self.label_map)
-        self.running_loss = collections.defaultdict(float)
-        self.metrics = collections.defaultdict(dict)
         self.pretrained = None
         self.extractor = awe.features.extraction.Extractor(self.params)
         self.sampler = awe.data.sampling.Sampler(self)
@@ -140,7 +155,6 @@ class Trainer:
 
     def train(self):
         self._reset_loop()
-        self.running_loss.clear()
         self.optim = self.model.create_optimizer()
         train_run = RunInput(self.train_loader, 'train')
         val_run = RunInput(self.val_loader, 'val')
