@@ -9,6 +9,7 @@ import awe.data.graph.dom
 
 if TYPE_CHECKING:
     import awe.features.extraction
+    import awe.model.classifier
 
 
 class WordIdentifiers(awe.features.feature.Feature):
@@ -36,13 +37,15 @@ class WordIdentifiers(awe.features.feature.Feature):
     def initialize(self):
         return self.extractor.context.max_num_words
 
-    def compute(self, node: awe.data.graph.dom.Node):
+    def compute(self, batch: 'awe.model.classifier.ModelInput'):
         # Get word token indices.
-        result = torch.zeros(self.extractor.context.max_num_words, dtype=torch.int32)
-        if node.is_text:
-            for i, token in enumerate(self.tokenizer(node.text)):
-                if i >= self.extractor.context.max_num_words:
-                    break
-                # Indices start at 1; 0 is used for unknown and pad words.
-                result[i] = self.glove.get_index(token, default=-1) + 1
+        result = torch.zeros(len(batch), self.extractor.context.max_num_words,
+            dtype=torch.int32)
+        for idx, node in enumerate(batch):
+            if node.is_text:
+                for i, token in enumerate(self.tokenizer(node.text)):
+                    if i >= self.extractor.context.max_num_words:
+                        break
+                    # Indices start at 1; 0 is used for unknown and pad words.
+                    result[idx, i] = self.glove.get_index(token, default=-1) + 1
         return result

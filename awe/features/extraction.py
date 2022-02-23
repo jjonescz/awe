@@ -17,8 +17,8 @@ class Extractor:
         self.params = params
         self.context = awe.features.context.RootContext()
         self.features = [
-            awe.features.dom.HtmlTag(self),
-            #awe.features.text.WordIdentifiers(self),
+            #awe.features.dom.HtmlTag(self),
+            awe.features.text.WordIdentifiers(self),
         ]
 
     def prepare_page(self, page_dom: awe.data.graph.dom.Dom):

@@ -7,6 +7,8 @@ import torch.nn
 import awe.data.graph.dom
 import awe.features.dom
 import awe.features.extraction
+import awe.data.glove
+import awe.model.word_lstm
 
 if TYPE_CHECKING:
     import awe.training.trainer
@@ -48,6 +50,10 @@ class Model(torch.nn.Module):
             )
             input_features += embedding_dim
 
+        if self.trainer.params.use_lstm:
+            self.lstm = awe.model.word_lstm.WordLstm(self)
+            input_features += self.lstm.out_dim
+
         # Classification head
         D = 64
         num_labels = len(self.trainer.label_map.id_to_label) + 1
@@ -83,6 +89,9 @@ class Model(torch.nn.Module):
                 device=self.trainer.device
             ) # [N]
             x = self.tag_embedding(tag_ids) # [N, embedding_dim]
+
+        if self.trainer.params.use_lstm:
+            x = self.lstm(batch)
 
         # Classify features.
         x = self.head(x) # [N, num_labels]

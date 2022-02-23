@@ -23,6 +23,16 @@ class Params:
     eval_every_n_steps: Optional[int] = 50
     use_gpu: bool = True
 
+    # Word vectors
+    freeze_word_vectors: bool = True
+    pretrained_word_embeddings: bool = True
+
+    # LSTM
+    use_lstm: bool = False
+    lstm_dim: int = 100
+    lstm_args: Optional[dict] = None
+    filter_node_words: bool = False
+
     # Features
     cutoff_words: Optional[int] = 15
     """
