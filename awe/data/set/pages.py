@@ -10,6 +10,11 @@ if TYPE_CHECKING:
 
 
 @dataclasses.dataclass
+class ClearCacheRequest:
+    dom: bool = True
+    labels: bool = True
+
+@dataclasses.dataclass
 class Dataset:
     name: str
 
@@ -24,6 +29,10 @@ class Dataset:
             for v in self.verticals
         )
         return get_all_pages(page_lists, zip_lists=zip_verticals)
+
+    def clear_cache(self, request: ClearCacheRequest):
+        for page in self.get_all_pages():
+            page.clear_cache(request)
 
 @dataclasses.dataclass
 class Vertical:
@@ -71,6 +80,12 @@ class Page(abc.ABC):
         if self._dom is None:
             self._dom = awe.data.graph.dom.Dom(self)
         return self._dom
+
+    def clear_cache(self, request: ClearCacheRequest):
+        if request.dom:
+            self._dom = None
+        if request.labels:
+            self._labels = None
 
     def get_html_text(self) -> str:
         """Obtains HTML of the page as text."""

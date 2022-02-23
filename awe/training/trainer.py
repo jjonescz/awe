@@ -92,6 +92,7 @@ class Trainer:
         pass
 
     def load_dataset(self):
+        self.ds = None # release memory used by previously-loaded dataset
         self.ds = awe.data.set.swde.Dataset(suffix='-exact')
 
     def load_data(self):
