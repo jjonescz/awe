@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 import pandas as pd
 
 import awe.data.graph.dom
+import awe.data.graph.pred
 import awe.data.set.pages
 import awe.model.classifier
 import awe.utils
@@ -17,21 +18,22 @@ class Decoder:
 
     def __init__(self, trainer: 'awe.training.trainer.Trainer'):
         self.trainer = trainer
+        self.pred_set = awe.data.graph.pred.PredictionSet(self.trainer)
 
     def decode(self, preds: list[awe.model.classifier.Prediction]):
-        # Get all pages in preds.
-        pages = {
-            node.dom.page
-            for pred in preds
-            for node in pred.batch
-        }
+        # Gather all node predictions.
+        for pred in preds:
+            self.pred_set.add_batch(pred)
 
         return pd.DataFrame(
-            self.decode_one(page)
-            for page in pages
+            self.decode_one(page, page_pred)
+            for page, page_pred in self.pred_set.preds.items()
         )
 
-    def decode_one(self, page: awe.data.set.pages.Page):
+    def decode_one(self,
+        page: awe.data.set.pages.Page,
+        page_pred: awe.data.graph.pred.PredictedPage
+    ):
         d = {
             # 'vertical': page.website.vertical.name,
             # 'website': page.website.name,
@@ -43,9 +45,9 @@ class Decoder:
         for label_key, labeled_nodes in page_dom.labeled_nodes.items():
             d[f'gold_{label_key}'] = [self.decode_node(n) for n in labeled_nodes]
 
-            # Sort by most confident predictions.
+            # Sort predictions by most confident.
             pred_nodes = sorted(
-                page_dom.node_predictions.get(label_key, ()),
+                page_pred.preds.get(label_key, ()),
                 key=lambda p: p.confidence,
                 reverse=True,
             )
@@ -57,5 +59,5 @@ class Decoder:
     def decode_node(self, node: awe.data.graph.dom.Node):
         return node.text if node.is_text else f'<{node.html_tag}>'
 
-    def decode_node_pred(self, pred: awe.data.graph.dom.NodePrediction):
+    def decode_node_pred(self, pred: awe.data.graph.pred.NodePrediction):
         return f'{self.decode_node(pred.node)}[{pred.confidence:.2f}]'

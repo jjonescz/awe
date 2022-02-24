@@ -27,9 +27,7 @@ class PredictedPage:
         self.preds = collections.defaultdict(list)
 
     def add(self, label_key: str, pred: NodePrediction):
-        l = self.preds[label_key]
-        l.append(pred)
-        l.sort(key=lambda p: p.confidence, reverse=True)
+        self.preds[label_key].append(pred)
 
     def increment(self):
         self.num_predicted += 1
@@ -70,10 +68,10 @@ class PredictionSet:
         for idx in torch.nonzero(pred_labels):
             label_id = pred_labels[idx]
             label_key = self.trainer.label_map.id_to_label[label_id.item()]
-            pred = NodePrediction(
+            node_pred = NodePrediction(
                 node=pred.batch[idx.item()],
                 confidence=pred.outputs.logits[idx, label_id].item()
             )
-            self.add(label_key=label_key, pred=pred)
+            self.add(label_key=label_key, pred=node_pred)
         for node in pred.batch:
             self.increment(node)
