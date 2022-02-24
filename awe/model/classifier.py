@@ -41,7 +41,8 @@ class Model(torch.nn.Module):
         input_features = 0
 
         # HTML tag name embedding
-        if self.trainer.extractor.has_feature(awe.features.dom.HtmlTag):
+        self.html_tag = self.trainer.extractor.get_feature(awe.features.dom.HtmlTag)
+        if self.html_tag is not None:
             num_html_tags = len(self.trainer.extractor.context.html_tags) + 1
             embedding_dim = 32
             self.tag_embedding = torch.nn.Embedding(
@@ -79,9 +80,8 @@ class Model(torch.nn.Module):
 
     def forward(self, batch: ModelInput) -> ModelOutput:
         # Embed HTML tag names.
-        html_tag = self.trainer.extractor.get_feature(awe.features.dom.HtmlTag)
-        if html_tag is not None:
-            tag_ids = html_tag.compute(batch) # [N]
+        if self.html_tag is not None:
+            tag_ids = self.html_tag.compute(batch) # [N]
             x = self.tag_embedding(tag_ids) # [N, embedding_dim]
 
         if self.trainer.params.use_lstm:
