@@ -17,7 +17,7 @@ class Version:
     @staticmethod
     def _iterate_all():
         for dirname in os.listdir(LOG_DIR):
-            match = re.match(r'(\d+)-(.+)', dirname)
+            match = re.match(r'(\d+)-(.*)', dirname)
             if match is not None:
                 number = int(match.group(1))
                 name = match.group(2)
