@@ -208,7 +208,7 @@ class PickleWebsite(Website):
         for idx in range(self.page_count):
             yield PicklePage(website=self, index=idx)
 
-@dataclasses.dataclass
+@dataclasses.dataclass(eq=False)
 class Page(awe.data.set.pages.Page):
     website: Website
     _url: Optional[str] = dataclasses.field(repr=False, init=False, default=None)

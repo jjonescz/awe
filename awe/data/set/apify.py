@@ -93,7 +93,7 @@ class Website(awe.data.set.pages.Website):
     def dataset_pickle_path(self):
         return f'{self.dir_path}/dataset.pkl'
 
-@dataclasses.dataclass
+@dataclasses.dataclass(eq=False)
 class Page(awe.data.set.pages.Page):
     website: Website
     index: int = None

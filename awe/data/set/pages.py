@@ -62,7 +62,7 @@ class Website:
     prev_page_count: int = dataclasses.field(repr=False, default=None)
     page_count: int = dataclasses.field(repr=False, default=None)
 
-@dataclasses.dataclass
+@dataclasses.dataclass(eq=False)
 class Page(abc.ABC):
     website: Website = dataclasses.field(repr=False)
     index: int = dataclasses.field(repr=False, default=None)
