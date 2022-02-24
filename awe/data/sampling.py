@@ -30,7 +30,7 @@ class Sampler:
         return result
 
     def get_nodes_for_page(self, page: awe.data.set.pages.Page) -> list[Sample]:
-        if page.dom.root is None:
+        if page.create_dom().root is None:
             page.dom.init_nodes()
 
             page.dom.init_labels()

@@ -98,10 +98,14 @@ class Page(abc.ABC):
     @property
     def dom(self):
         if self._dom is None:
-            self._dom = awe.data.graph.dom.Dom(self)
+            raise RuntimeError(f'Page DOM has not been created ({self.url!r}).')
         return self._dom
 
-    def try_get_dom(self):
+    def create_dom(self):
+        # Note that creating page DOM can be memory consuming (especially if
+        # done for many pages), hence this method which makes it explicit.
+        if self._dom is None:
+            self._dom = awe.data.graph.dom.Dom(self)
         return self._dom
 
     def clear_cache(self, request: ClearCacheRequest):
