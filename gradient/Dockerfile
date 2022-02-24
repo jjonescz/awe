@@ -1,5 +1,6 @@
 # Inspired by
 # https://github.com/Paperspace/fastai-docker/blob/master/fastai-v4/Dockerfile.
+# Docker image page: https://hub.docker.com/r/nvidia/cuda.
 FROM nvidia/cuda:9.2-base-ubuntu16.04
 
 ENV LANG C.UTF-8
