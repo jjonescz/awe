@@ -39,9 +39,9 @@ class F1Metrics:
             f1 = 2 * (precision * recall) / (precision + recall)
         return F1Metrics(precision, recall, f1)
 
-    def to_dict(self, prefix: str = ''):
+    def to_dict(self, prefix: str = '', postfix: str = ''):
         return {
-            f'{prefix}precision': self.precision,
-            f'{prefix}recall': self.recall,
-            f'{prefix}f1': self.f1,
+            f'{prefix}precision{postfix}': self.precision,
+            f'{prefix}recall{postfix}': self.recall,
+            f'{prefix}f1{postfix}': self.f1,
         }

@@ -54,10 +54,10 @@ class Evaluation:
     def __init__(self, evaluator: Evaluator):
         self.evaluator = evaluator
         self.metrics = collections.defaultdict(FloatMetric)
-        self.nodes = Metrics(evaluator, [
-            torchmetrics.Accuracy(ignore_index=0),
-            torchmetrics.F1(ignore_index=0)
-        ])
+        self.nodes = Metrics(evaluator, {
+            'acc': torchmetrics.Accuracy(ignore_index=0),
+            'f1': torchmetrics.F1(ignore_index=0)
+        }, postfix='/node')
 
     def clear(self):
         self.metrics.clear()
@@ -95,12 +95,20 @@ class Evaluation:
                         else:
                             stats.false_positives += 1
 
-            # Average per-label stats.
-            page_metrics = awe.model.metrics.F1Metrics.from_vector(sum(
-                awe.model.metrics.F1Metrics.compute(stats).to_vector()
-                for stats in per_label.values()) / len(per_label))
+            # Log per-label stats.
+            per_label_metrics = {
+                label_key: awe.model.metrics.F1Metrics.compute(stats)
+                for label_key, stats in per_label.items()
+            }
+            for k, m in per_label_metrics.items():
+                metrics_dict.update(m.to_dict(postfix=f'/label_{k}'))
 
-            metrics_dict.update(page_metrics.to_dict(prefix='page_'))
+            # Average per-label stats to page-wide stats.
+            page_metrics = awe.model.metrics.F1Metrics.from_vector(sum(
+                metrics.to_vector() for metrics in per_label_metrics.values())
+                / len(per_label))
+
+            metrics_dict.update(page_metrics.to_dict(postfix='/page'))
 
         return metrics_dict
 

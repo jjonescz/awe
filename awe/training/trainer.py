@@ -163,9 +163,10 @@ class Trainer:
             prefix=desc if log else None,
         )
 
-    def create_model(self):
+    def create_evaluator(self):
         self.evaluator = awe.model.eval.Evaluator(self)
 
+    def create_model(self):
         use_gpu = self.params.use_gpu and torch.cuda.is_available()
         self.device = torch.device('cuda:0' if use_gpu else 'cpu')
         self.model = awe.model.classifier.Model(self).to(self.device)
