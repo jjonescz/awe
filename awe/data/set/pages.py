@@ -126,12 +126,13 @@ class Page(abc.ABC):
 
     def __eq__(self, other: 'Page'):
         return other and self.index_in_dataset == other.index_in_dataset \
-            and self.website.vertical.dataset == other.website.vertical.dataset
+            and self.website.vertical.dataset.name == other.website.vertical.dataset.name
 
     def __ne__(self, other: 'Page'):
         return not self.__eq__(other)
 
     def __hash__(self):
+        # Usually, dataset is not different so we don't bother hashing it.
         return self.index_in_dataset
 
 def get_all_pages(page_lists: list[list[Page]], *, zip_lists: bool = False):
