@@ -7,12 +7,13 @@ import awe.data.graph.dom
 import awe.features.context
 
 if TYPE_CHECKING:
-    import awe.features.extraction
+    import awe.model.classifier
+    import awe.training.trainer
 
 
 class Feature(abc.ABC):
-    def __init__(self, extractor: 'awe.features.extraction.Extractor'):
-        self.extractor = extractor
+    def __init__(self, trainer: 'awe.training.trainer.Trainer'):
+        self.trainer = trainer
         self.__post_init__()
 
     def __post_init__(self):
@@ -26,14 +27,9 @@ class Feature(abc.ABC):
         features. Can be used for example to populate a global word dictionary.
         """
 
-    @abc.abstractmethod
-    def initialize(self) -> int:
-        """
-        Work needed to be done so that this feature can be computed.
-
-        Returns length of the feature vector that will be `compute`d.
-        """
+    def initialize(self):
+        """Work needed to be done so that this feature can be computed."""
 
     @abc.abstractmethod
-    def compute(self, node: awe.data.graph.dom.Node) -> torch.FloatTensor:
-        """Computes a feature vector for the given `node`."""
+    def compute(self, batch: 'awe.model.classifier.ModelInput') -> torch.FloatTensor:
+        """Computes a feature vector for the given `batch` of nodes."""

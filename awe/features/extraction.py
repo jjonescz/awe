@@ -1,4 +1,4 @@
-from typing import Optional, TypeVar
+from typing import TYPE_CHECKING, Optional, TypeVar
 
 import awe.data.glove
 import awe.data.graph.dom
@@ -8,17 +8,20 @@ import awe.features.dom
 import awe.features.text
 import awe.training.params
 
+if TYPE_CHECKING:
+    import awe.training.trainer
+
 T = TypeVar('T')
 
 class Extractor:
     """Extracts features."""
 
-    def __init__(self, params: awe.training.params.Params):
-        self.params = params
+    def __init__(self, trainer: 'awe.training.trainer.Trainer'):
+        self.trainer = trainer
         self.context = awe.features.context.RootContext()
         self.features = [
-            #awe.features.dom.HtmlTag(self),
-            awe.features.text.WordIdentifiers(self),
+            #awe.features.dom.HtmlTag(trainer),
+            awe.features.text.WordIdentifiers(trainer),
         ]
 
     def prepare_page(self, page_dom: awe.data.graph.dom.Dom):

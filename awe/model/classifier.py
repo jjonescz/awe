@@ -81,13 +81,7 @@ class Model(torch.nn.Module):
         # Embed HTML tag names.
         html_tag = self.trainer.extractor.get_feature(awe.features.dom.HtmlTag)
         if html_tag is not None:
-            tag_ids = torch.tensor(
-                [
-                    html_tag.compute(node)
-                    for node in batch
-                ],
-                device=self.trainer.device
-            ) # [N]
+            tag_ids = html_tag.compute(batch) # [N]
             x = self.tag_embedding(tag_ids) # [N, embedding_dim]
 
         if self.trainer.params.use_lstm:

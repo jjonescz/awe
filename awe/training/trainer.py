@@ -96,7 +96,7 @@ class Trainer:
 
     def load_data(self):
         self.label_map = awe.training.context.LabelMap()
-        self.extractor = awe.features.extraction.Extractor(self.params)
+        self.extractor = awe.features.extraction.Extractor(self)
         self.sampler = awe.data.sampling.Sampler(self)
 
         # Load websites from one vertical.
