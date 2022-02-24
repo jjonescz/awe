@@ -1,6 +1,7 @@
 import dataclasses
 from typing import TYPE_CHECKING, Callable, Optional
 
+import awe.data.graph.pred
 import awe.data.parsing
 import awe.data.html_utils
 
@@ -14,8 +15,6 @@ class Dom:
     nodes: Optional[list['Node']] = None
     labeled_parsed_nodes: dict[str, list[awe.data.parsing.Node]]
     labeled_nodes: dict[str, list['Node']]
-    node_predictions: dict[str, list['NodePrediction']]
-    num_predicted_nodes = 0
 
     def __init__(self,
         page: 'awe.data.set.pages.Page'
@@ -23,7 +22,6 @@ class Dom:
         self.page = page
         self.labeled_parsed_nodes = {}
         self.labeled_nodes = {}
-        self.node_predictions = {}
         self.tree = awe.data.parsing.parse_html(page.get_html_text())
 
     def init_nodes(self):
@@ -40,10 +38,6 @@ class Dom:
 
         for node in self.nodes:
             node.init_labels()
-
-    def clear_predictions(self):
-        self.node_predictions.clear()
-        self.num_predicted_nodes = 0
 
 @dataclasses.dataclass
 class Node:
@@ -99,15 +93,17 @@ class Node:
             if deep_predicate(node):
                 stack.extend(node.children)
 
-    def predict_as(self, label_key: str, confidence: float):
+    def predict_as(self,
+        pred_set: awe.data.graph.pred.PredictionSet,
+        label_key: str,
+        confidence: float
+    ):
         """Marks the node as predicted with the given `label_key`."""
-        l = self.dom.node_predictions.setdefault(label_key, [])
-        l.append(NodePrediction(node=self, confidence=confidence))
 
-    def mark_predicted(self):
-        self.dom.num_predicted_nodes += 1
+        pred_set.add(label_key, awe.data.graph.pred.NodePrediction(
+            node=self,
+            confidence=confidence
+        ))
 
-@dataclasses.dataclass
-class NodePrediction:
-    node: Node
-    confidence: float
+    def mark_predicted(self, pred_set: awe.data.graph.pred.PredictionSet):
+        pred_set.increment(self)

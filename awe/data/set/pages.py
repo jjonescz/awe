@@ -40,10 +40,6 @@ class Dataset:
         for page in self.get_all_pages():
             page.clear_cache(request)
 
-    def clear_predictions(self):
-        for page in self.get_all_pages():
-            page.clear_predictions()
-
 @dataclasses.dataclass
 class Vertical:
     dataset: Dataset
@@ -113,10 +109,6 @@ class Page(abc.ABC):
             self._dom = None
         if request.labels:
             self._labels = None
-
-    def clear_predictions(self):
-        if self._dom is not None:
-            self._dom.clear_predictions()
 
     def get_html_text(self) -> str:
         """Obtains HTML of the page as text."""

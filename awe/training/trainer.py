@@ -24,6 +24,7 @@ import awe.training.params
 
 @dataclasses.dataclass
 class RunInput:
+    # Currently unused, but might be useful in the future.
     pages: list[awe.data.set.pages.Page]
 
     loader: torch.utils.data.DataLoader
@@ -163,10 +164,8 @@ class Trainer:
             prefix=desc if log else None,
         )
 
-    def create_evaluator(self):
-        self.evaluator = awe.model.eval.Evaluator(self)
-
     def create_model(self):
+        self.evaluator = awe.model.eval.Evaluator(self)
         use_gpu = self.params.use_gpu and torch.cuda.is_available()
         self.device = torch.device('cuda:0' if use_gpu else 'cpu')
         self.model = awe.model.classifier.Model(self).to(self.device)
@@ -186,7 +185,6 @@ class Trainer:
         self.step = 0
         self.train_progress = None
         self.val_progress = None
-        self.ds.clear_predictions()
 
     def _finalize(self):
         if self.writer is not None:
@@ -280,15 +278,14 @@ class Trainer:
             evaluation.add(awe.model.classifier.Prediction(batch, outputs))
             self.step += 1
             self.val_progress.update()
-        return self._eval(run, evaluation, page_wide=True)
+        return self._eval(run, evaluation)
 
     def _eval(self,
         run: RunInput,
-        evaluation: awe.model.eval.Evaluation,
-        page_wide: bool = False
+        evaluation: awe.model.eval.Evaluation
     ):
         # Log aggregate metrics to TensorBoard.
-        metrics = evaluation.compute(pages=run.pages if page_wide else None)
+        metrics = evaluation.compute()
         if run.prefix is not None:
             for k, v in metrics.items():
                 self.writer.add_scalar(f'{run.prefix}_{k}', v, self.step)
