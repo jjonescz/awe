@@ -15,6 +15,7 @@ import awe.data.set.pages
 import awe.data.set.swde
 import awe.features.extraction
 import awe.model.classifier
+import awe.model.decoding
 import awe.model.eval
 import awe.training.context
 import awe.training.logging
@@ -164,7 +165,13 @@ class Trainer:
         self.device = torch.device('cuda:0' if use_gpu else 'cpu')
         self.model = awe.model.classifier.Model(self).to(self.device)
 
+    def restore_latest(self):
+        version = awe.training.logging.Version.get_latest()
+        *_, checkpoint = version.get_checkpoints()
+        self.restore(checkpoint)
+
     def restore(self, checkpoint: awe.training.logging.Checkpoint):
+        print(f'Restoring {checkpoint.file_path!r}...')
         self.model.load_state_dict(torch.load(checkpoint.file_path))
 
     def _reset_loop(self):
@@ -295,4 +302,4 @@ class Trainer:
         return predictions
 
     def decode(self, preds: list[awe.model.classifier.Prediction]):
-        raise NotImplementedError()
+        return awe.model.decoding.Decoder(self).decode(preds)

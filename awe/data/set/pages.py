@@ -99,6 +99,9 @@ class Page(abc.ABC):
             self._dom = awe.data.graph.dom.Dom(self)
         return self._dom
 
+    def try_get_dom(self):
+        return self._dom
+
     def clear_cache(self, request: ClearCacheRequest):
         if request.dom:
             self._dom = None
@@ -118,6 +121,16 @@ class Page(abc.ABC):
     @abc.abstractmethod
     def get_labels(self) -> 'awe.data.set.labels.PageLabels':
         """Groundtruth labeling for the page."""
+
+    def __eq__(self, other: 'Page'):
+        return other and self.index_in_dataset == other.index_in_dataset \
+            and self.website.vertical.dataset == other.website.vertical.dataset
+
+    def __ne__(self, other: 'Page'):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        return self.index_in_dataset
 
 def get_all_pages(page_lists: list[list[Page]], *, zip_lists: bool = False):
     if zip_lists:
