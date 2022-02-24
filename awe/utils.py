@@ -132,7 +132,7 @@ def to_camel_case(snake_case: str):
     parts = snake_case.split('_')
     return parts[0] + ''.join(p.title() for p in parts[1:])
 
-def reload(*modules: list[str], exclude: list[str]):
+def reload(*modules: list[str], exclude: list[str] = ()):
     for module in modules:
         # Inspired by https://stackoverflow.com/a/51074507.
         for k, v in list(sys.modules.items()):
