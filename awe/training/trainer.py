@@ -34,7 +34,7 @@ class RunInput:
     """
 
 class Trainer:
-    ds: awe.data.set.swde.Dataset
+    ds: awe.data.set.swde.Dataset = None
     label_map: awe.training.context.LabelMap
     extractor: awe.features.extraction.Extractor
     sampler: awe.data.sampling.Sampler
@@ -92,8 +92,13 @@ class Trainer:
         pass
 
     def load_dataset(self):
-        self.ds = None # release memory used by previously-loaded dataset
-        self.ds = awe.data.set.swde.Dataset(suffix='-exact')
+        state = None
+        if self.ds is not None:
+            # Preserve dataset state.
+            state = self.ds.get_state()
+            # Release memory used by previously-loaded dataset.
+            self.ds = None
+        self.ds = awe.data.set.swde.Dataset(suffix='-exact', state=state)
 
     def load_data(self):
         self.label_map = awe.training.context.LabelMap()

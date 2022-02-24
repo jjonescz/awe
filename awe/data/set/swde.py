@@ -40,29 +40,37 @@ class Dataset(awe.data.set.pages.Dataset):
     verticals: list['Vertical'] = dataclasses.field(repr=False)
     suffix: Optional[str] = None
 
-    def __init__(self, suffix: Optional[str] = None):
+    def __init__(self,
+        suffix: Optional[str] = None,
+        state: Optional[dict[str, pd.DataFrame]] = None
+    ):
         super().__init__(
             name=f'swde{suffix or ""}',
             dir_path=DATA_DIR,
         )
         self.suffix = suffix
-        self.verticals = list(self._iterate_verticals())
+        self.verticals = list(self._iterate_verticals(state=state or {}))
 
-    def _iterate_verticals(self):
+    def _iterate_verticals(self, state: dict[str, pd.DataFrame]):
         page_count = 0
         for name in tqdm(VERTICAL_NAMES, desc='verticals'):
             vertical = Vertical(
                 dataset=self,
                 name=name,
-                prev_page_count=page_count
+                prev_page_count=page_count,
+                df=state.get(name),
             )
             yield vertical
             page_count += vertical.page_count
+
+    def get_state(self):
+        return { v.name: v.df for v in self.verticals }
 
 @dataclasses.dataclass
 class Vertical(awe.data.set.pages.Vertical):
     dataset: Dataset
     websites: list['Website'] = dataclasses.field(repr=False, default_factory=list)
+    df: pd.DataFrame = dataclasses.field(repr=False, default=None)
 
     def __post_init__(self):
         if not os.path.exists(self.dir_path):
@@ -71,25 +79,28 @@ class Vertical(awe.data.set.pages.Vertical):
             self.page_count = 0
             return
 
-        # Convert vertical to a DataFrame. It is faster than reading from files
-        # (especially in the cloud where the files are usually in a mounted file
-        # system which can be really slow).
-        if not os.path.exists(self.pickle_path):
-            pages = [
-                page
-                for website in self._iterate_websites(FileWebsite)
-                for page in website.pages
-            ]
-            self.df = pd.DataFrame(
-                (
-                    page.to_row()
-                    for page in tqdm(pages, desc=self.pickle_path)
-                ),
-                index=[page.index for page in pages]
-            )
-            self.df.to_pickle(self.pickle_path)
+        if self.df is not None:
+            print(f'Reusing state for {self.dir_path}.')
         else:
-            self.df = pd.read_pickle(self.pickle_path)
+            if not os.path.exists(self.pickle_path):
+                # Convert vertical to a DataFrame. It is faster than reading
+                # from files (especially in the cloud where the files are
+                # usually in a mounted file system which can be really slow).
+                pages = [
+                    page
+                    for website in self._iterate_websites(FileWebsite)
+                    for page in website.pages
+                ]
+                self.df = pd.DataFrame(
+                    (
+                        page.to_row()
+                        for page in tqdm(pages, desc=self.pickle_path)
+                    ),
+                    index=[page.index for page in pages]
+                )
+                self.df.to_pickle(self.pickle_path)
+            else:
+                self.df = pd.read_pickle(self.pickle_path)
 
         self.websites = list(self._iterate_websites(PickleWebsite))
         self.page_count = len(self.df)
