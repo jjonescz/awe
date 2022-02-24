@@ -121,7 +121,7 @@ class Evaluation:
             label_key = self.evaluator.trainer.label_map.id_to_label[label_id.item()]
             pred.batch[idx.item()].predict_as(
                 label_key=label_key,
-                confidence=pred.outputs.logits[idx, label_id]
+                confidence=pred.outputs.logits[idx, label_id].item()
             )
         for node in pred.batch:
             node.mark_predicted()

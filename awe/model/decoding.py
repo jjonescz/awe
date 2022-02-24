@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     import awe.training.trainer
 
 
+# pylint: disable=no-self-use
 class Decoder:
     """Can decode model's predictions for human inspection."""
 
@@ -40,7 +41,7 @@ class Decoder:
 
         page_dom = page.try_get_dom()
         for label_key, labeled_nodes in page_dom.labeled_nodes.items():
-            d[f'gold_{label_key}'] = self.decode_nodes(labeled_nodes)
+            d[f'gold_{label_key}'] = [self.decode_node(n) for n in labeled_nodes]
 
             # Sort by most confident predictions.
             pred_nodes = sorted(
@@ -49,12 +50,12 @@ class Decoder:
                 reverse=True,
             )
 
-            d[f'pred_{label_key}'] = self.decode_nodes(pred_nodes)
+            d[f'pred_{label_key}'] = [self.decode_node_pred(n) for n in pred_nodes]
 
         return d
 
-    def decode_nodes(self, nodes: list[awe.data.graph.dom.Node]):
-        return [
-            node.text if node.is_text else f'<{node.html_tag}>'
-            for node in nodes
-        ]
+    def decode_node(self, node: awe.data.graph.dom.Node):
+        return node.text if node.is_text else f'<{node.html_tag}>'
+
+    def decode_node_pred(self, pred: awe.data.graph.dom.NodePrediction):
+        return f'{self.decode_node(pred.node)}[{pred.confidence:.2f}]'
