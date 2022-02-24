@@ -41,8 +41,8 @@ class Model(torch.nn.Module):
         input_features = 0
 
         # HTML tag name embedding
-        num_html_tags = len(self.trainer.extractor.context.html_tags) + 1
-        if num_html_tags > 0:
+        if self.trainer.extractor.has_feature(awe.features.dom.HtmlTag):
+            num_html_tags = len(self.trainer.extractor.context.html_tags) + 1
             embedding_dim = 32
             self.tag_embedding = torch.nn.Embedding(
                 num_html_tags,
@@ -85,7 +85,7 @@ class Model(torch.nn.Module):
             x = self.tag_embedding(tag_ids) # [N, embedding_dim]
 
         if self.trainer.params.use_lstm:
-            x = self.lstm(batch)
+            x = self.lstm(batch) # [N, lstm_dim]
 
         # Classify features.
         x = self.head(x) # [N, num_labels]
