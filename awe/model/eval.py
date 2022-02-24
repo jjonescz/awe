@@ -1,7 +1,6 @@
 import collections
 from typing import TYPE_CHECKING
 
-import torch
 import torchmetrics
 
 import awe.data.graph.pred
@@ -60,7 +59,7 @@ class Evaluation:
 
     def __init__(self, evaluator: Evaluator):
         self.evaluator = evaluator
-        self.pred_set = awe.data.graph.pred.PredictionSet()
+        self.pred_set = awe.data.graph.pred.PredictionSet(evaluator.trainer)
         self.metrics = collections.defaultdict(FloatMetric)
         self.nodes = Metrics(evaluator, {
             'acc': torchmetrics.Accuracy(ignore_index=0),
@@ -132,16 +131,5 @@ class Evaluation:
 
     def add_slow(self, pred: 'awe.model.classifier.Prediction'):
         self.nodes.update(preds=pred.outputs.logits, target=pred.outputs.gold_labels)
-
-        # Save all predicted nodes.
-        pred_labels = pred.outputs.get_pred_labels()
-        for idx in torch.nonzero(pred_labels):
-            label_id = pred_labels[idx]
-            label_key = self.evaluator.trainer.label_map.id_to_label[label_id.item()]
-            pred.batch[idx.item()].predict_as(self.pred_set,
-                label_key=label_key,
-                confidence=pred.outputs.logits[idx, label_id].item()
-            )
-        for node in pred.batch:
-            node.mark_predicted(self.pred_set)
+        self.pred_set.add_batch(pred)
         self.pred_set_dirty = True

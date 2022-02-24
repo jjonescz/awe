@@ -2,10 +2,14 @@ import collections
 import dataclasses
 from typing import TYPE_CHECKING
 
+import torch
+
 import awe.data.set.pages
+import awe.model.classifier
 
 if TYPE_CHECKING:
     import awe.data.graph.dom
+    import awe.training.trainer
 
 
 @dataclasses.dataclass
@@ -40,7 +44,8 @@ class PredictionSet:
 
     preds: dict[awe.data.set.pages.Page, PredictedPage]
 
-    def __init__(self):
+    def __init__(self, trainer: 'awe.training.trainer.Trainer'):
+        self.trainer = trainer
         self.preds = {}
 
     def add(self, label_key: str, pred: NodePrediction):
@@ -59,3 +64,16 @@ class PredictionSet:
     def clear(self):
         for pred_page in self.preds.values():
             pred_page.clear()
+
+    def add_batch(self, pred: awe.model.classifier.Prediction):
+        pred_labels = pred.outputs.get_pred_labels()
+        for idx in torch.nonzero(pred_labels):
+            label_id = pred_labels[idx]
+            label_key = self.trainer.label_map.id_to_label[label_id.item()]
+            pred = NodePrediction(
+                node=pred.batch[idx.item()],
+                confidence=pred.outputs.logits[idx, label_id].item()
+            )
+            self.add(label_key=label_key, pred=pred)
+        for node in pred.batch:
+            self.increment(node)

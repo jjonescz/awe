@@ -1,12 +1,10 @@
 import dataclasses
 from typing import TYPE_CHECKING, Callable, Optional
 
-import awe.data.graph.pred
-import awe.data.parsing
 import awe.data.html_utils
+import awe.data.parsing
 
 if TYPE_CHECKING:
-    import awe.data.set.labels
     import awe.data.set.pages
 
 
@@ -92,18 +90,3 @@ class Node:
                 yield node
             if deep_predicate(node):
                 stack.extend(node.children)
-
-    def predict_as(self,
-        pred_set: awe.data.graph.pred.PredictionSet,
-        label_key: str,
-        confidence: float
-    ):
-        """Marks the node as predicted with the given `label_key`."""
-
-        pred_set.add(label_key, awe.data.graph.pred.NodePrediction(
-            node=self,
-            confidence=confidence
-        ))
-
-    def mark_predicted(self, pred_set: awe.data.graph.pred.PredictionSet):
-        pred_set.increment(self)
