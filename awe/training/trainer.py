@@ -168,11 +168,13 @@ class Trainer:
     def restore_latest(self):
         version = awe.training.logging.Version.get_latest()
         *_, checkpoint = version.get_checkpoints()
-        self.restore(checkpoint)
+        return self.restore(checkpoint)
 
     def restore(self, checkpoint: awe.training.logging.Checkpoint):
-        print(f'Restoring {checkpoint.file_path!r}...')
-        self.model.load_state_dict(torch.load(checkpoint.file_path))
+        print(f'Loading {checkpoint.file_path!r}...')
+        state_dict = torch.load(checkpoint.file_path)
+        print('Restoring model state...')
+        return self.model.load_state_dict(state_dict)
 
     def _reset_loop(self):
         self.step = 0
