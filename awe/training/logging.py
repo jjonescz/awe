@@ -2,6 +2,7 @@ import dataclasses
 import os
 import re
 import shutil
+import warnings
 
 from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 
@@ -37,13 +38,13 @@ class Version:
     @classmethod
     def delete_last(cls, name: str):
         """
-        If last version has the given `name` or no name, deletes it.
+        If the last version has the given `name`, deletes it. If it has no name,
+        keeps it (will be overwritten).
         """
 
         latest_version = cls.get_latest()
-        if latest_version is not None and (
-            latest_version.name in (name, '')
-        ):
+        if latest_version is not None and latest_version.name != '' \
+            and latest_version.name == name:
             latest_version.delete()
 
     @classmethod
@@ -55,6 +56,11 @@ class Version:
         latest_version = cls.get_latest()
         if latest_version is None:
             version = Version(1, name)
+        elif latest_version.name == '' and name == '':
+            # Overwrite empty version.
+            warnings.warn('Overwriting empty version ' + \
+                f'({latest_version.version_dir_name!r}).')
+            version = Version(latest_version.number, name)
         else:
             if latest_version.name == name:
                 raise RuntimeError(
