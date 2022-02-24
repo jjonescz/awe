@@ -7,6 +7,7 @@ import awe.features.context
 import awe.features.dom
 import awe.features.text
 import awe.training.params
+import awe.utils
 
 if TYPE_CHECKING:
     import awe.training.trainer
@@ -33,7 +34,7 @@ class Extractor:
 
     def get_feature(self, cls: type[T]) -> Optional[T]:
         for feature in self.features:
-            if isinstance(feature, cls):
+            if awe.utils.same_types(feature.__class__, cls):
                 return feature
         return None
 

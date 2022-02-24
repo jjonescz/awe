@@ -176,3 +176,9 @@ def test_tqdm():
 def init_notebook():
     change_dir_to_project_root()
     test_tqdm()
+
+def full_name(cls: type):
+    return f'{cls.__module__}.{cls.__name__}'
+
+def same_types(a: type, b: type):
+    return full_name(a) == full_name(b)
