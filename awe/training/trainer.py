@@ -203,8 +203,8 @@ class Trainer:
         self.optim = None
 
     def train(self,
-        train_progress_metrics: list[str] = ('loss',),
-        val_progress_metrics: list[str] = ('loss',)
+        train_progress_metrics: list[str] = ('loss', 'f1/page'),
+        val_progress_metrics: list[str] = ('loss', 'f1/page')
     ):
         self._reset_loop()
 
