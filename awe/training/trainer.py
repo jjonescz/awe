@@ -1,6 +1,6 @@
 import dataclasses
 import sys
-from typing import Optional
+from typing import Callable, Optional
 import warnings
 
 import numpy as np
@@ -33,6 +33,12 @@ class RunInput:
     """
     Prefix used in TensorBoard. When `None`, logging to TensorBoard is disabled.
     """
+
+    progress: Optional[Callable[[], tqdm]] = None
+
+    progress_metrics: list[str] = ()
+
+    progress_dict: Optional[dict[str]] = None
 
 class Trainer:
     ds: awe.data.set.swde.Dataset = None
@@ -194,11 +200,26 @@ class Trainer:
         if self.val_progress is not None:
             self.val_progress.close()
 
-    def train(self):
+    def train(self,
+        train_progress_metrics: list[str] = ('loss',),
+        val_progress_metrics: list[str] = ('loss',)
+    ):
         self._reset_loop()
         self.optim = self.model.create_optimizer()
-        train_run = RunInput(self.train_pages, self.train_loader, 'train')
-        val_run = RunInput(self.val_pages, self.val_loader, 'val')
+        train_run = RunInput(
+            pages=self.train_pages,
+            loader=self.train_loader,
+            prefix='train',
+            progress=lambda: self.train_progress,
+            progress_metrics=train_progress_metrics
+        )
+        val_run = RunInput(
+            pages=self.val_pages,
+            loader=self.val_loader,
+            prefix='val',
+            progress=lambda: self.val_progress,
+            progress_metrics=val_progress_metrics
+        )
         best_val_loss = sys.maxsize
         for epoch_idx in tqdm(range(self.params.epochs), desc='train'):
             train_metrics = self._train_epoch(train_run, val_run)
@@ -284,11 +305,31 @@ class Trainer:
         run: RunInput,
         evaluation: awe.model.eval.Evaluation
     ):
-        # Log aggregate metrics to TensorBoard.
+        # Compute aggregate metrics.
         metrics = evaluation.compute()
+
+        # Log to TensorBoard.
         if run.prefix is not None:
             for k, v in metrics.items():
                 self.writer.add_scalar(f'{run.prefix}_{k}', v, self.step)
+
+        # Update progress bar.
+        if run.progress is not None and len(run.progress_metrics) != 0:
+            progress_dict = {
+                k: v
+                for k in run.progress_metrics
+                if (v := metrics.get(k)) is not None
+            }
+
+            # Preserve previous progress metrics.
+            if run.progress_dict is not None:
+                run.progress_dict.update(progress_dict)
+                progress_dict = run.progress_dict
+            else:
+                run.progress_dict = progress_dict
+
+            run.progress().set_postfix(progress_dict)
+
         return metrics
 
     def validate(self, run: RunInput):
