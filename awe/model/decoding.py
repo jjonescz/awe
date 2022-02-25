@@ -41,8 +41,7 @@ class Decoder:
             'url': page.url
         }
 
-        page_dom = page.try_get_dom()
-        for label_key, labeled_nodes in page_dom.labeled_nodes.items():
+        for label_key, labeled_nodes in page.dom.labeled_nodes.items():
             d[f'gold_{label_key}'] = [self.decode_node(n) for n in labeled_nodes]
 
             # Sort predictions by most confident.
