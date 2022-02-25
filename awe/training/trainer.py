@@ -59,6 +59,7 @@ class Trainer:
     train_progress: Optional[tqdm] = None
     val_progress: Optional[tqdm] = None
     step: int
+    restored_state: Optional[dict[str]] = None
 
     def __init__(self,
         params: awe.training.params.Params,
@@ -183,9 +184,9 @@ class Trainer:
 
     def restore(self, checkpoint: awe.training.logging.Checkpoint):
         print(f'Loading {checkpoint.file_path!r}...')
-        state_dict = torch.load(checkpoint.file_path)
+        self.restored_state = torch.load(checkpoint.file_path)
         print('Restoring model state...')
-        return self.model.load_state_dict(state_dict)
+        return self.model.load_state_dict(self.restored_state['model'])
 
     def _reset_loop(self):
         self.step = 0
@@ -199,13 +200,26 @@ class Trainer:
             self.train_progress.close()
         if self.val_progress is not None:
             self.val_progress.close()
+        self.optim = None
 
     def train(self,
         train_progress_metrics: list[str] = ('loss',),
         val_progress_metrics: list[str] = ('loss',)
     ):
         self._reset_loop()
-        self.optim = self.model.create_optimizer()
+
+        if self.restored_state is not None:
+            print('Restoring training state...')
+            self.model.load_state_dict(self.restored_state['model'])
+            self.optim.load_state_dict(self.restored_state['optim'])
+            self.step = self.restored_state['step']
+            start_epoch_idx = self.restored_state['epoch'] + 1
+            best_val_loss = self.restored_state['best_val_loss']
+        else:
+            self.optim = self.model.create_optimizer()
+            start_epoch_idx = 0
+            best_val_loss = sys.maxsize
+
         train_run = RunInput(
             pages=self.train_pages,
             loader=self.train_loader,
@@ -220,8 +234,7 @@ class Trainer:
             progress=lambda: self.val_progress,
             progress_metrics=val_progress_metrics
         )
-        best_val_loss = sys.maxsize
-        for epoch_idx in tqdm(range(self.params.epochs), desc='train'):
+        for epoch_idx in tqdm(range(start_epoch_idx, self.params.epochs), desc='train'):
             train_metrics = self._train_epoch(train_run, val_run)
             val_metrics = self._validate_epoch(val_run)
 
@@ -244,7 +257,14 @@ class Trainer:
                 epoch_idx % self.params.save_every_n_epochs == 0
             ):
                 ckpt = self.version.create_checkpoint(epoch=epoch_idx, step=self.step)
-                torch.save(self.model.state_dict(), ckpt.file_path)
+                state = {
+                    'model': self.model.state_dict(),
+                    'optim': self.optim.state_dict(),
+                    'step': self.step,
+                    'epoch': epoch_idx,
+                    'best_val_loss': best_val_loss,
+                }
+                torch.save(state, ckpt.file_path)
         self._finalize()
 
     def _train_epoch(self, run: RunInput, val_run: RunInput):
