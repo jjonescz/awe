@@ -11,7 +11,7 @@ import awe.training.logging
 
 class TokenizerFamily(str, enum.Enum):
     custom = 'custom'
-    torch_text = 'torch_text'
+    torchtext = 'torchtext'
     transformers = 'transformers'
 
 @dataclasses.dataclass

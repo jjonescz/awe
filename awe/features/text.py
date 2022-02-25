@@ -59,7 +59,7 @@ class WordIdentifiers(awe.features.feature.Feature):
         family = params.tokenizer_family
         if family == awe.training.params.TokenizerFamily.custom:
             self.tokenize = basic_tokenize
-        if family == awe.training.params.TokenizerFamily.torch_text:
+        if family == awe.training.params.TokenizerFamily.torchtext:
             tokenizer = text_utils.get_tokenizer(params.tokenizer_id)
             self.tokenize = functools.partial(basic_tokenize,
                 tokenizer=tokenizer
