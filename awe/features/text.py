@@ -1,3 +1,5 @@
+import functools
+import re
 from typing import TYPE_CHECKING
 
 import torch
@@ -14,6 +16,40 @@ if TYPE_CHECKING:
     import awe.model.classifier
 
 
+# Inspired by `torchtext.data.utils._basic_english_normalize`.
+patterns = [r'\'',
+            r'\"',
+            r'\.',
+            r'<br \/>',
+            r',',
+            r'\(',
+            r'\)',
+            r'\!',
+            r'\?',
+            r'\;',
+            r'\:',
+            r'\s+',
+            r'\$']
+replacements = [' \'  ',
+                '',
+                ' . ',
+                ' ',
+                ' , ',
+                ' ( ',
+                ' ) ',
+                ' ! ',
+                ' ? ',
+                ' ',
+                ' ',
+                ' ',
+                ' $ ']
+patterns_dict = list((re.compile(p), r) for p, r in zip(patterns, replacements))
+def basic_tokenize(line: str):
+    line = line.lower()
+    for pattern_re, replaced_str in patterns_dict:
+        line = pattern_re.sub(replaced_str, line)
+    return line.split()
+
 class WordIdentifiers(awe.features.feature.Feature):
     """Identifiers of word tokens. Used for pre-trained GloVe embeddings."""
 
@@ -21,9 +57,13 @@ class WordIdentifiers(awe.features.feature.Feature):
         # Create tokenizer according to config.
         params = self.trainer.params
         family = params.tokenizer_family
+        if family == awe.training.params.TokenizerFamily.custom:
+            self.tokenize = basic_tokenize
         if family == awe.training.params.TokenizerFamily.torch_text:
             tokenizer = text_utils.get_tokenizer(params.tokenizer_id)
-            self.tokenize = tokenizer
+            self.tokenize = functools.partial(basic_tokenize,
+                tokenizer=tokenizer
+            )
         elif family == awe.training.params.TokenizerFamily.transformers:
             tokenizer = transformers.BertTokenizer.from_pretrained(
                 params.tokenizer_id

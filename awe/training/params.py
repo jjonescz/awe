@@ -10,6 +10,7 @@ import awe.training.logging
 
 
 class TokenizerFamily(str, enum.Enum):
+    custom = 'custom'
     torch_text = 'torch_text'
     transformers = 'transformers'
 
@@ -29,8 +30,8 @@ class Params:
     use_gpu: bool = True
 
     # Word vectors
-    tokenizer_family: TokenizerFamily = TokenizerFamily.torch_text
-    tokenizer_id: str = 'basic_english'
+    tokenizer_family: TokenizerFamily = TokenizerFamily.custom
+    tokenizer_id: str = ''
     freeze_word_vectors: bool = True
     pretrained_word_embeddings: bool = True
 
