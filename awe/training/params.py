@@ -1,4 +1,5 @@
 import dataclasses
+import enum
 import json
 import os
 import warnings
@@ -7,6 +8,10 @@ from typing import Optional
 import awe.data.constants
 import awe.training.logging
 
+
+class TokenizerFamily(str, enum.Enum):
+    torch_text = 'torch_text'
+    transformers = 'transformers'
 
 @dataclasses.dataclass
 class Params:
@@ -24,6 +29,8 @@ class Params:
     use_gpu: bool = True
 
     # Word vectors
+    tokenizer_family: TokenizerFamily = TokenizerFamily.torch_text
+    tokenizer_id: str = 'basic_english'
     freeze_word_vectors: bool = True
     pretrained_word_embeddings: bool = True
 

@@ -1,11 +1,13 @@
 from typing import TYPE_CHECKING
 
 import torch
+from torchtext.data import utils as text_utils
 import transformers
 
 import awe.features.feature
 import awe.data.glove
 import awe.data.graph.dom
+import awe.training.params
 
 if TYPE_CHECKING:
     import awe.features.extraction
@@ -16,11 +18,19 @@ class WordIdentifiers(awe.features.feature.Feature):
     """Identifiers of word tokens. Used for pre-trained GloVe embeddings."""
 
     def __post_init__(self):
-        self.tokenizer = transformers.BertTokenizer.from_pretrained('bert-base-uncased')
-        self.glove = awe.data.glove.LazyEmbeddings.get_or_create()
+        # Create tokenizer according to config.
+        params = self.trainer.params
+        family = params.tokenizer_family
+        if family == awe.training.params.TokenizerFamily.torch_text:
+            tokenizer = text_utils.get_tokenizer(params.tokenizer_id)
+            self.tokenize = tokenizer
+        elif family == awe.training.params.TokenizerFamily.transformers:
+            tokenizer = transformers.BertTokenizer.from_pretrained(
+                params.tokenizer_id
+            )
+            self.tokenize = tokenizer.tokenize
 
-    def tokenize(self, text: str):
-        return self.tokenizer.tokenize(text)
+        self.glove = awe.data.glove.LazyEmbeddings.get_or_create()
 
     def get_token_id(self, token: str):
         # Indices start at 1; 0 is used for unknown and pad words.
