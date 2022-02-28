@@ -74,9 +74,12 @@ class Dom:
                     # pylint: disable-next=cell-var-from-loop
                     key=lambda n: n.distance_to(node)
                 )
-                node.friends = set(closest_friends[:max_friends])
+                node.friends = closest_friends[:max_friends]
             else:
-                node.friends = friends
+                node.friends = list(friends)
+
+            # Keep nodes in DOM order.
+            node.friends.sort(key=lambda n: n.deep_index)
 
 # Setting `eq=False` makes the `Node` inherit hashing and equality functions
 # from `Object` (https://stackoverflow.com/a/53990477).
@@ -96,7 +99,7 @@ class Node:
     deep_index: Optional[int] = dataclasses.field(repr=False, default=None)
     """Iteration index of the node inside the `page`."""
 
-    friends: Optional[set['Node']] = dataclasses.field(repr=False, default=None)
+    friends: Optional[list['Node']] = dataclasses.field(repr=False, default=None)
     """
     Only set if the current node is a text node. Contains set of text nodes
     where distance to lowest common ancestor with the current node is less than
