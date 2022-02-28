@@ -145,7 +145,10 @@ class Trainer:
         print(f'{len(self.train_pages)=}, {len(self.val_pages)=}')
 
         # Create dataloaders.
-        self.train_loader = self.create_dataloader(self.train_pages, 'train', shuffle=True)
+        self.train_loader = self.create_dataloader(self.train_pages, 'train',
+            shuffle=True,
+            prepare=True,
+        )
         self.val_loader = self.create_dataloader(self.val_pages, 'val')
 
     def create_dataloader(self,
