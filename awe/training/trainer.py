@@ -110,6 +110,8 @@ class Trainer:
         self.ds = awe.data.set.swde.Dataset(suffix='-exact', state=state)
 
     def load_data(self):
+        """Creates features and loads data."""
+
         set_seed(42)
 
         self.label_map = awe.training.context.LabelMap()

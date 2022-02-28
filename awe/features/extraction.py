@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Optional, TypeVar
 import awe.data.glove
 import awe.data.graph.dom
 import awe.data.set.pages
-import awe.features.context
 import awe.features.dom
 import awe.features.text
 import awe.training.params
@@ -19,7 +18,6 @@ class Extractor:
 
     def __init__(self, trainer: 'awe.training.trainer.Trainer'):
         self.trainer = trainer
-        self.context = awe.features.context.RootContext()
         self.features = [
             #awe.features.dom.HtmlTag(trainer),
             awe.features.text.WordIdentifiers(trainer),

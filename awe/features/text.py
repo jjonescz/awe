@@ -53,6 +53,9 @@ def basic_tokenize(line: str):
 class WordIdentifiers(awe.features.feature.Feature):
     """Identifiers of word tokens. Used for pre-trained GloVe embeddings."""
 
+    max_num_words: int = 0
+    """Number of words in the longest node (up to `cutoff_words`)."""
+
     def __post_init__(self):
         # Create tokenizer according to config.
         params = self.trainer.params
@@ -78,7 +81,6 @@ class WordIdentifiers(awe.features.feature.Feature):
 
     def prepare(self, node: awe.data.graph.dom.Node):
         params = self.trainer.params
-        context = self.trainer.extractor.context
 
         # Find maximum word count.
         if node.is_text:
@@ -90,13 +92,11 @@ class WordIdentifiers(awe.features.feature.Feature):
                 ):
                     break
                 counter += 1
-            context.max_num_words = max(context.max_num_words, counter)
+            self.max_num_words = max(self.max_num_words, counter)
 
     def compute(self, batch: 'awe.model.classifier.ModelInput'):
-        context = self.trainer.extractor.context
-
         # Add friend cycles.
-        num_words = context.max_num_words
+        num_words = self.max_num_words
         if self.trainer.params.friend_cycles:
             num_words *= 1 + self.trainer.params.max_friends
 
@@ -115,8 +115,8 @@ class WordIdentifiers(awe.features.feature.Feature):
 
                 for node_idx, n in enumerate(node_and_friends):
                     for token_idx, token in enumerate(self.tokenize(n.text)):
-                        if token_idx >= context.max_num_words:
+                        if token_idx >= self.max_num_words:
                             break
-                        word_idx = context.max_num_words * node_idx + token_idx
+                        word_idx = self.max_num_words * node_idx + token_idx
                         result[idx, word_idx] = self.get_token_id(token)
         return result
