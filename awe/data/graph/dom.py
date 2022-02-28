@@ -27,6 +27,8 @@ class Dom:
         # Get all nodes.
         self.root = Node(dom=self, parsed=self.tree.body, parent=None)
         self.nodes = list(self.root.traverse())
+        for idx, node in enumerate(self.nodes):
+            node.deep_index = idx
 
     def init_labels(self):
         # Get labeled parsed nodes.
@@ -38,7 +40,10 @@ class Dom:
         for node in self.nodes:
             node.init_labels()
 
-    def compute_friend_cycles(self, max_ancestor_distance: int):
+    def compute_friend_cycles(self,
+        max_ancestor_distance: int = 5,
+        max_friends: int = 10,
+    ):
         """Finds friends and partner for each node (from SimpDOM paper)."""
 
         descendants = collections.defaultdict(list)
@@ -61,6 +66,15 @@ class Dom:
             if len(ancestors) != 0:
                 node.friends.remove(node)
 
+            # Keep only limited number of closest friends.
+            if len(node.friends) > max_friends:
+                closest_friends = sorted(node.friends,
+                    # pylint: disable-next=cell-var-from-loop
+                    key=lambda n: n.distance_to(node),
+                    reverse=True
+                )
+                node.friends = set(closest_friends[:max_friends])
+
 # Setting `eq=False` makes the `Node` inherit hashing and equality functions
 # from `Object` (https://stackoverflow.com/a/53990477).
 @dataclasses.dataclass(eq=False)
@@ -75,6 +89,9 @@ class Node:
     Label keys of the node or `[]` if the node doesn't correspond to any target
     attribute.
     """
+
+    deep_index: Optional[int] = dataclasses.field(repr=False, default=None)
+    """Iteration index of the node inside the `page`."""
 
     partner: Optional['Node'] = dataclasses.field(repr=False, default=None)
     friends: set['Node'] = dataclasses.field(repr=False, default_factory=set)
@@ -124,3 +141,6 @@ class Node:
         if self.parent is None or max_distance <= 0:
             return []
         return [self.parent] + self.parent.get_ancestors(max_distance - 1)
+
+    def distance_to(self, other: 'Node'):
+        return abs(self.deep_index - other.deep_index)
