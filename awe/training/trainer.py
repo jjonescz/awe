@@ -90,9 +90,7 @@ class Trainer:
         # Save params.
         self.params.save_version(self.version)
 
-    def create_writer(self):
-        """Initializes TensorBoard logger."""
-
+        # Initialize TensorBoard logger.
         self.writer = torch.utils.tensorboard.SummaryWriter(
             log_dir=self.version.version_dir_path,
         )
