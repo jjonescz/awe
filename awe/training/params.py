@@ -23,6 +23,7 @@ class Params:
     val_subset: int = 50
     epochs: int = 5
     version_name: str = ''
+    restore_num: Optional[int] = None
     batch_size: int = 16
     save_every_n_epochs: Optional[int] = 1
     log_every_n_steps: int = 10

@@ -81,20 +81,6 @@ class Trainer:
 
         self.params = params
 
-    def create_version(self):
-        awe.training.logging.Version.delete_last(self.params.version_name)
-        self.version = awe.training.logging.Version.create_new(
-            self.params.version_name
-        )
-
-        # Save params.
-        self.params.save_version(self.version)
-
-        # Initialize TensorBoard logger.
-        self.writer = torch.utils.tensorboard.SummaryWriter(
-            log_dir=self.version.version_dir_path,
-        )
-
     def load_pretrained(self):
         pass
 
@@ -197,14 +183,34 @@ class Trainer:
         self.device = torch.device('cuda:0' if use_gpu else 'cpu')
         self.model = awe.model.classifier.Model(self).to(self.device)
 
-    def restore_latest(self):
-        version = awe.training.logging.Version.get_latest()
+    def create_version(self):
+        if self.params.restore_num is not None:
+            self.version = awe.training.logging.Version(
+                number=self.params.restore_num,
+                name=self.params.version_name
+            )
+            print(self.restore_version(self.version))
+        else:
+            awe.training.logging.Version.delete_last(self.params.version_name)
+            self.version = awe.training.logging.Version.create_new(
+                self.params.version_name
+            )
+
+            # Save params.
+            self.params.save_version(self.version)
+
+        # Initialize TensorBoard logger.
+        self.writer = torch.utils.tensorboard.SummaryWriter(
+            log_dir=self.version.version_dir_path,
+        )
+
+    def restore_version(self, version: awe.training.logging.Version):
         checkpoints = version.get_checkpoints()
         if len(checkpoints) == 0:
-            return False
-        return self.restore(checkpoints[-1])
+            raise RuntimeError(f'No checkpoints ({version.version_dir_path!r})')
+        return self.restore_checkpoint(checkpoints[-1])
 
-    def restore(self, checkpoint: awe.training.logging.Checkpoint):
+    def restore_checkpoint(self, checkpoint: awe.training.logging.Checkpoint):
         print(f'Loading {checkpoint.file_path!r}...')
         self.restored_state = torch.load(checkpoint.file_path)
         print('Restoring model state...')
@@ -230,6 +236,7 @@ class Trainer:
         val_progress_metrics: list[str] = ('loss', 'f1/page')
     ):
         self._reset_loop()
+        self.optim = self.model.create_optimizer()
 
         if self.restored_state is not None:
             print('Restoring training state...')
@@ -239,7 +246,6 @@ class Trainer:
             start_epoch_idx = self.restored_state['epoch'] + 1
             best_val_loss = self.restored_state['best_val_loss']
         else:
-            self.optim = self.model.create_optimizer()
             start_epoch_idx = 0
             best_val_loss = sys.maxsize
 
