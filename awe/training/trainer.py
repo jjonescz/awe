@@ -154,7 +154,7 @@ class Trainer:
         set_seed(42)
 
         return torch.utils.data.DataLoader(
-            self.sampler(pages, desc=desc),
+            self.sampler(pages, desc=f'loading {desc}'),
             batch_size=self.params.batch_size,
             collate_fn=awe.data.sampling.Collater(),
             shuffle=shuffle,
@@ -370,7 +370,7 @@ class Trainer:
         predictions: list[awe.model.classifier.Prediction] = []
         self.model.eval()
         with torch.no_grad():
-            for batch in tqdm(run.loader, desc='predict'):
+            for batch in tqdm(run.loader, desc='pred'):
                 outputs = self.model.forward(batch)
                 predictions.append(awe.model.classifier.Prediction(batch, outputs))
         return predictions
