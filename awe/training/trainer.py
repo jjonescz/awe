@@ -193,6 +193,7 @@ class Trainer:
             self.version = awe.training.logging.Version.create_new(
                 self.params.version_name
             )
+            self.restored_state = None
 
             # Save params.
             self.params.save_version(self.version)
