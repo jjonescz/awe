@@ -1,3 +1,4 @@
+import collections
 import dataclasses
 from typing import TYPE_CHECKING, Callable, Optional
 
@@ -37,7 +38,32 @@ class Dom:
         for node in self.nodes:
             node.init_labels()
 
-@dataclasses.dataclass
+    def compute_friend_cycles(self, max_ancestor_distance: int):
+        """Finds friends and partner for each node (from SimpDOM paper)."""
+
+        descendants = collections.defaultdict(list)
+
+        for node in self.nodes:
+            ancestors = node.get_ancestors(max_distance=max_ancestor_distance)
+            for ancestor in ancestors:
+                descendants[ancestor].append(node)
+
+        for node in self.nodes:
+            ancestors = node.get_ancestors(max_distance=max_ancestor_distance)
+            for ancestor in ancestors:
+                desc = descendants[ancestor]
+                if len(desc) == 2:
+                    node.partner = [x for x in desc if x != node][0]
+                node.friends.update(desc)
+
+            # Node itself got added to its friends (as its a descendant of its
+            # ascendants), but it should not be there.
+            if len(ancestors) != 0:
+                node.friends.remove(node)
+
+# Setting `eq=False` makes the `Node` inherit hashing and equality functions
+# from `Object` (https://stackoverflow.com/a/53990477).
+@dataclasses.dataclass(eq=False)
 class Node:
     dom: Dom = dataclasses.field(repr=False)
     parsed: awe.data.parsing.Node
@@ -49,6 +75,9 @@ class Node:
     Label keys of the node or `[]` if the node doesn't correspond to any target
     attribute.
     """
+
+    partner: Optional['Node'] = dataclasses.field(repr=False, default=None)
+    friends: set['Node'] = dataclasses.field(repr=False, default_factory=set)
 
     def __post_init__(self):
         self.children = list(self._iterate_children())
@@ -90,3 +119,8 @@ class Node:
                 yield node
             if deep_predicate(node):
                 stack.extend(node.children)
+
+    def get_ancestors(self, max_distance: int):
+        if self.parent is None or max_distance <= 0:
+            return []
+        return [self.parent] + self.parent.get_ancestors(max_distance - 1)
