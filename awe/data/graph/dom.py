@@ -1,6 +1,6 @@
 import collections
 import dataclasses
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING, Optional
 
 import awe.data.html_utils
 import awe.data.parsing
@@ -139,19 +139,14 @@ class Node:
         for parsed_node in self.parsed.iter(include_text=True):
             yield Node(dom=self.dom, parsed=parsed_node, parent=self)
 
-    def traverse(self,
-        predicate: Callable[['Node'], bool] = lambda _: True,
-        shallow_predicate: Callable[['Node'], bool] = lambda _: True,
-        deep_predicate: Callable[['Node'], bool] = lambda _: True,
-    ):
+    def traverse(self):
+        """Iterates tree rooted in the current node in DFS order."""
+
         stack = [self]
         while len(stack) != 0:
             node = stack.pop()
-            if predicate(node):
-                if shallow_predicate(node):
-                    yield node
-                if deep_predicate(node):
-                    stack.extend(node.children)
+            yield node
+            stack.extend(reversed(node.children))
 
     def get_ancestors(self, max_distance: int):
         if self.parent is None or max_distance <= 0:
