@@ -72,8 +72,7 @@ class Dom:
             if len(friends) > max_friends:
                 closest_friends = sorted(friends,
                     # pylint: disable-next=cell-var-from-loop
-                    key=lambda n: n.distance_to(node),
-                    reverse=True
+                    key=lambda n: n.distance_to(node)
                 )
                 node.friends = set(closest_friends[:max_friends])
             else:
