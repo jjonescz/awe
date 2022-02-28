@@ -1,7 +1,8 @@
 import dataclasses
+import random
 import sys
-from typing import Callable, Optional
 import warnings
+from typing import Callable, Optional
 
 import numpy as np
 import pytorch_lightning as pl
@@ -100,6 +101,8 @@ class Trainer:
         pass
 
     def load_dataset(self):
+        set_seed(42)
+
         state = None
         if self.ds is not None:
             # Preserve dataset state.
@@ -109,6 +112,8 @@ class Trainer:
         self.ds = awe.data.set.swde.Dataset(suffix='-exact', state=state)
 
     def load_data(self):
+        set_seed(42)
+
         self.label_map = awe.training.context.LabelMap()
         self.extractor = awe.features.extraction.Extractor(self)
         self.sampler = awe.data.sampling.Sampler(self)
@@ -148,6 +153,8 @@ class Trainer:
         desc: str,
         shuffle: bool = False
     ):
+        set_seed(42)
+
         return torch.utils.data.DataLoader(
             self.sampler(pages, desc=desc),
             batch_size=self.params.batch_size,
@@ -172,6 +179,8 @@ class Trainer:
         )
 
     def create_model(self):
+        set_seed(42)
+
         self.evaluator = awe.model.eval.Evaluator(self)
         use_gpu = self.params.use_gpu and torch.cuda.is_available()
         self.device = torch.device('cuda:0' if use_gpu else 'cpu')
@@ -189,6 +198,7 @@ class Trainer:
         return self.model.load_state_dict(self.restored_state['model'])
 
     def _reset_loop(self):
+        set_seed(42)
         self.step = 0
         self.train_progress = None
         self.val_progress = None
@@ -369,3 +379,9 @@ class Trainer:
 
     def decode(self, preds: list[awe.model.classifier.Prediction]):
         return awe.model.decoding.Decoder(self).decode(preds)
+
+def set_seed(seed: int):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
