@@ -5,8 +5,12 @@ import selectolax.lexbor
 
 import awe.data.html_utils
 
-WHITESPACE_REGEX = re.compile(r'(\s|[\u200b])+')
-"""Matches whitespace characters."""
+WHITESPACE_CHAR_REGEX = r'(\s|[\u200b])'
+"""Matches whitespace character."""
+
+ANY_WHITESPACE_REGEX = re.compile(fr'{WHITESPACE_CHAR_REGEX}+')
+
+EMPTY_OR_WHITESPACE_REGEX = re.compile(fr'^{WHITESPACE_CHAR_REGEX}*$')
 
 # pylint: disable=c-extension-no-member
 Node = selectolax.lexbor.LexborNode
@@ -66,16 +70,13 @@ def normalize_node_text(text: str):
     return collapse_whitespace(text).strip()
 
 def collapse_whitespace(text: str):
-    return re.sub(WHITESPACE_REGEX, ' ', text)
+    return re.sub(ANY_WHITESPACE_REGEX, ' ', text)
 
 def remove_whitespace(text: str):
-    return re.sub(WHITESPACE_REGEX, '', text)
-
-def is_whitespace(text: str):
-    return re.match(WHITESPACE_REGEX, text) is not None
+    return re.sub(ANY_WHITESPACE_REGEX, '', text)
 
 def is_empty_or_whitespace(text: str):
-    return len(text) == 0 or is_whitespace(text)
+    return re.match(EMPTY_OR_WHITESPACE_REGEX, text) is not None
 
 def ignore_node(node: Node):
     return (
