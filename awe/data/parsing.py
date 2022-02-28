@@ -47,10 +47,18 @@ def parse_html(html_text: str):
         'script',
         'style',
         'head',
-        '[document]',
         'noscript',
         'iframe'
     ])
+
+    # Ignore more tags.
+    to_destroy = [n
+        for n in tree.root.traverse(include_text=False)
+        if awe.data.html_utils.is_comment(n)
+    ]
+    for n in to_destroy:
+        n: Node
+        n.decompose(recursive=False)
 
     return tree
 

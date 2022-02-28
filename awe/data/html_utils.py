@@ -4,6 +4,7 @@ if TYPE_CHECKING:
     import awe.data.parsing
 
 TEXT_TAG = '-text'
+COMMENT_TAG = '-comment'
 
 def iter_prev(node: 'awe.data.parsing.Node'):
     while node.prev is not None:
@@ -36,6 +37,9 @@ def get_xpath(node: 'awe.data.parsing.Node'):
 
 def is_text(node: 'awe.data.parsing.Node'):
     return node.tag == TEXT_TAG
+
+def is_comment(node: 'awe.data.parsing.Node'):
+    return node.tag == COMMENT_TAG
 
 def get_xpath_tag(node: 'awe.data.parsing.Node'):
     return 'text()' if is_text(node) else node.tag
