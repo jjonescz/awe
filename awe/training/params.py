@@ -29,6 +29,10 @@ class Params:
     eval_every_n_steps: Optional[int] = 50
     use_gpu: bool = True
 
+    # Friend cycles
+    friend_cycles: bool = False
+    max_friends: int = 10
+
     # Word vectors
     tokenizer_family: TokenizerFamily = TokenizerFamily.custom
     tokenizer_id: str = ''

@@ -51,6 +51,7 @@ class Model(torch.nn.Module):
             )
             input_features += embedding_dim
 
+        # Word LSTM
         if self.trainer.params.use_lstm:
             self.lstm = awe.model.word_lstm.WordLstm(self)
             input_features += self.lstm.out_dim

@@ -35,6 +35,11 @@ class Sampler:
 
             page.dom.init_labels()
 
+            if self.trainer.params.friend_cycles:
+                page.dom.compute_friend_cycles(
+                    max_friends=self.trainer.params.max_friends
+                )
+
         for label_key in page.labels.label_keys:
             self.trainer.label_map.map_label_to_id(label_key)
 

@@ -95,15 +95,28 @@ class WordIdentifiers(awe.features.feature.Feature):
     def compute(self, batch: 'awe.model.classifier.ModelInput'):
         context = self.trainer.extractor.context
 
+        # Add friend cycles.
+        num_words = context.max_num_words
+        if self.trainer.params.friend_cycles:
+            num_words *= 1 + self.trainer.params.max_friends
+
         # Get word token indices.
-        result = torch.zeros(len(batch), context.max_num_words,
+        result = torch.zeros(len(batch), num_words,
             dtype=torch.int32,
             device=self.trainer.device,
         )
         for idx, node in enumerate(batch):
             if node.is_text:
-                for i, token in enumerate(self.tokenize(node.text)):
-                    if i >= context.max_num_words:
-                        break
-                    result[idx, i] = self.get_token_id(token)
+
+                # Add friend cycles.
+                node_and_friends = [node]
+                if self.trainer.params.friend_cycles:
+                    node_and_friends.extend(node.friends)
+
+                for node_idx, n in enumerate(node_and_friends):
+                    for token_idx, token in enumerate(self.tokenize(n.text)):
+                        if token_idx >= context.max_num_words:
+                            break
+                        word_idx = context.max_num_words * node_idx + token_idx
+                        result[idx, word_idx] = self.get_token_id(token)
         return result
