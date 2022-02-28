@@ -69,9 +69,7 @@ class Trainer:
         # Preserve previously loaded data and pretrained models (enables faster
         # iteration during code changes and reloading in development).
         if prev_trainer is not None:
-            prev = set(dataclasses.asdict(prev_trainer.params).items())
-            provided = set(dataclasses.asdict(params).items())
-            difference = prev.symmetric_difference(provided)
+            difference = params.difference(prev_trainer.params)
             if difference:
                 warnings.warn('Params of previous trainer differ from ' + \
                     f'provided params ({difference}).')
@@ -208,6 +206,16 @@ class Trainer:
         checkpoints = version.get_checkpoints()
         if len(checkpoints) == 0:
             raise RuntimeError(f'No checkpoints ({version.version_dir_path!r})')
+
+        # Check params.
+        restored_params = awe.training.params.Params.load_version(version)
+        difference = self.params.difference(restored_params,
+            ignore_vars=('restore_num',)
+        )
+        if difference:
+            raise RuntimeError(
+                f'Restored params differ from current params ({difference}).')
+
         return self.restore_checkpoint(checkpoints[-1])
 
     def restore_checkpoint(self, checkpoint: awe.training.logging.Checkpoint):

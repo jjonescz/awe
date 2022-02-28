@@ -103,5 +103,13 @@ class Params:
                 sort_keys=True
             )
 
-    def update_from(self, checkpoint: awe.training.logging.Checkpoint):
-        self.epochs = checkpoint.epoch + 1
+    def as_dict(self, ignore_vars: list[str] = ()):
+        d = dataclasses.asdict(self)
+        for ignore_var in ignore_vars:
+            d.pop(ignore_var, None)
+        return d
+
+    def difference(self, other: 'Params', ignore_vars: list[str] = ()):
+        a = set(self.as_dict(ignore_vars).items())
+        b = set(other.as_dict(ignore_vars).items())
+        return a.symmetric_difference(b)
