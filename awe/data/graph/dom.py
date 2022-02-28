@@ -14,6 +14,7 @@ class Dom:
     nodes: Optional[list['Node']] = None
     labeled_parsed_nodes: dict[str, list[awe.data.parsing.Node]]
     labeled_nodes: dict[str, list['Node']]
+    friend_cycles_computed: bool = False
 
     def __init__(self,
         page: 'awe.data.set.pages.Page'
@@ -80,6 +81,8 @@ class Dom:
 
             # Keep nodes in DOM order.
             node.friends.sort(key=lambda n: n.deep_index)
+
+        self.friend_cycles_computed = True
 
 # Setting `eq=False` makes the `Node` inherit hashing and equality functions
 # from `Object` (https://stackoverflow.com/a/53990477).

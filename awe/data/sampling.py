@@ -43,20 +43,27 @@ class Sampler:
         page: awe.data.set.pages.Page,
         prepare: bool = False
     ) -> list[Sample]:
+        # Prepare DOM tree.
         if page.cache_dom().root is None:
             page.dom.init_nodes()
 
             page.dom.init_labels()
 
-            if self.trainer.params.friend_cycles:
-                page.dom.compute_friend_cycles(
-                    max_friends=self.trainer.params.max_friends
-                )
+        # Compute friend cycles.
+        if (
+            self.trainer.params.friend_cycles
+            and not page.dom.friend_cycles_computed
+        ):
+            page.dom.compute_friend_cycles(
+                max_friends=self.trainer.params.max_friends
+            )
 
         if prepare:
+            # Add all label keys to a map.
             for label_key in page.labels.label_keys:
                 self.trainer.label_map.map_label_to_id(label_key)
 
+            # Prepare features.
             self.trainer.extractor.prepare_page(page.dom)
 
         return page.dom.nodes
