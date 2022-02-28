@@ -159,6 +159,13 @@ class Trainer:
     ):
         set_seed(42)
 
+        flags = {
+            'shuffle': shuffle,
+            'prepare': prepare
+        }
+        if any(flags.values()):
+            desc = f'{desc} ({", ".join(k for k, v in flags.items() if v)})'
+
         return torch.utils.data.DataLoader(
             self.sampler.load(pages, desc=desc, prepare=prepare),
             batch_size=self.params.batch_size,
