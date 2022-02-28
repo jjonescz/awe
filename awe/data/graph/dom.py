@@ -44,36 +44,40 @@ class Dom:
         max_ancestor_distance: int = 5,
         max_friends: int = 10,
     ):
-        """Finds friends and partner for each node (from SimpDOM paper)."""
+        """Finds friends and partner for each text node (from SimpDOM paper)."""
 
         descendants = collections.defaultdict(list)
+        text_nodes = [n for n in self.nodes if n.is_text]
 
-        for node in self.nodes:
+        for node in text_nodes:
             ancestors = node.get_ancestors(max_distance=max_ancestor_distance)
             for ancestor in ancestors:
                 descendants[ancestor].append(node)
 
-        for node in self.nodes:
+        for node in text_nodes:
             ancestors = node.get_ancestors(max_distance=max_ancestor_distance)
+            friends: set[Node] = set()
             for ancestor in ancestors:
                 desc = descendants[ancestor]
                 if len(desc) == 2:
                     node.partner = [x for x in desc if x != node][0]
-                node.friends.update(desc)
+                friends.update(desc)
 
             # Node itself got added to its friends (as its a descendant of its
             # ascendants), but it should not be there.
             if len(ancestors) != 0:
-                node.friends.remove(node)
+                friends.remove(node)
 
             # Keep only limited number of closest friends.
-            if len(node.friends) > max_friends:
-                closest_friends = sorted(node.friends,
+            if len(friends) > max_friends:
+                closest_friends = sorted(friends,
                     # pylint: disable-next=cell-var-from-loop
                     key=lambda n: n.distance_to(node),
                     reverse=True
                 )
                 node.friends = set(closest_friends[:max_friends])
+            else:
+                node.friends = friends
 
 # Setting `eq=False` makes the `Node` inherit hashing and equality functions
 # from `Object` (https://stackoverflow.com/a/53990477).
@@ -93,8 +97,19 @@ class Node:
     deep_index: Optional[int] = dataclasses.field(repr=False, default=None)
     """Iteration index of the node inside the `page`."""
 
+    friends: Optional[set['Node']] = dataclasses.field(repr=False, default=None)
+    """
+    Only set if the current node is a text node. Contains set of text nodes
+    where distance to lowest common ancestor with the current node is less than
+    or equal to 5. Also limited to 10 closest friends (closest by means of
+    `distance_to`).
+    """
+
     partner: Optional['Node'] = dataclasses.field(repr=False, default=None)
-    friends: set['Node'] = dataclasses.field(repr=False, default_factory=set)
+    """
+    One of `friends` such that the current node and the friend are the only two
+    text nodes under a common ancestor. Usually, this is the closest friend.
+    """
 
     def __post_init__(self):
         self.children = list(self._iterate_children())
