@@ -66,6 +66,9 @@ class Sampler:
             # Prepare features.
             self.trainer.extractor.prepare_page(page.dom)
 
+        # Select nodes.
+        if self.trainer.params.classify_only_text_nodes:
+            return [n for n in page.dom.nodes if n.is_text]
         return page.dom.nodes
 
 class Collater:

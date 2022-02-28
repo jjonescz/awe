@@ -30,6 +30,9 @@ class Params:
     eval_every_n_steps: Optional[int] = 50
     use_gpu: bool = True
 
+    # Sampling
+    classify_only_text_nodes: bool = False
+
     # Friend cycles
     friend_cycles: bool = False
     max_friends: int = 10
