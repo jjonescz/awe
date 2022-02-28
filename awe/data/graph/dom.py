@@ -161,3 +161,8 @@ class Node:
 
     def distance_to(self, other: 'Node'):
         return abs(self.deep_index - other.deep_index)
+
+    def get_partner_set(self):
+        if self.partner is not None:
+            return [self.partner]
+        return []

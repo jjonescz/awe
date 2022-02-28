@@ -54,7 +54,10 @@ class Model(torch.nn.Module):
         # Word LSTM
         if self.trainer.params.use_lstm:
             self.lstm = awe.model.word_lstm.WordLstm(self)
-            input_features += self.lstm.out_dim
+            out_dim = self.lstm.out_dim
+            if self.trainer.params.friend_cycles:
+                out_dim *= 3
+            input_features += out_dim
 
         # Classification head
         D = 64
@@ -86,7 +89,21 @@ class Model(torch.nn.Module):
             x = self.tag_embedding(tag_ids) # [N, embedding_dim]
 
         if self.trainer.params.use_lstm:
-            x = self.lstm(batch) # [N, lstm_dim]
+            if self.trainer.params.friend_cycles:
+                # Expand partner and friend nodes.
+                friend_batch = [None] * (len(batch) * 3)
+                for i, n in zip(range(0, len(friend_batch), 3), batch):
+                    friend_batch[i] = [n]
+                    friend_batch[i + 1] = n.get_partner_set()
+                    friend_batch[i + 2] = n.friends
+                expanded_batch = friend_batch
+            else:
+                expanded_batch = [batch]
+
+            x = self.lstm(expanded_batch) # [3N, lstm_dim]
+
+            if self.trainer.params.friend_cycles:
+                x = torch.reshape(x, (len(batch), x.shape[1] * 3)) # [N, 3lstm_dim]
 
         # Classify features.
         x = self.head(x) # [N, num_labels]

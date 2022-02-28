@@ -4,6 +4,7 @@ import torch.nn
 import torch.nn.functional as F
 
 import awe.data.glove
+import awe.data.graph.dom
 import awe.features.text
 
 if TYPE_CHECKING:
@@ -43,7 +44,7 @@ class WordLstm(torch.nn.Module):
             # LSTM output will be twice as long.
             self.out_dim *= 2
 
-    def forward(self, batch: 'awe.model.classifier.ModelInput'):
+    def forward(self, batch: list[list[awe.data.graph.dom.Node]]):
         # Extract word identifiers for the batch.
         feat = self.trainer.extractor.get_feature(awe.features.text.WordIdentifiers)
         word_ids = feat.compute(batch)

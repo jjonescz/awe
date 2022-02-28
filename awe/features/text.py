@@ -94,35 +94,22 @@ class WordIdentifiers(awe.features.feature.Feature):
                 counter += 1
             self.max_num_words = max(self.max_num_words, counter)
 
-    def compute(self, batch: 'awe.model.classifier.ModelInput'):
-        # Add friend cycles.
+    def compute(self, batch: list[list[awe.data.graph.dom.Node]]):
+        # Account for friend cycles.
         num_words = self.max_num_words
         if self.trainer.params.friend_cycles:
-            num_words *= 2 + self.trainer.params.max_friends
-                # 1 for node words + 1 for partner node words + `max_friends`
-                # for friend nodes words.
+            num_words *= self.trainer.params.max_friends
 
         # Get word token indices.
         result = torch.zeros(len(batch), num_words,
             dtype=torch.int32,
             device=self.trainer.device,
         )
-        for idx, node in enumerate(batch):
-            if node.is_text:
-
-                # Add friend cycles.
-                node_and_friends = [node]
-                if self.trainer.params.friend_cycles:
-                    node_and_friends.append(node.partner)
-                    node_and_friends.extend(node.friends)
-
-                for node_idx, n in enumerate(node_and_friends):
-                    if n is None:
-                        # Partner node can be undefined.
-                        continue
-                    for token_idx, token in enumerate(self.tokenize(n.text)):
-                        if token_idx >= self.max_num_words:
-                            break
-                        word_idx = self.max_num_words * node_idx + token_idx
-                        result[idx, word_idx] = self.get_token_id(token)
+        for row_idx, row in enumerate(batch):
+            for node_idx, node in enumerate(row):
+                for token_idx, token in enumerate(self.tokenize(node.text)):
+                    if token_idx >= self.max_num_words:
+                        break
+                    word_idx = self.max_num_words * node_idx + token_idx
+                    result[row_idx, word_idx] = self.get_token_id(token)
         return result
