@@ -98,7 +98,9 @@ class WordIdentifiers(awe.features.feature.Feature):
         # Add friend cycles.
         num_words = self.max_num_words
         if self.trainer.params.friend_cycles:
-            num_words *= 1 + self.trainer.params.max_friends
+            num_words *= 2 + self.trainer.params.max_friends
+                # 1 for node words + 1 for partner node words + `max_friends`
+                # for friend nodes words.
 
         # Get word token indices.
         result = torch.zeros(len(batch), num_words,
@@ -111,9 +113,13 @@ class WordIdentifiers(awe.features.feature.Feature):
                 # Add friend cycles.
                 node_and_friends = [node]
                 if self.trainer.params.friend_cycles:
+                    node_and_friends.append(node.partner)
                     node_and_friends.extend(node.friends)
 
                 for node_idx, n in enumerate(node_and_friends):
+                    if n is None:
+                        # Partner node can be undefined.
+                        continue
                     for token_idx, token in enumerate(self.tokenize(n.text)):
                         if token_idx >= self.max_num_words:
                             break
