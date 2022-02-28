@@ -5,7 +5,7 @@ import selectolax.lexbor
 
 import awe.data.html_utils
 
-WHITESPACE_REGEX = r'(\s|[\u200b])+'
+WHITESPACE_REGEX = re.compile(r'(\s|[\u200b])+')
 """Matches whitespace characters."""
 
 # pylint: disable=c-extension-no-member
@@ -51,10 +51,10 @@ def parse_html(html_text: str):
         'iframe'
     ])
 
-    # Ignore more tags.
+    # Ignore more nodes.
     to_destroy = [n
-        for n in tree.root.traverse(include_text=False)
-        if awe.data.html_utils.is_comment(n)
+        for n in tree.root.traverse(include_text=True)
+        if ignore_node(n)
     ]
     for n in to_destroy:
         n: Node
@@ -70,3 +70,21 @@ def collapse_whitespace(text: str):
 
 def remove_whitespace(text: str):
     return re.sub(WHITESPACE_REGEX, '', text)
+
+def is_whitespace(text: str):
+    return re.match(WHITESPACE_REGEX, text) is not None
+
+def is_empty_or_whitespace(text: str):
+    return len(text) == 0 or is_whitespace(text)
+
+def ignore_node(node: Node):
+    return (
+        # Ignore comments.
+        awe.data.html_utils.is_comment(node) or
+
+        # Ignore text fragments containing only white space.
+        (
+            awe.data.html_utils.is_text(node) and
+            is_empty_or_whitespace(node.text(deep=False))
+        )
+    )
