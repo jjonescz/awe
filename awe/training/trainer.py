@@ -263,7 +263,12 @@ class Trainer:
             progress=lambda: self.val_progress,
             progress_metrics=val_progress_metrics
         )
-        for epoch_idx in tqdm(range(start_epoch_idx, self.params.epochs), desc='train'):
+        for epoch_idx in tqdm(range(self.params.epochs), desc='train'):
+            if epoch_idx < start_epoch_idx:
+                # Skip over restored epochs in this way, so the progress bar is
+                # in a proper state.
+                continue
+
             train_metrics = self._train_epoch(train_run, val_run)
             val_metrics = self._validate_epoch(val_run)
 
