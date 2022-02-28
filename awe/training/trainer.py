@@ -109,8 +109,8 @@ class Trainer:
             self.ds = None
         self.ds = awe.data.set.swde.Dataset(suffix='-exact', state=state)
 
-    def load_data(self):
-        """Creates features and loads data."""
+    def prepare_features(self):
+        """Splits data and prepares features on them."""
 
         set_seed(42)
 
@@ -151,12 +151,13 @@ class Trainer:
     def create_dataloader(self,
         pages: list[awe.data.set.pages.Page],
         desc: str,
-        shuffle: bool = False
+        shuffle: bool = False,
+        prepare: bool = False
     ):
         set_seed(42)
 
         return torch.utils.data.DataLoader(
-            self.sampler(pages, desc=f'loading {desc}'),
+            self.sampler.load(pages, desc=desc, prepare=prepare),
             batch_size=self.params.batch_size,
             collate_fn=awe.data.sampling.Collater(),
             shuffle=shuffle,
