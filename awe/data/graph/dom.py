@@ -126,16 +126,18 @@ class Node:
             yield Node(dom=self.dom, parsed=parsed_node, parent=self)
 
     def traverse(self,
+        predicate: Callable[['Node'], bool] = lambda _: True,
         shallow_predicate: Callable[['Node'], bool] = lambda _: True,
         deep_predicate: Callable[['Node'], bool] = lambda _: True,
     ):
         stack = [self]
         while len(stack) != 0:
             node = stack.pop()
-            if shallow_predicate(node):
-                yield node
-            if deep_predicate(node):
-                stack.extend(node.children)
+            if predicate(node):
+                if shallow_predicate(node):
+                    yield node
+                if deep_predicate(node):
+                    stack.extend(node.children)
 
     def get_ancestors(self, max_distance: int):
         if self.parent is None or max_distance <= 0:
