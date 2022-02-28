@@ -189,8 +189,10 @@ class Trainer:
 
     def restore_latest(self):
         version = awe.training.logging.Version.get_latest()
-        *_, checkpoint = version.get_checkpoints()
-        return self.restore(checkpoint)
+        checkpoints = version.get_checkpoints()
+        if len(checkpoints) == 0:
+            return False
+        return self.restore(checkpoints[-1])
 
     def restore(self, checkpoint: awe.training.logging.Checkpoint):
         print(f'Loading {checkpoint.file_path!r}...')
