@@ -98,7 +98,7 @@ class WordIdentifiers(awe.features.feature.Feature):
         # Account for friend cycles.
         num_words = self.max_num_words
         if self.trainer.params.friend_cycles:
-            num_words *= self.trainer.params.max_friends
+            num_words *= max(1, self.trainer.params.max_friends)
 
         # Get word token indices.
         result = torch.zeros(len(batch), num_words,
