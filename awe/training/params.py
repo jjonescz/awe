@@ -13,6 +13,7 @@ class TokenizerFamily(str, enum.Enum):
     custom = 'custom'
     torchtext = 'torchtext' # tokenizer_id = 'basic_english'
     transformers = 'transformers' # tokenizer_id = 'bert-base-uncased'
+    bert = 'bert'
 
 @dataclasses.dataclass
 class Params:

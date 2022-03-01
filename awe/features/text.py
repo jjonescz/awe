@@ -7,6 +7,7 @@ from torchtext.data import utils as text_utils
 
 import awe.data.glove
 import awe.data.graph.dom
+import awe.features.bert_tokenization
 import awe.features.feature
 import awe.training.params
 
@@ -70,6 +71,9 @@ class WordIdentifiers(awe.features.feature.Feature):
             else:
                 cls = transformers.BertTokenizer
             tokenizer = cls.from_pretrained(params.tokenizer_id)
+            self.tokenize = tokenizer.tokenize
+        elif family == awe.training.params.TokenizerFamily.bert:
+            tokenizer = awe.features.bert_tokenization.BasicTokenizer()
             self.tokenize = tokenizer.tokenize
 
         self.glove = awe.data.glove.LazyEmbeddings.get_or_create()
