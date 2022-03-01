@@ -26,7 +26,7 @@ class WordLstm(torch.nn.Module):
             self.word_embedding = torch.nn.Embedding.from_pretrained(
                 embeddings,
                 padding_idx=0,
-                freeze=self.trainer.params.freeze_word_vectors
+                freeze=self.trainer.params.freeze_word_embeddings
             )
         else:
             # Use only word indices of the pre-trained embeddings.

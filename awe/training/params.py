@@ -42,7 +42,7 @@ class Params:
     tokenizer_family: TokenizerFamily = TokenizerFamily.custom
     tokenizer_id: str = ''
     tokenizer_fast: bool = True
-    freeze_word_vectors: bool = True
+    freeze_word_embeddings: bool = True
     pretrained_word_embeddings: bool = True
 
     # LSTM
