@@ -1,14 +1,13 @@
-import functools
 import re
 from typing import TYPE_CHECKING
 
 import torch
-from torchtext.data import utils as text_utils
 import transformers
+from torchtext.data import utils as text_utils
 
-import awe.features.feature
 import awe.data.glove
 import awe.data.graph.dom
+import awe.features.feature
 import awe.training.params
 
 if TYPE_CHECKING:
@@ -64,9 +63,7 @@ class WordIdentifiers(awe.features.feature.Feature):
             self.tokenize = basic_tokenize
         if family == awe.training.params.TokenizerFamily.torchtext:
             tokenizer = text_utils.get_tokenizer(params.tokenizer_id)
-            self.tokenize = functools.partial(basic_tokenize,
-                tokenizer=tokenizer
-            )
+            self.tokenize = tokenizer
         elif family == awe.training.params.TokenizerFamily.transformers:
             tokenizer = transformers.BertTokenizer.from_pretrained(
                 params.tokenizer_id
