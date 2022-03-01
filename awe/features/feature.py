@@ -19,7 +19,7 @@ class Feature(abc.ABC):
     def __post_init__(self):
         """Can be used by derived classes to do initialization."""
 
-    def prepare(self, node: awe.data.graph.dom.Node):
+    def prepare(self, node: awe.data.graph.dom.Node, train: bool):
         """
         Prepares this feature for the given `node`.
 

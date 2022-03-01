@@ -13,8 +13,9 @@ class HtmlTag(awe.features.feature.Feature):
     html_tags: set[str]
     html_tag_ids: dict[str, int]
 
-    def prepare(self, node: awe.data.graph.dom.Node):
-        self.html_tags.add(node.html_tag)
+    def prepare(self, node: awe.data.graph.dom.Node, train: bool):
+        if train:
+            self.html_tags.add(node.html_tag)
 
     def initialize(self):
         # Map all found HTML tags to numbers. Note that 0 is reserved for

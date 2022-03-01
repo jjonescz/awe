@@ -135,7 +135,7 @@ class Trainer:
         # Create dataloaders.
         self.train_loader = self.create_dataloader(self.train_pages, 'train',
             shuffle=True,
-            prepare=True,
+            train=True,
         )
         self.val_loader = self.create_dataloader(self.val_pages, 'val')
 
@@ -143,19 +143,19 @@ class Trainer:
         pages: list[awe.data.set.pages.Page],
         desc: str,
         shuffle: bool = False,
-        prepare: bool = False
+        train: bool = False
     ):
         set_seed(42)
 
         flags = {
             'shuffle': shuffle,
-            'prepare': prepare
+            'train': train
         }
         if any(flags.values()):
             desc = f'{desc} ({", ".join(k for k, v in flags.items() if v)})'
 
         return torch.utils.data.DataLoader(
-            self.sampler.load(pages, desc=desc, prepare=prepare),
+            self.sampler.load(pages, desc=desc, train=train),
             batch_size=self.params.batch_size,
             collate_fn=awe.data.sampling.Collater(),
             shuffle=shuffle,

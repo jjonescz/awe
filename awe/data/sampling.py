@@ -23,7 +23,7 @@ class Sampler:
     def load(self,
         pages: list[awe.data.set.pages.Page],
         desc: str,
-        prepare: bool = False
+        train: bool = False
     ):
         """
         Pass `prepare` to run feature preparation on the pages (should be only
@@ -33,15 +33,15 @@ class Sampler:
         result = [
             node
             for page in tqdm(pages, desc=f'loading {desc}')
-            for node in self.get_nodes_for_page(page, prepare=prepare)
+            for node in self.get_nodes_for_page(page, train=train)
         ]
-        if prepare:
+        if train:
             self.trainer.extractor.initialize()
         return result
 
     def get_nodes_for_page(self,
         page: awe.data.set.pages.Page,
-        prepare: bool = False
+        train: bool = False
     ) -> list[Sample]:
         # Prepare DOM tree.
         if page.cache_dom().root is None:
@@ -58,13 +58,13 @@ class Sampler:
                 max_friends=self.trainer.params.max_friends
             )
 
-        if prepare:
+        if train:
             # Add all label keys to a map.
             for label_key in page.labels.label_keys:
                 self.trainer.label_map.map_label_to_id(label_key)
 
-            # Prepare features.
-            self.trainer.extractor.prepare_page(page.dom)
+        # Prepare features.
+        self.trainer.extractor.prepare_page(page.dom, train=train)
 
         # Select nodes.
         if self.trainer.params.classify_only_text_nodes:

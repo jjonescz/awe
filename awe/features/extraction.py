@@ -23,12 +23,12 @@ class Extractor:
             awe.features.text.WordIdentifiers(trainer),
         ]
 
-    def prepare_page(self, page_dom: awe.data.graph.dom.Dom):
+    def prepare_page(self, page_dom: awe.data.graph.dom.Dom, train: bool):
         """Prepares features for the `page`."""
 
         for feature in self.features:
             for node in page_dom.nodes:
-                feature.prepare(node)
+                feature.prepare(node=node, train=train)
 
     def get_feature(self, cls: type[T]) -> Optional[T]:
         for feature in self.features:

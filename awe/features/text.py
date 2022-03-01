@@ -86,7 +86,7 @@ class WordIdentifiers(awe.features.feature.Feature):
         # Indices start at 1; 0 is used for unknown and pad words.
         return self.glove.get_index(token, default=-1) + 1
 
-    def prepare(self, node: awe.data.graph.dom.Node):
+    def prepare(self, node: awe.data.graph.dom.Node, train: bool):
         params = self.trainer.params
 
         # Find maximum word count.
@@ -94,14 +94,20 @@ class WordIdentifiers(awe.features.feature.Feature):
             counter = 0
             token_ids = []
             for i, token in enumerate(self.tokenize(node.text)):
-                if (
-                    params.cutoff_words is not None and
-                    i >= params.cutoff_words
-                ):
-                    break
+                if train:
+                    # For train data, find `max_num_words`.
+                    if (
+                        params.cutoff_words is not None and
+                        i >= params.cutoff_words
+                    ):
+                        break
+                else:
+                    if i >= self.max_num_words:
+                        break
                 token_ids.append(self.get_token_id(token))
                 counter += 1
-            self.max_num_words = max(self.max_num_words, counter)
+            if train:
+                self.max_num_words = max(self.max_num_words, counter)
             self.node_token_ids[node] = token_ids
 
     def compute(self, batch: list[list[awe.data.graph.dom.Node]]):
