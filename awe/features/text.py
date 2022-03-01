@@ -56,6 +56,9 @@ class WordIdentifiers(awe.features.feature.Feature):
     max_num_words: int = 0
     """Number of words in the longest node (up to `cutoff_words`)."""
 
+    node_token_ids: dict[awe.data.graph.dom.Node, list[int]]
+    """Cache of node tokens IDs."""
+
     def __post_init__(self):
         # Create tokenizer according to config.
         params = self.trainer.params
@@ -77,6 +80,7 @@ class WordIdentifiers(awe.features.feature.Feature):
             self.tokenize = tokenizer.tokenize
 
         self.glove = awe.data.glove.LazyEmbeddings.get_or_create()
+        self.node_token_ids = {}
 
     def get_token_id(self, token: str):
         # Indices start at 1; 0 is used for unknown and pad words.
@@ -88,14 +92,17 @@ class WordIdentifiers(awe.features.feature.Feature):
         # Find maximum word count.
         if node.is_text:
             counter = 0
-            for i, _ in enumerate(self.tokenize(node.text)):
+            token_ids = []
+            for i, token in enumerate(self.tokenize(node.text)):
                 if (
                     params.cutoff_words is not None and
                     i >= params.cutoff_words
                 ):
                     break
+                token_ids.append(self.get_token_id(token))
                 counter += 1
             self.max_num_words = max(self.max_num_words, counter)
+            self.node_token_ids[node] = token_ids
 
     def compute(self, batch: list[list[awe.data.graph.dom.Node]]):
         # Account for friend cycles.
@@ -110,9 +117,9 @@ class WordIdentifiers(awe.features.feature.Feature):
         )
         for row_idx, row in enumerate(batch):
             for node_idx, node in enumerate(row):
-                for token_idx, token in enumerate(self.tokenize(node.text)):
+                for token_idx, token_id in enumerate(self.node_token_ids[node]):
                     if token_idx >= self.max_num_words:
                         break
                     word_idx = self.max_num_words * node_idx + token_idx
-                    result[row_idx, word_idx] = self.get_token_id(token)
+                    result[row_idx, word_idx] = token_id
         return result
