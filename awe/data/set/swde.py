@@ -42,6 +42,7 @@ class Dataset(awe.data.set.pages.Dataset):
 
     def __init__(self,
         suffix: Optional[str] = None,
+        only_verticals: Optional[list[str]] = None,
         state: Optional[dict[str, pd.DataFrame]] = None
     ):
         super().__init__(
@@ -49,11 +50,16 @@ class Dataset(awe.data.set.pages.Dataset):
             dir_path=DATA_DIR,
         )
         self.suffix = suffix
+        self.only_verticals = only_verticals
         self.verticals = list(self._iterate_verticals(state=state or {}))
 
     def _iterate_verticals(self, state: dict[str, pd.DataFrame]):
         page_count = 0
         for name in tqdm(VERTICAL_NAMES, desc='verticals'):
+            if (self.only_verticals is not None
+                and name not in self.only_verticals):
+                continue
+
             vertical = Vertical(
                 dataset=self,
                 name=name,

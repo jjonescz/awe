@@ -91,7 +91,11 @@ class Trainer:
             state = self.ds.get_state()
             # Release memory used by previously-loaded dataset.
             self.ds = None
-        self.ds = awe.data.set.swde.Dataset(suffix='-exact', state=state)
+        self.ds = awe.data.set.swde.Dataset(
+            suffix='-exact',
+            only_verticals=('auto',),
+            state=state
+        )
 
     def prepare_features(self):
         """Splits data and prepares features on them."""
