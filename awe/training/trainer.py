@@ -340,9 +340,12 @@ class Trainer:
                 # Compute all metrics every once in a while.
                 slow_eval.add_slow(awe.model.classifier.Prediction(batch, outputs))
 
-            # Validate during training.
-            if (self.params.eval_every_n_steps is not None and
-                batch_idx % self.params.eval_every_n_steps == 0):
+            # Validate during training. Always validate in the beginning (step
+            # 1) to catch possible bugs in the validation loop.
+            if (self.step == 1 or
+                (self.params.eval_every_n_steps is not None and
+                batch_idx % self.params.eval_every_n_steps == 0)
+            ):
                 self._validate_epoch(val_run)
                 self.model.train()
 
