@@ -44,7 +44,7 @@ class Params:
     pretrained_word_embeddings: bool = True
 
     # LSTM
-    use_lstm: bool = False
+    word_vector_function: Optional[str] = 'sum' # 'lstm', 'sum', 'mean'
     lstm_dim: int = 100
     lstm_args: Optional[dict] = None
     filter_node_words: bool = False

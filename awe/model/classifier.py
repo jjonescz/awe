@@ -52,7 +52,7 @@ class Model(torch.nn.Module):
             input_features += embedding_dim
 
         # Word LSTM
-        if self.trainer.params.use_lstm:
+        if self.trainer.params.word_vector_function is not None:
             self.lstm = awe.model.word_lstm.WordLstm(self)
             out_dim = self.lstm.out_dim
             if self.trainer.params.friend_cycles:
@@ -88,7 +88,7 @@ class Model(torch.nn.Module):
             tag_ids = self.html_tag.compute(batch) # [N]
             x = self.tag_embedding(tag_ids) # [N, embedding_dim]
 
-        if self.trainer.params.use_lstm:
+        if self.trainer.params.word_vector_function is not None:
             if self.trainer.params.friend_cycles:
                 # Expand partner and friend nodes.
                 friend_batch = [None] * (len(batch) * 3)

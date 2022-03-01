@@ -34,15 +34,18 @@ class WordLstm(torch.nn.Module):
                 padding_idx=0
             )
 
-        self.lstm = torch.nn.LSTM(word_dim, self.trainer.params.lstm_dim,
-            batch_first=True,
-            **(self.trainer.params.lstm_args or {})
-        )
+        if self.trainer.params.word_vector_function == 'lstm':
+            self.lstm = torch.nn.LSTM(word_dim, self.trainer.params.lstm_dim,
+                batch_first=True,
+                **(self.trainer.params.lstm_args or {})
+            )
 
-        self.out_dim = self.trainer.params.lstm_dim
-        if self.lstm.bidirectional:
-            # LSTM output will be twice as long.
-            self.out_dim *= 2
+            self.out_dim = self.trainer.params.lstm_dim
+            if self.lstm.bidirectional:
+                # LSTM output will be twice as long.
+                self.out_dim *= 2
+        else:
+            self.out_dim = word_dim
 
     def forward(self, batch: list[list[awe.data.graph.dom.Node]]):
         # Extract word identifiers for the batch.
@@ -59,12 +62,17 @@ class WordLstm(torch.nn.Module):
         embedded_words = self.word_embedding(masked_word_ids)
             # [num_masked_nodes, max_num_words, word_dim]
 
-        # Run through LSTM.
-        word_output, (_, _) = self.lstm(embedded_words)
-            # [num_masked_nodes, max_num_words, D * lstm_dim]
+        if self.trainer.params.word_vector_function == 'lstm':
+            # Run through LSTM.
+            word_output, (_, _) = self.lstm(embedded_words)
+                # [num_masked_nodes, max_num_words, D * lstm_dim]
 
-        # Keep only the last word output (whole text representation).
-        node_vectors = word_output[:, -1, ...] # [num_masked_nodes, D * lstm_dim]
+            # Keep only the last word output (whole text representation).
+            node_vectors = word_output[:, -1, ...] # [num_masked_nodes, D * lstm_dim]
+        else:
+            # If not using LSTM, aggregate word embeddings.
+            f = getattr(torch, self.trainer.params.word_vector_function)
+            node_vectors = f(embedded_words, dim=1) # [num_masked_nodes, word_dim]
 
         if self.trainer.params.filter_node_words:
             # Expand word vectors to the original shape.
