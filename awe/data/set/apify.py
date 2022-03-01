@@ -1,6 +1,7 @@
 import dataclasses
 import os
 import warnings
+from typing import Optional
 
 import pandas as pd
 import slugify
@@ -17,11 +18,12 @@ SELECTOR_PREFIX = 'selector_'
 class Dataset(awe.data.set.pages.Dataset):
     verticals: list['Vertical'] = dataclasses.field(repr=False)
 
-    def __init__(self):
+    def __init__(self, only_websites: Optional[list[str]] = None):
         super().__init__(
             name='apify',
             dir_path=DIR,
         )
+        self.only_websites = only_websites
         self.verticals = [
             Vertical(dataset=self, name='products', prev_page_count=0)
         ]
@@ -46,6 +48,10 @@ class Vertical(awe.data.set.pages.Vertical):
 
         page_count = 0
         for subdir in sorted(os.listdir(self.dir_path)):
+            if (self.dataset.only_websites is not None
+                and subdir not in self.dataset.only_websites):
+                continue
+
             website = Website(
                 vertical=self,
                 dir_name=subdir,
