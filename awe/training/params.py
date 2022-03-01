@@ -114,7 +114,10 @@ class Params:
             d.pop(ignore_var, None)
         return d
 
+    def as_set(self, ignore_vars: list[str] = ()):
+        return set((k, repr(v)) for k, v in self.as_dict(ignore_vars).items())
+
     def difference(self, other: 'Params', ignore_vars: list[str] = ()):
-        a = set(self.as_dict(ignore_vars).items())
-        b = set(other.as_dict(ignore_vars).items())
+        a = self.as_set(ignore_vars)
+        b = other.as_set(ignore_vars)
         return a.symmetric_difference(b)
