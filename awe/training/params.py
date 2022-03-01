@@ -11,8 +11,8 @@ import awe.training.logging
 
 class TokenizerFamily(str, enum.Enum):
     custom = 'custom'
-    torchtext = 'torchtext'
-    transformers = 'transformers'
+    torchtext = 'torchtext' # tokenizer_id = 'basic_english'
+    transformers = 'transformers' # tokenizer_id = 'bert-base-uncased'
 
 @dataclasses.dataclass
 class Params:
