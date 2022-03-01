@@ -44,18 +44,23 @@ class Dom:
     def compute_friend_cycles(self,
         max_ancestor_distance: int = 5,
         max_friends: int = 10,
+        only_variable_nodes: bool = True,
     ):
         """Finds friends and partner for each text node (from SimpDOM paper)."""
 
         descendants = collections.defaultdict(list)
-        text_nodes = [n for n in self.nodes if n.is_text]
 
-        for node in text_nodes:
+        if only_variable_nodes:
+            target_nodes = [n for n in self.nodes if n.is_variable_text]
+        else:
+            target_nodes = [n for n in self.nodes if n.is_text]
+
+        for node in target_nodes:
             ancestors = node.get_ancestors(max_distance=max_ancestor_distance)
             for ancestor in ancestors:
                 descendants[ancestor].append(node)
 
-        for node in text_nodes:
+        for node in target_nodes:
             ancestors = node.get_ancestors(max_distance=max_ancestor_distance)
             friends: set[Node] = set()
             for ancestor in ancestors:
@@ -116,6 +121,9 @@ class Node:
     text nodes under a common ancestor. Usually, this is the closest friend.
     """
 
+    is_variable_text: bool = dataclasses.field(repr=False, default=False)
+    """Whether this text node is variable across pages in a website."""
+
     def __post_init__(self):
         self.children = list(self._iterate_children())
 
@@ -131,6 +139,9 @@ class Node:
     @property
     def html_tag(self):
         return self.parsed.tag
+
+    def get_xpath(self):
+        return awe.data.html_utils.get_xpath(self.parsed)
 
     def init_labels(self):
         self.label_keys = [

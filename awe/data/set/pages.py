@@ -1,4 +1,5 @@
 import abc
+import collections
 import dataclasses
 import itertools
 from typing import TYPE_CHECKING
@@ -64,6 +65,57 @@ class Website:
     prev_page_count: int = dataclasses.field(repr=False, default=None)
     page_count: int = dataclasses.field(repr=False, default=None)
 
+    def find_variable_nodes(self, max_variable_nodes_per_website: int = 300):
+        """
+        Determines whether text nodes are variable or fixed in pages across the
+        website (as defined in the SimpDOM paper). Only considers pages with
+        cached DOM.
+        """
+
+        # Find texts for each XPath across pages.
+        nodes = collections.defaultdict(set) # XPath -> set of texts
+        for page in self.pages:
+            if (dom := page.try_get_dom()) is not None:
+                for node in dom.nodes:
+                    if node.is_text:
+                        nodes[node.get_xpath()].add(node.text)
+
+        # Sort nodes by variability.
+        node_vars = sorted(
+            ((xpath, len(texts)) for xpath, texts in nodes.items()),
+            key=lambda p: p[1],
+            reverse=True
+        )
+
+        # Ensure labeled nodes are variable.
+        labeled_xpaths = set()
+        for page in self.pages:
+            if (dom := page.try_get_dom()) is not None:
+                for labeled_nodes in dom.labeled_nodes.values():
+                    for node in labeled_nodes:
+                        labeled_xpaths.add(node.get_xpath())
+
+        # Split XPaths into variable/fixed sets.
+        variable_nodes = set() # XPaths
+        fixed_nodes = set() # XPaths
+        for xpath, variability in node_vars:
+            if ((
+                    variability > 5
+                    and len(variable_nodes) < max_variable_nodes_per_website
+                )
+                or xpath in labeled_xpaths
+            ):
+                variable_nodes.add(xpath)
+            else:
+                fixed_nodes.add(xpath)
+
+        # Flag variable nodes.
+        for page in self.pages:
+            if (dom := page.try_get_dom()) is not None:
+                for node in dom.nodes:
+                    if node.is_text:
+                        node.is_variable_text = node.get_xpath() in variable_nodes
+
 @dataclasses.dataclass(eq=False)
 class Page(abc.ABC):
     website: Website = dataclasses.field(repr=False)
@@ -99,6 +151,9 @@ class Page(abc.ABC):
     def dom(self):
         if self._dom is None:
             return self.create_dom()
+        return self._dom
+
+    def try_get_dom(self):
         return self._dom
 
     def cache_dom(self):

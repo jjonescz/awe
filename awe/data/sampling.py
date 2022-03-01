@@ -30,43 +30,61 @@ class Sampler:
         done for training pages).
         """
 
-        result = [
-            node
-            for page in tqdm(pages, desc=f'loading {desc}')
-            for node in self.get_nodes_for_page(page, train=train)
-        ]
-        if train:
-            self.trainer.extractor.initialize()
-        return result
+        # Prepare DOM trees.
+        for page in tqdm(pages, desc=f'init {desc}'):
+            page: awe.data.set.pages.Page
+            if page.cache_dom().root is None:
+                page.dom.init_nodes()
 
-    def get_nodes_for_page(self,
-        page: awe.data.set.pages.Page,
-        train: bool = False
-    ) -> list[Sample]:
-        # Prepare DOM tree.
-        if page.cache_dom().root is None:
-            page.dom.init_nodes()
+                page.dom.init_labels()
 
-            page.dom.init_labels()
+        # Find variable nodes.
+        if self.trainer.params.classify_only_variable_nodes:
+            websites = {}
+            for page in pages:
+                websites.setdefault(page.website.name, page.website)
+            for website in tqdm(
+                websites.values(),
+                desc=f'find variable nodes in {desc}'
+            ):
+                website: awe.data.set.pages.Website
+                website.find_variable_nodes()
 
         # Compute friend cycles.
-        if (
-            self.trainer.params.friend_cycles
-            and not page.dom.friend_cycles_computed
-        ):
-            page.dom.compute_friend_cycles(
-                max_friends=self.trainer.params.max_friends
-            )
+        for page in tqdm(pages, desc=f'prepare {desc}'):
+            if (
+                self.trainer.params.friend_cycles
+                and not page.dom.friend_cycles_computed
+            ):
+                page.dom.compute_friend_cycles(
+                    max_friends=self.trainer.params.max_friends,
+                    only_variable_nodes=self.trainer.params.classify_only_variable_nodes
+                )
 
-        if train:
-            # Add all label keys to a map.
-            for label_key in page.labels.label_keys:
-                self.trainer.label_map.map_label_to_id(label_key)
+            if train:
+                # Add all label keys to a map.
+                for label_key in page.labels.label_keys:
+                    self.trainer.label_map.map_label_to_id(label_key)
 
-        # Prepare features.
-        self.trainer.extractor.prepare_page(page.dom, train=train)
+            # Prepare features.
+            self.trainer.extractor.prepare_page(page.dom, train=train)
+
+            # Initialize features.
+            if train:
+                self.trainer.extractor.initialize()
 
         # Select nodes.
+        return [
+            node
+            for page in pages
+            for node in self.select_nodes_for_page(page)
+        ]
+
+    def select_nodes_for_page(self,
+        page: awe.data.set.pages.Page
+    ) -> list[Sample]:
+        if self.trainer.params.classify_only_variable_nodes:
+            return [n for n in page.dom.nodes if n.is_variable_text]
         if self.trainer.params.classify_only_text_nodes:
             return [n for n in page.dom.nodes if n.is_text]
         return page.dom.nodes

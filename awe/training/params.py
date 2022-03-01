@@ -33,6 +33,7 @@ class Params:
 
     # Sampling
     classify_only_text_nodes: bool = False
+    classify_only_variable_nodes: bool = False
 
     # Friend cycles
     friend_cycles: bool = False
