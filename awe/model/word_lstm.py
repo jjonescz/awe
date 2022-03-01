@@ -34,6 +34,8 @@ class WordLstm(torch.nn.Module):
                 padding_idx=0
             )
 
+        self.dropout = torch.nn.Dropout(0.3)
+
         if self.trainer.params.word_vector_function == 'lstm':
             self.lstm = torch.nn.LSTM(word_dim, self.trainer.params.lstm_dim,
                 batch_first=True,
@@ -41,9 +43,6 @@ class WordLstm(torch.nn.Module):
             )
 
             self.out_dim = self.trainer.params.lstm_dim
-            if self.lstm.bidirectional:
-                # LSTM output will be twice as long.
-                self.out_dim *= 2
         else:
             self.out_dim = word_dim
 
@@ -61,14 +60,26 @@ class WordLstm(torch.nn.Module):
         # Embed words.
         embedded_words = self.word_embedding(masked_word_ids)
             # [num_masked_nodes, max_num_words, word_dim]
+        embedded_words = self.dropout(embedded_words)
 
         if self.trainer.params.word_vector_function == 'lstm':
             # Run through LSTM.
             word_output, (_, _) = self.lstm(embedded_words)
                 # [num_masked_nodes, max_num_words, D * lstm_dim]
 
+            # Aggregate forward and backward vectors.
+            if self.lstm.bidirectional:
+                word_output = torch.reshape(word_output,
+                    (word_output.shape[0], word_output.shape[1],
+                    word_output.shape[2] // 2, 2))
+                    # [num_masked_nodes, max_num_words, lstm_dim, D]
+                word_output = torch.mean(word_output, dim=-1)
+                    # [num_masked_nodes, max_num_words, lstm_dim]
+
+            word_output = self.dropout(word_output)
+
             # Keep only the last word output (whole text representation).
-            node_vectors = word_output[:, -1, ...] # [num_masked_nodes, D * lstm_dim]
+            node_vectors = word_output[:, -1, ...] # [num_masked_nodes, lstm_dim]
         else:
             # If not using LSTM, aggregate word embeddings.
             f = getattr(torch, self.trainer.params.word_vector_function)
