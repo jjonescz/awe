@@ -125,8 +125,32 @@ class Page(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def file_name_no_extension(self) -> str:
+        """Name of page stored locally."""
+
+    @property
+    @abc.abstractmethod
+    def dir_path(self) -> str:
+        """
+        Path to directory where page files are stored locally, relative to
+        `Dataset.dir_path`.
+        """
+
+    @property
+    def html_file_name(self):
+        return f'{self.file_name_no_extension}.htm'
+
+    @property
     def html_path(self) -> str:
-        """Path to HTML file stored locally, relative to `Dataset.dir_path`."""
+        return f'{self.dir_path}/{self.html_file_name}'
+
+    @property
+    def visuals_file_name(self):
+        return f'{self.file_name_no_extension}.json'
+
+    @property
+    def visuals_path(self):
+        return f'{self.dir_path}/{self.visuals_file_name}'
 
     @property
     @abc.abstractmethod

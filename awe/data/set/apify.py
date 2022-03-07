@@ -119,12 +119,12 @@ class Page(awe.data.set.pages.Page):
         return slugify.slugify(self.url)
 
     @property
-    def html_file_name(self):
-        return f'original_html_{self.url_slug}.htm'
+    def file_name_no_extension(self):
+        return f'original_html_{self.url_slug}'
 
     @property
-    def html_path(self):
-        return f'{self.website.dir_path}/pages/{self.html_file_name}'
+    def dir_path(self):
+        return f'{self.website.dir_path}/pages'
 
     @property
     def url(self) -> str:
