@@ -28,10 +28,13 @@ See available commands via `doit list`. Their source code is in `dodo.py`.
 
 ### Development
 
-**Adding new Python package:** Add the package to `gradient/requirements.txt`,
-try if it works by running `pip install -r gradient/requirements.txt`, and
-rebuild the Docker image.
+**Add new Python package:** Add the package to `gradient/requirements.txt`, try
+if it works by running `pip install -r gradient/requirements.txt`, and rebuild
+the Docker image.
 
-**Debugging training code:** Set `num_workers=0`. GPUs can be enabled.
+**Debug training code:** Set `num_workers=0`. GPUs can be enabled.
 
 **Kill processes taking up GPU:** Run `fuser -k /dev/nvidia0`.
+
+**Inspect HTML in the dataset:** Run `pnpx -y http-server` and navigate to the
+page through web browser.
