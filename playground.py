@@ -1,39 +1,10 @@
-import importlib
+import awe.data.set.label_validation
+import awe.data.set.swde
+import awe.data.set.apify
 
-import torch
-import numpy as np
-
-from awe import utils, filtering, features, html_utils, awe_graph
-from awe.data import swde, live, dataset
-from awe.features import extraction
-
-for module in [utils, filtering, dataset, swde, live, features, extraction, html_utils, awe_graph]:
-    importlib.reload(module)
-
-np.random.seed(42)
-torch.manual_seed(42)
-
-sds = swde.Dataset(suffix='-exact')
-
-SUBSET = slice(2)
-vertical = sds.verticals[0]
-train_pages = vertical.websites[0].pages[:400] + vertical.websites[1].pages[:100] + vertical.websites[2].pages[:100]
-val_pages = vertical.websites[3].pages[:100]
-ds = dataset.DatasetCollection()
-ds.create('train', train_pages[SUBSET], shuffle=True)
-ds.create('val', val_pages[SUBSET])
-
-ds.features = [
-    features.Depth(),
-    features.IsLeaf(),
-    features.CharCategories(),
-    features.Visuals(),
-    features.CharIdentifiers(),
-    features.WordIdentifiers(),
-]
-
-ds.create_dataloaders(batch_size=4)
-
-for batch in ds['train'].loader:
-    print(batch)
-    break
+ds = awe.data.set.apify.Dataset(only_websites=('tescoEn',))
+page = ds.verticals[0].websites[0].pages[0]
+page_labels = page.get_labels()
+page_dom = page.create_dom()
+page_dom.init_nodes()
+page_dom.root.parsed.css('.product-info-block + section.tabularContent')
