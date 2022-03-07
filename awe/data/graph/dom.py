@@ -1,9 +1,10 @@
 import collections
 import dataclasses
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import awe.data.html_utils
 import awe.data.parsing
+import awe.data.visual.structs
 
 if TYPE_CHECKING:
     import awe.data.set.pages
@@ -124,8 +125,18 @@ class Node:
     is_variable_text: bool = dataclasses.field(repr=False, default=False)
     """Whether this text node is variable across pages in a website."""
 
+    box: Optional[awe.data.visual.structs.BoundingBox] = \
+        dataclasses.field(repr=False, default=None)
+
+    visuals: dict[str, Any] = dataclasses.field(init=False, default_factory=dict)
+    """`VisualAttribute.name` -> attribute's value or `None`."""
+
     def __post_init__(self):
         self.children = list(self._iterate_children())
+
+    @property
+    def id(self):
+        return self.parsed.id
 
     @property
     def is_text(self):
