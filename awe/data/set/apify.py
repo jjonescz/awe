@@ -179,6 +179,15 @@ class PageLabels(awe.data.set.labels.PageLabels):
         if not self.has_label(label_key):
             return []
         selector = self.get_selector(label_key)
+
+        # HACK: If selector contains `+`, replace it by `~` as there is a bug in
+        # Lexbor's implementation of the former (a segfault occurs in
+        # `lxb_selectors_sibling` at source/lexbor/selectors/selectors.c:266).
+        if '+' in selector:
+            new_selector = selector.replace('+', '~')
+            warnings.warn(f'Patched selector {selector!r} to {new_selector!r}.')
+            selector = new_selector
+
         try:
             return self.page.dom.tree.css(selector)
         except awe.data.parsing.Error as e:
