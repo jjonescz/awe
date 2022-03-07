@@ -24,7 +24,7 @@ def validate(
                 if actual < expected:
                     warnings.warn(
                         f'Found {actual} < {expected} nodes labeled ' + \
-                        f'{repr(key)}={repr(values)} ({page.html_path}).')
+                        f'{key!r}={values!r} ({page.html_path!r}).')
 
         # Check that extracted visual DOM has the same structure as parsed DOM.
         if visuals:
