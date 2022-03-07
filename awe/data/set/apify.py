@@ -136,6 +136,9 @@ class Page(awe.data.set.pages.Page):
     def get_labels(self):
         return PageLabels(self)
 
+    def load_visuals(self):
+        raise NotImplementedError()
+
 class PageLabels(awe.data.set.labels.PageLabels):
     page: Page
 
