@@ -19,12 +19,16 @@ SELECTOR_PREFIX = 'selector_'
 class Dataset(awe.data.set.pages.Dataset):
     verticals: list['Vertical'] = dataclasses.field(repr=False)
 
-    def __init__(self, only_websites: Optional[list[str]] = None):
+    def __init__(self,
+        only_websites: Optional[list[str]] = None,
+        convert: bool = True,
+    ):
         super().__init__(
             name='apify',
             dir_path=DIR,
         )
         self.only_websites = only_websites
+        self.convert = convert
         self.verticals = [
             Vertical(dataset=self, name='products', prev_page_count=0)
         ]
@@ -73,20 +77,19 @@ class Website(awe.data.set.pages.Website):
             prev_page_count=prev_page_count,
         )
 
-        # Convert dataset.
-        if not os.path.exists(self.dataset_pickle_path):
-            print('Saving dataset in efficient binary format ' + \
-                f'({self.dataset_pickle_path!r}).')
+        if not self.vertical.dataset.convert:
+            self.df = self.read_json_df()
+        else:
+            # Convert dataset.
+            if not os.path.exists(self.dataset_pickle_path):
+                print('Saving dataset in efficient binary format ' + \
+                    f'({self.dataset_pickle_path!r}).')
+                json_df = self.read_json_df()
+                json_df.to_pickle(self.dataset_pickle_path)
 
-            if not os.path.exists(self.dataset_json_path):
-                raise RuntimeError(
-                    f'JSON not found ({self.dataset_json_path!r}).')
+            # Load dataset.
+            self.df = pd.read_pickle(self.dataset_pickle_path)
 
-            json_df = pd.read_json(self.dataset_json_path)
-            json_df.to_pickle(self.dataset_pickle_path)
-
-        # Load dataset.
-        self.df = pd.read_pickle(self.dataset_pickle_path)
         self.pages = [
             Page(website=self, index=idx)
             for idx in range(len(self.df))
@@ -104,6 +107,12 @@ class Website(awe.data.set.pages.Website):
     @property
     def dataset_pickle_path(self):
         return f'{self.dir_path}/dataset.pkl'
+
+    def read_json_df(self):
+        if not os.path.exists(self.dataset_json_path):
+            raise RuntimeError(
+                f'JSON not found ({self.dataset_json_path!r}).')
+        return pd.read_json(self.dataset_json_path)
 
 @dataclasses.dataclass(eq=False)
 class Page(awe.data.set.pages.Page):
