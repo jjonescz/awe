@@ -1,4 +1,5 @@
 import re
+from typing import Callable
 
 import selectolax
 import selectolax.lexbor
@@ -43,7 +44,12 @@ def parse_html(html_text: str):
     # Note that unlike the default selectolax parser, the Lexbor parser can
     # correctly extract text fragments `X`, `Y`, `Z` from HTML
     # `<p>X<br>Y<br>Z</p>`.
-    return Tree(html_text)
+    tree = Tree(html_text)
+
+    # Ignore comments.
+    remove_where(tree, ignore_node)
+
+    return tree
 
 def filter_tree(tree: Tree):
     # Ignore some tags.
@@ -56,13 +62,7 @@ def filter_tree(tree: Tree):
     ])
 
     # Ignore more nodes.
-    to_destroy = [n
-        for n in tree.root.traverse(include_text=True)
-        if ignore_node(n)
-    ]
-    for n in to_destroy:
-        n: Node
-        n.decompose(recursive=False)
+    remove_where(tree, filter_node)
 
 def normalize_node_text(text: str):
     return collapse_whitespace(text).strip()
@@ -76,11 +76,23 @@ def remove_whitespace(text: str):
 def is_empty_or_whitespace(text: str):
     return re.match(EMPTY_OR_WHITESPACE_REGEX, text) is not None
 
+def remove_where(tree: Tree, predicate: Callable[[Node], bool]):
+    to_destroy = [n
+        for n in tree.root.traverse(include_text=True)
+        if predicate(n)
+    ]
+    for n in to_destroy:
+        n: Node
+        n.decompose(recursive=False)
+
 def ignore_node(node: Node):
     return (
         # Ignore comments.
-        awe.data.html_utils.is_comment(node) or
+        awe.data.html_utils.is_comment(node)
+    )
 
+def filter_node(node: Node):
+    return (
         # Ignore text fragments containing only white space.
         (
             awe.data.html_utils.is_text(node) and
