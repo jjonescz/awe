@@ -32,6 +32,14 @@ class Dom:
         for idx, node in enumerate(self.nodes):
             node.deep_index = idx
 
+    def filter_nodes(self):
+        awe.data.parsing.filter_tree(self.tree)
+        self.nodes = [
+            node
+            for node in self.nodes
+            if not node.is_detached
+        ]
+
     def init_labels(self):
         # Get labeled parsed nodes.
         self.labeled_parsed_nodes = {
@@ -146,6 +154,10 @@ class Node:
     def text(self):
         assert self.is_text
         return self.parsed.text(deep=False)
+
+    @property
+    def is_detached(self):
+        return self.dom.root != self and self.parsed.parent is None
 
     @property
     def html_tag(self):

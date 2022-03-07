@@ -43,9 +43,9 @@ def parse_html(html_text: str):
     # Note that unlike the default selectolax parser, the Lexbor parser can
     # correctly extract text fragments `X`, `Y`, `Z` from HTML
     # `<p>X<br>Y<br>Z</p>`.
+    return Tree(html_text)
 
-    tree = Tree(html_text)
-
+def filter_tree(tree: Tree):
     # Ignore some tags.
     tree.strip_tags([
         'script',
@@ -63,8 +63,6 @@ def parse_html(html_text: str):
     for n in to_destroy:
         n: Node
         n.decompose(recursive=False)
-
-    return tree
 
 def normalize_node_text(text: str):
     return collapse_whitespace(text).strip()
