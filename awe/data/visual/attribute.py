@@ -2,8 +2,8 @@ import dataclasses
 from typing import Any, Callable, Generic, Optional, Tuple, TypeVar, Union
 
 import awe.data.graph.dom
-import awe.data.visual.color
 import awe.data.visual.context
+import awe.data.visual.structs
 import awe.utils
 
 T = TypeVar('T')
@@ -59,7 +59,7 @@ def categorical(c: AttributeContext[str]):
         i.count += 1
     return [i.unique_id]
 
-def select_color(c: AttributeContext[awe.data.visual.color.Color]):
+def select_color(c: AttributeContext[awe.data.visual.structs.Color]):
     return [c.value.hue, c.value.brightness / 255, c.value.alpha / 255]
 
 def select_image(c: AttributeContext[str]):
@@ -92,7 +92,7 @@ def select_z_index(c: AttributeContext[str]):
 
 COLOR = {
     'selector': select_color,
-    'parser': awe.data.visual.color.Color.parse,
+    'parser': awe.data.visual.structs.Color.parse,
     'labels': ['hue', 'brightness', 'alpha']
 }
 

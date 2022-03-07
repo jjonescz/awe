@@ -3,6 +3,17 @@ import dataclasses
 
 
 @dataclasses.dataclass
+class BoundingBox:
+    x: int
+    y: int
+    width: int
+    height: int
+
+    @property
+    def center_point(self):
+        return self.x + self.width / 2, self.y + self.height / 2
+
+@dataclasses.dataclass
 class Color:
     red: int
     green: int
