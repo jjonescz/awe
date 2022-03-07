@@ -91,6 +91,11 @@ RUN curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/focal.gpg | apt-key add 
 # Install Google Drive CLI.
 RUN curl -fsSL https://github.com/prasmussen/gdrive/releases/download/2.1.1/gdrive_2.1.1_linux_386.tar.gz | tar zxf - -C /usr/bin
 
+# Install jless (JSON CLI).
+RUN curl -fsSL https://github.com/PaulJuliusMartinez/jless/releases/download/v0.7.2/jless-v0.7.2-x86_64-unknown-linux-gnu.zip -o jless.zip \
+    && unzip jless.zip -d /usr/bin \
+    && rm jless.zip
+
 # Install Python packages.
 COPY requirements.txt /requirements.txt
 RUN pip install -r requirements.txt
