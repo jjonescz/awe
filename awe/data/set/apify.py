@@ -75,7 +75,12 @@ class Website(awe.data.set.pages.Website):
         # Convert dataset.
         if not os.path.exists(self.dataset_pickle_path):
             print('Saving dataset in efficient binary format ' + \
-                f'({self.dataset_pickle_path}).')
+                f'({self.dataset_pickle_path!r}).')
+
+            if not os.path.exists(self.dataset_json_path):
+                raise RuntimeError(
+                    f'JSON not found ({self.dataset_json_path!r}).')
+
             json_df = pd.read_json(self.dataset_json_path)
             json_df.to_pickle(self.dataset_pickle_path)
 
