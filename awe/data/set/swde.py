@@ -256,7 +256,8 @@ class Page(awe.data.set.pages.Page):
     def to_row(self):
         return {
             'url': self.url,
-            'html_text': self.get_html_text()
+            'html_text': self.get_html_text(),
+            'visuals': self.load_visuals().data
         }
 
 class FilePage(Page):
@@ -289,6 +290,11 @@ class FilePage(Page):
             _ = f.readline()
             return f.read()
 
+    def load_visuals(self):
+        visuals = self.create_visuals()
+        visuals.load_json()
+        return visuals
+
 class PicklePage(Page):
     @property
     def row(self):
@@ -300,3 +306,8 @@ class PicklePage(Page):
 
     def get_html_text(self):
         return self.row.html_text
+
+    def load_visuals(self):
+        visuals = self.create_visuals()
+        visuals.data = self.row.visuals
+        return visuals

@@ -194,6 +194,10 @@ class Page(abc.ABC):
     def create_visuals(self):
         return awe.data.graph.visual.DomData(self.visuals_path)
 
+    @abc.abstractmethod
+    def load_visuals(self) -> awe.data.graph.visual.DomData:
+        """Loads visual attributes for the page."""
+
     def clear_cache(self, request: ClearCacheRequest):
         if request.dom:
             self._dom = None
