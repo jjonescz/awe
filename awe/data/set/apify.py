@@ -5,6 +5,7 @@ from typing import Optional
 
 import pandas as pd
 import slugify
+from tqdm.auto import tqdm
 
 import awe.data.constants
 import awe.data.parsing
@@ -47,7 +48,7 @@ class Vertical(awe.data.set.pages.Vertical):
             return
 
         page_count = 0
-        for subdir in sorted(os.listdir(self.dir_path)):
+        for subdir in tqdm(sorted(os.listdir(self.dir_path)), desc='websites'):
             if (self.dataset.only_websites is not None
                 and subdir not in self.dataset.only_websites):
                 continue
