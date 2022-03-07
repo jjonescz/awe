@@ -1,3 +1,5 @@
+import warnings
+
 from tqdm.auto import tqdm
 
 import awe.data.set.pages
@@ -15,6 +17,6 @@ def validate(pages: list[awe.data.set.pages.Page]):
             expected = len(values)
             actual = len(nodes)
             if actual < expected:
-                raise RuntimeError(
+                warnings.warn(
                     f'Found {actual} < {expected} nodes labeled ' + \
                     f'{repr(key)}={repr(values)} ({page.html_path}).')
