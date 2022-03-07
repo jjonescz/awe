@@ -5,6 +5,7 @@ import itertools
 from typing import TYPE_CHECKING
 
 import awe.data.graph.dom
+import awe.data.graph.visual
 
 if TYPE_CHECKING:
     import awe.data.set.labels
@@ -189,6 +190,9 @@ class Page(abc.ABC):
 
     def create_dom(self):
         return awe.data.graph.dom.Dom(self)
+
+    def create_visuals(self):
+        return awe.data.graph.visual.DomData(self.visuals_path)
 
     def clear_cache(self, request: ClearCacheRequest):
         if request.dom:
