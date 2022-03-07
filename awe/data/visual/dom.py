@@ -1,5 +1,6 @@
 import json
 import os
+import warnings
 from typing import Any, Callable
 
 import awe.data.graph.dom
@@ -47,7 +48,7 @@ class DomData:
             filled = node_data.pop('_filled', False)
             if not filled and tag_name != '':
                 raise RuntimeError('Unused visual attributes for ' + \
-                    f'{get_xpath(tag_name, parent)} in {self.path}')
+                    f'{get_xpath(tag_name, parent)!r} in {self.path!r}.')
 
             # Add children to queue.
             for child_name, child_data in node_data.items():
@@ -78,8 +79,8 @@ class DomData:
                 try:
                     result = parser(val, node_data)
                 except ValueError as e:
-                    print(f'Cannot parse {snake_case}="{val}", using ' + \
-                        f'default="{val}" in {self.path}: {str(e)}')
+                    warnings.warn(f'Cannot parse {snake_case}={val!r} ' + \
+                        f'using default={val!r} in {self.path!r}: {str(e)}')
                     result = default(node)
                 return result
             return None
@@ -101,8 +102,8 @@ class DomData:
         for index, element in enumerate(elements):
             current_data = current_data.get(f'/{element}')
             if current_data is None:
-                current_xpath = '/'.join(elements[:index + 1])
+                current_xpath = '/' + '/'.join(elements[:index + 1])
                 raise RuntimeError(
-                    f'Cannot find visual attributes for /{current_xpath} ' + \
-                    f'while searching for {xpath} in {self.path}')
+                    f'Cannot find visual attributes for {current_xpath!r} ' + \
+                    f'while searching for {xpath!r} in {self.path!r}.')
         return current_data
