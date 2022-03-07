@@ -13,6 +13,14 @@ ANY_WHITESPACE_REGEX = re.compile(fr'{WHITESPACE_CHAR_REGEX}+')
 
 EMPTY_OR_WHITESPACE_REGEX = re.compile(fr'^{WHITESPACE_CHAR_REGEX}*$')
 
+IGNORED_TAG_NAMES = [
+    'script',
+    'style',
+    'head',
+    'noscript',
+    'iframe'
+]
+
 # pylint: disable=c-extension-no-member
 Node = selectolax.lexbor.LexborNode
 Tree = selectolax.lexbor.LexborHTMLParser
@@ -46,21 +54,15 @@ def parse_html(html_text: str):
     # `<p>X<br>Y<br>Z</p>`.
     tree = Tree(html_text)
 
+    # Ignore some tags.
+    tree.strip_tags(IGNORED_TAG_NAMES)
+
     # Ignore comments.
     remove_where(tree, ignore_node)
 
     return tree
 
 def filter_tree(tree: Tree):
-    # Ignore some tags.
-    tree.strip_tags([
-        'script',
-        'style',
-        'head',
-        'noscript',
-        'iframe'
-    ])
-
     # Ignore more nodes.
     remove_where(tree, filter_node)
 

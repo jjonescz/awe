@@ -1,13 +1,16 @@
 import json
 import os
+import re
 import warnings
 from typing import Any, Callable
 
 import awe.data.graph.dom
+import awe.data.parsing
 import awe.data.visual.attribute
 import awe.data.visual.structs
 import awe.utils
 
+XPATH_ELEMENT_REGEX = r'^/(.*?)(\[\d+\])?$'
 
 class DomData:
     """Can load visual attributes saved by `extractor.ts`."""
@@ -52,7 +55,10 @@ class DomData:
 
             # Add children to queue.
             for child_name, child_data in node_data.items():
-                if child_name.startswith('/'):
+                if child_name.startswith('/') and (
+                    get_tag_name(child_name)
+                    not in awe.data.parsing.IGNORED_TAG_NAMES
+                ):
                     queue.insert(0, (child_data, child_name, item))
 
     def fill_one(self, node: awe.data.graph.dom.Node):
@@ -107,3 +113,6 @@ class DomData:
                     f'Cannot find visual attributes for {current_xpath!r} ' + \
                     f'while searching for {xpath!r} in {self.path!r}.')
         return current_data
+
+def get_tag_name(xpath_element: str):
+    return re.match(XPATH_ELEMENT_REGEX, xpath_element).group(1)
