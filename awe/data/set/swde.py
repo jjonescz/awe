@@ -243,12 +243,24 @@ class Page(awe.data.set.pages.Page):
         return self.website.vertical.dataset.suffix
 
     @property
+    def file_name_no_extension(self):
+        return f'{self.index:04}{self.suffix or ""}'
+
+    @property
     def html_file_name(self):
-        return f'{self.index:04}{self.suffix or ""}.htm'
+        return f'{self.file_name_no_extension}.htm'
 
     @property
     def html_path(self):
         return f'{self.website.dir_path}/{self.html_file_name}'
+
+    @property
+    def visuals_file_name(self):
+        return f'{self.file_name_no_extension}.json'
+
+    @property
+    def visuals_path(self):
+        return f'{self.website.dir_path}/{self.visuals_file_name}'
 
     def get_labels(self):
         return awe.data.set.swde_labels.PageLabels(self)
