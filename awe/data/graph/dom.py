@@ -27,7 +27,7 @@ class Dom:
 
     def init_nodes(self):
         # Get all nodes.
-        self.root = Node(dom=self, parsed=self.tree.body, parent=None)
+        self.root = Node(dom=self, parsed=self.tree.root, parent=None)
         self.nodes = list(self.root.traverse())
         for idx, node in enumerate(self.nodes):
             node.deep_index = idx
