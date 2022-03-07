@@ -1,12 +1,10 @@
-from dataclasses import dataclass, field
-from typing import (TYPE_CHECKING, Any, Callable, Generic, Optional, Tuple,
-                    TypeVar, Union)
+import dataclasses
+from typing import Any, Callable, Generic, Optional, Tuple, TypeVar, Union
 
-from awe import utils
-from awe.visual import color
-
-if TYPE_CHECKING:
-    from awe import awe_graph, features
+import awe.data.graph.dom
+import awe.data.visual.color
+import awe.data.visual.context
+import awe.utils
 
 T = TypeVar('T')
 TInput = TypeVar('TInput')
@@ -34,13 +32,13 @@ def parse_border(values: dict[str, str], default: str):
         return [value] * 4
     return [values.get(side, default) for side in BORDER_SIDES]
 
-@dataclass
+@dataclasses.dataclass
 class AttributeContext(Generic[T]):
     """Everything needed to compute feature from `VisualAttribute` of a node."""
 
     attribute: 'VisualAttribute[T]'
-    node: 'awe_graph.HtmlNode'
-    context: 'features.RootContext'
+    node: awe.data.graph.dom.Node
+    extraction: awe.data.visual.context.Extraction
     freezed: bool
 
     @property
@@ -53,15 +51,15 @@ class AttributeContext(Generic[T]):
 
 def categorical(c: AttributeContext[str]):
     if c.freezed:
-        i = c.context.visual_categorical[c.attribute.name].get(c.value)
+        i = c.extraction.categorical[c.attribute.name].get(c.value)
         if i is None:
             return [0]
     else:
-        i = c.context.visual_categorical[c.attribute.name][c.value]
+        i = c.extraction.categorical[c.attribute.name][c.value]
         i.count += 1
     return [i.unique_id]
 
-def select_color(c: AttributeContext[color.Color]):
+def select_color(c: AttributeContext[awe.data.visual.color.Color]):
     return [c.value.hue, c.value.brightness / 255, c.value.alpha / 255]
 
 def select_image(c: AttributeContext[str]):
@@ -94,7 +92,7 @@ def select_z_index(c: AttributeContext[str]):
 
 COLOR = {
     'selector': select_color,
-    'parser': color.Color.parse,
+    'parser': awe.data.visual.color.Color.parse,
     'labels': ['hue', 'brightness', 'alpha']
 }
 
@@ -104,40 +102,40 @@ BORDER = {
     'labels': BORDER_SIDES
 }
 
-@dataclass
+@dataclasses.dataclass
 class VisualAttribute(Generic[T, TInput]):
     name: str
     """Name in snake_case."""
 
     selector: Optional[Callable[[AttributeContext[T]], list[float]]] = \
-        field(default=None, repr=False)
+        dataclasses.field(default=None, repr=False)
     """Converts attribute to feature vector."""
 
-    parser: Callable[[TInput], T] = field(default=lambda x: x, repr=False)
+    parser: Callable[[TInput], T] = dataclasses.field(default=lambda x: x, repr=False)
     """Used when converting from JSON value to Python value."""
 
     complex_parser: Optional[Callable[[dict[str, TInput], TInput], T]] = \
-        field(default=None, repr=False)
+        dataclasses.field(default=None, repr=False)
     """
     Like parser but gets all node's DOM data prefixed with attribute's name.
     """
 
     load_types: Union[type[TInput], Tuple[type[TInput]]] = \
-        field(default=str, repr=False)
+        dataclasses.field(default=str, repr=False)
     """What types are allowed to be loaded from JSON DOM data."""
 
-    labels: Optional[list[str]] = field(default=None)
+    labels: Optional[list[str]] = dataclasses.field(default=None)
     """Column labels of the resulting feature vector."""
 
-    default: Union[T, Callable[['awe_graph.HtmlNode'], T]] = \
-        field(default=None, repr=False)
+    default: Union[T, Callable[[awe.data.graph.dom.Node], T]] = \
+        dataclasses.field(default=None, repr=False)
     """Default JSON value if DOM data are missing this attribute."""
 
     @property
     def camel_case_name(self):
-        utils.to_camel_case(self.name)
+        awe.utils.to_camel_case(self.name)
 
-    def get_default(self, node: 'awe_graph.HtmlNode') -> T:
+    def get_default(self, node: awe.data.graph.dom.Node) -> T:
         if callable(self.default):
             return self.default(node)
         return self.default

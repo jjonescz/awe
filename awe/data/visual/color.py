@@ -1,8 +1,8 @@
 import colorsys
-from dataclasses import dataclass
+import dataclasses
 
 
-@dataclass
+@dataclasses.dataclass
 class Color:
     red: int
     green: int
