@@ -14,6 +14,7 @@ import awe.data.set.pages
 
 DIR = f'{awe.data.constants.DATA_DIR}/apify'
 SELECTOR_PREFIX = 'selector_'
+USE_ONLY_LABEL_KEYS = { 'name', 'price', 'shortDescription', 'images' }
 
 @dataclasses.dataclass
 class Dataset(awe.data.set.pages.Dataset):
@@ -165,9 +166,10 @@ class PageLabels(awe.data.set.labels.PageLabels):
     def label_keys(self):
         keys: list[str] = self.page.row.keys()
         return [
-            k[len(SELECTOR_PREFIX):]
+            s
             for k in keys
-            if k.startswith(SELECTOR_PREFIX)
+            if (k.startswith(SELECTOR_PREFIX) and
+                (s := k[len(SELECTOR_PREFIX):]) in USE_ONLY_LABEL_KEYS)
         ]
 
     def get_selector(self, label_key: str):
