@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 class Dom:
     root: Optional['Node'] = None
     nodes: Optional[list['Node']] = None
-    labeled_parsed_nodes: dict[str, list[awe.data.parsing.Node]]
     labeled_nodes: dict[str, list['Node']]
     friend_cycles_computed: bool = False
 
@@ -21,7 +20,6 @@ class Dom:
         page: 'awe.data.set.pages.Page'
     ):
         self.page = page
-        self.labeled_parsed_nodes = {}
         self.labeled_nodes = {}
         self.tree = awe.data.parsing.parse_html(page.get_html_text())
 
@@ -40,22 +38,29 @@ class Dom:
             if not node.is_detached
         ]
 
+    def find_parsed_node(self, node: awe.data.parsing.Node):
+        index_path = awe.data.html_utils.get_index_path(node)
+        return self.root.find_by_index_path(index_path)
+
     def init_labels(self, propagate_to_leaves: bool = False):
-        def get_labeled_nodes(label_key: str):
-            nodes = self.page.labels.get_labeled_nodes(label_key)
-            if propagate_to_leaves:
-                nodes = awe.data.html_utils.expand_leaves(nodes)
-            return nodes
-
-        # Get labeled parsed nodes.
-        self.labeled_parsed_nodes = {
-            k: get_labeled_nodes(k)
-            for k in self.page.labels.label_keys
-        }
-
+        # Clear DOM node labeling.
         self.labeled_nodes.clear()
         for node in self.nodes:
-            node.init_labels()
+            node.label_keys.clear()
+
+        for label_key in self.page.labels.label_keys:
+            # Get labeled nodes.
+            parsed_nodes = self.page.labels.get_labeled_nodes(label_key)
+            if propagate_to_leaves:
+                parsed_nodes = awe.data.html_utils.expand_leaves(parsed_nodes)
+
+            # Find the labeled nodes in our DOM.
+            labeled_nodes = [self.find_parsed_node(n) for n in parsed_nodes]
+
+            # Fill node labeling.
+            self.labeled_nodes[label_key] = labeled_nodes
+            for node in labeled_nodes:
+                node.label_keys.append(label_key)
 
     def compute_friend_cycles(self,
         max_ancestor_distance: int = 5,
@@ -172,6 +177,13 @@ class Node:
 
     def get_xpath(self):
         return awe.data.html_utils.get_xpath(self.parsed)
+
+    def find_by_index_path(self, indices: list[int]):
+        """Finds node by output of `awe.data.html_utils.get_index_path`."""
+        node = self
+        for idx in indices:
+            node = node.children[idx]
+        return node
 
     def init_labels(self):
         self.label_keys = [

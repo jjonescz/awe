@@ -35,6 +35,21 @@ def get_xpath(node: 'awe.data.parsing.Node'):
         node = node.parent
     return xpath
 
+def get_index_path(node: 'awe.data.parsing.Node'):
+    """
+    Gets path of indices that can be used to get to the same node in an
+    analogous DOM tree.
+    """
+
+    indices = []
+    while node.parent.parent is not None:
+        # Determine index of this node inside parent.
+        prev_count = sum(1 for _ in iter_prev(node))
+        indices.append(prev_count)
+        node = node.parent
+    indices.reverse()
+    return indices
+
 def is_text(node: 'awe.data.parsing.Node'):
     return node.tag == TEXT_TAG
 
@@ -56,5 +71,6 @@ def iter_leaves(node: 'awe.data.parsing.Node'):
         yield node
     else:
         for n in node.traverse(include_text=True):
+            n: 'awe.data.parsing.Node'
             if is_leaf(n):
                 yield n
