@@ -1,5 +1,6 @@
 import dataclasses
 import warnings
+from typing import Optional
 
 from tqdm.auto import tqdm
 
@@ -13,9 +14,9 @@ class Validator:
 
     def validate_pages(self,
         pages: list[awe.data.set.pages.Page],
-        progress_bar: bool = True
+        progress_bar: Optional[str] = 'pages'
     ):
-        for page in tqdm(pages, desc='validation') if progress_bar else pages:
+        for page in tqdm(pages, desc=progress_bar) if progress_bar is not None else pages:
             self.validate_page(page)
 
     def validate_page(self, page: awe.data.set.pages.Page):

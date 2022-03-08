@@ -88,7 +88,7 @@ class Sampler:
             validator = awe.data.validation.Validator(
                 visuals=self.trainer.params.load_visuals
             )
-            validator.validate_pages(pages)
+            validator.validate_pages(pages, progress_bar=f'validate {desc}')
 
         # Select nodes.
         return [
