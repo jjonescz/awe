@@ -11,8 +11,11 @@ class Validator:
     labels: bool = True
     visuals: bool = True
 
-    def validate_pages(self, pages: list[awe.data.set.pages.Page]):
-        for page in tqdm(pages, desc='pages'):
+    def validate_pages(self,
+        pages: list[awe.data.set.pages.Page],
+        progress_bar: bool = True
+    ):
+        for page in tqdm(pages, desc='validation') if progress_bar else pages:
             self.validate_page(page)
 
     def validate_page(self, page: awe.data.set.pages.Page):

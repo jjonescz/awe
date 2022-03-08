@@ -5,6 +5,7 @@ from tqdm.auto import tqdm
 import awe.data.graph.dom
 import awe.data.parsing
 import awe.data.set.pages
+import awe.data.validation
 import awe.features.extraction
 
 if TYPE_CHECKING:
@@ -81,6 +82,13 @@ class Sampler:
             # Initialize features.
             if train:
                 self.trainer.extractor.initialize()
+
+        # Validate.
+        if self.trainer.params.validate_data:
+            validator = awe.data.validation.Validator(
+                visuals=self.trainer.params.load_visuals
+            )
+            validator.validate_pages(pages)
 
         # Select nodes.
         return [

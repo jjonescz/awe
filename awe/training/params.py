@@ -45,6 +45,7 @@ class Params:
     classify_only_text_nodes: bool = False
     classify_only_variable_nodes: bool = False
     propagate_labels_to_leaves: bool = False
+    validate_data: bool = True
 
     # Friend cycles
     friend_cycles: bool = False
