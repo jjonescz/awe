@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 from tqdm.auto import tqdm
 
@@ -101,10 +101,22 @@ class Sampler:
         page: awe.data.set.pages.Page
     ) -> list[Sample]:
         if self.trainer.params.classify_only_variable_nodes:
-            return [n for n in page.dom.nodes if n.is_variable_text]
+            return filter_nodes(page, lambda n: n.is_variable_text)
         if self.trainer.params.classify_only_text_nodes:
-            return [n for n in page.dom.nodes if n.is_text]
+            return filter_nodes(page, lambda n: n.is_text)
         return page.dom.nodes
+
+def filter_nodes(
+    page: awe.data.set.pages.Page,
+    predicate: Callable[[awe.data.graph.dom.Node], bool]
+):
+    for node in page.dom.nodes:
+        if predicate(node):
+            yield node
+        # Check that excluded nodes are not labeled.
+        elif len(node.label_keys) != 0:
+            raise RuntimeError(f'Excluded node {node.get_xpath()!r} ' +
+                f'labeled {node.label_keys!r} ({page.html_path!r}).')
 
 class Collater:
     """
