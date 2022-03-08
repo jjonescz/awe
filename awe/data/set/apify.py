@@ -87,16 +87,17 @@ class Website(awe.data.set.pages.Website):
             self.df = df
         elif not self.vertical.dataset.convert:
             self.df = self.read_json_df()
+            print(f'Loaded {self.dataset_json_path!r}.')
         else:
             # Convert dataset.
             if not os.path.exists(self.dataset_pickle_path):
-                print('Saving dataset in efficient binary format ' + \
-                    f'({self.dataset_pickle_path!r}).')
-                json_df = self.read_json_df()
-                json_df.to_pickle(self.dataset_pickle_path)
-
-            # Load dataset.
-            self.df = pd.read_pickle(self.dataset_pickle_path)
+                self.df = self.read_json_df()
+                self.df.to_pickle(self.dataset_pickle_path)
+                print(f'Saved {self.dataset_pickle_path!r}.')
+            else:
+                # Load dataset.
+                self.df = pd.read_pickle(self.dataset_pickle_path)
+                print(f'Loaded {self.dataset_pickle_path!r}.')
 
         self.vertical.dataset.state[self.name] = self.df
         self.pages = [

@@ -105,8 +105,10 @@ class Vertical(awe.data.set.pages.Vertical):
                     index=[page.index for page in pages]
                 )
                 self.df.to_pickle(self.pickle_path)
+                print(f'Saved {self.pickle_path!r}.')
             else:
                 self.df = pd.read_pickle(self.pickle_path)
+                print(f'Loaded {self.pickle_path!r}.')
 
         self.websites = list(self._iterate_websites(PickleWebsite))
         self.page_count = len(self.df)
