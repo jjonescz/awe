@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from tqdm.auto import tqdm
 
 import awe.data.graph.dom
+import awe.data.parsing
 import awe.data.set.pages
 import awe.features.extraction
 
@@ -34,8 +35,13 @@ class Sampler:
         for page in tqdm(pages, desc=f'init {desc}'):
             page: awe.data.set.pages.Page
             if page.cache_dom().root is None:
+                if not self.trainer.params.load_visuals:
+                    # If not loading visuals, we can filter nodes in one pass.
+                    awe.data.parsing.filter_tree(page.dom.tree)
                 page.dom.init_nodes()
-                page.dom.filter_nodes()
+                if self.trainer.params.load_visuals:
+                    # TODO: Load visuals here.
+                    page.dom.filter_nodes()
                 page.dom.init_labels(
                     propagate_to_leaves=
                         self.trainer.params.propagate_labels_to_leaves
