@@ -64,7 +64,7 @@ class Params:
     lstm_args: Optional[dict] = None
     filter_node_words: bool = False
 
-    # Features
+    # Word and char IDs
     cutoff_words: Optional[int] = 15
     """
     Maximum number of words to preserve in each node (or `None` to preserve
@@ -76,6 +76,9 @@ class Params:
     Maximum number of characters to preserve in each token (or `None` to
     preserve all). Used by `CharacterIdentifiers`.
     """
+
+    # HTML DOM features
+    tag_name_embedding: bool = False
 
     # Classifier
     learning_rate: float = 1e-3

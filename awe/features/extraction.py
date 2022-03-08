@@ -21,6 +21,8 @@ class Extractor:
         self.features = []
         if self.trainer.params.word_vector_function is not None:
             self.features.append(awe.features.text.WordIdentifiers(trainer))
+        if self.trainer.params.tag_name_embedding:
+            self.features.append(awe.features.dom.HtmlTag(trainer))
 
     def prepare_page(self, page_dom: awe.data.graph.dom.Dom, train: bool):
         """Prepares features for the `page`."""

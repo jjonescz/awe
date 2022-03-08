@@ -145,6 +145,9 @@ class Node:
     is_variable_text: bool = dataclasses.field(repr=False, default=False)
     """Whether this text node is variable across pages in a website."""
 
+    semantic_html_tag: Optional[str] = dataclasses.field(repr=False, default=None)
+    """Most semantic HTML tag (found by `HtmlTag` feature)."""
+
     box: Optional[awe.data.visual.structs.BoundingBox] = \
         dataclasses.field(repr=False, default=None)
 
@@ -219,3 +222,19 @@ class Node:
         if self.partner is not None:
             return [self.partner]
         return []
+
+    def unwrap(self, tag_names: set[str]):
+        """
+        If this node is wrapped in another node from set of `tag_names`, returns
+        the parent node (recursively unwrapped).
+        """
+
+        node = self
+        while node.parent is not None and (
+            node.is_text or (
+                node.html_tag in tag_names and
+                len(node.parent.children) == 1
+            )
+        ):
+            node = node.parent
+        return node
