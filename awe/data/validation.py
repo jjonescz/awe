@@ -1,3 +1,4 @@
+import dataclasses
 import warnings
 
 from tqdm.auto import tqdm
@@ -5,16 +6,18 @@ from tqdm.auto import tqdm
 import awe.data.set.pages
 
 
-def validate(
-    pages: list[awe.data.set.pages.Page],
-    labels: bool = True,
-    visuals: bool = True,
-):
-    for page in tqdm(pages, desc='pages'):
-        page: awe.data.set.pages.Page
+@dataclasses.dataclass
+class Validator:
+    labels: bool = True
+    visuals: bool = True
 
+    def validate_pages(self, pages: list[awe.data.set.pages.Page]):
+        for page in tqdm(pages, desc='pages'):
+            self.validate_page(page)
+
+    def validate_page(self, page: awe.data.set.pages.Page):
         # Check that label key-value pairs are consistent.
-        if labels:
+        if self.labels:
             page_labels = page.get_labels()
             for key in page_labels.label_keys:
                 values = page_labels.get_label_values(key)
@@ -27,7 +30,7 @@ def validate(
                         f'{key!r}={values!r} ({page.html_path!r}).')
 
         # Check that extracted visual DOM has the same structure as parsed DOM.
-        if visuals:
+        if self.visuals:
             page_dom = page.dom
             page_dom.init_nodes()
             page_visuals = page.load_visuals()
