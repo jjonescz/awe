@@ -175,7 +175,7 @@ class Page(abc.ABC):
     @property
     def dom(self):
         if self._dom is None:
-            return self.create_dom()
+            return self._create_dom()
         return self._dom
 
     def try_get_dom(self):
@@ -183,12 +183,12 @@ class Page(abc.ABC):
 
     def cache_dom(self):
         # Note that creating page DOM can be memory consuming (especially if
-        # done for many pages), hence this method which makes it explicit.
+        # done for many pages), hence this method exists to make it explicit.
         if self._dom is None:
-            self._dom = self.create_dom()
+            self._dom = self._create_dom()
         return self._dom
 
-    def create_dom(self):
+    def _create_dom(self):
         return awe.data.graph.dom.Dom(self)
 
     def create_visuals(self):
