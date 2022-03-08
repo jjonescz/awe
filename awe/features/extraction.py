@@ -18,10 +18,9 @@ class Extractor:
 
     def __init__(self, trainer: 'awe.training.trainer.Trainer'):
         self.trainer = trainer
-        self.features = [
-            #awe.features.dom.HtmlTag(trainer),
-            awe.features.text.WordIdentifiers(trainer),
-        ]
+        self.features = []
+        if self.trainer.params.word_vector_function is not None:
+            self.features.append(awe.features.text.WordIdentifiers(trainer))
 
     def prepare_page(self, page_dom: awe.data.graph.dom.Dom, train: bool):
         """Prepares features for the `page`."""
