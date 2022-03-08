@@ -35,7 +35,7 @@ class Sampler:
             page: awe.data.set.pages.Page
             if page.cache_dom().root is None:
                 page.dom.init_nodes()
-
+                page.dom.filter_nodes()
                 page.dom.init_labels()
 
         # Find variable nodes.
