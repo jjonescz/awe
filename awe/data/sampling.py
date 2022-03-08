@@ -41,7 +41,10 @@ class Sampler:
                     awe.data.parsing.filter_tree(page.dom.tree)
                 page.dom.init_nodes()
                 if self.trainer.params.load_visuals:
-                    # TODO: Load visuals here.
+                    # Load visuals.
+                    page_visuals = page.load_visuals()
+                    page_visuals.fill_tree(page.dom)
+
                     page.dom.filter_nodes()
                 page.dom.init_labels(
                     propagate_to_leaves=
@@ -86,7 +89,9 @@ class Sampler:
         # Validate.
         if self.trainer.params.validate_data:
             validator = awe.data.validation.Validator(
-                visuals=self.trainer.params.load_visuals
+                # It is not needed to validate visuals as that's automatically
+                # performed when they are loaded (a few lines above).
+                visuals=False
             )
             validator.validate_pages(pages, progress_bar=f'validate {desc}')
 
