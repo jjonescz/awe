@@ -2,6 +2,9 @@ import collections
 import dataclasses
 from typing import TYPE_CHECKING, Any, Optional
 
+import numpy as np
+import sklearn.neighbors
+
 import awe.data.html_utils
 import awe.data.parsing
 import awe.data.visual.structs
@@ -112,6 +115,26 @@ class Dom:
 
         self.friend_cycles_computed = True
 
+    def compute_visual_neighbors(self):
+        target_nodes = [
+            n for n in self.page.dom.nodes
+            if n.is_text and n.box is not None
+        ]
+        coords = np.array([n.box.center_point for n in target_nodes])
+        nn = sklearn.neighbors.NearestNeighbors().fit(coords)
+        d, i = nn.kneighbors(coords)
+        for node, distances, indices in zip(target_nodes, d, i):
+            neighbors = (target_nodes[idx] for idx in indices)
+            node.visual_neighbors = [
+                VisualNeighbor(
+                    distance=dist,
+                    distance_x=neighbor.box.x - node.box.x,
+                    distance_y=neighbor.box.y - node.box.y,
+                    neighbor=neighbor
+                )
+                for dist, neighbor in zip(distances, neighbors)
+            ]
+
 # Setting `eq=False` makes the `Node` inherit hashing and equality functions
 # from `Object` (https://stackoverflow.com/a/53990477).
 @dataclasses.dataclass(eq=False)
@@ -155,6 +178,10 @@ class Node:
 
     visuals: dict[str, Any] = dataclasses.field(init=False, default_factory=dict)
     """`VisualAttribute.name` -> attribute's value or `None`."""
+
+    visual_neighbors: Optional[list['VisualNeighbor']] = \
+        dataclasses.field(repr=False, default=None)
+    """Closest nodes visually."""
 
     def __post_init__(self):
         self.children = list(self._iterate_children())
@@ -240,3 +267,10 @@ class Node:
         ):
             node = node.parent
         return node
+
+@dataclasses.dataclass
+class VisualNeighbor:
+    distance: float
+    distance_x: float
+    distance_y: float
+    neighbor: Node
