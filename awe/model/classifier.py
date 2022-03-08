@@ -83,6 +83,8 @@ class Model(torch.nn.Module):
         )
 
     def forward(self, batch: ModelInput) -> ModelOutput:
+        x = None
+
         # Embed HTML tag names.
         if self.html_tag is not None:
             tag_ids = self.html_tag.compute(batch) # [N]
@@ -100,10 +102,15 @@ class Model(torch.nn.Module):
             else:
                 expanded_batch = [batch]
 
-            x = self.lstm(expanded_batch) # [3N, lstm_dim]
+            y = self.lstm(expanded_batch) # [3N, lstm_dim]
 
             if self.trainer.params.friend_cycles:
-                x = torch.reshape(x, (len(batch), x.shape[1] * 3)) # [N, 3lstm_dim]
+                y = torch.reshape(y, (len(batch), y.shape[1] * 3)) # [N, 3lstm_dim]
+
+            if x is not None:
+                x = torch.concat((x, y), dim=-1) # [N, input_features]
+            else:
+                x = y
 
         # Classify features.
         x = self.head(x) # [N, num_labels]
