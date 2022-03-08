@@ -36,7 +36,10 @@ class Sampler:
             if page.cache_dom().root is None:
                 page.dom.init_nodes()
                 page.dom.filter_nodes()
-                page.dom.init_labels()
+                page.dom.init_labels(
+                    propagate_to_leaves=
+                        self.trainer.params.propagate_labels_to_leaves
+                )
 
         # Find variable nodes.
         if self.trainer.params.classify_only_variable_nodes:

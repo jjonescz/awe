@@ -40,10 +40,16 @@ class Dom:
             if not node.is_detached
         ]
 
-    def init_labels(self):
+    def init_labels(self, propagate_to_leaves: bool = False):
+        def get_labeled_nodes(label_key: str):
+            nodes = self.page.labels.get_labeled_nodes(label_key)
+            if propagate_to_leaves:
+                nodes = awe.data.html_utils.expand_leaves(nodes)
+            return nodes
+
         # Get labeled parsed nodes.
         self.labeled_parsed_nodes = {
-            k: self.page.labels.get_labeled_nodes(k)
+            k: get_labeled_nodes(k)
             for k in self.page.labels.label_keys
         }
 

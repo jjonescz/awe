@@ -41,5 +41,20 @@ def is_text(node: 'awe.data.parsing.Node'):
 def is_comment(node: 'awe.data.parsing.Node'):
     return node.tag == COMMENT_TAG
 
+def is_leaf(node: 'awe.data.parsing.Node'):
+    return node.child is None
+
 def get_xpath_tag(node: 'awe.data.parsing.Node'):
     return 'text()' if is_text(node) else node.tag
+
+def expand_leaves(nodes: list['awe.data.parsing.Node']):
+    """Inner nodes are expanded to all their leaf nodes."""
+    return [l for n in nodes for l in iter_leaves(n)]
+
+def iter_leaves(node: 'awe.data.parsing.Node'):
+    if is_leaf(node):
+        yield node
+    else:
+        for n in node.traverse(include_text=True):
+            if is_leaf(n):
+                yield n
