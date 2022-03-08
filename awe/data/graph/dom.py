@@ -37,6 +37,8 @@ class Dom:
             for node in self.nodes
             if not node.is_detached
         ]
+        for node in self.nodes:
+            node.children = [n for n in node.children if not n.is_detached]
 
     def find_parsed_node(self, node: awe.data.parsing.Node):
         index_path = awe.data.html_utils.get_index_path(node)
