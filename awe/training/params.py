@@ -25,6 +25,8 @@ class Params:
 
     # Dataset
     dataset: Dataset = Dataset.swde
+    train_website_indices: list[int] = (0, 3, 4, 5, 7)
+    """Only the first vertical for now."""
     train_subset: int = 2000
     val_subset: int = 50
 

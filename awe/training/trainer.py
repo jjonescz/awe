@@ -120,7 +120,7 @@ class Trainer:
         websites = self.ds.verticals[0].websites
 
         # Split websites.
-        train_website_indices = [0, 3, 4, 5, 7]
+        train_website_indices = self.params.train_website_indices
         val_website_indices = [i
             for i in range(len(websites))
             if i not in train_website_indices
