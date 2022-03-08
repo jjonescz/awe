@@ -14,7 +14,6 @@ import awe.data.set.pages
 
 DIR = f'{awe.data.constants.DATA_DIR}/apify'
 SELECTOR_PREFIX = 'selector_'
-USE_ONLY_LABEL_KEYS = { 'name', 'price', 'shortDescription', 'images' }
 
 @dataclasses.dataclass
 class Dataset(awe.data.set.pages.Dataset):
@@ -23,7 +22,8 @@ class Dataset(awe.data.set.pages.Dataset):
     def __init__(self,
         only_websites: Optional[list[str]] = None,
         convert: bool = True,
-        state: Optional[dict[str, pd.DataFrame]] = None
+        state: Optional[dict[str, pd.DataFrame]] = None,
+        only_label_keys: Optional[list[str]] = None
     ):
         super().__init__(
             name='apify',
@@ -32,6 +32,7 @@ class Dataset(awe.data.set.pages.Dataset):
         self.only_websites = only_websites
         self.convert = convert
         self.state = state or {}
+        self.only_label_keys = only_label_keys
         self.verticals = [
             Vertical(dataset=self, name='products', prev_page_count=0)
         ]
@@ -100,6 +101,17 @@ class Website(awe.data.set.pages.Website):
                 self.df = pd.read_pickle(self.dataset_pickle_path)
                 print(f'Loaded {self.dataset_pickle_path!r}.')
 
+        # Filter label keys.
+        if (label_keys := self.vertical.dataset.only_label_keys) is not None:
+            all_label_keys = {
+                col[len(SELECTOR_PREFIX):]
+                for col in self.df.columns
+                if col.startswith(SELECTOR_PREFIX)
+            }
+            for excluded_label_key in all_label_keys.difference(label_keys):
+                del self.df[excluded_label_key]
+                del self.df[f'{SELECTOR_PREFIX}{excluded_label_key}']
+
         self.vertical.dataset.state[self.name] = self.df
         self.pages = [
             Page(website=self, index=idx)
@@ -166,10 +178,9 @@ class PageLabels(awe.data.set.labels.PageLabels):
     def label_keys(self):
         keys: list[str] = self.page.row.keys()
         return [
-            s
+            k[len(SELECTOR_PREFIX):]
             for k in keys
-            if (k.startswith(SELECTOR_PREFIX) and
-                (s := k[len(SELECTOR_PREFIX):]) in USE_ONLY_LABEL_KEYS)
+            if k.startswith(SELECTOR_PREFIX)
         ]
 
     def get_selector(self, label_key: str):
