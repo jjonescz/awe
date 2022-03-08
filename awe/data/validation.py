@@ -4,6 +4,7 @@ from typing import Optional
 
 from tqdm.auto import tqdm
 
+import awe.data.html_utils
 import awe.data.set.pages
 
 
@@ -30,8 +31,16 @@ class Validator:
                 actual = len(nodes)
                 if actual < expected:
                     warnings.warn(
-                        f'Found {actual} < {expected} nodes labeled ' + \
+                        f'Found {actual} < {expected} nodes labeled ' +
                         f'{key!r}={values!r} ({page.html_path!r}).')
+
+                # Check that labeled nodes are not empty.
+                for node in nodes:
+                    if node.child is None:
+                        xpath = awe.data.html_utils.get_xpath(node)
+                        warnings.warn(
+                            f'Node {xpath!r} labeled {key!r} is empty ' +
+                            f'({page.html_path!r}).')
 
         # Check that extracted visual DOM has the same structure as parsed DOM.
         if self.visuals:
