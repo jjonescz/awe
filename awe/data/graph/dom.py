@@ -53,6 +53,7 @@ class Dom:
             for k in self.page.labels.label_keys
         }
 
+        self.labeled_nodes.clear()
         for node in self.nodes:
             node.init_labels()
 
