@@ -22,6 +22,7 @@ class Dataset(awe.data.set.pages.Dataset):
     def __init__(self,
         only_websites: Optional[list[str]] = None,
         convert: bool = True,
+        state: Optional[dict[str, pd.DataFrame]] = None
     ):
         super().__init__(
             name='apify',
@@ -29,9 +30,13 @@ class Dataset(awe.data.set.pages.Dataset):
         )
         self.only_websites = only_websites
         self.convert = convert
+        self.state = state or {}
         self.verticals = [
             Vertical(dataset=self, name='products', prev_page_count=0)
         ]
+
+    def get_state(self):
+        return self.state
 
 @dataclasses.dataclass
 class Vertical(awe.data.set.pages.Vertical):
@@ -77,7 +82,10 @@ class Website(awe.data.set.pages.Website):
             prev_page_count=prev_page_count,
         )
 
-        if not self.vertical.dataset.convert:
+        if (df := self.vertical.dataset.state.get(self.name)) is not None:
+            print(f'Reusing state for {self.dir_path!r}.')
+            self.df = df
+        elif not self.vertical.dataset.convert:
             self.df = self.read_json_df()
         else:
             # Convert dataset.
@@ -90,6 +98,7 @@ class Website(awe.data.set.pages.Website):
             # Load dataset.
             self.df = pd.read_pickle(self.dataset_pickle_path)
 
+        self.vertical.dataset.state[self.name] = self.df
         self.pages = [
             Page(website=self, index=idx)
             for idx in range(len(self.df))

@@ -81,12 +81,12 @@ class Vertical(awe.data.set.pages.Vertical):
     def __post_init__(self):
         if not os.path.exists(self.dir_path):
             warnings.warn(
-                f'Vertical directory does not exist ({self.dir_path}).')
+                f'Vertical directory does not exist ({self.dir_path!r}).')
             self.page_count = 0
             return
 
         if self.df is not None:
-            print(f'Reusing state for {self.dir_path}.')
+            print(f'Reusing state for {self.dir_path!r}.')
         else:
             if not os.path.exists(self.pickle_path):
                 # Convert vertical to a DataFrame. It is faster than reading

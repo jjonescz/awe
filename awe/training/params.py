@@ -15,13 +15,20 @@ class TokenizerFamily(str, enum.Enum):
     transformers = 'transformers' # tokenizer_id = 'bert-base-uncased'
     bert = 'bert'
 
+class Dataset(str, enum.Enum):
+    swde = 'swde'
+    apify = 'apify'
+
 @dataclasses.dataclass
 class Params:
     """Hyper parameters with persistence."""
 
-    # Trainer
+    # Dataset
+    dataset: Dataset = Dataset.swde
     train_subset: int = 2000
     val_subset: int = 50
+
+    # Trainer
     epochs: int = 5
     version_name: str = ''
     restore_num: Optional[int] = None

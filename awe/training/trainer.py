@@ -12,6 +12,7 @@ import torch.utils.tensorboard
 from tqdm.auto import tqdm
 
 import awe.data.sampling
+import awe.data.set.apify
 import awe.data.set.pages
 import awe.data.set.swde
 import awe.features.extraction
@@ -42,7 +43,7 @@ class RunInput:
     progress_dict: Optional[dict[str]] = None
 
 class Trainer:
-    ds: awe.data.set.swde.Dataset = None
+    ds: awe.data.set.pages.Dataset = None
     label_map: awe.training.context.LabelMap
     extractor: awe.features.extraction.Extractor
     sampler: awe.data.sampling.Sampler
@@ -91,11 +92,20 @@ class Trainer:
             state = self.ds.get_state()
             # Release memory used by previously-loaded dataset.
             self.ds = None
-        self.ds = awe.data.set.swde.Dataset(
-            suffix='-exact',
-            only_verticals=('auto',),
-            state=state
-        )
+        if self.params.dataset == awe.training.params.Dataset.swde:
+            self.ds = awe.data.set.swde.Dataset(
+                suffix='-exact',
+                only_verticals=('auto',),
+                state=state
+            )
+        elif self.params.dataset == awe.training.params.Dataset.apify:
+            self.ds = awe.data.set.apify.Dataset(
+                only_websites=('alzaEn', 'ikeaEn', 'notinoEn'),
+                state=state
+            )
+        else:
+            raise ValueError(
+                f'Unrecognized dataset param {self.params.dataset!r}.')
 
     def prepare_features(self):
         """Splits data and prepares features on them."""
