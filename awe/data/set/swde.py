@@ -72,6 +72,14 @@ class Dataset(awe.data.set.pages.Dataset):
     def get_state(self):
         return { v.name: v.df for v in self.verticals }
 
+    def reload(self, vertical: str, website: str, page: int):
+        v = next(v for v in self.verticals if v.name == vertical)
+        w = next(w for w in v.websites if w.name == website)
+        file_page = FilePage.try_create(w, w.pages[page].html_file_name)
+        w.pages[page] = file_page
+        v.df.iloc[file_page.index_in_vertical] = file_page.to_row()
+        return file_page
+
 @dataclasses.dataclass
 class Vertical(awe.data.set.pages.Vertical):
     dataset: Dataset
@@ -104,8 +112,7 @@ class Vertical(awe.data.set.pages.Vertical):
                     ),
                     index=[page.index for page in pages]
                 )
-                self.df.to_pickle(self.pickle_path)
-                print(f'Saved {self.pickle_path!r}.')
+                self.save_pickle()
             else:
                 self.df = pd.read_pickle(self.pickle_path)
                 print(f'Loaded {self.pickle_path!r}.')
@@ -146,6 +153,10 @@ class Vertical(awe.data.set.pages.Vertical):
 
             yield website
             page_count += website.page_count
+
+    def save_pickle(self):
+        self.df.to_pickle(self.pickle_path)
+        print(f'Saved {self.pickle_path!r}.')
 
 @dataclasses.dataclass
 class Website(awe.data.set.pages.Website):
