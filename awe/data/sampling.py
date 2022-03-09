@@ -122,6 +122,8 @@ class Sampler:
     def select_nodes_for_page(self,
         page: awe.data.set.pages.Page
     ) -> list[Sample]:
+        if self.trainer.params.visual_neighbors:
+            return filter_nodes(page, lambda n: n.visual_neighbors is not None)
         if self.trainer.params.classify_only_variable_nodes:
             return filter_nodes(page, lambda n: n.is_variable_text)
         if self.trainer.params.classify_only_text_nodes:
