@@ -126,10 +126,9 @@ class Dom:
         for node, distances, indices in zip(target_nodes, d, i):
             neighbors = (target_nodes[idx] for idx in indices)
             node.visual_neighbors = [
-                VisualNeighbor(
+                VisualNeighbor.create(
                     distance=dist,
-                    distance_x=neighbor.box.x - node.box.x,
-                    distance_y=neighbor.box.y - node.box.y,
+                    node=node,
                     neighbor=neighbor
                 )
                 for dist, neighbor in zip(distances, neighbors)
@@ -146,10 +145,9 @@ class Dom:
         d, i = nn.kneighbors(coords)
         for idx, node in enumerate(target_nodes):
             node.visual_neighbors = [
-                VisualNeighbor(
+                VisualNeighbor.create(
                     distance=dist,
-                    distance_x=neighbor.box.x - node.box.x,
-                    distance_y=neighbor.box.y - node.box.y,
+                    node=node,
                     neighbor=neighbor
                 )
                 for distances, indices in zip(d[idx * 4:idx * 4 + 4], i[idx * 4:idx * 4 + 4])
@@ -309,3 +307,14 @@ class VisualNeighbor:
     distance_x: float
     distance_y: float
     neighbor: Node
+
+    @staticmethod
+    def create(distance: float, node: Node, neighbor: Node):
+        node_center = node.box.center_point
+        neighbor_center = neighbor.box.center_point
+        return VisualNeighbor(
+            distance=distance,
+            distance_x=neighbor_center[0] - node_center[0],
+            distance_y=neighbor_center[1] - node_center[1],
+            neighbor=neighbor
+        )
