@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING, Optional
 import torch
 import torch.nn
 
+import awe.data.glove
 import awe.data.graph.dom
 import awe.features.dom
 import awe.features.extraction
-import awe.data.glove
 import awe.model.word_lstm
 
 if TYPE_CHECKING:
@@ -38,7 +38,7 @@ class Model(torch.nn.Module):
         self.trainer = trainer
         self.lr = lr
 
-        input_features = 0
+        node_features = 0
 
         # HTML tag name embedding
         self.html_tag = self.trainer.extractor.get_feature(awe.features.dom.HtmlTag)
@@ -49,7 +49,7 @@ class Model(torch.nn.Module):
                 num_html_tags,
                 embedding_dim
             )
-            input_features += embedding_dim
+            node_features += embedding_dim
 
         # Word LSTM
         if self.trainer.params.word_vector_function is not None:
@@ -57,13 +57,20 @@ class Model(torch.nn.Module):
             out_dim = self.lstm.out_dim
             if self.trainer.params.friend_cycles:
                 out_dim *= 3
-            input_features += out_dim
+            node_features += out_dim
+
+        # Visual neighbors
+        if self.trainer.params.visual_neighbors:
+            self.neighbor_attention = torch.nn.Linear(node_features * 2 + 3, 1)
+            head_features = node_features * 2
+        else:
+            head_features = node_features
 
         # Classification head
         D = 64
         num_labels = len(self.trainer.label_map.id_to_label) + 1
         self.head = torch.nn.Sequential(
-            torch.nn.Linear(input_features, 2 * D),
+            torch.nn.Linear(head_features, 2 * D),
             torch.nn.ReLU(),
             torch.nn.Dropout(),
             torch.nn.Linear(2 * D, D),
@@ -82,7 +89,7 @@ class Model(torch.nn.Module):
             lr=(self.lr or self.trainer.params.learning_rate)
         )
 
-    def forward(self, batch: ModelInput) -> ModelOutput:
+    def get_node_features(self, batch: list[awe.data.graph.dom.Node]):
         x = None
 
         # Embed HTML tag names.
@@ -108,9 +115,58 @@ class Model(torch.nn.Module):
                 y = torch.reshape(y, (len(batch), y.shape[1] * 3)) # [N, 3lstm_dim]
 
             if x is not None:
-                x = torch.concat((x, y), dim=-1) # [N, input_features]
+                x = torch.concat((x, y), dim=-1) # [N, node_features]
             else:
                 x = y
+
+        return x
+
+    def forward(self, batch: ModelInput) -> ModelOutput:
+        # Propagate visual neighbors.
+        if self.trainer.params.visual_neighbors:
+            n_neighbors = self.trainer.params.n_neighbors
+            neighbors = [
+                v
+                for n in batch
+                for v in n.visual_neighbors
+            ]
+            neighbor_batch = [v.neighbor for v in neighbors]
+
+            node_features = self.get_node_features(batch) # [N, node_features]
+            neighbor_features = self.get_node_features(neighbor_batch)
+                # [n_neighbors * N, node_features]
+            distances = torch.tensor([
+                (v.distance_x, v.distance_y, v.distance)
+                for v in neighbors
+            ]) # [n_neighbors * N, 3]
+
+            # Get node for each neighbor (e.g., [0, 0, 1, 1, 2, 2] if there are
+            # three nodes and each has two neighbors)
+            expanded_features = node_features.repeat_interleave(n_neighbors)
+                # [n_neighbors * N, node_features]
+
+            # Compute neighbor coefficients (for each node, its neighbor, and
+            # distance between them).
+            coefficient_inputs = torch.concat(
+                (expanded_features, neighbor_features, distances),
+                dim=-1
+            ) # [n_neighbors * N, 2*node_features + 3]
+            coefficients = self.neighbor_attention(coefficient_inputs)
+                # [n_neighbors * N, 1]
+
+            # Aggregate neighbor features (sum weighted by the coefficients).
+            coefficients = coefficients.reshape((len(batch), 1, n_neighbors))
+                # [N, 1, n_neighbors]
+            neighbor_features = neighbor_features \
+                .reshape((len(batch), -1, n_neighbors))
+                # [N, node_features, n_neighbors]
+            neighborhood = coefficients * neighbor_features
+                # [N, node_features]
+
+            x = torch.concat((node_features, neighborhood))
+                # [N, 2 * node_features]
+        else:
+            x = self.get_node_features(batch)
 
         # Classify features.
         x = self.head(x) # [N, num_labels]
