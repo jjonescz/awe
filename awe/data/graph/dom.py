@@ -18,6 +18,7 @@ class Dom:
     nodes: Optional[list['Node']] = None
     labeled_nodes: dict[str, list['Node']]
     friend_cycles_computed: bool = False
+    visual_neighbors_computed: bool = False
 
     def __init__(self,
         page: 'awe.data.set.pages.Page'
@@ -138,6 +139,8 @@ class Dom:
                 )
             ]
 
+        self.visual_neighbors_computed = True
+
     def compute_visual_neighbors_rect(self, n_neighbors: int = 4):
         target_nodes = [
             n for n in self.page.dom.nodes
@@ -180,6 +183,8 @@ class Dom:
                     if c == n_neighbors:
                         break
             node.visual_neighbors = distinct[1:]
+
+        self.visual_neighbors_computed = True
 
 # Setting `eq=False` makes the `Node` inherit hashing and equality functions
 # from `Object` (https://stackoverflow.com/a/53990477).

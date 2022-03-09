@@ -7,6 +7,7 @@ import awe.data.parsing
 import awe.data.set.pages
 import awe.data.validation
 import awe.features.extraction
+import awe.training.params
 
 if TYPE_CHECKING:
     import awe.training.trainer
@@ -63,8 +64,8 @@ class Sampler:
                 website: awe.data.set.pages.Website
                 website.find_variable_nodes()
 
-        # Compute friend cycles.
         for page in tqdm(pages, desc=f'prepare {desc}'):
+            # Compute friend cycles.
             if (
                 self.trainer.params.friend_cycles
                 and not page.dom.friend_cycles_computed
@@ -73,6 +74,22 @@ class Sampler:
                     max_friends=self.trainer.params.max_friends,
                     only_variable_nodes=self.trainer.params.classify_only_variable_nodes
                 )
+
+            # Compute visual neighbors.
+            if (
+                self.trainer.params.visual_neighbors
+                and not page.dom.visual_neighbors_computed
+            ):
+                neighbor_distance = self.trainer.params.neighbor_distance
+                D = awe.training.params.VisualNeighborDistance
+                if neighbor_distance == D.center_point:
+                    f = page.dom.compute_visual_neighbors
+                elif neighbor_distance == D.rect:
+                    f = page.dom.compute_visual_neighbors_rect
+                else:
+                    raise ValueError(
+                        f'Unrecognized param {neighbor_distance=}.')
+                f(n_neighbors=self.trainer.params.n_neighbors)
 
             if train:
                 # Add all label keys to a map.

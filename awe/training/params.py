@@ -19,6 +19,10 @@ class Dataset(str, enum.Enum):
     swde = 'swde'
     apify = 'apify'
 
+class VisualNeighborDistance(str, enum.Enum):
+    center_point = 'center'
+    rect = 'rect'
+
 @dataclasses.dataclass
 class Params:
     """Hyper parameters with persistence."""
@@ -50,6 +54,11 @@ class Params:
     # Friend cycles
     friend_cycles: bool = False
     max_friends: int = 10
+
+    # Visual neighbors
+    visual_neighbors: bool = False
+    n_neighbors: int = 4
+    neighbor_distance: VisualNeighborDistance = VisualNeighborDistance.rect
 
     # Word vectors
     tokenizer_family: TokenizerFamily = TokenizerFamily.custom
