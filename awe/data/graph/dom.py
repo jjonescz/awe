@@ -115,58 +115,71 @@ class Dom:
 
         self.friend_cycles_computed = True
 
-    def compute_visual_neighbors(self):
+    def compute_visual_neighbors(self, n_neighbors: int = 4):
         target_nodes = [
             n for n in self.page.dom.nodes
             if n.is_text and n.box is not None
         ]
         coords = np.array([n.box.center_point for n in target_nodes])
-        nn = sklearn.neighbors.NearestNeighbors().fit(coords)
+        n_neighbors += 1 # 0th neighbor is the node itself
+        nn = sklearn.neighbors.NearestNeighbors(n_neighbors=n_neighbors)
+        nn.fit(coords)
         d, i = nn.kneighbors(coords)
         for node, distances, indices in zip(target_nodes, d, i):
-            neighbors = (target_nodes[idx] for idx in indices)
             node.visual_neighbors = [
                 VisualNeighbor.create(
                     distance=dist,
                     node=node,
                     neighbor=neighbor
                 )
-                for dist, neighbor in zip(distances, neighbors)
+                for dist, neighbor in zip(
+                    distances[1:],
+                    (target_nodes[idx] for idx in indices[1:])
+                )
             ]
 
-    def compute_visual_neighbors_rect(self, n_neighbors: int = 5):
+    def compute_visual_neighbors_rect(self, n_neighbors: int = 4):
         target_nodes = [
             n for n in self.page.dom.nodes
             if n.is_text and n.box is not None
         ]
         coords = np.array([c for n in target_nodes for c in n.box.corners])
+        n_neighbors += 1 # 0th neighbor is the node itself
         nn = sklearn.neighbors.NearestNeighbors(n_neighbors=n_neighbors * 4)
-        nn = nn.fit(coords)
+        nn.fit(coords)
         d, i = nn.kneighbors(coords)
         for idx, node in enumerate(target_nodes):
-            node.visual_neighbors = [
+            neighbors = [
                 VisualNeighbor.create(
                     distance=dist,
                     node=node,
                     neighbor=neighbor
                 )
-                for distances, indices in zip(d[idx * 4:idx * 4 + 4], i[idx * 4:idx * 4 + 4])
-                for dist, neighbor in zip(distances, (target_nodes[idx // 4] for idx in indices))
+                for distances, indices in zip(
+                    d[idx * 4:idx * 4 + 4],
+                    i[idx * 4:idx * 4 + 4]
+                )
+                for dist, neighbor in zip(
+                    distances,
+                    (target_nodes[idx // 4] for idx in indices)
+                )
             ]
 
-            node.visual_neighbors.sort(key=lambda n: n.distance)
+            neighbors.sort(key=lambda n: n.distance)
 
+            # Keep only distinct nodes (otherwise, different corners of the same
+            # node can be included).
             c = 0
             u = set()
             distinct = []
-            for n in node.visual_neighbors:
+            for n in neighbors:
                 if n.neighbor not in u:
                     u.add(n.neighbor)
                     c += 1
                     distinct.append(n)
                     if c == n_neighbors:
                         break
-            node.visual_neighbors = distinct
+            node.visual_neighbors = distinct[1:]
 
 # Setting `eq=False` makes the `Node` inherit hashing and equality functions
 # from `Object` (https://stackoverflow.com/a/53990477).
