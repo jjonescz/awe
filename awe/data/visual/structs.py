@@ -13,6 +13,26 @@ class BoundingBox:
     def center_point(self):
         return self.x + self.width / 2, self.y + self.height / 2
 
+    @property
+    def top_left(self):
+        return self.x, self.y
+
+    @property
+    def top_right(self):
+        return self.x + self.width, self.y
+
+    @property
+    def bottom_left(self):
+        return self.x, self.y + self.height
+
+    @property
+    def bottom_right(self):
+        return self.x + self.width, self.y + self.height
+
+    @property
+    def corners(self):
+        return self.top_left, self.top_right, self.bottom_left, self.bottom_right
+
 @dataclasses.dataclass
 class Color:
     red: int

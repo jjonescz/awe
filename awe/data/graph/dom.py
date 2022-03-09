@@ -135,6 +135,41 @@ class Dom:
                 for dist, neighbor in zip(distances, neighbors)
             ]
 
+    def compute_visual_neighbors_rect(self, n_neighbors: int = 5):
+        target_nodes = [
+            n for n in self.page.dom.nodes
+            if n.is_text and n.box is not None
+        ]
+        coords = np.array([c for n in target_nodes for c in n.box.corners])
+        nn = sklearn.neighbors.NearestNeighbors(n_neighbors=n_neighbors * 4)
+        nn = nn.fit(coords)
+        d, i = nn.kneighbors(coords)
+        for idx, node in enumerate(target_nodes):
+            node.visual_neighbors = [
+                VisualNeighbor(
+                    distance=dist,
+                    distance_x=neighbor.box.x - node.box.x,
+                    distance_y=neighbor.box.y - node.box.y,
+                    neighbor=neighbor
+                )
+                for distances, indices in zip(d[idx * 4:idx * 4 + 4], i[idx * 4:idx * 4 + 4])
+                for dist, neighbor in zip(distances, (target_nodes[idx // 4] for idx in indices))
+            ]
+
+            node.visual_neighbors.sort(key=lambda n: n.distance)
+
+            c = 0
+            u = set()
+            distinct = []
+            for n in node.visual_neighbors:
+                if n.neighbor not in u:
+                    u.add(n.neighbor)
+                    c += 1
+                    distinct.append(n)
+                    if c == n_neighbors:
+                        break
+            node.visual_neighbors = distinct
+
 # Setting `eq=False` makes the `Node` inherit hashing and equality functions
 # from `Object` (https://stackoverflow.com/a/53990477).
 @dataclasses.dataclass(eq=False)
