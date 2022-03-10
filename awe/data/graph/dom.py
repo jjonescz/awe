@@ -299,7 +299,7 @@ class Node:
 
     def iterate_ancestors(self, num: int):
         node = self.parent
-        for i in range(num):
+        for _ in range(num):
             if node is None:
                 break
             yield node
