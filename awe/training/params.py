@@ -63,6 +63,9 @@ class Params:
     # Ancestor chain
     ancestor_chain: bool = False
     n_ancestors: int = 5
+    ancestor_function: Optional[str] = 'lstm' # 'lstm', 'sum', 'mean'
+    ancestor_lstm_out_dim: Optional[int] = None
+    ancestor_lstm_args: Optional[dict[str]] = None
 
     # Word vectors
     tokenizer_family: TokenizerFamily = TokenizerFamily.custom
@@ -74,7 +77,7 @@ class Params:
     # LSTM
     word_vector_function: Optional[str] = 'sum' # 'lstm', 'sum', 'mean'
     lstm_dim: int = 100
-    lstm_args: Optional[dict] = None
+    lstm_args: Optional[dict[str]] = None
     filter_node_words: bool = False
 
     # Word and char IDs

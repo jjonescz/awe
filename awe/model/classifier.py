@@ -8,6 +8,7 @@ import awe.data.glove
 import awe.data.graph.dom
 import awe.features.dom
 import awe.features.extraction
+import awe.model.lstm_utils
 import awe.model.word_lstm
 
 if TYPE_CHECKING:
@@ -77,7 +78,17 @@ class Model(torch.nn.Module):
 
         # Ancestor chain
         if self.trainer.params.ancestor_chain:
-            head_features += self.slim_node_feature_dim
+            if self.trainer.params.ancestor_function == 'lstm':
+                out_dim = (self.trainer.params.ancestor_lstm_out_dim or
+                    self.slim_node_feature_dim)
+                self.ancestor_lstm = torch.nn.LSTM(
+                    self.slim_node_feature_dim,
+                    out_dim,
+                    **(self.trainer.params.ancestor_lstm_args or {})
+                )
+                head_features += out_dim
+            else:
+                head_features += self.slim_node_feature_dim
 
         # Classification head
         D = 64
@@ -211,11 +222,26 @@ class Model(torch.nn.Module):
             [len(a) for a in ancestors]
         )
 
-        # Sum ancestor chains.
-        padded_ancestors = torch.nn.utils.rnn.pad_sequence(ancestor_sequences)
-            # [n_ancestors, N, ancestor_features]
-        ancestor_chains = torch.sum(padded_ancestors, dim=0)
-            # [N, ancestor_features]
+        # Aggregate ancestor chains.
+        if self.trainer.params.ancestor_function == 'lstm':
+            # Use LSTM.
+            packed_input = torch.nn.utils.rnn.pack_sequence(ancestor_sequences,
+                enforce_sorted=False
+            )
+            packed_output, _ = self.ancestor_lstm(packed_input)
+            packed_output: torch.nn.utils.rnn.PackedSequence
+
+            # Extract only the last sequence (representation of all ancestors).
+            ancestor_chains = awe.model.lstm_utils.last_items(packed_output,
+                unsort=True
+            ) # [N, ancestor_features]
+        else:
+            # Use simple aggregation function (sum or mean).
+            f = getattr(torch, self.trainer.params.ancestor_function)
+            padded_ancestors = torch.nn.utils.rnn.pad_sequence(ancestor_sequences)
+                # [n_ancestors, N, ancestor_features]
+            ancestor_chains = f(padded_ancestors, dim=0)
+                # [N, ancestor_features]
 
         return ancestor_chains
 
