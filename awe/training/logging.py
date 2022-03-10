@@ -64,7 +64,7 @@ class Version:
         else:
             if latest_version.name == name:
                 raise RuntimeError(
-                    f'Last version {latest_version.version_dir_name} has ' + \
+                    f'Last version {latest_version.version_dir_name!r} has ' + \
                     'unchanged name.')
 
             version = Version(latest_version.number + 1, name)
@@ -129,7 +129,7 @@ class Version:
         return os.path.exists(self.version_dir_path)
 
     def create(self):
-        print(f'Creating {self.version_dir_path}')
+        print(f'Creating {self.version_dir_path!r}.')
         os.makedirs(self.version_dir_path, exist_ok=True)
 
     def delete(self):
@@ -137,10 +137,10 @@ class Version:
             return
 
         if os.path.exists(self.bak_dir_path):
-            print(f'Deleting {self.bak_dir_path}')
+            print(f'Deleting {self.bak_dir_path!r}.')
             shutil.rmtree(self.bak_dir_path)
 
-        print(f'Trashing {self.version_dir_path} -> {self.bak_dir_path}')
+        print(f'Trashing {self.version_dir_path!r} -> {self.bak_dir_path!r}.')
         os.makedirs(self.bak_dir_path, exist_ok=True)
         os.rename(self.version_dir_path, self.bak_dir_path)
 

@@ -110,7 +110,7 @@ class Params:
         path = f'{awe.data.constants.DATA_DIR}/params.json'
         if not os.path.exists(path):
             # Create file with default params as template.
-            warnings.warn(f'No params file, creating one at {repr(path)}.')
+            warnings.warn(f'No params file, creating one at {path!r}.')
             Params().save_file(path)
             return None
         return cls.load_file(path, normalize=normalize)
