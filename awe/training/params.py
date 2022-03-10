@@ -73,6 +73,7 @@ class Params:
     tokenizer_fast: bool = True
     freeze_word_embeddings: bool = True
     pretrained_word_embeddings: bool = True
+    tokenize_node_attrs: bool = False
 
     # LSTM
     word_vector_function: Optional[str] = 'sum' # 'lstm', 'sum', 'mean'
@@ -86,6 +87,8 @@ class Params:
     Maximum number of words to preserve in each node (or `None` to preserve
     all). Used by `CharacterIdentifiers` and `WordIdentifiers`.
     """
+
+    attr_cutoff_words: Optional[int] = 10
 
     cutoff_word_length: Optional[int] = 10
     """

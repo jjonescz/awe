@@ -1,3 +1,4 @@
+import itertools
 import re
 from typing import TYPE_CHECKING
 
@@ -70,6 +71,11 @@ class WordIdentifiers(awe.features.feature.Feature):
     node_token_ids: dict[awe.data.graph.dom.Node, list[int]]
     """Cache of node tokens IDs."""
 
+    node_attr_token_ids: dict[awe.data.graph.dom.Node, torch.Tensor]
+    """
+    Cache of node token IDs of attributes values (`id`, `name`, `class`, etc.).
+    """
+
     def __post_init__(self):
         # Create tokenizer according to config.
         params = self.trainer.params
@@ -92,6 +98,7 @@ class WordIdentifiers(awe.features.feature.Feature):
 
         self.glove = awe.data.glove.LazyEmbeddings.get_or_create()
         self.node_token_ids = {}
+        self.node_attr_token_ids = {}
 
     def tokenize(self, text: str, humanize: bool = False):
         if humanize:
@@ -105,7 +112,7 @@ class WordIdentifiers(awe.features.feature.Feature):
     def prepare(self, node: awe.data.graph.dom.Node, train: bool):
         params = self.trainer.params
 
-        # Find maximum word count.
+        # Find maximum word count and save token IDs.
         if node.is_text:
             counter = 0
             token_ids = []
@@ -126,6 +133,23 @@ class WordIdentifiers(awe.features.feature.Feature):
                 self.max_num_words = max(self.max_num_words, counter)
             self.node_token_ids[node] = token_ids
 
+        # Tokenize attribute values.
+        if self.trainer.params.tokenize_node_attrs:
+            attr_text = get_node_attr_text(node)
+            if attr_text:
+                token_ids = list(itertools.islice(
+                    (
+                        token_id
+                        for token in self.tokenize(attr_text, humanize=True)
+                        if (token_id := self.get_token_id(token)) != 0
+                    ),
+                    0, params.attr_cutoff_words
+                ))
+                self.node_attr_token_ids[node] = torch.tensor(token_ids,
+                    dtype=torch.int32,
+                    device=self.trainer.device
+                )
+
     def compute(self, batch: list[list[awe.data.graph.dom.Node]]):
         # Account for friend cycles.
         num_words = self.max_num_words
@@ -145,3 +169,17 @@ class WordIdentifiers(awe.features.feature.Feature):
                     word_idx = self.max_num_words * node_idx + token_idx
                     result[row_idx, word_idx] = token_id
         return result
+
+    def compute_attr(self, batch: list[list[awe.data.graph.dom.Node]]):
+        return torch.nn.utils.rnn.pad_sequence(
+            [self.node_attr_token_ids.get(n, torch.zeros(0)) for n in batch],
+            batch_first=True
+        )
+
+def get_node_attr_text(node: awe.data.graph.dom.Node):
+    attrs = node.get_attributes()
+    return ' '.join(
+        v
+        for a in ['id', 'name', 'class']
+        if (v := attrs.get(a, ''))
+    )

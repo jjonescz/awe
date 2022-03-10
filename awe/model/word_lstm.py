@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     import awe.model.classifier
 
 
-class WordLstm(torch.nn.Module):
+class WordEmbedding(torch.nn.Module):
     def __init__(self, parent: 'awe.model.classifier.Model'):
         super().__init__()
         self.trainer = parent.trainer
@@ -33,6 +33,16 @@ class WordLstm(torch.nn.Module):
             self.word_embedding = torch.nn.Embedding(word_num, word_dim,
                 padding_idx=0
             )
+        self.out_dim = word_dim
+
+    def forward(self, word_ids):
+        return self.word_embedding(word_ids)
+
+class WordLstm(torch.nn.Module):
+    def __init__(self, parent: 'awe.model.classifier.Model'):
+        super().__init__()
+        self.trainer = parent.trainer
+        word_dim = parent.word_embedding.out_dim
 
         self.dropout = torch.nn.Dropout(0.3)
 
@@ -48,8 +58,7 @@ class WordLstm(torch.nn.Module):
 
     def forward(self, batch: list[list[awe.data.graph.dom.Node]]):
         # Extract word identifiers for the batch.
-        feat = self.trainer.extractor.get_feature(awe.features.text.WordIdentifiers)
-        word_ids = feat.compute(batch)
+        word_ids = self.trainer.model.word_ids.compute(batch)
 
         if self.trainer.params.filter_node_words:
             # Keep only sentences at leaf nodes.
@@ -58,7 +67,7 @@ class WordLstm(torch.nn.Module):
             masked_word_ids = word_ids
 
         # Embed words.
-        embedded_words = self.word_embedding(masked_word_ids)
+        embedded_words = self.trainer.model.word_embedding(masked_word_ids)
             # [num_masked_nodes, max_num_words, word_dim]
         embedded_words = self.dropout(embedded_words)
 

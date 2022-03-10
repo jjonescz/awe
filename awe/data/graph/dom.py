@@ -265,6 +265,9 @@ class Node:
     def get_xpath(self):
         return awe.data.html_utils.get_xpath(self.parsed)
 
+    def get_attributes(self):
+        return self.parsed.attributes
+
     def find_by_index_path(self, indices: list[int]):
         """Finds node by output of `awe.data.html_utils.get_index_path`."""
         node = self

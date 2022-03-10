@@ -22,7 +22,8 @@ class Extractor:
     def __init__(self, trainer: 'awe.training.trainer.Trainer'):
         self.trainer = trainer
         self.features = []
-        if self.trainer.params.word_vector_function is not None:
+        if (self.trainer.params.word_vector_function is not None or
+            self.trainer.params.tokenize_node_attrs):
             self.features.append(awe.features.text.WordIdentifiers(trainer))
         if self.trainer.params.tag_name_embedding:
             self.features.append(awe.features.dom.HtmlTag(trainer))

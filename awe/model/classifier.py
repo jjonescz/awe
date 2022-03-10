@@ -8,6 +8,7 @@ import awe.data.glove
 import awe.data.graph.dom
 import awe.features.dom
 import awe.features.extraction
+import awe.features.text
 import awe.model.lstm_utils
 import awe.model.word_lstm
 
@@ -41,6 +42,11 @@ class Model(torch.nn.Module):
 
         self.slim_node_feature_dim = 0
 
+        # Word embedding (shared for node text and attributes)
+        self.word_ids = self.trainer.extractor.get_feature(awe.features.text.WordIdentifiers)
+        if self.word_ids is not None:
+            self.word_embedding = awe.model.word_lstm.WordEmbedding(self)
+
         # HTML tag name embedding
         self.html_tag = self.trainer.extractor.get_feature(awe.features.dom.HtmlTag)
         if self.html_tag is not None:
@@ -51,6 +57,9 @@ class Model(torch.nn.Module):
                 embedding_dim
             )
             self.slim_node_feature_dim += embedding_dim
+
+        if self.trainer.params.tokenize_node_attrs:
+            self.slim_node_feature_dim += self.word_embedding.out_dim
 
         self.node_feature_dim = self.slim_node_feature_dim
 
@@ -123,6 +132,14 @@ class Model(torch.nn.Module):
         if self.html_tag is not None:
             tag_ids = self.html_tag.compute(batch) # [N]
             x = append(x, self.tag_embedding(tag_ids)) # [N, embedding_dim]
+
+        # Tokenize node attributes.
+        if self.trainer.params.tokenize_node_attrs:
+            word_ids = self.word_ids.compute_attr(batch) # [N, num_words]
+            word_embeddings = self.word_embedding(word_ids)
+                # [N, num_words, word_dim]
+            attrs = torch.sum(word_embeddings, dim=1) # [N, word_dim]
+            x = append(x, attrs)
 
         return x
 
