@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 class ClearCacheRequest:
     dom: bool = True
     labels: bool = True
+    dom_dirty_flags: bool = False
 
 @dataclasses.dataclass
 class Dataset:
@@ -203,6 +204,9 @@ class Page(abc.ABC):
             self._dom = None
         if request.labels:
             self._labels = None
+        if request.dom_dirty_flags and self._dom is not None:
+            self._dom.friend_cycles_computed = False
+            self._dom.visual_neighbors_computed = False
 
     def get_html_text(self) -> str:
         """Obtains HTML of the page as text."""
