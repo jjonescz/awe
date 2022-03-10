@@ -75,6 +75,10 @@ class Model(torch.nn.Module):
         else:
             head_features = self.node_feature_dim
 
+        # Ancestor chain
+        if self.trainer.params.ancestor_chain:
+            head_features += self.slim_node_feature_dim
+
         # Classification head
         D = 64
         num_labels = len(self.trainer.label_map.id_to_label) + 1
