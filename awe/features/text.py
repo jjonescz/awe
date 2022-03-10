@@ -1,6 +1,7 @@
 import re
 from typing import TYPE_CHECKING
 
+import inflection
 import torch
 import transformers
 from torchtext.data import utils as text_utils
@@ -50,6 +51,16 @@ def basic_tokenize(line: str):
         line = pattern_re.sub(replaced_str, line)
     return line.split()
 
+def humanize_string(text: str):
+    """
+    Converts symbols (in camelCase, snake_case, etc.) into space-separated
+    words.
+    """
+
+    text = inflection.underscore(text)
+    text = inflection.humanize(text)
+    return text
+
 class WordIdentifiers(awe.features.feature.Feature):
     """Identifiers of word tokens. Used for pre-trained GloVe embeddings."""
 
@@ -64,23 +75,28 @@ class WordIdentifiers(awe.features.feature.Feature):
         params = self.trainer.params
         family = params.tokenizer_family
         if family == awe.training.params.TokenizerFamily.custom:
-            self.tokenize = basic_tokenize
+            self._tokenize = basic_tokenize
         if family == awe.training.params.TokenizerFamily.torchtext:
             tokenizer = text_utils.get_tokenizer(params.tokenizer_id)
-            self.tokenize = tokenizer
+            self._tokenize = tokenizer
         elif family == awe.training.params.TokenizerFamily.transformers:
             if params.tokenizer_fast:
                 cls = transformers.BertTokenizerFast
             else:
                 cls = transformers.BertTokenizer
             tokenizer = cls.from_pretrained(params.tokenizer_id)
-            self.tokenize = tokenizer.tokenize
+            self._tokenize = tokenizer.tokenize
         elif family == awe.training.params.TokenizerFamily.bert:
             tokenizer = awe.features.bert_tokenization.BasicTokenizer()
-            self.tokenize = tokenizer.tokenize
+            self._tokenize = tokenizer.tokenize
 
         self.glove = awe.data.glove.LazyEmbeddings.get_or_create()
         self.node_token_ids = {}
+
+    def tokenize(self, text: str, humanize: bool = False):
+        if humanize:
+            text = humanize_string(text)
+        return self._tokenize(text)
 
     def get_token_id(self, token: str):
         # Indices start at 1; 0 is used for unknown and pad words.
