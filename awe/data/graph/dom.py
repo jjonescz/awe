@@ -83,12 +83,12 @@ class Dom:
             target_nodes = [n for n in self.nodes if n.is_text]
 
         for node in target_nodes:
-            ancestors = node.get_ancestors(max_distance=max_ancestor_distance)
+            ancestors = node.get_ancestors(max_ancestor_distance)
             for ancestor in ancestors:
                 descendants[ancestor].append(node)
 
         for node in target_nodes:
-            ancestors = node.get_ancestors(max_distance=max_ancestor_distance)
+            ancestors = node.get_ancestors(max_ancestor_distance)
             friends: set[Node] = set()
             for ancestor in ancestors:
                 desc = descendants[ancestor]
@@ -294,10 +294,16 @@ class Node:
             yield node
             stack.extend(reversed(node.children))
 
-    def get_ancestors(self, max_distance: int):
-        if self.parent is None or max_distance <= 0:
-            return []
-        return [self.parent] + self.parent.get_ancestors(max_distance - 1)
+    def get_ancestors(self, num: int):
+        return list(self.iterate_ancestors(num))
+
+    def iterate_ancestors(self, num: int):
+        node = self.parent
+        for i in range(num):
+            if node is None:
+                break
+            yield node
+            node = node.parent
 
     def distance_to(self, other: 'Node'):
         return abs(self.deep_index - other.deep_index)

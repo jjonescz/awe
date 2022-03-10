@@ -38,7 +38,7 @@ class Model(torch.nn.Module):
         self.trainer = trainer
         self.lr = lr
 
-        node_features = 0
+        self.slim_node_feature_dim = 0
 
         # HTML tag name embedding
         self.html_tag = self.trainer.extractor.get_feature(awe.features.dom.HtmlTag)
@@ -49,11 +49,14 @@ class Model(torch.nn.Module):
                 num_html_tags,
                 embedding_dim
             )
-            node_features += embedding_dim
+            self.slim_node_feature_dim += embedding_dim
 
+        self.node_feature_dim = self.slim_node_feature_dim
+
+        # Node position
         self.position = self.trainer.extractor.get_feature(awe.features.dom.Position)
         if self.position is not None:
-            node_features += 2
+            self.node_feature_dim += 2
 
         # Word LSTM
         if self.trainer.params.word_vector_function is not None:
@@ -61,14 +64,16 @@ class Model(torch.nn.Module):
             out_dim = self.lstm.out_dim
             if self.trainer.params.friend_cycles:
                 out_dim *= 3
-            node_features += out_dim
+            self.node_feature_dim += out_dim
 
         # Visual neighbors
         if self.trainer.params.visual_neighbors:
-            self.neighbor_attention = torch.nn.Linear(node_features * 2 + 3, 1)
-            head_features = node_features * 2
+            self.neighbor_attention = torch.nn.Linear(
+                self.node_feature_dim * 2 + 3, 1
+            )
+            head_features = self.node_feature_dim * 2
         else:
-            head_features = node_features
+            head_features = self.node_feature_dim
 
         # Classification head
         D = 64
@@ -185,12 +190,41 @@ class Model(torch.nn.Module):
         return torch.concat((node_features, neighborhood), dim=-1)
             # [N, 2 * node_features]
 
+    def get_ancestor_chain(self, batch: list[awe.data.graph.dom.Node]):
+        # Get features for each ancestor.
+        n_ancestors = self.trainer.params.n_ancestors
+        ancestors = [node.get_ancestors(n_ancestors) for node in batch]
+        ancestor_batch = [
+            ancestor
+            for node_ancestors in ancestors
+            for ancestor in node_ancestors
+        ]
+        ancestor_features = self.get_node_features_slim(ancestor_batch)
+
+        # Pack ancestors corresponding to one node together.
+        ancestor_sequences: list[torch.Tensor] = torch.split(
+            ancestor_features,
+            [len(a) for a in ancestors]
+        )
+
+        # Sum ancestor chains.
+        padded_ancestors = torch.nn.utils.rnn.pad_sequence(ancestor_sequences)
+            # [n_ancestors, N, ancestor_features]
+        ancestor_chains = torch.sum(padded_ancestors, dim=0)
+            # [N, ancestor_features]
+
+        return ancestor_chains
+
     def forward(self, batch: ModelInput) -> ModelOutput:
         # Propagate visual neighbors.
         if self.trainer.params.visual_neighbors:
             x = self.propagate_visual_neighbors(batch)
         else:
             x = self.get_node_features(batch)
+
+        # Append ancestor chain.
+        if self.trainer.params.ancestor_chain:
+            x = append(x, self.get_ancestor_chain(batch))
 
         # Classify features.
         x = self.head(x) # [N, num_labels]

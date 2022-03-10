@@ -61,7 +61,7 @@ class Params:
     neighbor_distance: VisualNeighborDistance = VisualNeighborDistance.rect
 
     # Ancestor chain
-    dom_ancestors: bool = False
+    ancestor_chain: bool = False
     n_ancestors: int = 5
 
     # Word vectors
