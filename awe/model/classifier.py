@@ -135,14 +135,18 @@ class Model(torch.nn.Module):
             node_features = self.get_node_features(batch) # [N, node_features]
             neighbor_features = self.get_node_features(neighbor_batch)
                 # [n_neighbors * N, node_features]
-            distances = torch.tensor([
-                (v.distance_x, v.distance_y, v.distance)
-                for v in neighbors
-            ]) # [n_neighbors * N, 3]
+            distances = torch.tensor(
+                [
+                    (v.distance_x, v.distance_y, v.distance)
+                    for v in neighbors
+                ],
+                dtype=torch.float32,
+                device=self.trainer.device
+            ) # [n_neighbors * N, 3]
 
             # Get node for each neighbor (e.g., [0, 0, 1, 1, 2, 2] if there are
             # three nodes and each has two neighbors)
-            expanded_features = node_features.repeat_interleave(n_neighbors)
+            expanded_features = node_features.repeat_interleave(n_neighbors, dim=0)
                 # [n_neighbors * N, node_features]
 
             # Compute neighbor coefficients (for each node, its neighbor, and
