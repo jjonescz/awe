@@ -110,7 +110,7 @@ class Vertical(awe.data.set.pages.Vertical):
                         page.to_row()
                         for page in tqdm(pages, desc=self.pickle_path)
                     ),
-                    index=[page.index for page in pages]
+                    index=[page.index_in_vertical for page in pages]
                 )
                 self.save_pickle()
             else:
