@@ -136,56 +136,59 @@ class Model(torch.nn.Module):
 
         return x
 
+    def propagate_visual_neighbors(self, batch: list[awe.data.graph.dom.Node]):
+        n_neighbors = self.trainer.params.n_neighbors
+        neighbors = [
+            v
+            for n in batch
+            for v in n.visual_neighbors
+        ]
+        neighbor_batch = [v.neighbor for v in neighbors]
+
+        node_features = self.get_node_features(batch) # [N, node_features]
+        neighbor_features = self.get_node_features(neighbor_batch)
+            # [n_neighbors * N, node_features]
+        distances = torch.tensor(
+            [
+                (v.distance_x, v.distance_y, v.distance)
+                for v in neighbors
+            ],
+            dtype=torch.float32,
+            device=self.trainer.device
+        ) # [n_neighbors * N, 3]
+
+        # Get node for each neighbor (e.g., [0, 0, 1, 1, 2, 2] if there are
+        # three nodes and each has two neighbors)
+        expanded_features = node_features.repeat_interleave(n_neighbors, dim=0)
+            # [n_neighbors * N, node_features]
+
+        # Compute neighbor coefficients (for each node, its neighbor, and
+        # distance between them).
+        coefficient_inputs = torch.concat(
+            (expanded_features, neighbor_features, distances),
+            dim=-1
+        ) # [n_neighbors * N, 2*node_features + 3]
+        coefficients = self.neighbor_attention(coefficient_inputs)
+            # [n_neighbors * N, 1]
+
+        # Aggregate neighbor features (sum weighted by the coefficients).
+        coefficients = coefficients.reshape((len(batch), 1, n_neighbors))
+            # [N, 1, n_neighbors]
+        neighbor_features = neighbor_features \
+            .reshape((len(batch), n_neighbors, -1))
+            # [N, n_neighbors, node_features]
+        neighborhood = torch.matmul(coefficients, neighbor_features)
+            # [N, 1, node_features]
+        neighborhood = neighborhood.reshape((len(batch), -1))
+            # [N, node_features]
+
+        return torch.concat((node_features, neighborhood), dim=-1)
+            # [N, 2 * node_features]
+
     def forward(self, batch: ModelInput) -> ModelOutput:
         # Propagate visual neighbors.
         if self.trainer.params.visual_neighbors:
-            n_neighbors = self.trainer.params.n_neighbors
-            neighbors = [
-                v
-                for n in batch
-                for v in n.visual_neighbors
-            ]
-            neighbor_batch = [v.neighbor for v in neighbors]
-
-            node_features = self.get_node_features(batch) # [N, node_features]
-            neighbor_features = self.get_node_features(neighbor_batch)
-                # [n_neighbors * N, node_features]
-            distances = torch.tensor(
-                [
-                    (v.distance_x, v.distance_y, v.distance)
-                    for v in neighbors
-                ],
-                dtype=torch.float32,
-                device=self.trainer.device
-            ) # [n_neighbors * N, 3]
-
-            # Get node for each neighbor (e.g., [0, 0, 1, 1, 2, 2] if there are
-            # three nodes and each has two neighbors)
-            expanded_features = node_features.repeat_interleave(n_neighbors, dim=0)
-                # [n_neighbors * N, node_features]
-
-            # Compute neighbor coefficients (for each node, its neighbor, and
-            # distance between them).
-            coefficient_inputs = torch.concat(
-                (expanded_features, neighbor_features, distances),
-                dim=-1
-            ) # [n_neighbors * N, 2*node_features + 3]
-            coefficients = self.neighbor_attention(coefficient_inputs)
-                # [n_neighbors * N, 1]
-
-            # Aggregate neighbor features (sum weighted by the coefficients).
-            coefficients = coefficients.reshape((len(batch), 1, n_neighbors))
-                # [N, 1, n_neighbors]
-            neighbor_features = neighbor_features \
-                .reshape((len(batch), n_neighbors, -1))
-                # [N, n_neighbors, node_features]
-            neighborhood = torch.matmul(coefficients, neighbor_features)
-                # [N, 1, node_features]
-            neighborhood = neighborhood.reshape((len(batch), -1))
-                # [N, node_features]
-
-            x = torch.concat((node_features, neighborhood), dim=-1)
-                # [N, 2 * node_features]
+            x = self.propagate_visual_neighbors(batch)
         else:
             x = self.get_node_features(batch)
 
