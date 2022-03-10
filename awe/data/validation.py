@@ -36,7 +36,7 @@ class Validator:
 
                 # Check that labeled nodes are not empty.
                 for node in nodes:
-                    if node.child is None:
+                    if node.child is None and not node.text(deep=False):
                         xpath = awe.data.html_utils.get_xpath(node)
                         warnings.warn(
                             f'Node {xpath!r} labeled {key!r} is empty ' +
