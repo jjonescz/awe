@@ -107,7 +107,7 @@ class Model(torch.nn.Module):
                     friend_batch[i + 2] = n.friends
                 expanded_batch = friend_batch
             else:
-                expanded_batch = [batch]
+                expanded_batch = [[n] for n in batch]
 
             y = self.lstm(expanded_batch) # [3N, lstm_dim]
 
