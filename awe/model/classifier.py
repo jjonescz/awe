@@ -162,12 +162,14 @@ class Model(torch.nn.Module):
             coefficients = coefficients.reshape((len(batch), 1, n_neighbors))
                 # [N, 1, n_neighbors]
             neighbor_features = neighbor_features \
-                .reshape((len(batch), -1, n_neighbors))
-                # [N, node_features, n_neighbors]
-            neighborhood = coefficients * neighbor_features
+                .reshape((len(batch), n_neighbors, -1))
+                # [N, n_neighbors, node_features]
+            neighborhood = torch.matmul(coefficients, neighbor_features)
+                # [N, 1, node_features]
+            neighborhood = neighborhood.reshape((len(batch), -1))
                 # [N, node_features]
 
-            x = torch.concat((node_features, neighborhood))
+            x = torch.concat((node_features, neighborhood), dim=-1)
                 # [N, 2 * node_features]
         else:
             x = self.get_node_features(batch)
