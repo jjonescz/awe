@@ -51,6 +51,10 @@ class Model(torch.nn.Module):
             )
             node_features += embedding_dim
 
+        self.position = self.trainer.extractor.get_feature(awe.features.dom.Position)
+        if self.position is not None:
+            node_features += 2
+
         # Word LSTM
         if self.trainer.params.word_vector_function is not None:
             self.lstm = awe.model.word_lstm.WordLstm(self)
@@ -96,6 +100,14 @@ class Model(torch.nn.Module):
         if self.html_tag is not None:
             tag_ids = self.html_tag.compute(batch) # [N]
             x = self.tag_embedding(tag_ids) # [N, embedding_dim]
+
+        # Add more HTML node features.
+        if self.position is not None:
+            y = self.position.compute(batch)
+            if x is not None:
+                x = torch.concat((x, y), dim=-1)
+            else:
+                x = y
 
         if self.trainer.params.word_vector_function is not None:
             if self.trainer.params.friend_cycles:

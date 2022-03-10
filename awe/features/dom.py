@@ -4,6 +4,7 @@ import torch
 
 import awe.features.feature
 import awe.data.graph.dom
+import awe.data.visual.structs
 
 if TYPE_CHECKING:
     import awe.model.classifier
@@ -40,3 +41,22 @@ class HtmlTag(awe.features.feature.Feature):
             ],
             device=self.trainer.device
         )
+
+class Position(awe.features.feature.Feature):
+    root_box: awe.data.visual.structs.BoundingBox
+
+    def prepare(self, node: awe.data.graph.dom.Node, _):
+        if node.is_root:
+            self.root_box = node.box
+
+    def compute(self, batch: 'awe.model.classifier.ModelInput'):
+        # For each node, compute its relative x and y position.
+        coords = torch.tensor(
+            [(n.box.x, n.box.y) for n in batch],
+            device=self.trainer.device
+        ) # [N, 2]
+        rect = torch.tensor(
+            [self.root_box.width, self.root_box.height],
+            device=self.trainer.device
+        ) # [2]
+        return torch.abs(torch.log(coords / rect)) # [N, 2]

@@ -251,8 +251,12 @@ class Node:
         return self.parsed.text(deep=False)
 
     @property
+    def is_root(self):
+        return self.dom.root == self
+
+    @property
     def is_detached(self):
-        return self.dom.root != self and self.parsed.parent is None
+        return not self.is_root and self.parsed.parent is None
 
     @property
     def html_tag(self):

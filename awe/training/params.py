@@ -88,6 +88,7 @@ class Params:
 
     # HTML DOM features
     tag_name_embedding: bool = False
+    position: bool = False
 
     # Classifier
     learning_rate: float = 1e-3
