@@ -93,21 +93,27 @@ class Model(torch.nn.Module):
             lr=(self.lr or self.trainer.params.learning_rate)
         )
 
-    def get_node_features(self, batch: list[awe.data.graph.dom.Node]):
+    def get_node_features_slim(self, batch: list[awe.data.graph.dom.Node]):
+        """
+        Features used for a node, its ancestor chain, and its visual neighbors.
+        """
         x = None
 
         # Embed HTML tag names.
         if self.html_tag is not None:
             tag_ids = self.html_tag.compute(batch) # [N]
-            x = self.tag_embedding(tag_ids) # [N, embedding_dim]
+            x = append(x, self.tag_embedding(tag_ids)) # [N, embedding_dim]
+
+        return x
+
+    def get_node_features(self, batch: list[awe.data.graph.dom.Node]):
+        """Features used for a node and its visual neighbors."""
+
+        x = self.get_node_features_slim(batch)
 
         # Add more HTML node features.
         if self.position is not None:
-            y = self.position.compute(batch)
-            if x is not None:
-                x = torch.concat((x, y), dim=-1)
-            else:
-                x = y
+            x = append(x, self.position.compute(batch))
 
         if self.trainer.params.word_vector_function is not None:
             if self.trainer.params.friend_cycles:
@@ -126,10 +132,7 @@ class Model(torch.nn.Module):
             if self.trainer.params.friend_cycles:
                 y = torch.reshape(y, (len(batch), y.shape[1] * 3)) # [N, 3lstm_dim]
 
-            if x is not None:
-                x = torch.concat((x, y), dim=-1) # [N, node_features]
-            else:
-                x = y
+            x = append(x, y) # [N, node_features]
 
         return x
 
@@ -204,3 +207,8 @@ class Model(torch.nn.Module):
             logits=x,
             gold_labels=gold_labels
         )
+
+def append(x: Optional[torch.Tensor], y: torch.Tensor):
+    if x is None:
+        return y
+    return torch.concat((x, y), dim=-1)

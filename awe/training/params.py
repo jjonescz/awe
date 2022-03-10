@@ -60,6 +60,10 @@ class Params:
     n_neighbors: int = 4
     neighbor_distance: VisualNeighborDistance = VisualNeighborDistance.rect
 
+    # Ancestor chain
+    dom_ancestors: bool = False
+    n_ancestors: int = 5
+
     # Word vectors
     tokenizer_family: TokenizerFamily = TokenizerFamily.custom
     tokenizer_id: str = ''
