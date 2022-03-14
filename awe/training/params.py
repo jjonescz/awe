@@ -81,6 +81,7 @@ class Params:
     freeze_word_embeddings: bool = True
     pretrained_word_embeddings: bool = True
     tokenize_node_attrs: bool = False
+    tokenize_node_attrs_only_ancestors: bool = True
 
     # LSTM
     word_vector_function: Optional[str] = 'sum' # 'lstm', 'sum', 'mean'

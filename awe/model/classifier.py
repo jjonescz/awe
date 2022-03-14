@@ -62,10 +62,13 @@ class Model(torch.nn.Module):
             )
             self.slim_node_feature_dim += embedding_dim
 
+        self.node_feature_dim = self.slim_node_feature_dim
+
         if self.trainer.params.tokenize_node_attrs:
             self.slim_node_feature_dim += self.word_embedding.out_dim
 
-        self.node_feature_dim = self.slim_node_feature_dim
+            if not self.trainer.params.tokenize_node_attrs_only_ancestors:
+                self.node_feature_dim += self.word_embedding.out_dim
 
         # Node position
         self.position = self.trainer.extractor.get_feature(awe.features.dom.Position)
@@ -139,7 +142,10 @@ class Model(torch.nn.Module):
             lr=(self.lr or self.trainer.params.learning_rate)
         )
 
-    def get_node_features_slim(self, batch: list[awe.data.graph.dom.Node]):
+    def get_node_features_slim(self,
+        batch: list[awe.data.graph.dom.Node],
+        attrs: bool = True
+    ):
         """
         Features used for a node, its ancestor chain, and its visual neighbors.
         """
@@ -151,7 +157,7 @@ class Model(torch.nn.Module):
             x = append(x, self.tag_embedding(tag_ids)) # [N, embedding_dim]
 
         # Tokenize node attributes.
-        if self.trainer.params.tokenize_node_attrs:
+        if attrs and self.trainer.params.tokenize_node_attrs:
             word_ids = self.word_ids.compute_attr(batch) # [N, num_words]
             word_embeddings = self.word_embedding(word_ids)
                 # [N, num_words, word_dim]
@@ -163,7 +169,9 @@ class Model(torch.nn.Module):
     def get_node_features(self, batch: list[awe.data.graph.dom.Node]):
         """Features used for a node and its visual neighbors."""
 
-        x = self.get_node_features_slim(batch)
+        x = self.get_node_features_slim(batch,
+            attrs=not self.trainer.params.tokenize_node_attrs_only_ancestors
+        )
 
         # Add more HTML node features.
         if self.position is not None:
