@@ -203,9 +203,11 @@ class Trainer:
             } | {
                 f'anc_{i}': f'<{a.html_tag}>{get_text(a)}'
                 for i, a in enumerate(node.iterate_ancestors(self.params.n_ancestors))
+                if self.params.ancestor_chain
             } | {
                 f'neighbor_{i}': v.neighbor.text
                 for i, v in enumerate(node.visual_neighbors)
+                if self.params.visual_neighbors
             }
             for node in nodes
             if node.label_keys
