@@ -12,6 +12,7 @@ import awe.features.extraction
 import awe.features.text
 import awe.model.lstm_utils
 import awe.model.word_lstm
+import awe.training.params
 
 if TYPE_CHECKING:
     import awe.training.trainer
@@ -82,6 +83,7 @@ class Model(torch.nn.Module):
             self.neighbor_attention = torch.nn.Linear(
                 self.node_feature_dim * 2 + 3, 1
             )
+            self.neighbor_softmax = torch.nn.Softmax(dim=-1)
             head_features = self.node_feature_dim * 2
         else:
             head_features = self.node_feature_dim
@@ -211,8 +213,12 @@ class Model(torch.nn.Module):
         # Normalize coefficients.
         coefficients = coefficients.reshape((len(batch), 1, n_neighbors))
             # [N, 1, n_neighbors]
-        if self.trainer.params.neighbor_normalize:
+        normalize = self.trainer.params.neighbor_normalize
+        N = awe.training.params.NeighborNormalization
+        if normalize == N.vector:
             coefficients = torch.nn.functional.normalize(coefficients, dim=-1)
+        elif normalize == N.softmax:
+            coefficients = self.neighbor_softmax(coefficients)
 
         # Aggregate neighbor features (sum weighted by the coefficients).
         neighbor_features = neighbor_features \

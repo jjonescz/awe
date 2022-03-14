@@ -23,6 +23,10 @@ class VisualNeighborDistance(str, enum.Enum):
     center_point = 'center'
     rect = 'rect'
 
+class NeighborNormalization(str, enum.Enum):
+    vector = 'vector'
+    softmax = 'softmax'
+
 @dataclasses.dataclass
 class Params:
     """Hyper parameters with persistence."""
@@ -59,7 +63,7 @@ class Params:
     visual_neighbors: bool = False
     n_neighbors: int = 4
     neighbor_distance: VisualNeighborDistance = VisualNeighborDistance.rect
-    neighbor_normalize: bool = True
+    neighbor_normalize: Optional[NeighborNormalization] = NeighborNormalization.softmax
 
     # Ancestor chain
     ancestor_chain: bool = False
