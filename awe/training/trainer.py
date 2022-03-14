@@ -5,17 +5,20 @@ import warnings
 from typing import Callable, Optional
 
 import numpy as np
+import pandas as pd
 import pytorch_lightning as pl
 import torch
 import torch.utils.data
 import torch.utils.tensorboard
 from tqdm.auto import tqdm
 
+import awe.data.graph.dom
 import awe.data.sampling
 import awe.data.set.apify
 import awe.data.set.pages
 import awe.data.set.swde
 import awe.features.extraction
+import awe.features.text
 import awe.model.classifier
 import awe.model.decoding
 import awe.model.eval
@@ -186,6 +189,26 @@ class Trainer:
                 shuffle=shuffle
             ),
             prefix=desc if log else None,
+        )
+
+    def explore_data(self):
+        nodes: list[awe.data.graph.dom.Node] = self.train_loader.dataset
+        def get_text(node: awe.data.graph.dom.Node):
+            attrs = awe.features.text.get_node_attr_text(node)
+            return awe.features.text.humanize_string(attrs)
+        return pd.DataFrame(
+            {
+                'label_key': node.label_keys[0],
+                'text': node.text,
+            } | {
+                f'anc_{i}': f'<{a.html_tag}>{get_text(a)}'
+                for i, a in enumerate(node.iterate_ancestors(self.params.n_ancestors))
+            } | {
+                f'neighbor_{i}': v.neighbor.text
+                for i, v in enumerate(node.visual_neighbors)
+            }
+            for node in nodes
+            if node.label_keys
         )
 
     def create_model(self):
