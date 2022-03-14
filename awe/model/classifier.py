@@ -118,15 +118,17 @@ class Model(torch.nn.Module):
         # Classification head
         D = 64
         num_labels = len(self.trainer.label_map.id_to_label) + 1
-        self.head = torch.nn.Sequential(
+        self.head = torch.nn.Sequential(filter(lambda x: x is not None, (
             torch.nn.Linear(head_features, 2 * D),
+            torch.nn.LayerNorm(2 * D) if self.trainer.params.layer_norm else None,
             torch.nn.ReLU(),
             torch.nn.Dropout(),
             torch.nn.Linear(2 * D, D),
+            torch.nn.LayerNorm(D) if self.trainer.params.layer_norm else None,
             torch.nn.ReLU(),
             torch.nn.Dropout(),
             torch.nn.Linear(D, num_labels)
-        )
+        )))
 
         self.loss = torch.nn.CrossEntropyLoss(
             label_smoothing=self.trainer.params.label_smoothing
