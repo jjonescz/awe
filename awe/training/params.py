@@ -71,6 +71,8 @@ class Params:
     ancestor_function: Optional[str] = 'lstm' # 'lstm', 'sum', 'mean'
     ancestor_lstm_out_dim: Optional[int] = None
     ancestor_lstm_args: Optional[dict[str]] = None
+    ancestor_summarize: bool = False
+    ancestor_dim: Optional[int] = None
 
     # Word vectors
     tokenizer_family: TokenizerFamily = TokenizerFamily.custom

@@ -92,17 +92,23 @@ class Model(torch.nn.Module):
 
         # Ancestor chain
         if self.trainer.params.ancestor_chain:
+            if self.trainer.params.ancestor_summarize:
+                self.ancestor_dim = self.trainer.params.ancestor_dim or self.slim_node_feature_dim
+                self.ancestor_layer = torch.nn.Linear(self.slim_node_feature_dim, self.ancestor_dim)
+            else:
+                self.ancestor_dim = self.slim_node_feature_dim
+
             if self.trainer.params.ancestor_function == 'lstm':
                 out_dim = (self.trainer.params.ancestor_lstm_out_dim or
-                    self.slim_node_feature_dim)
+                    self.ancestor_dim)
                 self.ancestor_lstm = torch.nn.LSTM(
-                    self.slim_node_feature_dim,
+                    self.ancestor_dim,
                     out_dim,
                     **(self.trainer.params.ancestor_lstm_args or {})
                 )
                 head_features += out_dim
             else:
-                head_features += self.slim_node_feature_dim
+                head_features += self.ancestor_dim
 
         # Classification head
         D = 64
@@ -246,6 +252,11 @@ class Model(torch.nn.Module):
             for ancestor in node_ancestors
         ]
         ancestor_features = self.get_node_features_slim(ancestor_batch)
+
+        # Summarize ancestor features.
+        if self.trainer.params.ancestor_summarize:
+            ancestor_features = self.ancestor_layer(ancestor_features)
+            ancestor_features = self.dropout(ancestor_features)
 
         # Pack ancestors corresponding to one node together.
         ancestor_sequences: list[torch.Tensor] = torch.split(
