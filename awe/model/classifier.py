@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Optional
 
 import torch
 import torch.nn
+import torch.nn.functional
 
 import awe.data.glove
 import awe.data.graph.dom
@@ -208,9 +209,13 @@ class Model(torch.nn.Module):
         coefficients = self.neighbor_attention(coefficient_inputs)
             # [n_neighbors * N, 1]
 
-        # Aggregate neighbor features (sum weighted by the coefficients).
+        # Normalize coefficients.
         coefficients = coefficients.reshape((len(batch), 1, n_neighbors))
             # [N, 1, n_neighbors]
+        if self.trainer.params.neighbor_normalize:
+            coefficients = torch.nn.functional.normalize(coefficients, dim=-1)
+
+        # Aggregate neighbor features (sum weighted by the coefficients).
         neighbor_features = neighbor_features \
             .reshape((len(batch), n_neighbors, -1))
             # [N, n_neighbors, node_features]
