@@ -118,7 +118,7 @@ class Model(torch.nn.Module):
         # Classification head
         D = 64
         num_labels = len(self.trainer.label_map.id_to_label) + 1
-        self.head = torch.nn.Sequential(filter(lambda x: x is not None, (
+        self.head = torch.nn.Sequential(*filter(lambda x: x is not None, (
             torch.nn.Linear(head_features, 2 * D),
             torch.nn.LayerNorm(2 * D) if self.trainer.params.layer_norm else None,
             torch.nn.ReLU(),
