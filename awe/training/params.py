@@ -103,6 +103,7 @@ class Params:
 
     # Classifier
     learning_rate: float = 1e-3
+    label_smoothing: float = 0.0
 
     @classmethod
     def load_version(cls,

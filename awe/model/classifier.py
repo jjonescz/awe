@@ -114,8 +114,7 @@ class Model(torch.nn.Module):
         )
 
         self.loss = torch.nn.CrossEntropyLoss(
-            #weight=torch.FloatTensor(params.label_weights),
-            #label_smoothing=params.label_smoothing
+            label_smoothing=self.trainer.params.label_smoothing
         )
 
     def create_optimizer(self):
