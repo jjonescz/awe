@@ -44,6 +44,8 @@ class Model(torch.nn.Module):
 
         self.slim_node_feature_dim = 0
 
+        self.dropout = torch.nn.Dropout(0.3)
+
         # Word embedding (shared for node text and attributes)
         self.word_ids = self.trainer.extractor.get_feature(awe.features.text.WordIdentifiers)
         if self.word_ids is not None:
@@ -228,6 +230,8 @@ class Model(torch.nn.Module):
             # [N, 1, node_features]
         neighborhood = neighborhood.reshape((len(batch), -1))
             # [N, node_features]
+
+        neighborhood = self.dropout(neighborhood)
 
         return torch.concat((node_features, neighborhood), dim=-1)
             # [N, 2 * node_features]
