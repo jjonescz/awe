@@ -92,12 +92,17 @@ class Model(torch.nn.Module):
 
         # Ancestor chain
         if self.trainer.params.ancestor_chain:
-            if self.trainer.params.ancestor_summarize:
-                self.ancestor_dim = self.trainer.params.ancestor_dim or self.slim_node_feature_dim
-                self.ancestor_layer = torch.nn.Linear(self.slim_node_feature_dim, self.ancestor_dim)
-            else:
-                self.ancestor_dim = self.slim_node_feature_dim
+            # For each ancestor we have slim features and its distance.
+            input_ancestor_dim = self.slim_node_feature_dim + 1
 
+            # We can summarize features of each ancestor using one layer.
+            if self.trainer.params.ancestor_summarize:
+                self.ancestor_dim = self.trainer.params.ancestor_dim or input_ancestor_dim
+                self.ancestor_layer = torch.nn.Linear(input_ancestor_dim, self.ancestor_dim)
+            else:
+                self.ancestor_dim = input_ancestor_dim
+
+            # We then aggregate features for each group of ancestors.
             if self.trainer.params.ancestor_function == 'lstm':
                 out_dim = (self.trainer.params.ancestor_lstm_out_dim or
                     self.ancestor_dim)
@@ -251,11 +256,22 @@ class Model(torch.nn.Module):
             for node_ancestors in ancestors
             for ancestor in node_ancestors
         ]
-        ancestor_features = self.get_node_features_slim(ancestor_batch)
+        ancestor_features = self.get_node_features_slim(ancestor_batch) # [M, slim_dim]
+
+        # Append distance of ancestors.
+        ancestor_distances = torch.tensor(
+            [i + 1 for a in ancestors for i in range(len(a))],
+            dtype=torch.int32,
+            device=self.trainer.device
+        ) # [M, 1]
+        ancestor_features = torch.concat(
+            (ancestor_distances, ancestor_features),
+            dim=0
+        ) # [M, slim_dim + 1]
 
         # Summarize ancestor features.
         if self.trainer.params.ancestor_summarize:
-            ancestor_features = self.ancestor_layer(ancestor_features)
+            ancestor_features = self.ancestor_layer(ancestor_features) # [M, anc_dim]
             ancestor_features = self.dropout(ancestor_features)
 
         # Pack ancestors corresponding to one node together.
@@ -276,14 +292,14 @@ class Model(torch.nn.Module):
             # Extract only the last sequence (representation of all ancestors).
             ancestor_chains = awe.model.lstm_utils.last_items(packed_output,
                 unsort=True
-            ) # [N, ancestor_features]
+            ) # [N, anc_out_dim]
         else:
             # Use simple aggregation function (sum or mean).
             f = getattr(torch, self.trainer.params.ancestor_function)
             padded_ancestors = torch.nn.utils.rnn.pad_sequence(ancestor_sequences)
-                # [n_ancestors, N, ancestor_features]
+                # [n_ancestors, N, anc_dim]
             ancestor_chains = f(padded_ancestors, dim=0)
-                # [N, ancestor_features]
+                # [N, anc_dim]
 
         return ancestor_chains
 
