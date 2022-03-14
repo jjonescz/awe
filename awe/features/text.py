@@ -180,6 +180,6 @@ def get_node_attr_text(node: awe.data.graph.dom.Node):
     attrs = node.get_attributes()
     return ' '.join(
         v
-        for a in ['id', 'name', 'class']
+        for a in ['itemprop', 'id', 'name', 'class']
         if (v := attrs.get(a, ''))
     )
