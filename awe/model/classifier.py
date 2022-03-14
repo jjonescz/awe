@@ -265,10 +265,10 @@ class Model(torch.nn.Module):
             [i + 1 for a in ancestors for i in range(len(a))],
             dtype=torch.int32,
             device=self.trainer.device
-        ) # [M, 1]
+        ).reshape((-1, 1)) # [M, 1]
         ancestor_features = torch.concat(
             (ancestor_distances, ancestor_features),
-            dim=0
+            dim=-1
         ) # [M, slim_dim + 1]
 
         # Summarize ancestor features.
