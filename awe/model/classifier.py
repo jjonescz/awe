@@ -115,6 +115,10 @@ class Model(torch.nn.Module):
                     **(self.trainer.params.ancestor_lstm_args or {})
                 )
                 head_features += out_dim
+            elif self.trainer.params.ancestor_function == 'attention':
+                self.ancestor_attention = torch.nn.Linear(self.ancestor_dim, 1)
+                self.ancestor_softmax = torch.nn.Softmax(dim=-1)
+                head_features += self.ancestor_dim
             else:
                 head_features += self.ancestor_dim
 
@@ -237,7 +241,7 @@ class Model(torch.nn.Module):
         coefficients = coefficients.reshape((len(batch), 1, n_neighbors))
             # [N, 1, n_neighbors]
         normalize = self.trainer.params.neighbor_normalize
-        N = awe.training.params.NeighborNormalization
+        N = awe.training.params.AttentionNormalization
         if normalize == N.vector:
             coefficients = F.normalize(coefficients, dim=-1)
         elif normalize == N.softmax:

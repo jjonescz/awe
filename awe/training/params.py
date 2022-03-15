@@ -23,7 +23,7 @@ class VisualNeighborDistance(str, enum.Enum):
     center_point = 'center'
     rect = 'rect'
 
-class NeighborNormalization(str, enum.Enum):
+class AttentionNormalization(str, enum.Enum):
     vector = 'vector'
     softmax = 'softmax'
 
@@ -63,16 +63,17 @@ class Params:
     visual_neighbors: bool = False
     n_neighbors: int = 4
     neighbor_distance: VisualNeighborDistance = VisualNeighborDistance.rect
-    neighbor_normalize: Optional[NeighborNormalization] = NeighborNormalization.softmax
+    neighbor_normalize: Optional[AttentionNormalization] = AttentionNormalization.softmax
 
     # Ancestor chain
     ancestor_chain: bool = False
     n_ancestors: int = 5
-    ancestor_function: Optional[str] = 'lstm' # 'lstm', 'sum', 'mean'
+    ancestor_function: Optional[str] = 'lstm' # 'lstm', 'attention', 'sum', 'mean'
     ancestor_lstm_out_dim: Optional[int] = None
     ancestor_lstm_args: Optional[dict[str]] = None
     ancestor_summarize: bool = False
     ancestor_dim: Optional[int] = None
+    ancestor_normalize: Optional[AttentionNormalization] = AttentionNormalization.softmax
 
     # Word vectors
     tokenizer_family: TokenizerFamily = TokenizerFamily.custom
