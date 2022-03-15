@@ -138,8 +138,12 @@ class Trainer:
 
         # Take subset.
         rng = np.random.default_rng(42)
-        self.train_pages = rng.choice(train_pages, self.params.train_subset, replace=False)
-        self.val_pages = rng.choice(val_pages, self.params.val_subset, replace=False)
+        def subset(pages, subset):
+            if subset is None:
+                return pages
+            return rng.choice(pages, subset, replace=False)
+        self.train_pages = subset(train_pages, self.params.train_subset)
+        self.val_pages = subset(val_pages, self.params.val_subset)
         print(f'{len(self.train_pages)=}, {len(self.val_pages)=}')
 
         # Create dataloaders.
