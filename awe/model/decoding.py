@@ -4,6 +4,7 @@ import pandas as pd
 
 import awe.data.graph.dom
 import awe.data.graph.pred
+import awe.data.parsing
 import awe.data.set.pages
 import awe.model.classifier
 import awe.utils
@@ -56,7 +57,9 @@ class Decoder:
         return d
 
     def decode_node(self, node: awe.data.graph.dom.Node):
-        return node.text if node.is_text else f'<{node.html_tag}>'
+        if node.is_text:
+            return repr(awe.data.parsing.normalize_node_text(node.text))
+        return f'<{node.html_tag}>'
 
     def decode_node_pred(self, pred: awe.data.graph.pred.NodePrediction):
-        return f'{self.decode_node(pred.node)}[{pred.confidence:.2f}]'
+        return f'{self.decode_node(pred.node)}({pred.confidence:.2f})'
