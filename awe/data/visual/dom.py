@@ -27,9 +27,13 @@ class DomData:
         with open(self.path, mode='r', encoding='utf-8') as file:
             return file.read()
 
+    def load_json_str(self, json_text: str):
+        """Reads DOM data from JSON."""
+        self.data = json.loads(json_text)
+
     def load_json(self):
         """Reads DOM data from JSON."""
-        self.data = json.loads(self.get_json_str())
+        self.load_json_str(self.get_json_str())
 
     def fill_tree(self, dom: awe.data.graph.dom.Dom):
         for node in dom.nodes:

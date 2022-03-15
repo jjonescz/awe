@@ -3,12 +3,14 @@ import os
 import warnings
 from typing import Optional
 
+import json5
 import pandas as pd
 import slugify
 from tqdm.auto import tqdm
 
 import awe.data.constants
 import awe.data.parsing
+import awe.data.set.db
 import awe.data.set.labels
 import awe.data.set.pages
 
@@ -22,7 +24,6 @@ class Dataset(awe.data.set.pages.Dataset):
     def __init__(self,
         only_websites: Optional[list[str]] = None,
         convert: bool = True,
-        state: Optional[dict[str, pd.DataFrame]] = None,
         only_label_keys: Optional[list[str]] = None
     ):
         super().__init__(
@@ -31,14 +32,21 @@ class Dataset(awe.data.set.pages.Dataset):
         )
         self.only_websites = only_websites
         self.convert = convert
-        self.state = state or {}
         self.only_label_keys = only_label_keys
         self.verticals = [
             Vertical(dataset=self, name='products', prev_page_count=0)
         ]
 
-    def get_state(self):
-        return self.state
+    def filter_label_keys(self, df: pd.DataFrame):
+        if (label_keys := self.only_label_keys) is not None:
+            all_label_keys = {
+                col[len(SELECTOR_PREFIX):]
+                for col in df.columns
+                if col.startswith(SELECTOR_PREFIX)
+            }
+            for excluded_label_key in all_label_keys.difference(label_keys):
+                del df[excluded_label_key]
+                del df[f'{SELECTOR_PREFIX}{excluded_label_key}']
 
 @dataclasses.dataclass
 class Vertical(awe.data.set.pages.Vertical):
@@ -75,7 +83,8 @@ class Vertical(awe.data.set.pages.Vertical):
 @dataclasses.dataclass
 class Website(awe.data.set.pages.Website):
     vertical: Vertical
-    df: pd.DataFrame = dataclasses.field(repr=False, default=None)
+    db: Optional[awe.data.set.db.Database] = dataclasses.field(repr=False, default=None)
+    df: Optional[pd.DataFrame] = dataclasses.field(repr=False, default=None)
 
     def __init__(self, vertical: Vertical, dir_name: str, prev_page_count: int):
         super().__init__(
@@ -84,40 +93,53 @@ class Website(awe.data.set.pages.Website):
             prev_page_count=prev_page_count,
         )
 
-        if (df := self.vertical.dataset.state.get(self.name)) is not None:
-            print(f'Reusing state for {self.dir_path!r}.')
-            self.df = df
-        elif not self.vertical.dataset.convert:
+        if not self.vertical.dataset.convert:
             self.df = self.read_json_df()
+            self.vertical.dataset.filter_label_keys(self.df)
+            self.page_count = len(self.df)
             print(f'Loaded {self.dataset_json_path!r}.')
         else:
             # Convert dataset.
-            if not os.path.exists(self.dataset_pickle_path):
-                self.df = self.read_json_df()
-                self.df.to_pickle(self.dataset_pickle_path)
-                print(f'Saved {self.dataset_pickle_path!r}.')
+            self.db = awe.data.set.db.Database(self.dataset_db_path)
+            if not self.db.fresh:
+                self.page_count = len(self.db)
             else:
-                # Load dataset.
-                self.df = pd.read_pickle(self.dataset_pickle_path)
-                print(f'Loaded {self.dataset_pickle_path!r}.')
+                df = self.read_json_df()
+                self.vertical.dataset.filter_label_keys(df)
+                self.page_count = len(df)
 
-        # Filter label keys.
-        if (label_keys := self.vertical.dataset.only_label_keys) is not None:
-            all_label_keys = {
-                col[len(SELECTOR_PREFIX):]
-                for col in self.df.columns
-                if col.startswith(SELECTOR_PREFIX)
-            }
-            for excluded_label_key in all_label_keys.difference(label_keys):
-                del self.df[excluded_label_key]
-                del self.df[f'{SELECTOR_PREFIX}{excluded_label_key}']
+                # Gather DataFrame columns to convert into metadata.
+                selector_cols = {
+                    col for col in df.columns
+                    if col.startswith(SELECTOR_PREFIX)
+                }
+                metadata_cols = selector_cols | {
+                    col[len(SELECTOR_PREFIX):]
+                    for col in selector_cols
+                }
 
-        self.vertical.dataset.state[self.name] = self.df
+                # Add rows to database.
+                progress = tqdm(enumerate(df.iloc),
+                    desc=self.dataset_db_path,
+                    total=self.page_count
+                )
+                for idx, row in progress:
+                    metadata_dict = {
+                        k: v
+                        for k, v in row.items()
+                        if k in metadata_cols
+                    }
+                    metadata_json = json5.dumps(metadata_dict)
+                    self.db.add(idx,
+                        url=row.url,
+                        html_text=row.html,
+                        metadata=metadata_json
+                    )
+
         self.pages = [
             Page(website=self, index=idx)
-            for idx in range(len(self.df))
+            for idx in range(self.page_count)
         ]
-        self.page_count = len(self.pages)
 
     @property
     def dir_path(self):
@@ -128,8 +150,8 @@ class Website(awe.data.set.pages.Website):
         return f'{self.dir_path}/dataset.json'
 
     @property
-    def dataset_pickle_path(self):
-        return f'{self.dir_path}/dataset.pkl'
+    def dataset_db_path(self):
+        return f'{self.dir_path}/dataset.db'
 
     def read_json_df(self):
         if not os.path.exists(self.dataset_json_path):
@@ -143,8 +165,19 @@ class Page(awe.data.set.pages.Page):
     index: int = None
 
     @property
+    def db(self):
+        return self.website.db
+
+    @property
     def row(self):
         return self.website.df.iloc[self.index]
+
+    @property
+    def metadata(self):
+        if self.db is not None:
+            json_text = self.db.get_metadata(self.index)
+            return json5.loads(json_text)
+        return self.row
 
     @property
     def url_slug(self):
@@ -160,9 +193,13 @@ class Page(awe.data.set.pages.Page):
 
     @property
     def url(self) -> str:
+        if self.db is not None:
+            return self.db.get_url(self.index)
         return self.row.url
 
     def get_html_text(self):
+        if self.db is not None:
+            return self.db.get_html_text(self.index)
         return self.row.html
 
     def get_labels(self):
@@ -176,7 +213,7 @@ class PageLabels(awe.data.set.labels.PageLabels):
 
     @property
     def label_keys(self):
-        keys: list[str] = self.page.row.keys()
+        keys: list[str] = self.page.metadata.keys()
         return [
             k[len(SELECTOR_PREFIX):]
             for k in keys
@@ -184,13 +221,13 @@ class PageLabels(awe.data.set.labels.PageLabels):
         ]
 
     def get_selector(self, label_key: str):
-        return self.page.row[f'{SELECTOR_PREFIX}{label_key}']
+        return self.page.metadata[f'{SELECTOR_PREFIX}{label_key}']
 
     def has_label(self, label_key: str):
         return self.get_selector(label_key) != ''
 
     def get_label_values(self, label_key: str):
-        label_value = self.page.row[label_key]
+        label_value = self.page.metadata[label_key]
 
         # Check that when CSS selector is empty string, gold value is empty.
         if not self.has_label(label_key):

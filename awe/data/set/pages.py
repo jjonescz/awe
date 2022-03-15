@@ -26,12 +26,6 @@ class Dataset:
 
     verticals: list['Vertical'] = dataclasses.field(repr=False, default_factory=list)
 
-    def get_state(self):
-        """
-        Extracts an internal state that can be later restored by passing it into
-        `Dataset` constructor.
-        """
-
     def get_all_pages(self, *, zip_verticals: bool = False, zip_websites: bool = False):
         page_lists = (
             v.get_all_pages(zip_websites=zip_websites)

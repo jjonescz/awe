@@ -89,22 +89,14 @@ class Trainer:
     def load_dataset(self):
         set_seed(42)
 
-        state = None
-        if self.ds is not None:
-            # Preserve dataset state.
-            state = self.ds.get_state()
-            # Release memory used by previously-loaded dataset.
-            self.ds = None
         if self.params.dataset == awe.training.params.Dataset.swde:
             self.ds = awe.data.set.swde.Dataset(
                 suffix='-exact',
-                only_verticals=('auto',),
-                state=state
+                only_verticals=('auto',)
             )
         elif self.params.dataset == awe.training.params.Dataset.apify:
             self.ds = awe.data.set.apify.Dataset(
                 only_websites=('alzaEn', 'ikeaEn', 'notinoEn'),
-                state=state,
                 only_label_keys=('name', 'price', 'shortDescription', 'images')
             )
         else:

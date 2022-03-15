@@ -6,10 +6,10 @@ import re
 import warnings
 from typing import Optional
 
-import pandas as pd
 from tqdm.auto import tqdm
 
 import awe.data.constants
+import awe.data.set.db
 import awe.data.set.pages
 import awe.data.set.swde_labels
 import awe.utils
@@ -43,8 +43,7 @@ class Dataset(awe.data.set.pages.Dataset):
     def __init__(self,
         suffix: Optional[str] = None,
         only_verticals: Optional[list[str]] = None,
-        convert: bool = True,
-        state: Optional[dict[str, pd.DataFrame]] = None
+        convert: bool = True
     ):
         super().__init__(
             name=f'swde{suffix or ""}',
@@ -53,9 +52,9 @@ class Dataset(awe.data.set.pages.Dataset):
         self.suffix = suffix
         self.only_verticals = only_verticals
         self.convert = convert
-        self.verticals = list(self._iterate_verticals(state=state or {}))
+        self.verticals = list(self._iterate_verticals())
 
-    def _iterate_verticals(self, state: dict[str, pd.DataFrame]):
+    def _iterate_verticals(self):
         page_count = 0
         for name in tqdm(VERTICAL_NAMES, desc='verticals'):
             if (self.only_verticals is not None
@@ -66,13 +65,9 @@ class Dataset(awe.data.set.pages.Dataset):
                 dataset=self,
                 name=name,
                 prev_page_count=page_count,
-                df=state.get(name),
             )
             yield vertical
             page_count += vertical.page_count
-
-    def get_state(self):
-        return { v.name: v.df for v in self.verticals }
 
     def find_page(self, vertical: str, website: str, page: int):
         v = next(v for v in self.verticals if v.name == vertical)
@@ -82,14 +77,14 @@ class Dataset(awe.data.set.pages.Dataset):
     def reload(self, page: 'Page'):
         file_page = FilePage.try_create(page.website, page.html_file_name)
         page.website.pages[page.index] = file_page
-        page.website.vertical.df.iloc[page.index_in_vertical] = file_page.to_row()
+        page.website.vertical.db.replace(page.index_in_vertical, **file_page.to_row())
         return file_page
 
 @dataclasses.dataclass
 class Vertical(awe.data.set.pages.Vertical):
     dataset: Dataset
     websites: list['Website'] = dataclasses.field(repr=False, default_factory=list)
-    df: pd.DataFrame = dataclasses.field(repr=False, default=None)
+    db: awe.data.set.db.Database = dataclasses.field(repr=False, default=None)
 
     def __post_init__(self):
         if not os.path.exists(self.dir_path):
@@ -98,45 +93,35 @@ class Vertical(awe.data.set.pages.Vertical):
             self.page_count = 0
             return
 
-        # Load DataFrame.
-        if self.df is not None:
-            print(f'Reusing state for {self.dir_path!r}.')
-        elif self.dataset.convert:
-            if not os.path.exists(self.pickle_path):
-                # Convert vertical to a DataFrame. It is faster than reading
-                # from files (especially in the cloud where the files are
-                # usually in a mounted file system which can be really slow).
-                pages = [
-                    page
-                    for website in self._iterate_websites(FileWebsite)
-                    for page in website.pages
-                ]
-                self.df = pd.DataFrame(
-                    (
-                        page.to_row()
-                        for page in tqdm(pages, desc=self.pickle_path)
-                    ),
-                    index=[page.index_in_vertical for page in pages]
-                )
-                self.save_pickle()
-            else:
-                self.df = pd.read_pickle(self.pickle_path)
-                print(f'Loaded {self.pickle_path!r}.')
+        # Fill database.
+        self.db = awe.data.set.db.Database(self.db_path)
+        if self.dataset.convert and self.db.fresh:
+            # Convert vertical to an SQLite database. It is faster than reading
+            # from files (especially in the cloud where the files are
+            # usually in a mounted file system which can be really slow).
+            pages = [
+                page
+                for website in self._iterate_websites(FileWebsite)
+                for page in website.pages
+            ]
+            for page in tqdm(pages, desc=self.db_path):
+                page: FilePage
+                self.db.add(page.index_in_vertical, **page.to_row())
 
         if not self.dataset.convert:
             self.websites = list(self._iterate_websites(FileWebsite))
             self.page_count = sum(w.page_count for w in self.websites)
         else:
-            self.websites = list(self._iterate_websites(PickleWebsite))
-            self.page_count = len(self.df)
+            self.websites = list(self._iterate_websites(DbWebsite))
+            self.page_count = len(self.db)
 
     @property
     def dir_path(self):
         return f'{self.dataset.dir_path}/{self.name}'
 
     @property
-    def pickle_path(self):
-        return f'{self.dataset.dir_path}/{self.name}.pkl'
+    def db_path(self):
+        return f'{self.dir_path}{self.dataset.suffix or ""}.db'
 
     @property
     def groundtruth_dir(self):
@@ -163,10 +148,6 @@ class Vertical(awe.data.set.pages.Vertical):
 
             yield website
             page_count += website.page_count
-
-    def save_pickle(self):
-        self.df.to_pickle(self.pickle_path)
-        print(f'Saved {self.pickle_path!r}.')
 
 @dataclasses.dataclass
 class Website(awe.data.set.pages.Website):
@@ -243,10 +224,10 @@ class FileWebsite(Website):
                 assert page.html_file_name == file
                 yield page
 
-class PickleWebsite(Website):
+class DbWebsite(Website):
     def _iterate_pages(self):
         for idx in range(self.page_count):
-            yield PicklePage(website=self, index=idx)
+            yield DbPage(website=self, index=idx)
 
 @dataclasses.dataclass(eq=False)
 class Page(awe.data.set.pages.Page):
@@ -276,11 +257,14 @@ class Page(awe.data.set.pages.Page):
     def get_labels(self):
         return awe.data.set.swde_labels.PageLabels(self)
 
+    def get_visuals_json_text(self):
+        return self.create_visuals().get_json_str()
+
     def to_row(self):
         return {
             'url': self.url,
             'html_text': self.get_html_text(),
-            'visuals': self.load_visuals().data
+            'visuals': self.get_visuals_json_text()
         }
 
 class FilePage(Page):
@@ -318,19 +302,22 @@ class FilePage(Page):
         visuals.load_json()
         return visuals
 
-class PicklePage(Page):
+class DbPage(Page):
     @property
-    def row(self):
-        return self.website.vertical.df.iloc[self.index_in_vertical]
+    def db(self):
+        return self.website.vertical.db
 
     @property
     def url(self):
-        return self.row.url
+        return self.db.get_url(self.index_in_vertical)
 
     def get_html_text(self):
-        return self.row.html_text
+        return self.db.get_html_text(self.index_in_vertical)
+
+    def get_visuals_json_text(self):
+        return self.db.get_visuals(self.index_in_vertical)
 
     def load_visuals(self):
         visuals = self.create_visuals()
-        visuals.data = self.row.visuals
+        visuals.load_json_str(self.get_visuals_json_text())
         return visuals
