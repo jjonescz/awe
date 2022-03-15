@@ -38,3 +38,6 @@ the Docker image.
 
 **Inspect HTML in the dataset:** Run `pnpx -y http-server` and navigate to the
 page through web browser.
+
+**Debug CPython code:** Run `gdb -ex=r --args python <path_to_script>.py`. Then
+issue GDB command `backtrace`.

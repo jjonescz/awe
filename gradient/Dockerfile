@@ -35,6 +35,8 @@ RUN \
     openssh-server \
     # Needed to unzip SWDE.
     p7zip-full \
+    # Useful for CPython debugging.
+    gdb \
     # Needed for Puppeteer.
     google-chrome-stable && \
     rm -rf /var/lib/{apt,dpkg,cache,log}
