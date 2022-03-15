@@ -116,6 +116,10 @@ class Trainer:
 
         set_seed(42)
 
+        # Create device (some features need it when preparing tensors).
+        use_gpu = self.params.use_gpu and torch.cuda.is_available()
+        self.device = torch.device('cuda:0' if use_gpu else 'cpu')
+
         self.label_map = awe.training.context.LabelMap()
         self.extractor = awe.features.extraction.Extractor(self)
         self.sampler = awe.data.sampling.Sampler(self)
@@ -222,8 +226,6 @@ class Trainer:
         set_seed(42)
 
         self.evaluator = awe.model.eval.Evaluator(self)
-        use_gpu = self.params.use_gpu and torch.cuda.is_available()
-        self.device = torch.device('cuda:0' if use_gpu else 'cpu')
         self.model = awe.model.classifier.Model(self).to(self.device)
 
     def create_version(self):
