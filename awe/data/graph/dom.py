@@ -266,6 +266,9 @@ class Node:
         return awe.data.html_utils.get_xpath(self.parsed)
 
     def get_attributes(self):
+        if self.is_text:
+            # HACK: Lexbor can crash when querying attributes of text fragments.
+            return {}
         return self.parsed.attributes
 
     def find_by_index_path(self, indices: list[int]):
