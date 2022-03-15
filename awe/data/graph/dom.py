@@ -292,6 +292,9 @@ class Node:
             stack.extend(reversed(node.children))
 
     def get_ancestors(self, num: int):
+        """
+        List of ancestors up to length `num` starting from this node's parent.
+        """
         return list(self.iterate_ancestors(num))
 
     def iterate_ancestors(self, num: int):
@@ -301,6 +304,25 @@ class Node:
                 break
             yield node
             node = node.parent
+
+    def get_ancestor_chain(self, num: int):
+        """
+        List of ancestors of length exactly `num` (trailing nodes are repeated
+        if necessary) starting from the most distant ancestor.
+
+        Most nodes being classified have `num` ancestors and returning a
+        fixed-sized list simplifies feature and deep learning computation.
+        """
+        result = list(self.iterate_ancestor_chain(num))
+        result.reverse()
+        return result
+
+    def iterate_ancestor_chain(self, num: int):
+        node = self
+        for _ in range(num):
+            if node.parent is not None:
+                node = node.parent
+            yield node
 
     def distance_to(self, other: 'Node'):
         return abs(self.deep_index - other.deep_index)

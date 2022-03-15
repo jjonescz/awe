@@ -10,7 +10,6 @@ import awe.data.graph.dom
 import awe.features.dom
 import awe.features.extraction
 import awe.features.text
-import awe.model.lstm_utils
 import awe.model.word_lstm
 import awe.training.params
 
@@ -264,55 +263,51 @@ class Model(torch.nn.Module):
     def get_ancestor_chain(self, batch: list[awe.data.graph.dom.Node]):
         # Get features for each ancestor.
         n_ancestors = self.trainer.params.n_ancestors
-        ancestors = [node.get_ancestors(n_ancestors) for node in batch]
-        ancestor_batch = [
+        ancestors = [
             ancestor
-            for node_ancestors in ancestors
-            for ancestor in node_ancestors
-        ]
-        ancestor_features = self.get_node_features_slim(ancestor_batch) # [M, slim_dim]
+            for node in batch
+            for ancestor in node.get_ancestor_chain(n_ancestors)
+        ] # [N * n_ancestors]
+        ancestor_features = self.get_node_features_slim(ancestors)
+            # [N * n_ancestors, slim_dim]
 
         # Append distance of ancestors.
-        ancestor_distances = torch.tensor(
-            [i + 1 for a in ancestors for i in range(len(a))],
-            dtype=torch.int32,
+        ancestor_distances = torch.arange(
+            n_ancestors, 0, -1,
             device=self.trainer.device
-        ).reshape((-1, 1)) # [M, 1]
+        ).expand((len(batch), n_ancestors)).flatten() # [N * n_ancestors]
+        ancestor_distances = ancestor_distances.reshape((-1, 1))
+            # [N * n_ancestors, 1]
         ancestor_features = torch.concat(
             (ancestor_distances, ancestor_features),
             dim=-1
-        ) # [M, slim_dim + 1]
+        ) # [N * n_ancestors, slim_dim + 1]
 
         # Summarize ancestor features.
         if self.trainer.params.ancestor_summarize:
-            ancestor_features = self.ancestor_layer(ancestor_features) # [M, anc_dim]
+            ancestor_features = self.ancestor_layer(ancestor_features)
+                # [N * n_ancestors, anc_dim]
             ancestor_features = self.dropout(ancestor_features)
+            ancestor_features: torch.Tensor
 
-        # Pack ancestors corresponding to one node together.
-        ancestor_sequences: list[torch.Tensor] = torch.split(
-            ancestor_features,
-            [len(a) for a in ancestors]
-        )
+        # Split ancestors according to the node they correspond to.
+        ancestor_features = ancestor_features.reshape(
+            (len(batch), n_ancestors, -1)) # [N, n_ancestors, anc_dim]
+        ancestor_features = ancestor_features.transpose(0, 1)
+            # [n_ancestors, N, anc_dim]
 
         # Aggregate ancestor chains.
         if self.trainer.params.ancestor_function == 'lstm':
             # Use LSTM.
-            packed_input = torch.nn.utils.rnn.pack_sequence(ancestor_sequences,
-                enforce_sorted=False
-            )
-            packed_output, _ = self.ancestor_lstm(packed_input)
-            packed_output: torch.nn.utils.rnn.PackedSequence
+            ancestor_chains, _ = self.ancestor_lstm(ancestor_features)
+                # [n_ancestors, N, D * anc_dim]
 
             # Extract only the last sequence (representation of all ancestors).
-            ancestor_chains = awe.model.lstm_utils.last_items(packed_output,
-                unsort=True
-            ) # [N, anc_out_dim]
+            ancestor_chains = ancestor_chains[-1, :, :] # [N, anc_out_dim]
         else:
             # Use simple aggregation function (sum or mean).
             f = getattr(torch, self.trainer.params.ancestor_function)
-            padded_ancestors = torch.nn.utils.rnn.pad_sequence(ancestor_sequences)
-                # [n_ancestors, N, anc_dim]
-            ancestor_chains = f(padded_ancestors, dim=0)
+            ancestor_chains = f(ancestor_features, dim=0)
                 # [N, anc_dim]
 
         return ancestor_chains
