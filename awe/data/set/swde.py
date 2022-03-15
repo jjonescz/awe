@@ -74,12 +74,15 @@ class Dataset(awe.data.set.pages.Dataset):
     def get_state(self):
         return { v.name: v.df for v in self.verticals }
 
-    def reload(self, vertical: str, website: str, page: int):
+    def find_page(self, vertical: str, website: str, page: int):
         v = next(v for v in self.verticals if v.name == vertical)
         w = next(w for w in v.websites if w.name == website)
-        file_page = FilePage.try_create(w, w.pages[page].html_file_name)
-        w.pages[page] = file_page
-        v.df.iloc[file_page.index_in_vertical] = file_page.to_row()
+        return w.pages[page]
+
+    def reload(self, page: 'Page'):
+        file_page = FilePage.try_create(page.website, page.html_file_name)
+        page.website.pages[page.index] = file_page
+        page.website.vertical.df.iloc[page.index_in_vertical] = file_page.to_row()
         return file_page
 
 @dataclasses.dataclass
