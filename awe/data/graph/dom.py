@@ -278,15 +278,6 @@ class Node:
             node = node.children[idx]
         return node
 
-    def init_labels(self):
-        self.label_keys = [
-            k
-            for k in self.dom.labeled_parsed_nodes.keys()
-            if self.parsed in self.dom.labeled_parsed_nodes[k]
-        ]
-        for key in self.label_keys:
-            self.dom.labeled_nodes.setdefault(key, []).append(self)
-
     def _iterate_children(self):
         for parsed_node in self.parsed.iter(include_text=True):
             yield Node(dom=self.dom, parsed=parsed_node, parent=self)
