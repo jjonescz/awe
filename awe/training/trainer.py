@@ -194,12 +194,17 @@ class Trainer:
     def explore_data(self):
         nodes: list[awe.data.graph.dom.Node] = self.train_loader.dataset
         def get_text(node: awe.data.graph.dom.Node):
+            if not self.params.tokenize_node_attrs:
+                return ''
             attrs = awe.features.text.get_node_attr_text(node)
             return awe.features.text.humanize_string(attrs)
         return pd.DataFrame(
             {
                 'label_key': node.label_keys[0],
                 'text': node.text,
+            } | {
+                'attrs': t for t in [get_text(node)]
+                if not self.params.tokenize_node_attrs_only_ancestors and t
             } | {
                 f'anc_{i}': f'<{a.html_tag}>{get_text(a)}'
                 for i, a in enumerate(node.iterate_ancestors(self.params.n_ancestors))
