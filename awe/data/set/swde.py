@@ -43,6 +43,7 @@ class Dataset(awe.data.set.pages.Dataset):
     def __init__(self,
         suffix: Optional[str] = None,
         only_verticals: Optional[list[str]] = None,
+        convert: bool = True,
         state: Optional[dict[str, pd.DataFrame]] = None
     ):
         super().__init__(
@@ -51,6 +52,7 @@ class Dataset(awe.data.set.pages.Dataset):
         )
         self.suffix = suffix
         self.only_verticals = only_verticals
+        self.convert = convert
         self.verticals = list(self._iterate_verticals(state=state or {}))
 
     def _iterate_verticals(self, state: dict[str, pd.DataFrame]):
@@ -93,9 +95,10 @@ class Vertical(awe.data.set.pages.Vertical):
             self.page_count = 0
             return
 
+        # Load DataFrame.
         if self.df is not None:
             print(f'Reusing state for {self.dir_path!r}.')
-        else:
+        elif self.dataset.convert:
             if not os.path.exists(self.pickle_path):
                 # Convert vertical to a DataFrame. It is faster than reading
                 # from files (especially in the cloud where the files are
@@ -117,8 +120,12 @@ class Vertical(awe.data.set.pages.Vertical):
                 self.df = pd.read_pickle(self.pickle_path)
                 print(f'Loaded {self.pickle_path!r}.')
 
-        self.websites = list(self._iterate_websites(PickleWebsite))
-        self.page_count = len(self.df)
+        if not self.dataset.convert:
+            self.websites = list(self._iterate_websites(FileWebsite))
+            self.page_count = sum(w.page_count for w in self.websites)
+        else:
+            self.websites = list(self._iterate_websites(PickleWebsite))
+            self.page_count = len(self.df)
 
     @property
     def dir_path(self):
