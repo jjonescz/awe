@@ -135,6 +135,9 @@ class Website(awe.data.set.pages.Website):
                         html_text=row.html,
                         metadata=metadata_json
                     )
+                    if idx % 100 == 1:
+                        self.db.save()
+                self.db.save()
 
         self.pages = [
             Page(website=self, index=idx)

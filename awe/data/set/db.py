@@ -31,17 +31,19 @@ class Database:
         visuals: Optional[str] = None,
         metadata: Optional[str] = None
     ):
-        with self.db:
-            self.db.execute('''
-                insert into pages(id, url, html, visuals, metadata)
-                    values(:id, :url, :html, :visuals, :metadata)
-            ''', {
-                'id': idx,
-                'url': url,
-                'html': html_text,
-                'visuals': visuals,
-                'metadata': metadata
-            })
+        self.db.execute('''
+            insert into pages(id, url, html, visuals, metadata)
+                values(:id, :url, :html, :visuals, :metadata)
+        ''', {
+            'id': idx,
+            'url': url,
+            'html': html_text,
+            'visuals': visuals,
+            'metadata': metadata
+        })
+
+    def save(self):
+        self.db.commit()
 
     def replace(self,
         idx: int,

@@ -104,9 +104,12 @@ class Vertical(awe.data.set.pages.Vertical):
                 for website in self._iterate_websites(FileWebsite)
                 for page in website.pages
             ]
-            for page in tqdm(pages, desc=self.db_path):
+            for idx, page in enumerate(tqdm(pages, desc=self.db_path)):
                 page: FilePage
                 self.db.add(page.index_in_vertical, **page.to_row())
+                if idx % 100 == 1:
+                    self.db.save()
+            self.db.save()
 
         if not self.dataset.convert:
             self.websites = list(self._iterate_websites(FileWebsite))
