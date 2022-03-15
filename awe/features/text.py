@@ -76,6 +76,8 @@ class WordIdentifiers(awe.features.feature.Feature):
     Cache of node token IDs of attributes values (`id`, `name`, `class`, etc.).
     """
 
+    default_token_ids: torch.Tensor
+
     def __post_init__(self):
         # Create tokenizer according to config.
         params = self.trainer.params
@@ -150,6 +152,12 @@ class WordIdentifiers(awe.features.feature.Feature):
                     device=self.trainer.device
                 )
 
+    def initialize(self):
+        self.default_token_ids = torch.zeros(0,
+            dtype=torch.int32,
+            device=self.trainer.device
+        )
+
     def compute(self, batch: list[list[awe.data.graph.dom.Node]]):
         # Account for friend cycles.
         num_words = self.max_num_words
@@ -172,7 +180,10 @@ class WordIdentifiers(awe.features.feature.Feature):
 
     def compute_attr(self, batch: list[list[awe.data.graph.dom.Node]]):
         return torch.nn.utils.rnn.pad_sequence(
-            [self.node_attr_token_ids.get(n, torch.zeros(0)) for n in batch],
+            [
+                self.node_attr_token_ids.get(n, self.default_token_ids)
+                for n in batch
+            ],
             batch_first=True
         )
 
