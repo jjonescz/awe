@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional
 
 import torch
 import torch.nn
-import torch.nn.functional
+import torch.nn.functional as F
 
 import awe.data.glove
 import awe.data.graph.dom
@@ -239,7 +239,7 @@ class Model(torch.nn.Module):
         normalize = self.trainer.params.neighbor_normalize
         N = awe.training.params.NeighborNormalization
         if normalize == N.vector:
-            coefficients = torch.nn.functional.normalize(coefficients, dim=-1)
+            coefficients = F.normalize(coefficients, dim=-1)
         elif normalize == N.softmax:
             coefficients = self.neighbor_softmax(coefficients)
 
