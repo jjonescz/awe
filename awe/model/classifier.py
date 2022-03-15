@@ -304,6 +304,7 @@ class Model(torch.nn.Module):
 
             # Extract only the last sequence (representation of all ancestors).
             ancestor_chains = ancestor_chains[-1, :, :] # [N, anc_out_dim]
+            ancestor_chains = self.dropout(ancestor_chains)
         else:
             # Use simple aggregation function (sum or mean).
             f = getattr(torch, self.trainer.params.ancestor_function)
