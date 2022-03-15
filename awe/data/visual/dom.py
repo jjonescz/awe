@@ -5,12 +5,13 @@ import warnings
 from typing import Any, Callable
 
 import awe.data.graph.dom
+import awe.data.html_utils
 import awe.data.parsing
 import awe.data.visual.attribute
 import awe.data.visual.structs
 import awe.utils
 
-XPATH_ELEMENT_REGEX = r'^/(.*?)(\[\d+\])?$'
+XPATH_ELEMENT_REGEX = re.compile(r'^/(.*?)(\[(\d+)\])?$')
 
 class DomData:
     """Can load visual attributes saved by `extractor.ts`."""
@@ -34,6 +35,34 @@ class DomData:
     def load_json(self):
         """Reads DOM data from JSON."""
         self.load_json_str(self.get_json_str())
+
+    def fill_tree_boxes(self, dom: awe.data.graph.dom.Dom):
+        """
+        Lighter version of `fill_tree` that loads only bounding boxes, without
+        any validation for now.
+        """
+
+        queue = [(dom.root, self.data['/html'])]
+        while len(queue) != 0:
+            node, data = queue.pop()
+            data: dict[str]
+
+            # Load node's visuals.
+            if (box := data.get('box')) is not None:
+                node.box = awe.data.visual.structs.BoundingBox(*box)
+
+            # Add children to queue.
+            for child in node.children:
+                # Find visuals corresponding to the child.
+                xpath_element = child.get_xpath_element()
+                child_data = data.get(f'/{xpath_element}', None)
+                if child_data is None:
+                    raise RuntimeError(
+                        f'Cannot find {xpath_element!r} in ' +
+                        f'{node.get_xpath()!r} ({dom.page.html_path!r}).'
+                    )
+
+                queue.append((child, child_data))
 
     def fill_tree(self, dom: awe.data.graph.dom.Dom):
         for node in dom.nodes:

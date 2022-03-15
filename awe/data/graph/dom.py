@@ -195,6 +195,12 @@ class Node:
     parent: Optional['Node'] = dataclasses.field(repr=False)
     children: list['Node'] = dataclasses.field(repr=False, default_factory=list)
 
+    same_tag_index: Optional[int] = dataclasses.field(repr=False, default=-1)
+    """
+    Index of this node among its siblings with the same `html_tag`.
+    `None` if this is the only such child.
+    """
+
     label_keys: list[str] = dataclasses.field(default_factory=list)
     """
     Label keys of the node or `[]` if the node doesn't correspond to any target
@@ -237,6 +243,16 @@ class Node:
     def __post_init__(self):
         self.children = list(self._iterate_children())
 
+        # Compute `same_tag_index`es.
+        tags: dict[str, tuple[int, Node]] = {}
+        for child in self.children:
+            c, _ = tags.get(child.html_tag, (0, None))
+            child.same_tag_index = c
+            tags[child.html_tag] = (c + 1, child)
+        for c, child in tags.values():
+            if c == 1:
+                child.same_tag_index = None
+
     @property
     def id(self):
         return self.parsed.id
@@ -264,6 +280,12 @@ class Node:
 
     def get_xpath(self):
         return awe.data.html_utils.get_xpath(self.parsed)
+
+    def get_xpath_element(self):
+        tag = self.html_tag if not self.is_text else 'text()'
+        if self.same_tag_index is None:
+            return tag
+        return f'{tag}[{self.same_tag_index + 1}]'
 
     def get_attributes(self):
         if self.is_text:
