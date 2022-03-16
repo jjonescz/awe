@@ -7,8 +7,6 @@ export enum ValidationResultType {
   HtmlNonExistent,
   /** Extracted JSON doesn't exist. */
   JsonNonExistent,
-  /** Ground-truth values don't exist inside the extracted HTML. */
-  MissingGroundTruth,
 }
 
 export interface MissingGroundTruth {
@@ -46,21 +44,6 @@ export class Validator {
 
     if (!existsSync(this.recipe.jsonPath)) {
       return new ValidationResult(ValidationResultType.JsonNonExistent);
-    }
-
-    for (const label of this.recipe.page.labels) {
-      const groundTruth = await this.recipe.page.getGroundTruth(label);
-      const values = groundTruth.entries[this.recipe.page.index];
-      for (const value of values) {
-        // Check that groundtruth value is present.
-        // TODO: This doesn't work, use Python code instead (see `swde.py`).
-        if (!this.recipe.page.html.includes(value)) {
-          return new ValidationResult(ValidationResultType.MissingGroundTruth, {
-            label,
-            value,
-          });
-        }
-      }
     }
 
     return new ValidationResult(ValidationResultType.Valid);
