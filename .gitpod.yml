@@ -2,3 +2,7 @@
 
 image:
   file: .gitpod.Dockerfile
+
+vscode:
+  extensions:
+    - esbenp.prettier-vscode
