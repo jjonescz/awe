@@ -250,8 +250,12 @@ class Page(awe.data.set.pages.Page):
         return self.website.vertical.dataset.suffix
 
     @property
+    def original_file_name_no_extension(self):
+        return f'{self.index:04}'
+
+    @property
     def file_name_no_extension(self):
-        return f'{self.index:04}{self.suffix or ""}'
+        return f'{self.original_file_name_no_extension}{self.suffix or ""}'
 
     @property
     def dir_path(self):

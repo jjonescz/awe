@@ -46,7 +46,7 @@ if args.read_list is not None:
             page_paths = { l.rstrip() for l in f.readlines() }
         pages = [
             p for p in pages
-            if p.html_path in page_paths
+            if p.original_html_path in page_paths
         ]
         print(
             f'Found {len(pages)} of {len(page_paths)} pages in the list ' +

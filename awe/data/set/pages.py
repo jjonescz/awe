@@ -120,6 +120,10 @@ class Page(abc.ABC):
     _dom = None
 
     @property
+    def original_file_name_no_extension(self):
+        return self.file_name_no_extension
+
+    @property
     @abc.abstractmethod
     def file_name_no_extension(self) -> str:
         """Name of page stored locally."""
@@ -133,11 +137,23 @@ class Page(abc.ABC):
         """
 
     @property
+    def original_html_file_name(self):
+        return f'{self.original_file_name_no_extension}.htm'
+
+    @property
     def html_file_name(self):
         return f'{self.file_name_no_extension}.htm'
 
     @property
-    def html_path(self) -> str:
+    def original_html_path(self):
+        """
+        Path to non-modified HTML file (can be different from `html_path` if
+        that points to a snapshot saved by the JavaScript scraper).
+        """
+        return f'{self.dir_path}/{self.original_html_file_name}'
+
+    @property
+    def html_path(self):
         return f'{self.dir_path}/{self.html_file_name}'
 
     @property
