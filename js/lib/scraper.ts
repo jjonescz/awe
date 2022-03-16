@@ -2,7 +2,7 @@ import puppeteer from 'puppeteer-core';
 import { AssetStats } from './asset-stats';
 import { Cache } from './cache';
 import { logger } from './logging';
-import { SwdePage } from './page-info';
+import { PageInfo } from './page-info';
 import { createPagePool, PagePoolOptions } from './page-pool';
 import { PageScraper } from './page-scraper';
 import { ScrapingStats } from './scraping-stats';
@@ -66,7 +66,7 @@ export class Scraper {
     return new Scraper(wayback, browser, cache, opts);
   }
 
-  public async for(swdePage: SwdePage) {
+  public async for(swdePage: PageInfo) {
     return await PageScraper.create(this, swdePage);
   }
 

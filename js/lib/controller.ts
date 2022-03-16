@@ -4,7 +4,7 @@ import { from, lastValueFrom, mergeMap } from 'rxjs';
 import { SWDE_DIR } from './constants';
 import { logger } from './logging';
 import { PageController } from './page-controller';
-import { SwdePage } from './page-info';
+import { PageInfo } from './page-info';
 import { PageRecipe } from './page-recipe';
 import { ScrapeVersion } from './scrape-version';
 import { Scraper } from './scraper';
@@ -26,7 +26,7 @@ export class Controller {
 
   public constructor(public readonly scraper: Scraper) {}
 
-  public async for(page: SwdePage) {
+  public async for(page: PageInfo) {
     return await PageController.create(this, page);
   }
 
@@ -75,7 +75,7 @@ export class Controller {
 
           // Scrape different versions of the same page.
           try {
-            const page = await SwdePage.parse(path.resolve(file));
+            const page = await PageInfo.parse(path.resolve(file));
             for (const version of versions) {
               // Validate existing extraction of this version.
               if (this.validateOnly) {

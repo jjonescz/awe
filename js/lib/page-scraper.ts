@@ -4,7 +4,7 @@ import { AssetPageStats } from './asset-stats';
 import { SWDE_TIMESTAMP } from './constants';
 import { cleanHeaders, ignoreUrl } from './ignore';
 import { logger } from './logging';
-import { SwdePage } from './page-info';
+import { PageInfo } from './page-info';
 import { Scraper } from './scraper';
 import { normalizeUrl, urlsEqual } from './utils';
 
@@ -28,7 +28,7 @@ export class PageScraper {
   constructor(
     public readonly logger: winston.Logger,
     private readonly scraper: Scraper,
-    private readonly swdePage: SwdePage,
+    private readonly swdePage: PageInfo,
     public readonly page: puppeteer.Page,
     public readonly assetStats: AssetPageStats
   ) {
@@ -42,7 +42,7 @@ export class PageScraper {
     return this.inProgress.size;
   }
 
-  public static async create(scraper: Scraper, swdePage: SwdePage) {
+  public static async create(scraper: Scraper, swdePage: PageInfo) {
     const page = await scraper.pagePool.acquire();
     const pageLogger = logger.child({ page: swdePage.id });
     const assetStats = scraper.assetStats.getPage(swdePage.id);
@@ -107,7 +107,7 @@ export class PageScraper {
   }
 
   /** Handles request to SWDE page. */
-  private async handleSwdePage(request: puppeteer.HTTPRequest, page: SwdePage) {
+  private async handleSwdePage(request: puppeteer.HTTPRequest, page: PageInfo) {
     switch (this.swdeHandling) {
       case SwdeHandling.Offline:
         page.timestamp = 'offline';

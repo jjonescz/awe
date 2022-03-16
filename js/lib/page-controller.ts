@@ -1,7 +1,7 @@
 import { existsSync } from 'fs';
 import { Controller } from './controller';
 import { Extractor } from './extractor';
-import { SwdePage } from './page-info';
+import { PageInfo } from './page-info';
 import { PageRecipe } from './page-recipe';
 import { PageScraper } from './page-scraper';
 import { ScrapeVersion, scrapeVersionToSwdeHandling } from './scrape-version';
@@ -11,11 +11,11 @@ import { addSuffix } from './utils';
 export class PageController {
   private constructor(
     private readonly controller: Controller,
-    private readonly page: SwdePage,
+    private readonly page: PageInfo,
     private readonly pageScraper: PageScraper
   ) {}
 
-  public static async create(controller: Controller, page: SwdePage) {
+  public static async create(controller: Controller, page: PageInfo) {
     const pageScraper = await controller.scraper.for(page);
     return new PageController(controller, page, pageScraper);
   }

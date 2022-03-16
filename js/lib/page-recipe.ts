@@ -1,4 +1,4 @@
-import { SwdePage } from './page-info';
+import { PageInfo } from './page-info';
 import { ScrapeVersion, scrapeVersionToString } from './scrape-version';
 import { replaceExtension } from './utils';
 
@@ -7,7 +7,7 @@ export class PageRecipe {
   public readonly suffix: string;
 
   public constructor(
-    public readonly page: SwdePage,
+    public readonly page: PageInfo,
     public readonly version: ScrapeVersion
   ) {
     this.suffix = `-${scrapeVersionToString(version)}`;

@@ -9,7 +9,7 @@ export const BASE_TAG_REGEX = /^\uFEFF?<base href="([^\n]*)"\/>\w*\n(.*)/s;
 const WEBSITE_REGEX = /^(\w+)-(\w+)\((\d+)\)$/;
 
 /** Page from the SWDE dataset. */
-export class SwdePage {
+export class PageInfo {
   /** Timestamp used to scrape this page. */
   public timestamp: string | null = null;
 
@@ -28,13 +28,13 @@ export class SwdePage {
     // Extract original page URL from a `<base>` tag that is at the beginning of
     // every HTML file in SWDE.
     const [_, url, html] = contents.match(BASE_TAG_REGEX)!;
-    return new SwdePage(fullPath, url, html);
+    return new PageInfo(fullPath, url, html);
   }
 
   public withHtml(html: string) {
-    const clone = Object.create(this) as Writable<SwdePage>;
+    const clone = Object.create(this) as Writable<PageInfo>;
     clone.html = html;
-    return clone as SwdePage;
+    return clone as PageInfo;
   }
 
   public stringify() {
