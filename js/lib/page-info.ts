@@ -6,8 +6,6 @@ import { Writable } from './utils';
 // First character is UTF-8 BOM marker.
 export const BASE_TAG_REGEX = /^\uFEFF?<base href="([^\n]*)"\/>\w*\n(.*)/s;
 
-const WEBSITE_REGEX = /^(\w+)-(\w+)\((\d+)\)$/;
-
 /** Page from the SWDE dataset. */
 export class PageInfo {
   /** Timestamp used to scrape this page. */
@@ -45,19 +43,5 @@ export class PageInfo {
   public async saveAs(fullPath: string) {
     const contents = this.stringify();
     await writeFile(fullPath, contents, { encoding: 'utf-8' });
-  }
-
-  public get vertical() {
-    return path.basename(path.dirname(path.dirname(this.fullPath)));
-  }
-
-  public get website() {
-    const websiteDir = path.basename(path.dirname(this.fullPath));
-    const [_, _vertical, name, _num] = websiteDir.match(WEBSITE_REGEX)!;
-    return name;
-  }
-
-  public get index() {
-    return parseInt(path.parse(path.basename(this.fullPath)).name);
   }
 }
