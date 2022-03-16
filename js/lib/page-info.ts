@@ -25,8 +25,14 @@ export class PageInfo {
     const contents = await readFile(fullPath, { encoding: 'utf-8' });
     // Extract original page URL from a `<base>` tag that is at the beginning of
     // every HTML file in SWDE.
-    const [_, url, html] = contents.match(BASE_TAG_REGEX)!;
-    return new PageInfo(fullPath, url, html);
+    const match = contents.match(BASE_TAG_REGEX);
+    if (match !== null) {
+      const [_, url, html] = match;
+      return new PageInfo(fullPath, url, html);
+    }
+
+    // If it's not an SWDE page, use dummy URL.
+    return new PageInfo(fullPath, 'http://example.com', contents);
   }
 
   public withHtml(html: string) {
