@@ -117,6 +117,7 @@ export class PageScraper {
         });
         await request.respond({
           body: page.html,
+          contentType: 'text/html; charset=UTF-8',
         });
         break;
 
