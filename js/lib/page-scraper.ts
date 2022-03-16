@@ -93,6 +93,9 @@ export class PageScraper {
 
     if (this.swdePage !== null && urlsEqual(request.url(), this.swdePage.url)) {
       await this.handleSwdePage(request, this.swdePage);
+    } else if (url.startsWith('file://')) {
+      // Allow local URLs.
+      await request.continue();
     } else {
       // Pass WaybackMachine redirects through.
       const redirectUrl = this.scraper.wayback.isArchiveRedirect(request);

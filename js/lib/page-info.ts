@@ -1,5 +1,6 @@
 import { readFile, writeFile } from 'fs/promises';
 import path from 'path';
+import { pathToFileURL } from 'url';
 import { SWDE_DIR } from './constants';
 import { Writable } from './utils';
 
@@ -31,8 +32,9 @@ export class PageInfo {
       return new PageInfo(fullPath, url, html);
     }
 
-    // If it's not an SWDE page, use dummy URL.
-    return new PageInfo(fullPath, 'http://example.com', contents);
+    // If it's not an SWDE page, use `file://` URL.
+    const url = pathToFileURL(fullPath).toString();
+    return new PageInfo(fullPath, url, contents);
   }
 
   public withHtml(html: string) {
