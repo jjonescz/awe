@@ -39,6 +39,16 @@ parser.add_argument('-q',
     help='suppress warnings',
     default=False
 )
+parser.add_argument('--max-pages',
+    dest='max_pages',
+    type=int,
+    help='maximum number of pages to validate'
+)
+parser.add_argument('--max-errors',
+    dest='max_errors',
+    type=int,
+    help='maximum number of errors before quitting the validation'
+)
 args = parser.parse_args()
 
 # Validate arguments.
@@ -74,10 +84,14 @@ if args.read_list is not None:
     else:
         warnings.warn(f'List file not found ({args.read_list!r}).')
 
+# Slice pages.
+if args.max_pages is not None:
+    pages = pages[:args.max_pages]
+
 # Validate.
 def validate():
     validator = awe.data.validation.Validator(visuals=False)
-    validator.validate_pages(pages)
+    validator.validate_pages(pages, max_invalid=args.max_errors)
 if args.quiet:
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore', module=r'awe\.data\.validation')

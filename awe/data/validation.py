@@ -15,14 +15,20 @@ class Validator:
 
     def validate_pages(self,
         pages: list[awe.data.set.pages.Page],
-        progress_bar: Optional[str] = 'pages'
+        progress_bar: Optional[str] = 'pages',
+        max_invalid: Optional[int] = None
     ):
         # Reset validation state.
         for page in pages:
             page.valid = None
 
+        num_invalid = 0
         for page in tqdm(pages, desc=progress_bar) if progress_bar is not None else pages:
             self.validate_page(page)
+            if page.valid is False:
+                num_invalid += 1
+            if max_invalid is not None and num_invalid >= max_invalid:
+                break
 
     def validate_page(self, page: awe.data.set.pages.Page):
         # Check that label key-value pairs are consistent.
