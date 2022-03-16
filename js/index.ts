@@ -112,6 +112,10 @@ class Program extends Command {
       char: 'D',
       description: 'Run Chrome in non-headless mode with DevTools open',
     }),
+    keepOpen: flags.boolean({
+      char: 'K',
+      description: 'Keeps browser open (useful for debugging)',
+    }),
     timeout: flags.integer({
       char: 'T',
       description: 'milliseconds before scraping of one page is aborted',
@@ -240,6 +244,20 @@ class Program extends Command {
           ...(flags.exact ? [ScrapeVersion.Exact] : []),
         ],
       });
+
+      if (flags.keepOpen) {
+        console.log(
+          'Completed but waiting (due to argument `-K`). ' +
+            'Press any key to exit...'
+        );
+        process.stdin.setRawMode(true);
+        await new Promise<void>((resolve) =>
+          process.stdin.once('data', () => {
+            process.stdin.setRawMode(false);
+            resolve();
+          })
+        );
+      }
     } finally {
       await scraper.dispose();
     }
