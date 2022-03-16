@@ -2,7 +2,7 @@ import abc
 import collections
 import dataclasses
 import itertools
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import awe.data.graph.dom
 import awe.data.visual.dom
@@ -118,6 +118,12 @@ class Page(abc.ABC):
     index: int = dataclasses.field(repr=False, default=None)
     _labels = None
     _dom = None
+
+    valid: Optional[bool] = dataclasses.field(repr=False, default=None)
+    """
+    Set by various components of the validation pipeline (hence the shared
+    state).
+    """
 
     @property
     def original_file_name_no_extension(self):

@@ -17,6 +17,10 @@ class Validator:
         pages: list[awe.data.set.pages.Page],
         progress_bar: Optional[str] = 'pages'
     ):
+        # Reset validation state.
+        for page in pages:
+            page.valid = None
+
         for page in tqdm(pages, desc=progress_bar) if progress_bar is not None else pages:
             self.validate_page(page)
 
@@ -30,6 +34,7 @@ class Validator:
                 expected = len(values)
                 actual = len(nodes)
                 if actual < expected:
+                    page.valid = False
                     warnings.warn(
                         f'Found {actual} < {expected} nodes labeled ' +
                         f'{key!r}={values!r} ({page.html_path!r}).')
@@ -37,6 +42,7 @@ class Validator:
                 # Check that labeled nodes are not empty.
                 for node in nodes:
                     if node.child is None and not node.text(deep=False):
+                        page.valid = False
                         xpath = awe.data.html_utils.get_xpath(node)
                         warnings.warn(
                             f'Node {xpath!r} labeled {key!r} is empty ' +
@@ -47,4 +53,12 @@ class Validator:
             page_dom = page.dom
             page_dom.init_nodes()
             page_visuals = page.load_visuals()
-            page_visuals.fill_tree(page_dom)
+            try:
+                page_visuals.fill_tree(page_dom)
+            except RuntimeError as e:
+                page.valid = False
+                warnings.warn(
+                    f'Cannot fill page visuals ({page.html_path!r}): {e}')
+
+        if page.valid is None:
+            page.valid = True

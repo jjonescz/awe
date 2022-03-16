@@ -8,6 +8,7 @@ import awe.data.set.apify
 import awe.data.set.swde
 import awe.data.validation
 
+# Parse CLI arguments.
 parser = argparse.ArgumentParser(
     description='Validates datasets',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -26,8 +27,19 @@ parser.add_argument('--read-list',
     dest='read_list',
     help='File with list of page paths that will be considered'
 )
+parser.add_argument('--save',
+    dest='save',
+    action='store_true',
+    help='Saves list of invalid pages back',
+    default=False
+)
 args = parser.parse_args()
 
+# Validate arguments.
+if args.save and args.read_list is None:
+    raise ValueError('Argument `--save` cannot be specified without `--read-list`.')
+
+# Open dataset.
 if args.dataset == 'apify':
     ds = awe.data.set.apify.Dataset(only_websites=args.target, convert=False)
 elif args.dataset == 'swde':
@@ -37,6 +49,7 @@ elif args.dataset == 'swde':
         convert=False
     )
 
+# Get its pages.
 pages = ds.get_all_pages(zip_websites=False)
 
 # Keep only pages from previous list of invalid pages.
@@ -55,5 +68,26 @@ if args.read_list is not None:
     else:
         warnings.warn(f'List file not found ({args.read_list!r}).')
 
+# Validate.
 validator = awe.data.validation.Validator(visuals=False)
 validator.validate_pages(pages)
+
+# Update list of invalid pages.
+if args.save:
+    num_original = len(page_paths)
+    num_valid = 0
+    num_invalid = 0
+    for page in pages:
+        if page.valid is True:
+            num_valid += 1
+            page_paths.discard(page.original_html_path)
+        elif page.valid is False:
+            num_invalid += 1
+            page_paths.add(page.original_html_path)
+    sorted_paths = sorted(page_paths)
+    with open(args.read_list, mode='w', encoding='utf-8', newline='\n') as f:
+        f.writelines(f'{p}\n' for p in sorted_paths)
+    print(
+        f'Saved {len(sorted_paths)} to {args.read_list!r} ' +
+        f'({num_original=}, {num_valid=}, {num_invalid=}).'
+    )
