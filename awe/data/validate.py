@@ -25,12 +25,18 @@ parser.add_argument('target',
 )
 parser.add_argument('--read-list',
     dest='read_list',
-    help='File with list of page paths that will be considered'
+    help='file with list of page paths that will be considered'
 )
 parser.add_argument('--save',
     dest='save',
     action='store_true',
-    help='Saves list of invalid pages back',
+    help='saves list of invalid pages back',
+    default=False
+)
+parser.add_argument('-q',
+    dest='quiet',
+    action='store_true',
+    help='suppress warnings',
     default=False
 )
 args = parser.parse_args()
@@ -69,8 +75,15 @@ if args.read_list is not None:
         warnings.warn(f'List file not found ({args.read_list!r}).')
 
 # Validate.
-validator = awe.data.validation.Validator(visuals=False)
-validator.validate_pages(pages)
+def validate():
+    validator = awe.data.validation.Validator(visuals=False)
+    validator.validate_pages(pages)
+if args.quiet:
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', module=r'awe\.data\.validation')
+        validate()
+else:
+    validate()
 
 # Update list of invalid pages.
 if args.save:
