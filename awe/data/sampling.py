@@ -1,3 +1,4 @@
+import collections
 from typing import TYPE_CHECKING, Callable
 
 from tqdm.auto import tqdm
@@ -134,13 +135,23 @@ def filter_nodes(
     page: awe.data.set.pages.Page,
     predicate: Callable[[awe.data.graph.dom.Node], bool]
 ):
+    included = collections.defaultdict(int)
+    excluded = collections.defaultdict(int)
     for node in page.dom.nodes:
         if predicate(node):
+            if len(node.label_keys) != 0:
+                for label_key in node.label_keys:
+                    included[label_key] += 1
             yield node
-        # Check that excluded nodes are not labeled.
         elif len(node.label_keys) != 0:
-            raise RuntimeError(f'Excluded node {node.get_xpath()!r} ' +
-                f'labeled {node.label_keys!r} ({page.html_path!r}).')
+            for label_key in node.label_keys:
+                excluded[label_key] += 1
+
+    for label_key in page.labels.label_keys:
+        e = excluded.get(label_key, 0)
+        if e > 0 and included.get(label_key, 0) == 0:
+            raise RuntimeError(f'Excluded all {e} node(s) ' +
+                f'labeled {label_key!r} ({page.html_path!r}).')
 
 class Collater:
     """
