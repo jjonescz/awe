@@ -49,3 +49,9 @@ Taking screenshots of 10 pages of each website of `auto` vertical:
 ```ps1
 pnpm start -- -j=8 -e="C:\Program Files\Google\Chrome\Application\chrome.exe" -RSot -T=1000 -F 10 -g "auto/*/????.htm"
 ```
+
+Extracting visuals from Apify dataset:
+
+```bash
+pnpm start -- -d ../data/apify/tescoEn -g pages/localized_html_*.htm -oH -T=1000
+```
