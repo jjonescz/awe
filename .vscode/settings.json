@@ -6,6 +6,9 @@
     "[markdown]": {
         "editor.formatOnSave": false
     },
+    "[html]": {
+        "editor.defaultFormatter": null
+    },
     "cSpell.words": [
         "asdict",
         "apify",
