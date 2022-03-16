@@ -1,10 +1,10 @@
 import { existsSync } from 'fs';
 import { Controller } from './controller';
 import { Extractor } from './extractor';
+import { SwdePage } from './page-info';
 import { PageRecipe } from './page-recipe';
 import { PageScraper } from './page-scraper';
 import { ScrapeVersion, scrapeVersionToSwdeHandling } from './scrape-version';
-import { SwdePage } from './swde-page';
 import { addSuffix } from './utils';
 
 /** {@link PageScraper} controller to scrape one {@link SwdePage}. */

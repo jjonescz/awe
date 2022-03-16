@@ -4,10 +4,10 @@ import { from, lastValueFrom, mergeMap } from 'rxjs';
 import { SWDE_DIR } from './constants';
 import { logger } from './logging';
 import { PageController } from './page-controller';
+import { SwdePage } from './page-info';
 import { PageRecipe } from './page-recipe';
 import { ScrapeVersion } from './scrape-version';
 import { Scraper } from './scraper';
-import { SwdePage } from './swde-page';
 import { secondsToTimeString } from './utils';
 import { ValidationResultType, Validator } from './validator';
 

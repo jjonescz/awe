@@ -1,5 +1,5 @@
+import { SwdePage } from './page-info';
 import { ScrapeVersion, scrapeVersionToString } from './scrape-version';
-import { SwdePage } from './swde-page';
 import { replaceExtension } from './utils';
 
 /** Input for scraping one {@link version} of {@link SwdePage}. */

@@ -2,10 +2,10 @@ import puppeteer from 'puppeteer-core';
 import { AssetStats } from './asset-stats';
 import { Cache } from './cache';
 import { logger } from './logging';
+import { SwdePage } from './page-info';
 import { createPagePool, PagePoolOptions } from './page-pool';
 import { PageScraper } from './page-scraper';
 import { ScrapingStats } from './scraping-stats';
-import { SwdePage } from './swde-page';
 import { Wayback } from './wayback';
 
 /** Common dependencies of all {@link PageScraper}s. */

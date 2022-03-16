@@ -4,8 +4,8 @@ import { AssetPageStats } from './asset-stats';
 import { SWDE_TIMESTAMP } from './constants';
 import { cleanHeaders, ignoreUrl } from './ignore';
 import { logger } from './logging';
+import { SwdePage } from './page-info';
 import { Scraper } from './scraper';
-import { SwdePage } from './swde-page';
 import { normalizeUrl, urlsEqual } from './utils';
 
 /** Method of handling request to SWDE page. */
