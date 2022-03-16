@@ -16,12 +16,20 @@ parser.add_argument('-d',
     default='apify',
     help='dataset'
 )
+parser.add_argument('target',
+    nargs='*',
+    help='websites (Apify) or verticals (SWDE) to validate'
+)
 args = parser.parse_args()
 
 if args.dataset == 'apify':
-    ds = awe.data.set.apify.Dataset(convert=False)
+    ds = awe.data.set.apify.Dataset(only_websites=args.target, convert=False)
 elif args.dataset == 'swde':
-    ds = awe.data.set.swde.Dataset(suffix='-exact', convert=False)
+    ds = awe.data.set.swde.Dataset(
+        suffix='-exact',
+        only_verticals=args.target,
+        convert=False
+    )
 pages = ds.get_all_pages(zip_websites=False)
 validator = awe.data.validation.Validator(visuals=False)
 validator.validate_pages(pages)
