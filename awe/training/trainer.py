@@ -93,11 +93,13 @@ class Trainer:
             self.ds = awe.data.set.swde.Dataset(
                 suffix='-exact',
                 only_verticals=(self.params.vertical,),
+                convert=False
             )
         elif self.params.dataset == awe.training.params.Dataset.apify:
             self.ds = awe.data.set.apify.Dataset(
                 only_websites=('alzaEn', 'ikeaEn', 'notinoEn'),
-                only_label_keys=('name', 'price', 'shortDescription', 'images')
+                only_label_keys=('name', 'price', 'shortDescription', 'images'),
+                convert=False
             )
         else:
             raise ValueError(
