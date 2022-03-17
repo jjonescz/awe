@@ -213,8 +213,15 @@ class Page(awe.data.set.pages.Page):
     def get_labels(self):
         return PageLabels(self)
 
+    def get_visuals_json_text(self):
+        if self.db is not None:
+            return self.db.get_visuals(self.index)
+        return self.create_visuals().get_json_str()
+
     def load_visuals(self):
-        raise NotImplementedError()
+        visuals = self.create_visuals()
+        visuals.load_json_str(self.get_visuals_json_text())
+        return visuals
 
 class PageLabels(awe.data.set.labels.PageLabels):
     page: Page
