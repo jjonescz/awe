@@ -196,6 +196,10 @@ class Page(awe.data.set.pages.Page):
         return f'localized_html_{self.url_slug}'
 
     @property
+    def visuals_suffix(self):
+        return '-exact'
+
+    @property
     def dir_path(self):
         return f'{self.website.dir_path}/pages'
 

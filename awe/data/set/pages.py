@@ -163,8 +163,12 @@ class Page(abc.ABC):
         return f'{self.dir_path}/{self.html_file_name}'
 
     @property
+    def visuals_suffix(self):
+        return ''
+
+    @property
     def visuals_file_name(self):
-        return f'{self.file_name_no_extension}.json'
+        return f'{self.file_name_no_extension}{self.visuals_suffix}.json'
 
     @property
     def visuals_path(self):
