@@ -1,40 +1,49 @@
 import express from 'express';
 import { logger } from './lib/logging';
-import { Scraper } from './lib/scraper';
+import puppeteer from 'puppeteer-core';
 
 logger.level = 'verbose';
 
 (async () => {
-  // Open browser (Puppeteer).
-  const scraper = await Scraper.create({
-    poolSize: 1,
+  // Open browser.
+  logger.verbose('opening Puppeteer');
+  const browser = await puppeteer.launch({
+    args: [
+      // Allow running as root.
+      '--no-sandbox',
+    ],
     executablePath: 'google-chrome-stable',
-    devtools: false,
-    timeout: 1000,
-    disableJavaScript: false,
   });
+  logger.verbose('opened Puppeteer');
 
   // Create server.
   const app = express();
   const port = process.env.PORT || 3000;
   const log = logger.child({ server: port });
 
-  app.get(['/', '/:name'], (req, res) => {
-    const greeting = '<h1>Hello From Node</h1>';
-    const name = req.params['name'];
-    if (name) {
-      res.send(`${greeting}<p>Welcome, ${name}.</p>`);
-    } else {
-      res.send(greeting);
-    }
+  app.get(['/'], (req, res) => {
+    res.send('<h1>Hello From Node</h1>');
   });
 
-  app.get('/run/:url', async (req, res) => {
+  app.get('/run', async (req, res) => {
     // Parse parameters.
-    const url = req.params['url'];
+    const url = req.query['url']?.toString() ?? '';
     log.debug('run', { url: url });
 
-    // TODO: Run through Puppeteer.
+    // Run through Puppeteer.
+    const page = await browser.newPage();
+    await page.goto(url, { waitUntil: 'networkidle0' });
+
+    // Take screenshot.
+    const screenshot = await page.screenshot({
+      fullPage: true,
+      encoding: 'base64',
+    });
+
+    res.send(
+      `<h1>${url}</h1>
+      <img src="data:image/png;base64,${screenshot}" />`
+    );
   });
 
   app.listen(port, async () => {
