@@ -3,6 +3,9 @@
 image:
   file: gitpod/Dockerfile
 
+tasks:
+  - init: ./sh/configure.sh
+
 vscode:
   extensions:
     - editorconfig.editorconfig
