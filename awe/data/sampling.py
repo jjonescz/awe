@@ -100,9 +100,9 @@ class Sampler:
             # Prepare features.
             self.trainer.extractor.prepare_page(page.dom, train=train)
 
-            # Freeze features.
-            if train:
-                self.trainer.extractor.freeze()
+        # Freeze features.
+        if train:
+            self.trainer.extractor.freeze()
 
         # Validate.
         if self.trainer.params.validate_data:
