@@ -50,6 +50,8 @@ class Trainer:
     label_map: awe.training.context.LabelMap
     extractor: awe.features.extraction.Extractor
     sampler: awe.data.sampling.Sampler
+    train_websites: list[awe.data.set.pages.Website]
+    val_websites: list[awe.data.set.pages.Website]
     train_pages: list[awe.data.set.pages.Page]
     val_pages: list[awe.data.set.pages.Page]
     train_loader: torch.utils.data.DataLoader
@@ -105,9 +107,7 @@ class Trainer:
             raise ValueError(
                 f'Unrecognized dataset param {self.params.dataset!r}.')
 
-    def prepare_features(self):
-        """Splits data and prepares features on them."""
-
+    def init_dataloaders(self):
         set_seed(42)
 
         # Create device (some features need it when preparing tensors).
@@ -127,15 +127,15 @@ class Trainer:
             for i in range(len(websites))
             if i not in train_website_indices
         ]
-        train_websites = [websites[i] for i in train_website_indices]
-        val_websites = [websites[i] for i in val_website_indices]
-        train_website_names = [w.name for w in train_websites]
-        val_website_names = [w.name for w in val_websites]
+        self.train_websites = [websites[i] for i in train_website_indices]
+        self.val_websites = [websites[i] for i in val_website_indices]
+        train_website_names = [w.name for w in self.train_websites]
+        val_website_names = [w.name for w in self.val_websites]
         print(f'{train_website_names=}, {val_website_names=}')
 
         # Take pages.
-        train_pages = [p for w in train_websites for p in w.pages]
-        val_pages = [p for w in val_websites for p in w.pages]
+        train_pages = [p for w in self.train_websites for p in w.pages]
+        val_pages = [p for w in self.val_websites for p in w.pages]
         print(f'{len(train_pages)=}, {len(val_pages)=}')
 
         # Take subset.
@@ -147,6 +147,9 @@ class Trainer:
         self.train_pages = subset(train_pages, self.params.train_subset)
         self.val_pages = subset(val_pages, self.params.val_subset)
         print(f'{len(self.train_pages)=}, {len(self.val_pages)=}')
+
+    def create_dataloaders(self):
+        """Splits data to train/val sets and prepares features on them."""
 
         # Create dataloaders.
         self.train_loader = self.create_dataloader(self.train_pages, 'train',
