@@ -55,5 +55,6 @@
     "python.terminal.activateEnvironment": false,
     "python.linting.enabled": true,
     "python.linting.pylintEnabled": true,
-    "python.formatting.provider": "autopep8"
+    "python.formatting.provider": "autopep8",
+    "python.defaultInterpreterPath": "/opt/conda/bin/python"
 }
