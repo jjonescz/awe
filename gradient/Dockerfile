@@ -33,13 +33,16 @@ RUN \
     psmisc \
     # Needed for SSH below.
     openssh-server \
-    # Needed to unzip SWDE.
-    p7zip-full \
     # Useful for CPython debugging.
     gdb \
     # Needed for Puppeteer.
     google-chrome-stable && \
     rm -rf /var/lib/{apt,dpkg,cache,log}
+
+# Install latest 7zip.
+RUN wget https://downloads.sourceforge.net/project/sevenzip/7-Zip/21.07/7z2107-linux-x64.tar.xz \
+    && tar xf 7z2107-linux-x64.tar.xz -C /usr/bin 7zz \
+    && rm 7z2107-linux-x64.tar.xz
 
 ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64
 

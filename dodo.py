@@ -55,7 +55,7 @@ def task_extract_swde_7z():
     output_dirs = [f'{output_dir}/{n}' for n in names]
     def extract_src():
         for archive in input_zips:
-            shell(f'7z x {archive} -aos -o"{output_dir}" >/dev/null')
+            shell(f'7zz x {archive} -aos -o"{output_dir}" >/dev/null')
 
     return {
         'actions': [
