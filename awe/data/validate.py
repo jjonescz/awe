@@ -49,6 +49,12 @@ parser.add_argument('--max-errors',
     type=int,
     help='maximum number of errors before quitting the validation'
 )
+parser.add_argument('--visuals',
+    dest='visuals',
+    action='store_true',
+    help='Validate visuals',
+    default=False
+)
 args = parser.parse_args()
 
 # Validate arguments.
@@ -90,7 +96,7 @@ if args.max_pages is not None:
 
 # Validate.
 def validate():
-    validator = awe.data.validation.Validator(visuals=False)
+    validator = awe.data.validation.Validator(visuals=args.visuals)
     validator.validate_pages(pages, max_invalid=args.max_errors)
 if args.quiet:
     with warnings.catch_warnings():
