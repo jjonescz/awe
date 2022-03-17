@@ -235,7 +235,8 @@ class Trainer:
                 number=self.params.restore_num,
                 name=self.params.version_name
             )
-            print(self.restore_version(self.version))
+            self.restore_version(self.version)
+            print(self.restore_model())
         else:
             awe.training.logging.Version.delete_last(self.params.version_name)
             self.version = awe.training.logging.Version.create_new(
@@ -265,13 +266,17 @@ class Trainer:
             raise RuntimeError(
                 f'Restored params differ from current params ({difference}).')
 
-        return self.restore_checkpoint(checkpoints[-1])
+        self.restore_checkpoint(checkpoints[-1])
 
     def restore_checkpoint(self, checkpoint: awe.training.logging.Checkpoint):
         print(f'Loading {checkpoint.file_path!r}...')
         self.restored_state = torch.load(checkpoint.file_path)
+
+    def restore_features(self):
         print('Restoring features...')
         self.extractor.features = self.restored_state['features']
+
+    def restore_model(self):
         print('Restoring model state...')
         return self.model.load_state_dict(self.restored_state['model'])
 
