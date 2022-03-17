@@ -193,7 +193,7 @@ class Page(awe.data.set.pages.Page):
 
     @property
     def file_name_no_extension(self):
-        return f'original_html_{self.url_slug}'
+        return f'localized_html_{self.url_slug}'
 
     @property
     def dir_path(self):
