@@ -275,7 +275,7 @@ class Trainer:
     def restore_features(self):
         print('Restoring features...')
         self.label_map = self.restored_state['label_map']
-        self.extractor.features = self.restored_state['features']
+        self.extractor.restore_features(self.restored_state['features'])
 
     def restore_model(self):
         print('Restoring model state...')

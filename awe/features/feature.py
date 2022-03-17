@@ -14,9 +14,9 @@ if TYPE_CHECKING:
 class Feature(abc.ABC):
     def __init__(self, trainer: 'awe.training.trainer.Trainer'):
         self.trainer = trainer
-        self.__post_init__()
+        self.__post_init__(restoring=False)
 
-    def __post_init__(self):
+    def __post_init__(self, restoring: bool):
         """Can be used by derived classes to do initialization."""
 
     def prepare(self, node: awe.data.graph.dom.Node, train: bool):

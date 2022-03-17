@@ -80,7 +80,7 @@ class WordIdentifiers(awe.features.feature.Feature, awe.utils.PickleSubset):
     def get_pickled_keys(self):
         return ('max_num_words',)
 
-    def __post_init__(self):
+    def __post_init__(self, restoring: bool):
         # Create tokenizer according to config.
         params = self.trainer.params
         family = params.tokenizer_family

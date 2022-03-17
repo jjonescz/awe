@@ -49,3 +49,9 @@ class Extractor:
     def freeze(self):
         for feature in self.features:
             feature.freeze()
+
+    def restore_features(self, features: list[awe.features.feature.Feature]):
+        self.features = features
+        for feature in features:
+            feature.trainer = self.trainer
+            feature.__post_init__(restoring=True)

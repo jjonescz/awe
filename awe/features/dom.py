@@ -15,8 +15,9 @@ class HtmlTag(awe.features.feature.Feature, awe.utils.PickleSubset):
     _html_tags: set[str]
     html_tag_ids: dict[str, int]
 
-    def __post_init__(self):
-        self._html_tags = set()
+    def __post_init__(self, restoring: bool):
+        if not restoring:
+            self._html_tags = set()
 
     def get_pickled_keys(self):
         return ('html_tag_ids',)
