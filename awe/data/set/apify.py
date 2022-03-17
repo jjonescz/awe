@@ -72,6 +72,11 @@ class Vertical(awe.data.set.pages.Vertical):
                 and subdir not in self.dataset.only_websites):
                 continue
 
+            # Ignore some directories.
+            if (not os.path.isdir(os.path.join(self.dir_path, subdir)) or
+                subdir.startswith('.') or subdir == 'Datasets'):
+                continue
+
             website = Website(
                 vertical=self,
                 dir_name=subdir,
