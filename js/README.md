@@ -29,6 +29,8 @@ and start your command with:
 node -r ts-node/register/transpile-only index.ts
 ```
 
+To run with type-checking, run `pnpm test`.
+
 ## Execution
 
 Scraping was executed on a Windows computer using command:
