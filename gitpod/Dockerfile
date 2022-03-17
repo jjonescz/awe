@@ -1,6 +1,6 @@
 # See https://www.gitpod.io/docs/config-docker.
 # Base image defined in `/gradient/Dockerfile`.
-FROM janjones/awe-gradient
+FROM janjones/awe-gradient:latest
 
 ARG USER="gitpod"
 ENV HOME=/home/${USER}
