@@ -1,7 +1,7 @@
 import progress from 'cli-progress';
 import path from 'path';
 import { from, lastValueFrom, mergeMap } from 'rxjs';
-import { SWDE_DIR } from './constants';
+import { DATA_DIR } from './constants';
 import { logger } from './logging';
 import { PageController } from './page-controller';
 import { PageInfo } from './page-info';
@@ -70,7 +70,7 @@ export class Controller {
           // Show stats.
           showStats(
             this.scraper.stats.toString(),
-            path.relative(SWDE_DIR, file)
+            path.relative(DATA_DIR, file)
           );
 
           // Scrape different versions of the same page.

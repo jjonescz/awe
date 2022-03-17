@@ -1,7 +1,7 @@
 import { readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import { pathToFileURL } from 'url';
-import { SWDE_DIR } from './constants';
+import { DATA_DIR } from './constants';
 import { Writable } from './utils';
 
 // First character is UTF-8 BOM marker.
@@ -19,7 +19,7 @@ export class PageInfo {
   ) {}
 
   public get id() {
-    return path.relative(SWDE_DIR, this.fullPath);
+    return path.relative(DATA_DIR, this.fullPath);
   }
 
   public static async parse(fullPath: string) {
