@@ -81,7 +81,7 @@ RUN curl -L https://go.dev/dl/go1.17.3.linux-amd64.tar.gz -o go.tar.gz && \
     rm go.tar.gz
 ENV GOPATH=/huproxy \
     PATH=/usr/local/go/bin:$PATH
-RUN go get github.com/google/huproxy
+RUN go get github.com/google/huproxy@a131ee126ce30e57a8a47d259a0d02a835fa3189
 
 # Install Tailscaled proxy.
 RUN curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/focal.gpg | apt-key add - \
@@ -91,7 +91,8 @@ RUN curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/focal.gpg | apt-key add 
     && rm -rf /var/lib/{apt,dpkg,cache,log}
 
 # Install Google Drive CLI.
-RUN curl -fsSL https://github.com/prasmussen/gdrive/releases/download/2.1.1/gdrive_2.1.1_linux_386.tar.gz | tar zxf - -C /usr/bin
+ENV GOPATH=/usr
+RUN go get github.com/prasmussen/gdrive@2.1.1
 
 # Install jless (JSON CLI).
 RUN curl -fsSL https://github.com/PaulJuliusMartinez/jless/releases/download/v0.7.2/jless-v0.7.2-x86_64-unknown-linux-gnu.zip -o jless.zip \
