@@ -1,6 +1,6 @@
 import express from 'express';
-import { logger } from './lib/logging';
 import puppeteer from 'puppeteer-core';
+import { logger } from './lib/logging';
 
 logger.level = 'verbose';
 
