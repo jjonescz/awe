@@ -62,6 +62,8 @@ if args.save and args.read_list is None:
     raise ValueError('Argument `--save` cannot be specified without `--read-list`.')
 
 # Open dataset.
+if len(args.target) == 0:
+    args.target = None
 if args.dataset == 'apify':
     ds = awe.data.set.apify.Dataset(only_websites=args.target, convert=False)
 elif args.dataset == 'swde':
