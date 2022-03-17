@@ -53,5 +53,5 @@ pnpm start -- -j=8 -e="C:\Program Files\Google\Chrome\Application\chrome.exe" -R
 Extracting visuals from Apify dataset:
 
 ```bash
-pnpm start -- -d ../data/apify/tescoEn -g pages/localized_html_*.htm -oH -T=1000
+pnpm start -- -d ../data/apify/alzaEn -g pages/localized_html_*.htm -oH -T=1000 -j=8 -S
 ```
