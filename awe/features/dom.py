@@ -12,11 +12,11 @@ if TYPE_CHECKING:
 
 
 class HtmlTag(awe.features.feature.Feature, awe.utils.PickleSubset):
-    html_tags: set[str]
+    _html_tags: set[str]
     html_tag_ids: dict[str, int]
 
     def __post_init__(self):
-        self.html_tags = set()
+        self._html_tags = set()
 
     def get_pickled_keys(self):
         return ('html_tag_ids',)
@@ -27,16 +27,16 @@ class HtmlTag(awe.features.feature.Feature, awe.utils.PickleSubset):
         node.semantic_html_tag = semantic.html_tag
 
         if train:
-            self.html_tags.add(node.semantic_html_tag)
+            self._html_tags.add(node.semantic_html_tag)
 
     def freeze(self):
         # Map all found HTML tags to numbers. Note that 0 is reserved for
         # "unknown" tags.
         self.html_tag_ids = {
             c: i + 1
-            for i, c in enumerate(self.html_tags)
+            for i, c in enumerate(self._html_tags)
         }
-        self.html_tags = None
+        self._html_tags = None
 
     def compute(self, batch: 'awe.model.classifier.ModelInput'):
         return torch.tensor(
