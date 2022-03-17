@@ -5,4 +5,12 @@ image:
 
 vscode:
   extensions:
+    - editorconfig.editorconfig
     - esbenp.prettier-vscode
+    - ms-python.python
+    - ms-python.vscode-pylance
+    - ms-toolsai.jupyter
+    - ms-toolsai.jupyter-renderers
+    - streetsidesoftware.code-spell-checker
+    - mutantdino.resourcemonitor
+    - innerlee.nvidia-smi
