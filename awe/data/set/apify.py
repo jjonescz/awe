@@ -150,7 +150,7 @@ class Website(awe.data.set.pages.Website):
 
     @property
     def dataset_json_path(self):
-        return f'{self.dir_path}/dataset.json'
+        return f'{self.dir_path}/augmented_dataset.json'
 
     @property
     def dataset_db_path(self):
