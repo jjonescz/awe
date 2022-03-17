@@ -347,16 +347,22 @@ class Trainer:
                 self.params.save_every_n_epochs is not None and
                 epoch_idx % self.params.save_every_n_epochs == 0
             ):
-                ckpt = self.version.create_checkpoint(epoch=epoch_idx, step=self.step)
-                state = {
-                    'model': self.model.state_dict(),
-                    'optim': self.optim.state_dict(),
-                    'step': self.step,
-                    'epoch': epoch_idx,
-                    'best_val_loss': best_val_loss,
-                }
-                torch.save(state, ckpt.file_path)
+                self.save_checkpoint(
+                    epoch_idx=epoch_idx,
+                    best_val_loss=best_val_loss
+                )
         self._finalize()
+
+    def save_checkpoint(self, epoch_idx: int, best_val_loss: int = sys.maxsize):
+        ckpt = self.version.create_checkpoint(epoch=epoch_idx, step=self.step)
+        state = {
+            'model': self.model.state_dict(),
+            'optim': self.optim.state_dict(),
+            'step': self.step,
+            'epoch': epoch_idx,
+            'best_val_loss': best_val_loss,
+        }
+        torch.save(state, ckpt.file_path)
 
     def _train_epoch(self, run: RunInput, val_run: RunInput):
         self.model.train()
