@@ -1,11 +1,27 @@
 # See https://www.gitpod.io/docs/config-docker.
-FROM gitpod/workspace-full
+# Base image defined in `/gradient/Dockerfile`.
+FROM janjones/awe-gradient
 
-# Install Google Chrome.
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add - \
-    && sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list' \
-    && sudo apt-get update && sudo apt-get install -y --no-install-recommends google-chrome-stable \
-    && sudo rm -rf /var/lib/{apt,dpkg,cache,log}
+ARG USER="gitpod"
+ENV HOME=/home/${USER}
 
-# Install Google Drive CLI and jless (JSON CLI).
-RUN brew install gdrive jless
+# Install `sudo`.
+RUN apt-get update && apt-get install -y --no-install-recommends sudo \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create user. Based on https://github.com/gitpod-io/workspace-images/blob/481f7600b725e0ab507fbf8377641a562a475625/base/Dockerfile.
+# '-l': see https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#user
+RUN if [ "${USER}" != "root" ] ; then \
+    useradd -l -u 33333 -G sudo -md /home/${USER} -s /bin/bash -p ${USER} ${USER} \
+    # passwordless sudo for users in the 'sudo' group
+    && sed -i.bkp -e 's/%sudo\s\+ALL=(ALL\(:ALL\)\?)\s\+ALL/%sudo ALL=NOPASSWD:ALL/g' /etc/sudoers ; fi
+WORKDIR $HOME
+USER ${USER}
+# use sudo so that user does not get sudo usage info on (the first) login
+RUN sudo echo "Running 'sudo' for ${USER}: success" && \
+    # create .bashrc.d folder and source it in the bashrc
+    mkdir -p $HOME/.bashrc.d && \
+    (echo; echo "for i in \$(ls -A \$HOME/.bashrc.d/); do source \$HOME/.bashrc.d/\$i; done"; echo) >> $HOME/.bashrc
+
+# Keep the container running if used on its own.
+CMD while sleep 1000; do :; done
