@@ -274,6 +274,7 @@ class Trainer:
 
     def restore_features(self):
         print('Restoring features...')
+        self.label_map = self.restored_state['label_map']
         self.extractor.features = self.restored_state['features']
 
     def restore_model(self):
@@ -368,6 +369,7 @@ class Trainer:
             'step': self.step,
             'epoch': epoch_idx,
             'best_val_loss': best_val_loss,
+            'label_map': self.label_map,
             'features': self.extractor.features,
         }
         torch.save(state, ckpt.file_path)
