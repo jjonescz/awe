@@ -270,6 +270,8 @@ class Trainer:
     def restore_checkpoint(self, checkpoint: awe.training.logging.Checkpoint):
         print(f'Loading {checkpoint.file_path!r}...')
         self.restored_state = torch.load(checkpoint.file_path)
+        print('Restoring features...')
+        self.extractor.features = self.restored_state['features']
         print('Restoring model state...')
         return self.model.load_state_dict(self.restored_state['model'])
 
@@ -361,6 +363,7 @@ class Trainer:
             'step': self.step,
             'epoch': epoch_idx,
             'best_val_loss': best_val_loss,
+            'features': self.extractor.features,
         }
         torch.save(state, ckpt.file_path)
 

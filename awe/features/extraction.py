@@ -46,6 +46,6 @@ class Extractor:
     def has_feature(self, cls: type):
         return self.get_feature(cls) is not None
 
-    def initialize(self):
+    def freeze(self):
         for feature in self.features:
-            feature.initialize()
+            feature.freeze()

@@ -27,8 +27,11 @@ class Feature(abc.ABC):
         features. Can be used for example to populate a global word dictionary.
         """
 
-    def initialize(self):
-        """Work needed to be done so that this feature can be computed."""
+    def freeze(self):
+        """
+        Called after preparing the feature for all training data. Should make
+        the feature pickleable.
+        """
 
     @abc.abstractmethod
     def compute(self, batch: 'awe.model.classifier.ModelInput') -> torch.FloatTensor:

@@ -1,3 +1,4 @@
+import abc
 import importlib
 import itertools
 import os
@@ -182,3 +183,29 @@ def full_name(cls: type):
 
 def same_types(a: type, b: type):
     return full_name(a) == full_name(b)
+
+def get_attrs(obj, attrs: list[str]):
+    return {
+        a: getattr(obj, a)
+        for a in attrs
+    }
+
+def set_attrs(obj, attrs: dict[str]):
+    for k, v in attrs.items():
+        setattr(obj, k, v)
+
+class PickleSubset(abc.ABC):
+    """
+    Derive from this mixin to easily support pickling a subset of a class's
+    fields.
+    """
+
+    @abc.abstractmethod
+    def get_pickled_keys(self) -> list[str]:
+        """List of keys to (un)pickle."""
+
+    def __getstate__(self):
+        return get_attrs(self, self.get_pickled_keys())
+
+    def __setstate__(self, state):
+        set_attrs(self, state)

@@ -12,6 +12,7 @@ import awe.data.graph.dom
 import awe.features.bert_tokenization
 import awe.features.feature
 import awe.training.params
+import awe.utils
 
 if TYPE_CHECKING:
     import awe.features.extraction
@@ -62,7 +63,7 @@ def humanize_string(text: str):
     text = inflection.humanize(text)
     return text
 
-class WordIdentifiers(awe.features.feature.Feature):
+class WordIdentifiers(awe.features.feature.Feature, awe.utils.PickleSubset):
     """Identifiers of word tokens. Used for pre-trained GloVe embeddings."""
 
     max_num_words: int = 0
@@ -76,7 +77,8 @@ class WordIdentifiers(awe.features.feature.Feature):
     Cache of node token IDs of attributes values (`id`, `name`, `class`, etc.).
     """
 
-    default_token_ids: torch.Tensor
+    def get_pickled_keys(self):
+        return ('max_num_words',)
 
     def __post_init__(self):
         # Create tokenizer according to config.
@@ -101,6 +103,10 @@ class WordIdentifiers(awe.features.feature.Feature):
         self.glove = awe.data.glove.LazyEmbeddings.get_or_create()
         self.node_token_ids = {}
         self.node_attr_token_ids = {}
+        self.default_token_ids = torch.zeros(0,
+            dtype=torch.int32,
+            device=self.trainer.device
+        )
 
     def tokenize(self, text: str, humanize: bool = False):
         if humanize:
@@ -151,12 +157,6 @@ class WordIdentifiers(awe.features.feature.Feature):
                     dtype=torch.int32,
                     device=self.trainer.device
                 )
-
-    def initialize(self):
-        self.default_token_ids = torch.zeros(0,
-            dtype=torch.int32,
-            device=self.trainer.device
-        )
 
     def compute(self, batch: list[list[awe.data.graph.dom.Node]]):
         # Account for friend cycles.

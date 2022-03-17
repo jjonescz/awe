@@ -5,17 +5,21 @@ import torch
 import awe.features.feature
 import awe.data.graph.dom
 import awe.data.visual.structs
+import awe.utils
 
 if TYPE_CHECKING:
     import awe.model.classifier
 
 
-class HtmlTag(awe.features.feature.Feature):
+class HtmlTag(awe.features.feature.Feature, awe.utils.PickleSubset):
     html_tags: set[str]
     html_tag_ids: dict[str, int]
 
     def __post_init__(self):
         self.html_tags = set()
+
+    def get_pickled_keys(self):
+        return ('html_tag_ids',)
 
     def prepare(self, node: awe.data.graph.dom.Node, train: bool):
         # Find most semantic HTML tag for the node.
@@ -25,13 +29,14 @@ class HtmlTag(awe.features.feature.Feature):
         if train:
             self.html_tags.add(node.semantic_html_tag)
 
-    def initialize(self):
+    def freeze(self):
         # Map all found HTML tags to numbers. Note that 0 is reserved for
         # "unknown" tags.
         self.html_tag_ids = {
             c: i + 1
             for i, c in enumerate(self.html_tags)
         }
+        self.html_tags = None
 
     def compute(self, batch: 'awe.model.classifier.ModelInput'):
         return torch.tensor(
