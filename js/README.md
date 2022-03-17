@@ -57,3 +57,9 @@ Extracting visuals from Apify dataset:
 ```bash
 pnpm start -- -d ../data/apify/alzaEn -g pages/localized_html_*.htm -oH -T=1000 -j=8 -S
 ```
+
+And validating them (from project root folder):
+
+```bash
+python -m awe.data.validate --no-labels --visuals --max-errors=1
+```
