@@ -41,3 +41,13 @@ page through web browser.
 
 **Debug CPython code:** Run `gdb -ex=r --args python <path_to_script>.py`. Then
 issue GDB command `backtrace`.
+
+### Release
+
+#### Upload pre-trained model
+
+```bash
+tar czf logs.tar.gz logs/1-version-name/
+gh auth login
+gh release upload v0.1 logs.tar.gz
+```
