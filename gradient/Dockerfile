@@ -59,9 +59,9 @@ ENV PATH=/opt/conda/bin:$PATH
 ENV PYTHON_VERSION=3.9.7
 RUN conda install python==${PYTHON_VERSION}
 
-# Install Node.js.
+# Install Node.js and GitHub CLI.
 ENV NODE_VERSION=17.1.0
-RUN conda install -c conda-forge nodejs==${NODE_VERSION} && \
+RUN conda install -c conda-forge nodejs==${NODE_VERSION} gh==2.6.0 && \
     corepack enable
 
 # Install PyTorch Geometric.
