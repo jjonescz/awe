@@ -10,6 +10,12 @@ import { ScrapeVersion } from './lib/scrape-version';
 logger.level = process.env.DEBUG ? 'debug' : 'verbose';
 const logInputs = !!process.env.LOG_INPUTS;
 
+interface NodePrediction {
+  text: string;
+  xpath: string;
+  confidence: number;
+}
+
 (async () => {
   // Parse arguments.
   const port = process.env.PORT || 3000;
@@ -68,7 +74,7 @@ const logInputs = !!process.env.LOG_INPUTS;
 
   // Configure demo server routes.
   app.get(['/'], (req, res) => {
-    res.send('<h1>Hello From Node</h1>');
+    res.send('<h1>AWE</h1>');
   });
 
   app.get('/run', async (req, res) => {
@@ -106,8 +112,36 @@ const logInputs = !!process.env.LOG_INPUTS;
 
     // Log full inputs if they haven't been logged already and there was an
     // error during inference.
-    if (!logInputs && 'error' in response) {
-      runLog.silly('inputs', { html, visuals });
+    let table: string;
+    if ('error' in response) {
+      table = '';
+      if (!logInputs) runLog.silly('inputs', { html, visuals });
+    } else {
+      // Render table with results.
+      const pagePred = response[0];
+      const rows = [];
+      for (const [labelKey, nodePreds] of Object.entries<NodePrediction[]>(
+        pagePred
+      )) {
+        for (const nodePred of nodePreds) {
+          rows.push({ labelKey, ...nodePred });
+        }
+      }
+      rows.sort((x, y) => y.confidence - x.confidence);
+      table = `<table>
+        <tr>
+          <th>Key</th>
+          <th>Value</th>
+          <th>Confidence</th>
+        </tr>
+        ${rows.map(
+          (r) => `<tr>
+          <td>${r.labelKey}</td>
+          <td>${r.text}</td>
+          <td>${r.confidence.toFixed(2)}</td>
+        </tr>`
+        )}
+      </table>`;
     }
 
     // Take screenshot.
@@ -117,8 +151,12 @@ const logInputs = !!process.env.LOG_INPUTS;
     });
 
     res.send(
-      `<h1>${url}</h1>
-      <code>${JSON.stringify(response)}</code>
+      `<h1>AWE results</h1>
+      <dl>
+        <dt>URL</dt>
+        <dd><code>${url}</code></dd>
+      </dl>
+      ${table}
       <img src="data:image/png;base64,${screenshot}" />`
     );
   });
