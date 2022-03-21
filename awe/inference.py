@@ -2,6 +2,7 @@
 
 import json
 import sys
+import traceback
 
 import awe.data.set.live
 import awe.training.logging
@@ -40,8 +41,8 @@ def main():
             preds = trainer.predict(run)
             df = trainer.decode(preds)
             response = dict(df.iloc[0].items())
-        except RuntimeError as e:
-            response = { 'error': repr(e) }
+        except RuntimeError:
+            response = { 'error': traceback.format_exc() }
         json.dump(response, sys.stdout)
         print() # commit the message by sending a newline character
 

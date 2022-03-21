@@ -94,13 +94,12 @@ logger.level = process.env.DEBUG ? 'debug' : 'verbose';
       python.once('message', resolve)
     );
     const response = JSON.parse(responseStr);
-    const logData: Record<string, any> = { response };
-    // Log full inputs in case there's an error.
+    runLog.debug('response', { response });
+
+    // Log full inputs in case there was an error.
     if ('error' in response) {
-      logData['html'] = html;
-      logData['visuals'] = visuals;
+      runLog.silly('inputs', { html, visuals });
     }
-    runLog.debug('response', logData);
 
     // Take screenshot.
     const screenshot = await page.screenshot({
