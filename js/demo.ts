@@ -41,6 +41,7 @@ logger.level = process.env.DEBUG ? 'debug' : 'verbose';
   await new Promise<void>((resolve, reject) => {
     const messageListener = (data: string) => {
       console.log(`PYTHON: ${data}`);
+      log.silly('python stdout', { data });
       if (data === 'Inference started.') {
         python.off('message', messageListener);
         resolve();
@@ -49,6 +50,7 @@ logger.level = process.env.DEBUG ? 'debug' : 'verbose';
     python.on('message', messageListener);
     python.on('stderr', (data) => {
       console.error(`PYTERR: ${data}`);
+      log.silly('python stderr', { data });
     });
     python.on('close', () => {
       log.verbose('python closed');
