@@ -39,10 +39,7 @@ def main():
             run = trainer.create_run([page], desc='live')
             preds = trainer.predict(run)
             df = trainer.decode(preds)
-            response = {
-                k: v
-                for k, v in df.iloc[0].items()
-            }
+            response = dict(df.iloc[0].items())
         except RuntimeError as e:
             response = { 'error': repr(e) }
         json.dump(response, sys.stdout)
