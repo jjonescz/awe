@@ -126,7 +126,8 @@ class Dom:
         n_neighbors += 1 # 0th neighbor is the node itself
         nn = sklearn.neighbors.NearestNeighbors(n_neighbors=n_neighbors)
 
-        if len(target_nodes) < nn.n_neighbors:
+        if len(coords) < nn.n_neighbors:
+            warnings.warn('Full neighborhood.')
             # Too little samples, everyone is neighbor with everyone else.
             for node in target_nodes:
                 neighbors = [
@@ -138,7 +139,12 @@ class Dom:
                     for n in target_nodes
                 ]
                 neighbors.sort(key=lambda n: n.distance)
-                node.visual_neighbors = neighbors
+                # Repeat the last visual neighbor if there is still too little
+                # of them.
+                d_neighbors = n_neighbors - len(neighbors)
+                if d_neighbors > 0:
+                    neighbors.extend([neighbors[-1]] * d_neighbors)
+                node.visual_neighbors = neighbors[1:]
             self.visual_neighbors_computed = True
             return
 
@@ -168,10 +174,10 @@ class Dom:
         n_neighbors += 1 # 0th neighbor is the node itself
         nn = sklearn.neighbors.NearestNeighbors(n_neighbors=n_neighbors * 4)
 
-        if len(target_nodes) < nn.n_neighbors:
+        if len(coords) < nn.n_neighbors:
             # Too little samples, cannot compare all corners.
             warnings.warn('Falling back to center neighborhood.')
-            self.compute_visual_neighbors(n_neighbors=n_neighbors)
+            self.compute_visual_neighbors(n_neighbors=n_neighbors-1)
             return
 
         nn.fit(coords)
