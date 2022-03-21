@@ -6,11 +6,11 @@ import awe.data.set.labels
 
 @dataclasses.dataclass(eq=False)
 class Page(awe.data.set.pages.Page):
-    def __init__(self, index: int, url: str, html: str, visuals: str):
+    def __init__(self, index: int, url: str, html_text: str, visuals_data: dict[str]):
         super().__init__(website=None, index=index)
         self._url = url
-        self.html = html
-        self.visuals_json_text = visuals
+        self.html_text = html_text
+        self.visuals_data = visuals_data
 
     @property
     def file_name_no_extension(self):
@@ -30,11 +30,11 @@ class Page(awe.data.set.pages.Page):
 
     def load_visuals(self):
         visuals = self.create_visuals()
-        visuals.load_json_str(self.visuals_json_text)
+        visuals.data = self.visuals_data
         return visuals
 
     def get_html_text(self):
-        return self.html
+        return self.html_text
 
     def get_labels(self):
         return PageLabels(self)

@@ -1,7 +1,11 @@
 import express from 'express';
 import puppeteer from 'puppeteer-core';
 import { PythonShell } from 'python-shell';
+import { Extractor } from './lib/extractor';
 import { logger } from './lib/logging';
+import { PageInfo } from './lib/page-info';
+import { PageRecipe } from './lib/page-recipe';
+import { ScrapeVersion } from './lib/scrape-version';
 
 logger.level = process.env.DEBUG ? 'debug' : 'verbose';
 
@@ -73,14 +77,24 @@ logger.level = process.env.DEBUG ? 'debug' : 'verbose';
     // Run through Puppeteer.
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: 'networkidle0' });
+    const html = await page.content();
+
+    // Extract visuals.
+    runLog.debug('extract visuals');
+    const pageInfo = new PageInfo(url, url, html);
+    const recipe = new PageRecipe(pageInfo, ScrapeVersion.Exact);
+    const extractor = new Extractor(page, recipe, runLog);
+    await extractor.extract();
+    const visuals = extractor.data;
 
     // Pass HTML and visuals to Python.
     runLog.debug('inference');
-    python.send(JSON.stringify({ url }));
-    const data = await new Promise<string>((resolve) =>
+    python.send(JSON.stringify({ url, html, visuals }));
+    const responseStr = await new Promise<string>((resolve) =>
       python.once('message', resolve)
     );
-    runLog.verbose('received', { data: JSON.parse(data) });
+    const response = JSON.parse(responseStr);
+    runLog.debug('response', { response });
 
     // Take screenshot.
     const screenshot = await page.screenshot({
@@ -90,6 +104,7 @@ logger.level = process.env.DEBUG ? 'debug' : 'verbose';
 
     res.send(
       `<h1>${url}</h1>
+      <code>${JSON.stringify(response)}</code>
       <img src="data:image/png;base64,${screenshot}" />`
     );
   });
