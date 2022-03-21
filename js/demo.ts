@@ -83,7 +83,7 @@ interface NodePrediction {
 
   // Configure demo server routes.
   app.get(['/'], (req, res) => {
-    res.send('<h1>AWE</h1>');
+    res.send(layout('<h1>AWE</h1>'));
   });
 
   app.get('/run', async (req, res) => {
@@ -172,7 +172,7 @@ interface NodePrediction {
       table = h`
       <table>
         <tr>
-          <th>Key</th>
+          <th></th>
           <th>Value</th>
           <th>Confidence</th>
         </tr>
@@ -180,7 +180,7 @@ interface NodePrediction {
           .map(
             (r) => h`
             <tr>
-              <td>${r.labelKey}</td>
+              <th>${r.labelKey}</th>
               <td>${r.text}</td>
               <td>${r.confidence.toFixed(2)}</td>
             </tr>`
@@ -196,13 +196,22 @@ interface NodePrediction {
     })) as string;
 
     res.send(
-      h`<h1>AWE results</h1>
-      <dl>
-        <dt>URL</dt>
-        <dd><code>${url}</code></dd>
-      </dl>
-      $${table}
-      <img src="data:image/png;base64,${screenshot}" />`
+      layout(
+        h`
+        <h1>AWE results</h1>
+        <h2>Inputs</h2>
+        <table>
+          <tr>
+            <th>URL</th>
+            <td><code>${url}</code></td>
+          </tr>
+        </table>
+        <h2>Results</h2>
+        <h3>Labels</h3>
+        $${table}
+        <h3>Screenshot</h3>
+        <img src="data:image/png;base64,${screenshot}" />`
+      )
     );
   });
 
@@ -227,3 +236,25 @@ interface NodePrediction {
     });
   }
 })();
+
+function layout(content: string) {
+  return h`
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta http-equiv="X-UA-Compatible" content="ie=edge">
+      <title>AWE</title>
+      <link
+        rel="stylesheet"
+        type="text/css"
+        href="https://cdn.jsdelivr.net/gh/alvaromontoro/almond.css@v1.0.0/dist/almond.min.css"
+      />
+    </head>
+    <body>
+      $${content}
+    </body>
+  </html>
+  `;
+}
