@@ -4,6 +4,7 @@ import json
 import sys
 import traceback
 
+import awe.data.parsing
 import awe.data.set.live
 import awe.training.logging
 import awe.training.params
@@ -39,8 +40,21 @@ def main():
             )
             run = trainer.create_run([page], desc='live')
             preds = trainer.predict(run)
-            df = trainer.decode(preds)
-            response = dict(df.iloc[0].items())
+            decoded = trainer.decode_raw(preds)
+            response = [
+                {
+                    k: [
+                        {
+                            'text': awe.data.parsing.normalize_node_text(p.node),
+                            'xpath': p.node.get_xpath(),
+                            'confidence': p.confidence
+                        }
+                        for p in v
+                    ]
+                    for k, v in d.items()
+                }
+                for d in decoded
+            ]
         except RuntimeError:
             response = { 'error': traceback.format_exc() }
         json.dump(response, sys.stdout)

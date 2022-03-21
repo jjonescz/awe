@@ -486,6 +486,9 @@ class Trainer:
     def decode(self, preds: list[awe.model.classifier.Prediction]):
         return awe.model.decoding.Decoder(self).decode(preds)
 
+    def decode_raw(self, preds: list[awe.model.classifier.Prediction]):
+        return awe.model.decoding.Decoder(self).decode_raw(preds)
+
 def set_seed(seed: int):
     random.seed(seed)
     np.random.seed(seed)
