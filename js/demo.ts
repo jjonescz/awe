@@ -2,7 +2,7 @@ import express from 'express';
 import puppeteer from 'puppeteer-core';
 import { PythonShell } from 'python-shell';
 import { Extractor } from './lib/extractor';
-import { logger } from './lib/logging';
+import { logFile, logger } from './lib/logging';
 import { PageInfo } from './lib/page-info';
 import { PageRecipe } from './lib/page-recipe';
 import { ScrapeVersion } from './lib/scrape-version';
@@ -13,7 +13,7 @@ logger.level = process.env.DEBUG ? 'debug' : 'verbose';
   // Parse arguments.
   const port = process.env.PORT || 3000;
   const log = logger.child({ server: port });
-  log.info('start', { logLevel: logger.level });
+  log.info('start', { logLevel: logger.level, logFile });
 
   // Create server.
   const app = express();
