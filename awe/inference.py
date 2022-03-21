@@ -45,7 +45,10 @@ def main():
                 {
                     k: [
                         {
-                            'text': awe.data.parsing.normalize_node_text(p.node),
+                            'text': (
+                                awe.data.parsing.normalize_node_text(p.node.text)
+                                if p.node.is_text else None
+                            ),
                             'xpath': p.node.get_xpath(),
                             'confidence': p.confidence
                         }
