@@ -82,15 +82,17 @@ interface NodePrediction {
   }
 
   // Configure demo server routes.
-  app.get(['/'], (req, res) => {
-    res.send(layout('<h1>AWE</h1>'));
-  });
-
-  app.get('/run', async (req, res) => {
+  app.get('/', async (req, res) => {
     // Parse parameters.
     const url = req.query['url']?.toString() ?? '';
     const runLog = log.child({ url: url });
     runLog.debug('run');
+
+    // Return empty form if no URL was provided.
+    if (url === '') {
+      res.send(form(''));
+      return;
+    }
 
     // Run through Puppeteer.
     const page = await browser.newPage();
@@ -196,21 +198,16 @@ interface NodePrediction {
     })) as string;
 
     res.send(
-      layout(
+      form(
         h`
-        <h1>AWE results</h1>
-        <h2>Inputs</h2>
-        <table>
-          <tr>
-            <th>URL</th>
-            <td><code>${url}</code></td>
-          </tr>
-        </table>
         <h2>Results</h2>
         <h3>Labels</h3>
         $${table}
         <h3>Screenshot</h3>
-        <img src="data:image/png;base64,${screenshot}" />`
+        <img src="data:image/png;base64,${screenshot}" />`,
+        {
+          url,
+        }
       )
     );
   });
@@ -236,6 +233,23 @@ interface NodePrediction {
     });
   }
 })();
+
+function form(content: string, { url = '' } = {}) {
+  return layout(h`
+  <h1><a href="/">AWE</a></h1>
+  <h2>Inputs</h2>
+  <form method="get">
+    <p>
+      <label>
+        URL<br />
+        <input type="url" name="url" value="${url}" />
+      </label>
+    </p>
+    <button type="submit">Submit</button>
+  </form>
+  $${content}
+  `);
+}
 
 function layout(content: string) {
   return h`
