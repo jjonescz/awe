@@ -1,6 +1,6 @@
 import express from 'express';
 import puppeteer from 'puppeteer-core';
-import { Communicator } from './lib/ipc';
+import { PythonShell } from 'python-shell';
 import { logger } from './lib/logging';
 
 logger.level = process.env.DEBUG ? 'debug' : 'verbose';
@@ -9,6 +9,9 @@ logger.level = process.env.DEBUG ? 'debug' : 'verbose';
   // Parse arguments.
   const port = process.env.PORT || 3000;
   const log = logger.child({ server: port });
+
+  // Create server.
+  const app = express();
 
   // Open browser.
   log.verbose('opening Puppeteer');
@@ -21,11 +24,33 @@ logger.level = process.env.DEBUG ? 'debug' : 'verbose';
   });
   log.verbose('opened Puppeteer');
 
-  // Open IPC pipe.
-  const ipc = await Communicator.open(log);
-
-  // Create server.
-  const app = express();
+  // Open Python inference.
+  log.verbose('opening Python shell');
+  const python = new PythonShell('awe.inference', {
+    pythonOptions: ['-m'],
+    cwd: '..',
+  });
+  python.on('stderr', (data) => {
+    console.error(`PYTERR: ${data}`);
+  });
+  python.on('message', (data) => {
+    console.log(`PYTHON: ${data}`);
+  });
+  python.on('close', () => {
+    log.verbose('python closed');
+  });
+  python.on('pythonError', (error) => {
+    log.error('python killed', { error });
+  });
+  python.on('error', (error) => {
+    log.error('python failure', { error });
+  });
+  app.on('close', () => {
+    log.verbose('closing Python shell');
+    python.end((err, exitCode, exitSignal) => {
+      log.verbose('closed Python shell', { err, exitCode, exitSignal });
+    });
+  });
 
   app.get(['/'], (req, res) => {
     res.send('<h1>Hello From Node</h1>');
@@ -39,6 +64,13 @@ logger.level = process.env.DEBUG ? 'debug' : 'verbose';
     // Run through Puppeteer.
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: 'networkidle0' });
+
+    // Pass HTML and visuals to Python.
+    python.send({ url });
+    const data = await new Promise<string>((resolve) =>
+      python.once('message', resolve)
+    );
+    log.verbose('received', { data });
 
     // Take screenshot.
     const screenshot = await page.screenshot({

@@ -4,6 +4,7 @@
 import awe.training.params
 import awe.training.trainer
 
+
 def main():
     params = awe.training.params.Params.load_user(normalize=True)
     if params is None:
@@ -12,7 +13,8 @@ def main():
     trainer = awe.training.trainer.Trainer(params)
     trainer.load_pretrained()
     trainer.load_dataset()
-    trainer.prepare_features()
+    trainer.init_dataloaders()
+    trainer.create_dataloaders()
     trainer.create_model()
     trainer.create_version()
     trainer.train()
