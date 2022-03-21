@@ -57,7 +57,7 @@ class DomData:
                 xpath_element = child.get_xpath_element()
                 child_data = data.get(f'/{xpath_element}', None)
                 if child_data is None:
-                    raise RuntimeError(
+                    warnings.warn(
                         f'Cannot find {xpath_element!r} in ' +
                         f'{node.get_xpath()!r} ({dom.page.html_path!r}).'
                     )

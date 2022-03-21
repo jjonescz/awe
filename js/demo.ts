@@ -8,6 +8,7 @@ import { PageRecipe } from './lib/page-recipe';
 import { ScrapeVersion } from './lib/scrape-version';
 
 logger.level = process.env.DEBUG ? 'debug' : 'verbose';
+const logInputs = !!process.env.LOG_INPUTS;
 
 (async () => {
   // Parse arguments.
@@ -99,7 +100,7 @@ logger.level = process.env.DEBUG ? 'debug' : 'verbose';
     runLog.debug('response', { response });
 
     // Log full inputs in case there was an error.
-    if ('error' in response) {
+    if (logInputs || 'error' in response) {
       runLog.silly('inputs', { html, visuals });
     }
 

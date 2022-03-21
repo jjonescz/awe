@@ -42,8 +42,11 @@ page through web browser.
 **Debug CPython code:** Run `gdb -ex=r --args python <path_to_script>.py`. Then
 issue GDB command `backtrace`.
 
-**Start Jupyter server in Gitpod:** Run `jupyter notebook --allow-root
---no-browser --NotebookApp.token='' --NotebookApp.disable_check_xsrf=True`.
+**Start Jupyter server in Gitpod:** Run
+`jupyter notebook --allow-root --no-browser --NotebookApp.token='' --NotebookApp.disable_check_xsrf=True`.
+
+**Get HTML from a scraping log**: For example, if it's on line 11, run
+`sed '11!d' data/scraping-logs/2022-03-21T13-26-38.056Z.txt | jq -r '.html' > data.html`.
 
 ### Release
 
