@@ -1,6 +1,7 @@
 import dataclasses
 
 import awe.data.set.pages
+import awe.data.set.labels
 
 
 @dataclasses.dataclass(eq=False)
@@ -32,4 +33,19 @@ class Page(awe.data.set.pages.Page):
         return self.html
 
     def get_labels(self):
-        raise RuntimeError(f'Cannot get labels for live page {self.url!r}.')
+        return PageLabels(self)
+
+class PageLabels(awe.data.set.labels.PageLabels):
+    """Empty labels."""
+
+    page: Page
+
+    @property
+    def label_keys(self):
+        return []
+
+    def get_label_values(self, _: str):
+        return []
+
+    def get_labeled_nodes(self, _: str):
+        return []
