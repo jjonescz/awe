@@ -21,6 +21,8 @@ def main():
     trainer.create_model()
     trainer.restore_model()
 
+    print('Inference started.')
+
     for line in sys.stdin:
         data = json.loads(line)
         json.dump({ 'got': data }, sys.stdout)

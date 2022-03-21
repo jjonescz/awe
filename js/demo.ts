@@ -27,31 +27,38 @@ logger.level = process.env.DEBUG ? 'debug' : 'verbose';
   // Open Python inference.
   log.verbose('opening Python shell');
   const python = new PythonShell('awe.inference', {
-    pythonOptions: ['-m'],
+    pythonOptions: ['-u', '-m'],
     cwd: '..',
   });
-  python.on('stderr', (data) => {
-    console.error(`PYTERR: ${data}`);
-  });
-  python.on('message', (data) => {
-    console.log(`PYTHON: ${data}`);
-  });
-  python.on('close', () => {
-    log.verbose('python closed');
-  });
-  python.on('pythonError', (error) => {
-    log.error('python killed', { error });
-  });
-  python.on('error', (error) => {
-    log.error('python failure', { error });
-  });
-  app.on('close', () => {
-    log.verbose('closing Python shell');
-    python.end((err, exitCode, exitSignal) => {
-      log.verbose('closed Python shell', { err, exitCode, exitSignal });
+
+  // Wait for Python inference to start.
+  log.verbose('waiting for Python');
+  await new Promise<void>((resolve, reject) => {
+    const messageListener = (data: string) => {
+      console.log(`PYTHON: ${data}`);
+      if (data === 'Inference started.') {
+        python.off('message', messageListener);
+        resolve();
+      }
+    };
+    python.on('message', messageListener);
+    python.on('stderr', (data) => {
+      console.error(`PYTERR: ${data}`);
+    });
+    python.on('close', () => {
+      log.verbose('python closed');
+      reject();
+    });
+    python.on('pythonError', (error) => {
+      log.error('python killed', { error });
+    });
+    python.on('error', (error) => {
+      log.error('python failure', { error });
+      reject();
     });
   });
 
+  // Configure demo server routes.
   app.get(['/'], (req, res) => {
     res.send('<h1>Hello From Node</h1>');
   });
@@ -84,6 +91,8 @@ logger.level = process.env.DEBUG ? 'debug' : 'verbose';
     );
   });
 
+  // Start demo server.
+  log.verbose('starting demo server');
   const server = app.listen(port, async () => {
     console.log(`Listening on http://localhost:${port}/`);
   });
