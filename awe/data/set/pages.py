@@ -228,7 +228,7 @@ class Page(abc.ABC):
             self._dom.friend_cycles_computed = False
             self._dom.visual_neighbors_computed = False
 
-    def get_html_text(self) -> str:
+    def get_html_text(self):
         """Obtains HTML of the page as text."""
 
         with open(self.html_path, encoding='utf-8') as f:
