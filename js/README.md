@@ -52,11 +52,14 @@ Taking screenshots of 10 pages of each website of `auto` vertical:
 pnpm start -- -j=8 -e="C:\Program Files\Google\Chrome\Application\chrome.exe" -RSot -T=1000 -F 10 -g "auto/*/????.htm"
 ```
 
-Extracting visuals from Apify dataset:
+Extracting visuals from Apify dataset (note that some pages require enabled
+JavaScript, so beware of that `-S` option):
 
 ```bash
 pnpm start -- -d ../data/apify/alzaEn -g 'pages/localized_html_*.htm' -oH -T=1000 -j=8 -S
 pnpm start -- -d ../data/apify/conradEn -g 'pages/localized_html_*.htm' -oH -T=1000 -j=8 -S
+pnpm start -- -d ../data/apify/ikeaEn -g 'pages/localized_html_*.htm' -oH -T=1000 -j=8 -S
+pnpm start -- -d ../data/apify/notinoEn -g 'pages/localized_html_*.htm' -oH -T=1000 -j=8
 ```
 
 And validating them:
