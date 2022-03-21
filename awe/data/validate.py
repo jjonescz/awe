@@ -44,6 +44,11 @@ parser.add_argument('--max-pages',
     type=int,
     help='maximum number of pages to validate'
 )
+parser.add_argument('--skip-pages',
+    dest='skip_pages',
+    type=int,
+    help='number of pages to skip at the beginning'
+)
 parser.add_argument('--max-errors',
     dest='max_errors',
     type=int,
@@ -99,6 +104,8 @@ if args.read_list is not None:
         warnings.warn(f'List file not found ({args.read_list!r}).')
 
 # Slice pages.
+if args.skip_pages is not None:
+    pages = pages[args.skip_pages:]
 if args.max_pages is not None:
     pages = pages[:args.max_pages]
 
