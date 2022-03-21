@@ -91,6 +91,10 @@ logger.level = process.env.DEBUG ? 'debug' : 'verbose';
   // Close server when Python closes.
   python.on('close', () => {
     log.verbose('closing server');
+    setTimeout(() => {
+      log.error('closing timeout');
+      process.exit(2);
+    }, 5000);
     server.close((err) => {
       log.verbose('closed server', { err });
       process.exit(1);
