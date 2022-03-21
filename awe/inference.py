@@ -25,23 +25,26 @@ def main():
     print('Inference started.')
 
     for line in sys.stdin:
-        data = json.loads(line)
-        url = data['url']
-        html_text = data['html']
-        visuals = data['visuals']
-        page = awe.data.set.live.Page(
-            index=0,
-            url=url,
-            html_text=html_text,
-            visuals_data=visuals
-        )
-        run = trainer.create_run([page], desc='live')
-        preds = trainer.predict(run)
-        df = trainer.decode(preds)
-        response = {
-            k: v
-            for k, v in df.iloc[0].items()
-        }
+        try:
+            data = json.loads(line)
+            url = data['url']
+            html_text = data['html']
+            visuals = data['visuals']
+            page = awe.data.set.live.Page(
+                index=0,
+                url=url,
+                html_text=html_text,
+                visuals_data=visuals
+            )
+            run = trainer.create_run([page], desc='live')
+            preds = trainer.predict(run)
+            df = trainer.decode(preds)
+            response = {
+                k: v
+                for k, v in df.iloc[0].items()
+            }
+        except RuntimeError as e:
+            response = { 'error': repr(e) }
         json.dump(response, sys.stdout)
         print() # commit the message by sending a newline character
 
