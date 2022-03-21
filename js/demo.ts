@@ -102,7 +102,20 @@ interface NodePrediction {
 
     // Run through Puppeteer.
     const page = await browser.newPage();
-    await page.goto(url, { waitUntil: 'networkidle0' });
+    try {
+      await page.goto(url, { waitUntil: 'networkidle0' });
+    } catch (e) {
+      const error = e as Error;
+      if (error?.name === 'TimeoutError') {
+        runLog.debug('goto timeout', { error: error?.stack });
+        res.write(logEntry('Navigation timeout.'));
+      } else {
+        runLog.debug('goto failed', { error: error?.stack });
+        res.write(logEntry(`Navigation failed: ${error}`));
+        res.end();
+        return;
+      }
+    }
     const html = await page.content();
 
     // Extract visuals.
