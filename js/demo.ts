@@ -128,19 +128,23 @@ interface NodePrediction {
         }
       }
       rows.sort((x, y) => y.confidence - x.confidence);
-      table = `<table>
+      table = `
+      <table>
         <tr>
           <th>Key</th>
           <th>Value</th>
           <th>Confidence</th>
         </tr>
-        ${rows.map(
-          (r) => `<tr>
-          <td>${r.labelKey}</td>
-          <td>${r.text}</td>
-          <td>${r.confidence.toFixed(2)}</td>
-        </tr>`
-        )}
+        ${rows
+          .map(
+            (r) => `
+            <tr>
+              <td>${r.labelKey}</td>
+              <td>${r.text}</td>
+              <td>${r.confidence.toFixed(2)}</td>
+            </tr>`
+          )
+          .join('')}
       </table>`;
     }
 
