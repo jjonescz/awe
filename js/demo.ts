@@ -9,6 +9,7 @@ logger.level = process.env.DEBUG ? 'debug' : 'verbose';
   // Parse arguments.
   const port = process.env.PORT || 3000;
   const log = logger.child({ server: port });
+  log.info('start', { logLevel: logger.level });
 
   // Create server.
   const app = express();
