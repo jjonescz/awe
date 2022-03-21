@@ -55,11 +55,12 @@ pnpm start -- -j=8 -e="C:\Program Files\Google\Chrome\Application\chrome.exe" -R
 Extracting visuals from Apify dataset:
 
 ```bash
-pnpm start -- -d ../data/apify/alzaEn -g pages/localized_html_*.htm -oH -T=1000 -j=8 -S
+pnpm start -- -d ../data/apify/alzaEn -g 'pages/localized_html_*.htm' -oH -T=1000 -j=8 -S
+pnpm start -- -d ../data/apify/conradEn -g 'pages/localized_html_*.htm' -oH -T=1000 -j=8 -S
 ```
 
 And validating them (from project root folder):
 
 ```bash
-python -m awe.data.validate --no-labels --visuals --max-errors=1
+python -m awe.data.validate --no-labels --visuals --max-errors=1 [<website_name>]
 ```
