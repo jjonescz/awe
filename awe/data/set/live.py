@@ -6,8 +6,8 @@ import awe.data.set.labels
 
 @dataclasses.dataclass(eq=False)
 class Page(awe.data.set.pages.Page):
-    def __init__(self, url: str, html: str, visuals: str):
-        super().__init__(website=None)
+    def __init__(self, index: int, url: str, html: str, visuals: str):
+        super().__init__(website=None, index=index)
         self._url = url
         self.html = html
         self.visuals_json_text = visuals
@@ -23,6 +23,10 @@ class Page(awe.data.set.pages.Page):
     @property
     def url(self):
         return self._url
+
+    @property
+    def index_in_dataset(self):
+        return self.index
 
     def load_visuals(self):
         visuals = self.create_visuals()
