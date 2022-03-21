@@ -84,7 +84,16 @@ logger.level = process.env.DEBUG ? 'debug' : 'verbose';
     );
   });
 
-  app.listen(port, async () => {
+  const server = app.listen(port, async () => {
     console.log(`Listening on http://localhost:${port}/`);
+  });
+
+  // Close server when Python closes.
+  python.on('close', () => {
+    log.verbose('closing server');
+    server.close((err) => {
+      log.verbose('closed server', { err });
+      process.exit(1);
+    });
   });
 })();
