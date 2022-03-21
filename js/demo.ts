@@ -1,12 +1,17 @@
 import express from 'express';
 import puppeteer from 'puppeteer-core';
+import { Communicator } from './lib/ipc';
 import { logger } from './lib/logging';
 
-logger.level = 'verbose';
+logger.level = process.env.DEBUG ? 'debug' : 'verbose';
 
 (async () => {
+  // Parse arguments.
+  const port = process.env.PORT || 3000;
+  const log = logger.child({ server: port });
+
   // Open browser.
-  logger.verbose('opening Puppeteer');
+  log.verbose('opening Puppeteer');
   const browser = await puppeteer.launch({
     args: [
       // Allow running as root.
@@ -14,12 +19,13 @@ logger.level = 'verbose';
     ],
     executablePath: 'google-chrome-stable',
   });
-  logger.verbose('opened Puppeteer');
+  log.verbose('opened Puppeteer');
+
+  // Open IPC pipe.
+  const ipc = await Communicator.open(log);
 
   // Create server.
   const app = express();
-  const port = process.env.PORT || 3000;
-  const log = logger.child({ server: port });
 
   app.get(['/'], (req, res) => {
     res.send('<h1>Hello From Node</h1>');
