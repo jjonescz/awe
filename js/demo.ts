@@ -88,11 +88,17 @@ interface NodePrediction {
     const runLog = log.child({ url: url });
     runLog.debug('run');
 
-    // Return empty form if no URL was provided.
+    // Start writing response so it's asynchronous.
+    res.write(layoutStart());
+    res.write(form({ url }));
     if (url === '') {
-      res.send(form(''));
+      // Return empty form if no URL was provided.
+      res.write(layoutEnd());
+      res.end();
       return;
     }
+    res.write(logStart());
+    res.write(logEntry('Loading page...'));
 
     // Run through Puppeteer.
     const page = await browser.newPage();
@@ -101,6 +107,7 @@ interface NodePrediction {
 
     // Extract visuals.
     runLog.debug('extract visuals');
+    res.write(logEntry('Extracting visuals...'));
     const pageInfo = new PageInfo(url, url, html);
     const recipe = new PageRecipe(pageInfo, ScrapeVersion.Exact);
     const extractor = new Extractor(page, recipe, runLog);
@@ -114,6 +121,7 @@ interface NodePrediction {
 
     // Pass HTML and visuals to Python.
     runLog.debug('inference');
+    res.write(logEntry('Running inference...'));
     let response: any;
     if (!mockInference) {
       python.send(JSON.stringify({ url, html, visuals }));
@@ -152,6 +160,7 @@ interface NodePrediction {
       ];
     }
     runLog.debug('response', { response });
+    res.write(logEntry('Rendering screenshot...'));
 
     // Log full inputs if they haven't been logged already and there was an
     // error during inference.
@@ -197,19 +206,17 @@ interface NodePrediction {
       encoding: 'base64',
     })) as string;
 
-    res.send(
-      form(
-        h`
-        <h2>Results</h2>
-        <h3>Labels</h3>
-        $${table}
-        <h3>Screenshot</h3>
-        <img src="data:image/png;base64,${screenshot}" />`,
-        {
-          url,
-        }
-      )
+    res.write(logEntry('Done.'));
+    res.write(logEnd());
+    res.write(
+      h`
+      <h2>Results</h2>
+      <h3>Labels</h3>
+      $${table}
+      <h3>Screenshot</h3>
+      <img src="data:image/png;base64,${screenshot}" />`
     );
+    res.end();
   });
 
   // Start demo server.
@@ -234,8 +241,8 @@ interface NodePrediction {
   }
 })();
 
-function form(content: string, { url = '' } = {}) {
-  return layout(h`
+function form({ url = '' } = {}) {
+  return h`
   <h1><a href="/">AWE</a></h1>
   <h2>Inputs</h2>
   <form method="get">
@@ -247,11 +254,32 @@ function form(content: string, { url = '' } = {}) {
     </p>
     <button type="submit">Submit</button>
   </form>
-  $${content}
-  `);
+  `;
 }
 
-function layout(content: string) {
+function logStart() {
+  return h`
+  <h2>Log</h2>
+  <table>
+    <tr>
+      <th>Time</th>
+      <th>Message</th>
+    </tr>`;
+}
+
+function logEntry(message: string) {
+  return h`
+  <tr>
+    <td>${new Date().toISOString()}</td>
+    <td>${message}</td>
+  </tr>`;
+}
+
+function logEnd() {
+  return h`</table>`;
+}
+
+function layoutStart() {
   return h`
   <!DOCTYPE html>
   <html lang="en">
@@ -266,8 +294,11 @@ function layout(content: string) {
         href="https://cdn.jsdelivr.net/gh/alvaromontoro/almond.css@v1.0.0/dist/almond.min.css"
       />
     </head>
-    <body>
-      $${content}
+    <body>`;
+}
+
+function layoutEnd() {
+  return h`
     </body>
   </html>
   `;
