@@ -6,6 +6,7 @@ import { logFile, logger } from './lib/logging';
 import { PageInfo } from './lib/page-info';
 import { PageRecipe } from './lib/page-recipe';
 import { ScrapeVersion } from './lib/scrape-version';
+import h from 'html-template-tag';
 
 logger.level = process.env.DEBUG ? 'debug' : 'verbose';
 
@@ -168,16 +169,16 @@ interface NodePrediction {
         }
       }
       rows.sort((x, y) => y.confidence - x.confidence);
-      table = `
+      table = h`
       <table>
         <tr>
           <th>Key</th>
           <th>Value</th>
           <th>Confidence</th>
         </tr>
-        ${rows
+        $${rows
           .map(
-            (r) => `
+            (r) => h`
             <tr>
               <td>${r.labelKey}</td>
               <td>${r.text}</td>
@@ -189,18 +190,18 @@ interface NodePrediction {
     }
 
     // Take screenshot.
-    const screenshot = await page.screenshot({
+    const screenshot = (await page.screenshot({
       fullPage: true,
       encoding: 'base64',
-    });
+    })) as string;
 
     res.send(
-      `<h1>AWE results</h1>
+      h`<h1>AWE results</h1>
       <dl>
         <dt>URL</dt>
         <dd><code>${url}</code></dd>
       </dl>
-      ${table}
+      $${table}
       <img src="data:image/png;base64,${screenshot}" />`
     );
   });

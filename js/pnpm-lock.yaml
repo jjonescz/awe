@@ -10,6 +10,7 @@ specifiers:
   express: 4.17.3
   fast-glob: 3.2.7
   generic-pool: 3.8.2
+  html-template-tag: 4.0.0
   puppeteer-core: 11.0.0
   python-shell: 3.0.1
   rxjs: 7.4.0
@@ -24,6 +25,7 @@ dependencies:
   express: 4.17.3
   fast-glob: 3.2.7
   generic-pool: 3.8.2
+  html-template-tag: 4.0.0
   puppeteer-core: 11.0.0
   python-shell: 3.0.1
   rxjs: 7.4.0
@@ -765,6 +767,16 @@ packages:
   /has-flag/4.0.0:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
     engines: {node: '>=8'}
+    dev: false
+
+  /html-es6cape/2.0.0:
+    resolution: {integrity: sha512-oRqzRVGgXHcLslCCDeE76Eyq+unlmqc1jqnKfI1rps6vCQ9FsyxfHRtYT3MnJoigoRqcFMmZdDpuQpsPDnmVPA==}
+    dev: false
+
+  /html-template-tag/4.0.0:
+    resolution: {integrity: sha512-jFZ+hAAuT/TdlhXkWMZbnyqLiSmoQaV7Nzm+XLatBkYZI3IRKONHUfep51B1WLZrVyuDEJqLEn7vozSB4MJxJQ==}
+    dependencies:
+      html-es6cape: 2.0.0
     dev: false
 
   /http-errors/1.8.1:
