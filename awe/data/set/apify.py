@@ -274,8 +274,9 @@ class PageLabels(awe.data.set.labels.PageLabels):
         # HACK: If selector contains `+`, replace it by `~` as there is a bug in
         # Lexbor's implementation of the former (a segfault occurs in
         # `lxb_selectors_sibling` at source/lexbor/selectors/selectors.c:266).
-        if '+' in selector:
-            new_selector = selector.replace('+', '~')
+        # Note the space, so we don't match  `:has(+...)` which is fine.
+        if ' + ' in selector:
+            new_selector = selector.replace(' + ', ' ~ ')
             warnings.warn(f'Patched selector {selector!r} to {new_selector!r}.')
             selector = new_selector
 
