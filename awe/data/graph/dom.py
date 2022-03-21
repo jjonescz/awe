@@ -1,6 +1,7 @@
 import collections
 import dataclasses
 from typing import TYPE_CHECKING, Any, Optional
+import warnings
 
 import numpy as np
 import sklearn.neighbors
@@ -124,6 +125,23 @@ class Dom:
         coords = np.array([n.box.center_point for n in target_nodes])
         n_neighbors += 1 # 0th neighbor is the node itself
         nn = sklearn.neighbors.NearestNeighbors(n_neighbors=n_neighbors)
+
+        if len(target_nodes) < nn.n_neighbors:
+            # Too little samples, everyone is neighbor with everyone else.
+            for node in target_nodes:
+                neighbors = [
+                    VisualNeighbor.create(
+                        distance=node.distance_to(n),
+                        node=node,
+                        neighbor=n
+                    )
+                    for n in target_nodes
+                ]
+                neighbors.sort(key=lambda n: n.distance)
+                node.visual_neighbors = neighbors
+            self.visual_neighbors_computed = True
+            return
+
         nn.fit(coords)
         d, i = nn.kneighbors(coords)
         for node, distances, indices in zip(target_nodes, d, i):
@@ -149,6 +167,13 @@ class Dom:
         coords = np.array([c for n in target_nodes for c in n.box.corners])
         n_neighbors += 1 # 0th neighbor is the node itself
         nn = sklearn.neighbors.NearestNeighbors(n_neighbors=n_neighbors * 4)
+
+        if len(target_nodes) < nn.n_neighbors:
+            # Too little samples, cannot compare all corners.
+            warnings.warn('Falling back to center neighborhood.')
+            self.compute_visual_neighbors(n_neighbors=n_neighbors)
+            return
+
         nn.fit(coords)
         d, i = nn.kneighbors(coords)
         for idx, node in enumerate(target_nodes):
