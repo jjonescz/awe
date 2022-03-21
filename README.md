@@ -42,6 +42,9 @@ page through web browser.
 **Debug CPython code:** Run `gdb -ex=r --args python <path_to_script>.py`. Then
 issue GDB command `backtrace`.
 
+**Start Jupyter server in Gitpod:** Run `jupyter notebook --allow-root
+--no-browser --NotebookApp.token='' --NotebookApp.disable_check_xsrf=True`.
+
 ### Release
 
 #### Upload pre-trained model
