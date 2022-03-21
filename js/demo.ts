@@ -67,18 +67,20 @@ logger.level = process.env.DEBUG ? 'debug' : 'verbose';
   app.get('/run', async (req, res) => {
     // Parse parameters.
     const url = req.query['url']?.toString() ?? '';
-    log.debug('run', { url: url });
+    const runLog = log.child({ url: url });
+    runLog.debug('run');
 
     // Run through Puppeteer.
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: 'networkidle0' });
 
     // Pass HTML and visuals to Python.
+    runLog.debug('inference');
     python.send(JSON.stringify({ url }));
     const data = await new Promise<string>((resolve) =>
       python.once('message', resolve)
     );
-    log.verbose('received', { data });
+    runLog.verbose('received', { data: JSON.parse(data) });
 
     // Take screenshot.
     const screenshot = await page.screenshot({
