@@ -13,7 +13,7 @@ export const logger = winston.createLogger({
   transports: [
     new winston.transports.File({
       filename: logFile,
-      level: 'debug',
+      level: 'silly',
     }),
     new winston.transports.Console({ format: winston.format.simple() }),
   ],
