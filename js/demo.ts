@@ -73,7 +73,7 @@ logger.level = process.env.DEBUG ? 'debug' : 'verbose';
     await page.goto(url, { waitUntil: 'networkidle0' });
 
     // Pass HTML and visuals to Python.
-    python.send({ url });
+    python.send(JSON.stringify({ url }));
     const data = await new Promise<string>((resolve) =>
       python.once('message', resolve)
     );
