@@ -64,7 +64,7 @@ interface NodePrediction {
       };
       python.on('message', messageListener);
       python.on('stderr', (data) => {
-        console.error(`PYTERR: ${data}`);
+        if (log.isLevelEnabled('debug')) console.error(`PYTERR: ${data}`);
         log.silly('python stderr', { data });
       });
       python.on('close', () => {
