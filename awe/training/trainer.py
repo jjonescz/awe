@@ -107,7 +107,7 @@ class Trainer:
             raise ValueError(
                 f'Unrecognized dataset param {self.params.dataset!r}.')
 
-    def init_dataloaders(self):
+    def init_features(self):
         set_seed(42)
 
         # Create device (some features need it when preparing tensors).
@@ -117,6 +117,9 @@ class Trainer:
         self.label_map = awe.training.context.LabelMap()
         self.extractor = awe.features.extraction.Extractor(self)
         self.sampler = awe.data.sampling.Sampler(self)
+
+    def split_data(self):
+        set_seed(42)
 
         # Load websites from one vertical.
         websites = self.ds.verticals[0].websites
