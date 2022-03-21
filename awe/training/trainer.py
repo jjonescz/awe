@@ -273,7 +273,10 @@ class Trainer:
 
     def restore_checkpoint(self, checkpoint: awe.training.logging.Checkpoint):
         print(f'Loading {checkpoint.file_path!r}...')
-        self.restored_state = torch.load(checkpoint.file_path)
+        self.restored_state = torch.load(checkpoint.file_path,
+            # Load GPU tensors to CPU if GPU is not available.
+            map_location=self.device if not torch.cuda.is_available() else None
+        )
 
     def restore_features(self):
         print('Restoring features...')
