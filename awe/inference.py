@@ -26,6 +26,7 @@ def main():
     for line in sys.stdin:
         data = json.loads(line)
         json.dump({ 'got': data }, sys.stdout)
+        print() # commit the message by sending a newline character
 
 if __name__ == '__main__':
     main()
