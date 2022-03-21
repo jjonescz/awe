@@ -59,8 +59,8 @@ pnpm start -- -d ../data/apify/alzaEn -g 'pages/localized_html_*.htm' -oH -T=100
 pnpm start -- -d ../data/apify/conradEn -g 'pages/localized_html_*.htm' -oH -T=1000 -j=8 -S
 ```
 
-And validating them (from project root folder):
+And validating them:
 
 ```bash
-python -m awe.data.validate --no-labels --visuals --max-errors=1 [<website_name>]
+(cd .. && python -m awe.data.validate --no-labels --visuals --max-errors=1 [<website_name>])
 ```
