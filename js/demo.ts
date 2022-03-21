@@ -90,6 +90,11 @@ const logInputs = !!process.env.LOG_INPUTS;
     await extractor.extract();
     const visuals = extractor.data;
 
+    // Log full inputs if desired.
+    if (logInputs) {
+      runLog.silly('inputs', { html, visuals });
+    }
+
     // Pass HTML and visuals to Python.
     runLog.debug('inference');
     python.send(JSON.stringify({ url, html, visuals }));
@@ -99,8 +104,9 @@ const logInputs = !!process.env.LOG_INPUTS;
     const response = JSON.parse(responseStr);
     runLog.debug('response', { response });
 
-    // Log full inputs in case there was an error.
-    if (logInputs || 'error' in response) {
+    // Log full inputs if they haven't been logged already and there was an
+    // error during inference.
+    if (!logInputs && 'error' in response) {
       runLog.silly('inputs', { html, visuals });
     }
 
