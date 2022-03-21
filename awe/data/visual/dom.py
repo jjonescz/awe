@@ -61,8 +61,8 @@ class DomData:
                         f'Cannot find {xpath_element!r} in ' +
                         f'{node.get_xpath()!r} ({dom.page.html_path!r}).'
                     )
-
-                queue.append((child, child_data))
+                else:
+                    queue.append((child, child_data))
 
     def fill_tree(self, dom: awe.data.graph.dom.Dom):
         for node in dom.nodes:
