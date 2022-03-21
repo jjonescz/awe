@@ -118,9 +118,9 @@ class DomData:
                 try:
                     result = parser(val, node_data)
                 except ValueError as e:
-                    warnings.warn(f'Cannot parse {snake_case}={val!r} ' + \
-                        f'using default={val!r} in {self.path!r}: {str(e)}')
                     result = default(node)
+                    warnings.warn(f'Cannot parse {snake_case}={val!r} ' + \
+                        f'using default={result!r} in {self.path!r}: {str(e)}')
                 return result
             return None
 
