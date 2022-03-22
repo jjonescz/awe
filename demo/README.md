@@ -36,6 +36,7 @@ Alternatively, run GitHub Action `fly-deploy`.
 heroku container:login
 git clean -fXd # optional, removes all Git-ignored files
 (cd demo && heroku container:push web --context-path .. --app awe-demo --arg GITHUB_API_TOKEN=<token>)
+heroku container:release web --app awe-demo
 ```
 
 Alternatively, run GitHub Action `heroku-deploy`.
