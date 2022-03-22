@@ -17,6 +17,10 @@ assert gensim.downloader.base_dir == GLOVE_DIR
 VECTOR_DIMENSION = 100
 MODEL_NAME = f'glove-wiki-gigaword-{VECTOR_DIMENSION}'
 
+def disable_progress():
+    # pylint: disable-next=protected-access
+    gensim.downloader._progress = lambda *_, **__: None
+
 def download_embeddings():
     gensim.downloader.load(MODEL_NAME, return_path=True)
 
