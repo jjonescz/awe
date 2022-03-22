@@ -295,6 +295,18 @@ function form(model: ModelInfo, { url = '' } = {}) {
         </datalist>
       </label>
     </p>
+    $${
+      model.examples === undefined
+        ? ''
+        : h`
+    <p>
+      Examples<br />
+      $${model.examples
+        .map((e) => h`<a href="/?url=${e}">${e}</a>`)
+        .join('<br />')}
+    </p>
+    `
+    }
     <button type="submit">Submit</button>
   </form>
   `;
