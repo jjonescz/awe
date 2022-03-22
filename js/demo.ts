@@ -59,20 +59,21 @@ interface NodePrediction {
     // Wait for Python inference to start.
     log.verbose('waiting for Python');
     await new Promise<void>((resolve, reject) => {
-      let status = { loaded: false };
+      const stderrListener = (data: string) => {
+        console.error(`PYTERR: ${data}`);
+      };
       const messageListener = (data: string) => {
         console.log(`PYTHON: ${data}`);
         log.silly('python stdout', { data });
         if (data === 'Inference started.') {
-          status.loaded = true;
           python.off('message', messageListener);
+          if (!log.isDebugEnabled()) python.off('stderr', stderrListener);
           resolve();
         }
       };
       python.on('message', messageListener);
+      python.on('stderr', stderrListener);
       python.on('stderr', (data) => {
-        if (!status.loaded || log.isLevelEnabled('debug'))
-          console.error(`PYTERR: ${data}`);
         log.silly('python stderr', { data });
       });
       python.on('close', () => {
