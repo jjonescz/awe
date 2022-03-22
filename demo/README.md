@@ -27,3 +27,5 @@ docker run --rm -it -p 3000:3000 awe-demo
    git clean -fXd # optional, removes all Git-ignored files
    flyctl deploy --build-arg GITHUB_API_TOKEN=<token>
    ```
+
+Alternatively, run GitHub Action `fly-deploy`.

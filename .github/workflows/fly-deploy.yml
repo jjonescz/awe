@@ -1,0 +1,21 @@
+# See https://fly.io/docs/app-guides/continuous-deployment-with-github-actions/.
+
+name: Fly.io app
+
+on:
+  # Enable manual trigger.
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy app
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+      - name: Build and deploy Fly.io app
+        uses: superfly/flyctl-actions@1.3
+        with:
+          args: deploy --build-arg GITHUB_API_TOKEN=${{ secrets.GITHUB_TOKEN }}
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
