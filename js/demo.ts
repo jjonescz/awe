@@ -232,11 +232,13 @@ interface NodePrediction {
     res.write(logEnd());
     res.write(
       h`
-      <h2>Results</h2>
-      <h3>Labels</h3>
+      <details open>
+      <summary>Results</summary>
+      <h2>Labels</h2>
       $${table}
-      <h3>Screenshot</h3>
-      <img src="data:image/png;base64,${screenshot}" />`
+      <h2>Screenshot</h2>
+      <img src="data:image/png;base64,${screenshot}" />
+      </details>`
     );
     res.end();
   });
@@ -266,7 +268,8 @@ interface NodePrediction {
 function info(model: ModelInfo) {
   return h`
   <h1><a href="/">AWE</a></h1>
-  <h2>Model</h2>
+  <details>
+  <summary>Model</summary>
   $${model.description !== undefined ? h`<p>${model.description}</p>` : ''}
   <dl>
     <dt>Vertical</dt>
@@ -277,12 +280,14 @@ function info(model: ModelInfo) {
     <dd>$${model.websites
       .map((w) => h`<a rel="external" href="${w}">${w}</a>`)
       .join('<br />')}</dd>
-  </dl>`;
+  </dl>
+  </details>`;
 }
 
 function form(model: ModelInfo, { url = '' } = {}) {
   return h`
-  <h2>Inputs</h2>
+  <details $${url === '' ? 'open' : ''}>
+  <summary>Inputs</summary>
   <form method="get">
     <p>
       <label>
@@ -307,14 +312,16 @@ function form(model: ModelInfo, { url = '' } = {}) {
     </p>
     `
     }
-    <button type="submit">Submit</button>
+    <p><button type="submit">Submit</button></p>
   </form>
+  </details>
   `;
 }
 
 function logStart() {
   return h`
-  <h2>Log</h2>
+  <details open>
+  <summary>Log</summary>
   <table>
     <tr>
       <th>Time</th>
@@ -331,7 +338,7 @@ function logEntry(message: string) {
 }
 
 function logEnd() {
-  return h`</table>`;
+  return h`</table></details>`;
 }
 
 function layoutStart() {
@@ -346,7 +353,7 @@ function layoutStart() {
       <link
         rel="stylesheet"
         type="text/css"
-        href="https://cdn.jsdelivr.net/gh/alvaromontoro/almond.css@v1.0.0/dist/almond.min.css"
+        href="https://cdn.jsdelivr.net/gh/alvaromontoro/almond.css@8698060/dist/almond.min.css"
       />
     </head>
     <body>`;
