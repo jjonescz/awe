@@ -29,3 +29,13 @@ docker run --rm -it -p 3000:3000 awe-demo
    ```
 
 Alternatively, run GitHub Action `fly-deploy`.
+
+## Deploying to Heroku
+
+```bash
+heroku container:login
+git clean -fXd # optional, removes all Git-ignored files
+(cd demo && heroku container:push web --context-path .. --app awe-demo --arg GITHUB_API_TOKEN=<token>)
+```
+
+Alternatively, run GitHub Action `heroku-deploy`.

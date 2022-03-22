@@ -1,3 +1,5 @@
+# MANUAL: Requires secrets `DOCKER_USERNAME` and `DOCKER_USERNAME`.
+
 name: Gradient Docker Image
 
 on:
