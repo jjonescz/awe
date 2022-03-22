@@ -10,19 +10,16 @@ RUN curl -s -H "Authorization: token $GITHUB_API_TOKEN" -s \
     -H 'Accept: application/octet-stream' \
     | tar xvz
 
+COPY . ./
+
 # Download GloVe embeddings.
-COPY awe/ ./awe/
 RUN python -m awe.prepare
 
-# Install JavaScript packages.
-COPY js/package.json js/pnpm-lock.yaml ./js/
-RUN (cd js && pnpm install --frozen-lockfile)
-
-# Run type checking.
-COPY js/ ./js/
-RUN (cd js && pnpm test)
-
 WORKDIR /storage/awe/src/js
+
+# Install JavaScript packages and run type checking.
+RUN pnpm install --frozen-lockfile && pnpm test
+
 ENV PORT=3000
 EXPOSE $PORT
 CMD pnpm run server
