@@ -8,5 +8,5 @@ indent_style = space
 end_of_line = lf
 charset = utf-8
 
-[*.yml]
+[*.{yml,yaml,toml}]
 indent_size = 2

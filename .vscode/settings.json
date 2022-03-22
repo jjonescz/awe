@@ -10,8 +10,8 @@
         "editor.defaultFormatter": null
     },
     "cSpell.words": [
-        "asdict",
         "apify",
+        "asdict",
         "bokeh",
         "ckpt",
         "conv",
@@ -19,6 +19,7 @@
         "curr",
         "dataloaders",
         "dtype",
+        "flyctl",
         "gdata",
         "gelu",
         "gigaword",
