@@ -1,12 +1,13 @@
 import express from 'express';
+import h from 'html-template-tag';
 import puppeteer from 'puppeteer-core';
 import { PythonShell } from 'python-shell';
+import { loadModel, ModelInfo } from './lib/demo/model-info';
 import { Extractor } from './lib/extractor';
 import { logFile, logger } from './lib/logging';
 import { PageInfo } from './lib/page-info';
 import { PageRecipe } from './lib/page-recipe';
 import { ScrapeVersion } from './lib/scrape-version';
-import h from 'html-template-tag';
 
 logger.level = process.env.DEBUG ? 'debug' : 'verbose';
 
@@ -27,6 +28,10 @@ interface NodePrediction {
   const port = process.env.PORT || 3000;
   const log = logger.child({ server: port });
   log.info('start', { logLevel: logger.level, logFile });
+
+  // Load model info.
+  const model = await loadModel();
+  log.verbose('loaded model info', { model });
 
   // Create server.
   const app = express();
@@ -93,7 +98,8 @@ interface NodePrediction {
 
     // Start writing response so it's asynchronous.
     res.write(layoutStart());
-    res.write(form({ url }));
+    res.write(info(model));
+    res.write(form(model, { url }));
     if (url === '') {
       // Return empty form if no URL was provided.
       res.write(layoutEnd());
@@ -257,15 +263,36 @@ interface NodePrediction {
   }
 })();
 
-function form({ url = '' } = {}) {
+function info(model: ModelInfo) {
   return h`
   <h1><a href="/">AWE</a></h1>
+  <h2>Model</h2>
+  $${model.description !== undefined ? h`<p>${model.description}</p>` : ''}
+  <dl>
+    <dt>Vertical</dt>
+    <dd>${model.vertical}</dd>
+    <dt>Label keys</dt>
+    <dd>$${model.labels.map((l) => h`<code>${l}</code>`).join(', ')}</dd>
+    <dt>Trained on</dt>
+    <dd>$${model.websites
+      .map((w) => h`<a rel="external" href="${w}">${w}</a>`)
+      .join('<br />')}</dd>
+  </dl>`;
+}
+
+function form(model: ModelInfo, { url = '' } = {}) {
+  return h`
   <h2>Inputs</h2>
   <form method="get">
     <p>
       <label>
         URL<br />
-        <input type="url" name="url" value="${url}" />
+        <input type="url" name="url" value="${url}" list="examples" />
+        <datalist id="examples">
+          $${(model.examples ?? [])
+            .map((e) => h`<option value="${e}" />`)
+            .join('')}
+        </datalist>
       </label>
     </p>
     <button type="submit">Submit</button>

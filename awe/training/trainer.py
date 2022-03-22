@@ -398,7 +398,7 @@ class Trainer:
             )
         ]
         return {
-            'label_keys': list(self.label_map.label_to_id.keys()),
+            'labels': list(self.label_map.label_to_id.keys()),
             'vertical': self.vertical.name,
             'websites': website_url_domains
         }
