@@ -1,8 +1,8 @@
 FROM janjones/awe-gradient
 
 # Download latest release asset (pre-trained model).
-ARG AWE_VERSION=latest \
-    GITHUB_API_TOKEN
+ARG AWE_VERSION=latest
+ARG GITHUB_API_TOKEN
 RUN curl -s -H "Authorization: token $GITHUB_API_TOKEN" -s \
     https://api.github.com/repos/jjonescz/awe/releases/$AWE_VERSION \
     | jq -r '.assets[0].url' \
