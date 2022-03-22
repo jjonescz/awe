@@ -18,7 +18,8 @@ IGNORED_TAG_NAMES = [
     'style',
     'head',
     'noscript',
-    'iframe'
+    'iframe',
+    'svg'
 ]
 
 # pylint: disable=c-extension-no-member
