@@ -5,7 +5,7 @@
   "author": "Jan Joneš",
   "scripts": {
     "start": "ts-node -T index.ts",
-    "test": "ts-node index.ts --help",
+    "test": "ts-node index.ts --version",
     "server": "ts-node -T demo.ts"
   },
   "files": [
