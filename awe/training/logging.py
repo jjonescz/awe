@@ -125,6 +125,10 @@ class Version:
     def params_path(self):
         return f'{self.version_dir_path}/params.json'
 
+    @property
+    def info_path(self):
+        return f'{self.version_dir_path}/info.json'
+
     def exists(self):
         return os.path.exists(self.version_dir_path)
 

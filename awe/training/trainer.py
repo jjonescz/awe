@@ -1,4 +1,7 @@
 import dataclasses
+import itertools
+import json
+import os
 import random
 import sys
 import warnings
@@ -50,6 +53,7 @@ class Trainer:
     label_map: awe.training.context.LabelMap
     extractor: awe.features.extraction.Extractor
     sampler: awe.data.sampling.Sampler
+    vertical: awe.data.set.pages.Vertical
     train_websites: list[awe.data.set.pages.Website]
     val_websites: list[awe.data.set.pages.Website]
     train_pages: list[awe.data.set.pages.Page]
@@ -122,7 +126,8 @@ class Trainer:
         set_seed(42)
 
         # Load websites from one vertical.
-        websites = self.ds.verticals[0].websites
+        self.vertical = self.ds.verticals[0]
+        websites = self.vertical.websites
 
         # Split websites.
         train_website_indices = self.params.train_website_indices
@@ -379,6 +384,24 @@ class Trainer:
             'features': self.extractor.features,
         }
         torch.save(state, ckpt.file_path)
+
+        # Also save JSON for inference UI.
+        with open(self.version.info_path, 'w', encoding='utf-8') as f:
+            json.dump(self.get_info(), f, indent=2, sort_keys=True)
+
+    def get_info(self):
+        website_url_domains = [
+            os.path.commonprefix([p.url for p in g])
+            for _, g in itertools.groupby(
+                self.train_pages,
+                key=lambda p: p.website.name
+            )
+        ]
+        return {
+            'label_keys': list(self.label_map.label_to_id.keys()),
+            'vertical': self.vertical.name,
+            'websites': website_url_domains
+        }
 
     def _train_epoch(self, run: RunInput, val_run: RunInput):
         self.model.train()
