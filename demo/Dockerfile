@@ -23,4 +23,6 @@ COPY js/ ./js/
 RUN (cd js && pnpm test)
 
 WORKDIR /storage/awe/src/js
+ENV PORT=3000
+EXPOSE $PORT
 CMD pnpm run server
