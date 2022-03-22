@@ -21,7 +21,11 @@ export class PageRecipe {
     return replaceExtension(this.jsonPath, '.htm');
   }
 
-  public get screenshotPath() {
-    return replaceExtension(this.jsonPath, '.png');
+  public get screenshotFullPath() {
+    return replaceExtension(this.jsonPath, '-full.png');
+  }
+
+  public get screenshotPreviewPath() {
+    return replaceExtension(this.jsonPath, '-preview.png');
   }
 }

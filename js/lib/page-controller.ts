@@ -34,14 +34,21 @@ export class PageController {
     // Check if not already scraped.
     if (this.controller.skipExisting) {
       const jsonExists = existsSync(recipe.jsonPath);
+      const jsonNeeded = !this.controller.skipExtraction && !jsonExists;
       const htmlExists = existsSync(recipe.htmlPath);
+      const htmlNeeded = !this.controller.skipSave && !htmlExists;
+      const screenshotExists = existsSync(recipe.screenshotFullPath);
+      const screenshotNeeded =
+        this.controller.takeScreenshot && !screenshotExists;
       const metadata = {
-        jsonExists,
+        jsonNeeded,
         jsonPath: recipe.jsonPath,
-        htmlExists,
+        htmlNeeded,
         htmlPath: recipe.htmlPath,
+        screenshotNeeded,
+        screenshotPath: recipe.screenshotFullPath,
       };
-      if (jsonExists && htmlExists) {
+      if (!jsonNeeded && !htmlNeeded && !screenshotNeeded) {
         this.pageScraper.logger.verbose('skipping', metadata);
         return;
       } else {
@@ -93,19 +100,17 @@ export class PageController {
 
     // Take screenshot.
     if (this.controller.takeScreenshot) {
-      await this.screenshot(recipe.screenshotPath, { fullPage: false });
-      await this.screenshot(recipe.screenshotPath, { fullPage: true });
+      await this.screenshot(recipe.screenshotPreviewPath, { fullPage: false });
+      await this.screenshot(recipe.screenshotFullPath, { fullPage: true });
     }
 
     return true;
   }
 
   private async screenshot(fullPath: string, { fullPage = true } = {}) {
-    const suffix = fullPage ? '-full' : '-preview';
-    const screenshotPath = addSuffix(fullPath, suffix);
-    this.pageScraper.logger.verbose('screenshot', { screenshotPath });
+    this.pageScraper.logger.verbose('screenshot', { fullPath });
     await this.pageScraper.page.screenshot({
-      path: screenshotPath,
+      path: fullPath,
       fullPage: fullPage,
     });
   }
