@@ -54,7 +54,7 @@ To stop the deployment, number of replicas can be set to 0 from the UI.
 
    ```bash
    git clean -fXd # optional, removes all Git-ignored files
-   flyctl deploy --build-arg GITHUB_API_TOKEN=<token>
+   flyctl deploy --remote-only --build-arg GITHUB_API_TOKEN=<token>
    ```
 
 Alternatively, run GitHub Action `fly-deploy`.
