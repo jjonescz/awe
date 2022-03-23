@@ -15,6 +15,30 @@ docker run --rm -it -p 3000:3000 awe-demo
 Alternatively, run GitHub Action `demo-docker-image` and use image
 `janjones/awe-demo` from [Docker Hub](https://hub.docker.com/).
 
+## Deploying to Gradient.run
+
+1. Install [Gradient CLI](https://docs.paperspace.com/gradient/cli/).
+
+   ```bash
+   pip install -U gradient
+   ```
+
+2. Login:
+
+   ```bash
+   gradient apiKey <key>
+   ```
+
+3. Run GitHub Action `demo-docker-image` (see above).
+
+4. Deploy:
+
+   ```bash
+   gradient deployments create --name awe-demo --spec demo/deployment.yaml
+   ```
+
+To stop the deployment, number of replicas can be set to 0 from the UI.
+
 ## Deploying to Fly.io
 
 1. Download and install [`flyctl`

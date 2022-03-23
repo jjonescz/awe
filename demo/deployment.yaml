@@ -1,0 +1,7 @@
+# See https://docs.paperspace.com/gradient/deployments/deployment-spec.
+image: janjones/awe-demo
+port: 3000
+resources:
+  replicas: 1
+  # See https://docs.paperspace.com/gradient/machines/.
+  instanceType: C4
