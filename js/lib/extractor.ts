@@ -35,7 +35,7 @@ type ElementInfo = ElementData & {
  * Structure in which extracted visual attributes are stored for an element and
  * its descendants.
  */
-type DomData = TreeData & {
+export type DomData = TreeData & {
   /** From {@link SwdePage.timestamp}. */
   timestamp: string;
 };
