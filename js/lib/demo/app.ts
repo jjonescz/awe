@@ -43,12 +43,18 @@ export class DemoApp {
     });
 
     // Create Puppeteer.
-    this.browser = puppeteer.launch({
-      args: [
-        // Allow running as root.
-        '--no-sandbox',
-      ],
-      executablePath: 'google-chrome-stable',
+    this.browser = new Promise<puppeteer.Browser>(async (resolve) => {
+      log.verbose('opening Puppeteer');
+      const browser = await puppeteer.launch({
+        args: [
+          // Allow running as root.
+          '--no-sandbox',
+        ],
+        executablePath: 'google-chrome-stable',
+      });
+      log.verbose('opened Puppeteer');
+      resolve(browser);
+      this.browser = browser;
     });
 
     if (!options.mockInference) {
