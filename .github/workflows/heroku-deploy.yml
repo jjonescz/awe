@@ -15,9 +15,9 @@ jobs:
         uses: actions/checkout@v2
       - name: Build and deploy Heroku app
         run: >
-          heroku container:login &&
-          (cd demo && heroku container:push web --context-path ..
+          heroku container:login
+          && (cd demo && heroku container:push web --context-path ..
           --app awe-demo --arg GITHUB_API_TOKEN=${{ secrets.GITHUB_TOKEN }})
-          heroku container:release web --app awe-demo
+          && heroku container:release web --app awe-demo
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
