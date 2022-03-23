@@ -1,5 +1,7 @@
 FROM janjones/awe-gradient
 
+COPY . ./
+
 # Download latest release asset (pre-trained model).
 ARG AWE_VERSION=latest
 ARG GITHUB_API_TOKEN
@@ -9,8 +11,6 @@ RUN curl -s -H "Authorization: token $GITHUB_API_TOKEN" -s \
     | xargs -n 1 curl -sL -H "Authorization: token $GITHUB_API_TOKEN" \
     -H 'Accept: application/octet-stream' \
     | tar xvz
-
-COPY . ./
 
 # Download GloVe embeddings.
 RUN python -m awe.prepare
