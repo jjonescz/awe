@@ -6,7 +6,7 @@ This folder contains sources for deploying demo.
 
 ```bash
 git clean -fXd # optional, removes all Git-ignored files
-docker build -t awe-demo --build-arg GITHUB_API_TOKEN=<token> -f demo/Dockerfile .
+docker build -t awe-demo -f demo/Dockerfile --build-arg GITHUB_API_TOKEN=<token> .
 docker run --rm -it -p 3000:3000 awe-demo
 ```
 
