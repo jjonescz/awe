@@ -1,6 +1,8 @@
 # AWE demo
 
 This folder contains sources for deploying demo.
+The demo is completely self-contained as both build and runtime happens in a Docker container.
+Note that currently it needs between 1 and 2 GiB of RAM at runtime.
 
 ## Running locally
 
