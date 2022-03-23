@@ -1,0 +1,57 @@
+# MANUAL: Requires secrets `DOCKER_USERNAME` and `DOCKER_USERNAME`.
+
+name: Demo Docker Image
+
+on:
+  # Enable manual trigger.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Docker image tag (leave empty to use timestamp)"
+        required: false
+      tag2:
+        description: "Another Docker image tag"
+        required: false
+        default: "latest"
+      cache_from:
+        description: "Docker image tag to use for build cache"
+        required: false
+        default: "latest"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      DOCKER_BUILDKIT: 1
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Compute Docker image tag
+        id: compute_tag
+        if: ${{ github.event.inputs.tag == null }}
+        run: echo "::set-output name=tag::$(date +%s)"
+      - name: Set Docker image tag
+        id: set_tag
+        run: echo "::set-output name=tag::${{ github.event.inputs.tag || steps.compute_tag.outputs.tag }}"
+      - name: Login to Docker
+        run: docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build Docker image
+        run: |
+          docker build \
+            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            --build-arg GITHUB_API_TOKEN=${{ secrets.GITHUB_TOKEN }} \
+            ${{ github.event.inputs.cache_from && format('--cache-from janjones/awe-demo:{0}', github.event.inputs.cache_from) }} \
+            -t janjones/awe-demo:${{ steps.set_tag.outputs.tag }} \
+            -f demo/Dockerfile .
+      - name: Push Docker image
+        run: docker push janjones/awe-demo:${{ steps.set_tag.outputs.tag }}
+      - name: Push Docker image as another tag
+        if: ${{ github.event.inputs.tag2 != null }}
+        run: |
+          docker tag janjones/awe-demo:${{ steps.set_tag.outputs.tag }} \
+              janjones/awe-demo:${{ github.event.inputs.tag2 }}
+          docker push janjones/awe-demo:${{ github.event.inputs.tag2 }}

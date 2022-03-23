@@ -12,6 +12,9 @@ docker build -t awe-demo -f demo/Dockerfile --build-arg GITHUB_API_TOKEN=<token>
 docker run --rm -it -p 3000:3000 awe-demo
 ```
 
+Alternatively, run GitHub Action `demo-docker-image` and use image
+`janjones/awe-demo` from [Docker Hub](https://hub.docker.com/).
+
 ## Deploying to Fly.io
 
 1. Download and install [`flyctl`
