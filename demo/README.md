@@ -32,11 +32,22 @@ Alternatively, run GitHub Action `fly-deploy`.
 
 ## Deploying to Heroku
 
-```bash
-heroku container:login
-git clean -fXd # optional, removes all Git-ignored files
-(cd demo && heroku container:push web --context-path .. --app awe-demo --arg GITHUB_API_TOKEN=<token>)
-heroku container:release web --app awe-demo
-```
+1. Install [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli) and
+   [Docker](https://www.docker.com/products/docker-desktop/).
+
+2. Login:
+
+   ```bash
+   heroku login
+   ```
+
+3. Build and deploy the app:
+
+   ```bash
+   heroku container:login
+   git clean -fXd # optional, removes all Git-ignored files
+   (cd demo && heroku container:push web --context-path .. --app awe-demo --arg GITHUB_API_TOKEN=<token>)
+   heroku container:release web --app awe-demo
+   ```
 
 Alternatively, run GitHub Action `heroku-deploy`.
