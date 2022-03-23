@@ -109,7 +109,7 @@ export class DemoApp {
     // Wait for Puppeteer.
     if (this.browser instanceof Promise) {
       log.debug('wait for Puppeteer');
-      res.write(views.logEntry('Waiting for Puppeteer to fully load...'));
+      res.write(views.logEntry('Waiting for Puppeteer one-time init...'));
       this.browser = await this.browser;
     }
 
@@ -154,7 +154,7 @@ export class DemoApp {
       const pythonLoading = this.python.loading;
       if (pythonLoading !== null) {
         log.debug('wait for Python');
-        res.write(views.logEntry('Waiting for inference to fully load...'));
+        res.write(views.logEntry('Waiting for inference one-time init...'));
         await pythonLoading;
       }
 

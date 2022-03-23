@@ -31,6 +31,7 @@ export class Inference {
     });
 
     // Start Python inference in a background shell.
+    log.verbose('opening Python');
     this.shell = new PythonShell('awe.inference', {
       pythonOptions: ['-u', '-m'],
       cwd: '..',
@@ -56,17 +57,22 @@ export class Inference {
     );
   }
 
+  private shouldForward() {
+    return this.loading !== null;
+  }
+
   private onMessage = (data: string) => {
-    console.log(`PYTHON: ${data}`);
+    if (this.shouldForward()) console.log(`PYTHON: ${data}`);
     this.log.silly('python stdout', { data });
     if (data === 'Inference started.') {
+      this.log.verbose('opened Python');
       this.resolve();
       this.loading = null;
     }
   };
 
   private onStderr = (data: string) => {
-    console.error(`PYTERR: ${data}`);
+    if (this.shouldForward()) console.error(`PYTERR: ${data}`);
     this.log.silly('python stderr', { data });
   };
 
