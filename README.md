@@ -14,10 +14,13 @@ This repository contains source code for AI-based structured web data extractor.
 ## Usage
 
 We use [VS Code IDE](https://code.visualstudio.com/).
+
 - For training on GPU in cloud, we have [instructions](gradient/README.md) to
 run on [Gradient](https://gradient.run) via [Remote
 SSH](https://code.visualstudio.com/docs/remote/ssh) (the same container can be
 also setup locally for testing).
+
+- For data manipulations, [Gitpod](https://www.gitpod.io/) can be used.
 
 ### Running
 
