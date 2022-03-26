@@ -58,17 +58,19 @@ ENV PATH=/opt/conda/bin:$PATH
 
 # Install Python.
 ENV PYTHON_VERSION=3.9.7
-RUN conda install python==${PYTHON_VERSION}
+RUN conda install -y --freeze-installed python==${PYTHON_VERSION} \
+    && conda clean -afy
 
 # Install Node.js and GitHub CLI.
 ENV NODE_VERSION=17.1.0
-RUN conda install -c conda-forge nodejs==${NODE_VERSION} gh==2.6.0 && \
-    corepack enable
+RUN conda install -y --freeze-installed -c conda-forge nodejs==${NODE_VERSION} gh==2.6.0 \
+    && corepack enable \
+    && conda clean -afy
 
 # Install PyTorch Geometric.
 COPY requirements-*.txt /
-RUN pip install -r requirements-torch.txt && \
-    pip install -r requirements-pyg.txt
+RUN pip install --no-cache-dir -r requirements-torch.txt && \
+    pip install --no-cache-dir -r requirements-pyg.txt
 
 # Configure SSH. Inspired by https://github.com/Paperspace/gradient-ssh-test.
 RUN mkdir /var/run/sshd && \
@@ -105,7 +107,7 @@ RUN curl -fsSL https://github.com/PaulJuliusMartinez/jless/releases/download/v0.
 
 # Install Python packages.
 COPY requirements.txt /requirements.txt
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Persist HuggingFace cache.
 ENV HF_HOME=/storage/.cache/huggingface
