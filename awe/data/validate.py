@@ -70,6 +70,12 @@ parser.add_argument('--no-labels',
     help='do not validate labels',
     default=False
 )
+parser.add_argument('--convert',
+    dest='convert',
+    action='store_true',
+    help='work with SQLite database rather than JSON',
+    default=False
+)
 args = parser.parse_args()
 
 # Validate arguments.
@@ -81,12 +87,15 @@ if args.save_back and args.read_list is None:
 if len(args.target) == 0:
     args.target = None
 if args.dataset == 'apify':
-    ds = awe.data.set.apify.Dataset(only_websites=args.target, convert=False)
+    ds = awe.data.set.apify.Dataset(
+        only_websites=args.target,
+        convert=args.convert
+    )
 elif args.dataset == 'swde':
     ds = awe.data.set.swde.Dataset(
         suffix='-exact',
         only_verticals=args.target,
-        convert=False
+        convert=args.convert
     )
 
 # Get its pages.
