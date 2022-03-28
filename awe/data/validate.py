@@ -124,6 +124,7 @@ def validate():
 if args.quiet:
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore', module=r'awe\.data\.validation')
+        warnings.filterwarnings('ignore', module=r'awe\.data\.visual\.dom')
         validate()
 else:
     validate()
