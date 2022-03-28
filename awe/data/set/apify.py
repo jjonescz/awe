@@ -167,6 +167,9 @@ class Website(awe.data.set.pages.Website):
                 f'JSON not found ({self.dataset_json_path!r}).')
         return pd.read_json(self.dataset_json_path)
 
+    def save_json_df(self):
+        self.df.to_json(self.dataset_json_path)
+
 @dataclasses.dataclass(eq=False)
 class Page(awe.data.set.pages.Page):
     website: Website
