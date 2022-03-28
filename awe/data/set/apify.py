@@ -137,7 +137,7 @@ class Website(awe.data.set.pages.Website):
                     metadata_json = json5.dumps(metadata_dict)
                     self.db.add(idx,
                         url=row.url,
-                        html_text=row.html,
+                        html_text=row.localizedHtml,
                         metadata=metadata_json
                     )
                     if idx % 100 == 1:
@@ -212,7 +212,7 @@ class Page(awe.data.set.pages.Page):
     def get_html_text(self):
         if self.db is not None:
             return self.db.get_html_text(self.index)
-        return self.row.html
+        return self.row.localizedHtml
 
     def get_labels(self):
         return PageLabels(self)
