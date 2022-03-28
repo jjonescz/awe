@@ -12,6 +12,7 @@ export interface NodePrediction {
   text: string;
   xpath: string;
   confidence: number;
+  probability: number;
 }
 
 export class Inference {

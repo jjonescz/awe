@@ -50,7 +50,8 @@ def main():
                                 if p.node.is_text else None
                             ),
                             'xpath': p.node.get_xpath(),
-                            'confidence': p.confidence
+                            'confidence': p.confidence,
+                            'probability': p.probability
                         }
                         for p in v
                     ]

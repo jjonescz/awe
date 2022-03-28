@@ -170,12 +170,14 @@ export class DemoApp {
           fuel_economy: [
             {
               confidence: 4.112531661987305,
+              probability: 0.9950769543647766,
               text: '22 / 29 mpg',
               xpath:
                 '/html/body/div[1]/main/div[1]/section[2]/div[1]/div/div[5]/div/div[1]/div[1]/div[2]/div[2]/text()',
             },
             {
               confidence: 1.1698349714279175,
+              probability: 0.6030704975128174,
               text: '5/5',
               xpath:
                 '/html/body/div[1]/main/div[1]/section[2]/div[1]/div/div[5]/div/div[1]/div[3]/div[2]/div[2]/text()',
@@ -185,6 +187,7 @@ export class DemoApp {
           price: [
             {
               confidence: 1.6609370708465576,
+              probability: 0.6562321186065674,
               text: '$25,377',
               xpath:
                 '/html/body/div[1]/main/div[1]/section[2]/div[1]/div/div[3]/div/table/tbody/tr[1]/td[3]/text()',

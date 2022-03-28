@@ -27,6 +27,9 @@ class ModelOutput:
     def get_pred_labels(self):
         return torch.argmax(self.logits, dim=-1)
 
+    def get_probabilities(self):
+        return F.softmax(self.logits, dim=-1)
+
 @dataclasses.dataclass
 class Prediction:
     batch: ModelInput

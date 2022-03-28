@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 class NodePrediction:
     node: 'awe.data.graph.dom.Node'
     confidence: float
+    probability: float
 
 class PredictedPage:
     """Stores predicted nodes for each label in a page."""
@@ -65,12 +66,14 @@ class PredictionSet:
 
     def add_batch(self, pred: awe.model.classifier.Prediction):
         pred_labels = pred.outputs.get_pred_labels()
+        probabilities = pred.outputs.get_probabilities()
         for idx in torch.nonzero(pred_labels):
             label_id = pred_labels[idx]
             label_key = self.trainer.label_map.id_to_label[label_id.item()]
             node_pred = NodePrediction(
                 node=pred.batch[idx.item()],
-                confidence=pred.outputs.logits[idx, label_id].item()
+                confidence=pred.outputs.logits[idx, label_id].item(),
+                probability=probabilities[idx, label_id].item()
             )
             self.add(label_key=label_key, pred=node_pred)
         for node in pred.batch:

@@ -1,5 +1,6 @@
 import h from 'html-template-tag';
 import { ModelInfo } from './model-info';
+import { NodePrediction } from './python';
 
 export function info(model: ModelInfo) {
   return h`
@@ -78,7 +79,9 @@ export function logEnd() {
 }
 
 export function results(
-  rows: { labelKey: string; text: string; confidence: number }[],
+  rows: ({
+    labelKey: string;
+  } & NodePrediction)[],
   screenshot: string
 ) {
   return h`
@@ -92,14 +95,16 @@ export function results(
       <th>Confidence</th>
     </tr>
     $${rows
-      .map(
-        (r) => h`
+      .map((r) => {
+        const prob = (r.probability * 100).toFixed(2);
+        const conf = r.confidence.toFixed(2);
+        return h`
         <tr>
           <th>${r.labelKey}</th>
           <td>${r.text}</td>
-          <td>${r.confidence.toFixed(2)}</td>
-        </tr>`
-      )
+          <td>${prob} % (${conf})</td>
+        </tr>`;
+      })
       .join('')}
   </table>
   <h2>Screenshot</h2>
