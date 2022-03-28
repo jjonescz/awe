@@ -42,10 +42,12 @@ export function form(model: ModelInfo, { url = '' } = {}) {
         ? ''
         : h`
     <p>
-      Examples<br />
+      Examples
+      <ul>
       $${model.examples
-        .map((e) => h`<a href="/?url=${e}">${e}</a>`)
-        .join('<br />')}
+        .map((e) => h`<li><a href="/?url=${e}">${e}</a></li>`)
+        .join('')}
+      </ul>
     </p>
     `
     }
@@ -126,6 +128,17 @@ export function layoutStart() {
         type="text/css"
         href="https://cdn.jsdelivr.net/gh/alvaromontoro/almond.css@8698060/dist/almond.min.css"
       />
+      <style>
+        ul {
+          padding-left: 1rem;
+        }
+        ul > li {
+          overflow-x: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          list-style-position: inside;
+        }
+      </style>
     </head>
     <body>`;
 }
