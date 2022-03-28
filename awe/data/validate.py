@@ -151,7 +151,7 @@ if args.save_back:
 
 # Save new list of invalid pages.
 if args.save_list is not None:
-    save_paths = sorted(p for p in pages if p.valid is False)
+    save_paths = sorted(p.original_html_path for p in pages if p.valid is False)
     with open(args.save_list, mode='w', encoding='utf-8', newline='\n') as f:
         f.writelines(f'{p}\n' for p in save_paths)
     print(f'Saved {len(save_paths)} to {args.save_list!r}.')
