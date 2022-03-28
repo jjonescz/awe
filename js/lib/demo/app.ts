@@ -227,6 +227,7 @@ export class DemoApp {
     res.write(views.logEntry('Done.'));
     res.write(views.logEnd());
     res.write(views.results(rows, screenshot));
+    res.write(views.layoutEnd());
     res.end();
   };
 }

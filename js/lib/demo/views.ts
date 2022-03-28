@@ -132,6 +132,16 @@ export function layoutStart() {
 
 export function layoutEnd() {
   return h`
+    <details open>
+      <summary>About</summary>
+      <p>
+        Created by <a href="https://github.com/jjonescz" rel="external">Jan Joneš</a>
+        for thesis <a href="https://is.cuni.cz/studium/dipl_st/index.php?id=&tid=&do=main&doo=detail&did=241832" rel="external">AI-based Structured Web Data Extraction</a>.
+      </p>
+      <p>
+        Last updated 2022-03-28.
+      </p>
+    </details>
     </body>
   </html>
   `;
