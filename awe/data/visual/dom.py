@@ -121,6 +121,7 @@ class DomData:
                     d = default(node)
                     warnings.warn(f'Cannot parse {snake_case}={val!r} ' + \
                         f'using default={d!r} in {self.path!r}: {str(e)}')
+                    node.dom.page.valid = False
                     result = parser(d, node_data)
                 return result
             return None
