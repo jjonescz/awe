@@ -69,3 +69,10 @@ And validating them:
 ```bash
 (cd .. && python -m awe.data.validate --no-labels --visuals --max-errors=1 [<website_name>])
 ```
+
+To save a list of invalid, add argument `--save-list=data/invalid_pages.txt -q`
+and re-scrape using:
+
+```bash
+pnpm start -- -d ../ --files=../data/invalid_pages.txt -oH -T=1000 -j=8 -S
+```
