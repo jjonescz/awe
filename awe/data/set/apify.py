@@ -135,9 +135,13 @@ class Website(awe.data.set.pages.Website):
                         if k in metadata_cols
                     }
                     metadata_json = json5.dumps(metadata_dict)
+                    visuals_path = f'{self.dir_path}/pages/localized_html_{slugify.slugify(row.url)}-exact.json'
+                    with open(visuals_path, mode='r', encoding='utf-8') as file:
+                        visuals = file.read()
                     self.db.add(idx,
                         url=row.url,
                         html_text=row.localizedHtml,
+                        visuals=visuals,
                         metadata=metadata_json
                     )
                     if idx % 100 == 1:
