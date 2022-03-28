@@ -27,11 +27,15 @@ parser.add_argument('--read-list',
     dest='read_list',
     help='file with list of page paths that will be considered'
 )
-parser.add_argument('--save',
-    dest='save',
+parser.add_argument('--save-back',
+    dest='save_back',
     action='store_true',
-    help='saves list of invalid pages back',
+    help='saves list of invalid pages back to `--read-list`',
     default=False
+)
+parser.add_argument('--save-list',
+    dest='save_list',
+    help='saves list of invalid pages to this text file'
 )
 parser.add_argument('-q',
     dest='quiet',
@@ -69,8 +73,9 @@ parser.add_argument('--no-labels',
 args = parser.parse_args()
 
 # Validate arguments.
-if args.save and args.read_list is None:
-    raise ValueError('Argument `--save` cannot be specified without `--read-list`.')
+if args.save_back and args.read_list is None:
+    raise ValueError(
+        'Argument `--save-back` cannot be specified without `--read-list`.')
 
 # Open dataset.
 if len(args.target) == 0:
@@ -124,7 +129,7 @@ else:
     validate()
 
 # Update list of invalid pages.
-if args.save:
+if args.save_back:
     num_original = len(page_paths)
     num_valid = 0
     num_invalid = 0
@@ -142,3 +147,10 @@ if args.save:
         f'Saved {len(sorted_paths)} to {args.read_list!r} ' +
         f'({num_original=}, {num_valid=}, {num_invalid=}).'
     )
+
+# Save new list of invalid pages.
+if args.save_list is not None:
+    save_paths = sorted(p for p in pages if p.valid is False)
+    with open(args.save_list, mode='w', encoding='utf-8', newline='\n') as f:
+        f.writelines(f'{p}\n' for p in save_paths)
+    print(f'Saved {len(save_paths)} to {args.save_list!r}.')
