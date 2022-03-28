@@ -210,7 +210,7 @@ export class Extractor {
         const rh = toHex(parseInt(r));
         const gh = toHex(parseInt(g));
         const bh = toHex(parseInt(b));
-        const ah = toHex(255 * parseFloat(a ?? '1'));
+        const ah = toHex(Math.floor(255 * parseFloat(a ?? '1')));
         return `#${rh}${gh}${bh}${ah}` as const;
       };
 
