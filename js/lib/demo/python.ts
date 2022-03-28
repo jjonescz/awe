@@ -15,10 +15,13 @@ export interface NodePrediction {
   probability: number;
 }
 
+type PromiseResolve<T> = (value: T | PromiseLike<T>) => void;
+
 export class Inference {
   public readonly shell: PythonShell;
+  private readonly queue: PromiseResolve<string>[] = [];
   public loading: Promise<void> | null;
-  private resolve: (value: void | PromiseLike<void>) => void;
+  private resolve: PromiseResolve<void>;
   private reject: (reason?: any) => void;
 
   public constructor(private readonly log: Logger) {
@@ -53,9 +56,13 @@ export class Inference {
 
   private async sendStr(message: string) {
     this.shell.send(message);
-    return await new Promise<string>((resolve) =>
-      this.shell.once('message', resolve)
-    );
+    // Append new promise to the queue, it is resolved once a response from the
+    // Python interpreter arrives. Thanks to this, correspondence of
+    // request-response pairs is preserved even if requests are made in
+    // parallel.
+    return await new Promise<string>((resolve) => {
+      this.queue.push(resolve);
+    });
   }
 
   private shouldForward() {
@@ -65,7 +72,14 @@ export class Inference {
   private onMessage = (data: string) => {
     if (this.shouldForward()) console.log(`PYTHON: ${data}`);
     this.log.silly('python stdout', { data });
-    if (data === 'Inference started.') {
+    if (this.loading === null) {
+      const resolve = this.queue.shift();
+      if (resolve === undefined) {
+        this.log.error('unmatched Python response', { data });
+      } else {
+        resolve(data);
+      }
+    } else if (data === 'Inference started.') {
       this.log.verbose('opened Python');
       this.resolve();
       this.loading = null;
