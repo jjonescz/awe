@@ -95,6 +95,7 @@ export class DemoApp {
     log.debug('run');
 
     // Start writing response so it's asynchronous.
+    res.setHeader('transfer-encoding', 'chunked');
     res.write(views.layoutStart());
     res.write(views.info(this.model));
     res.write(views.form(this.model, { url }));
