@@ -1,5 +1,12 @@
 import * as cheerio from 'cheerio';
-import { isDocument, isTag, isText, Text } from 'domhandler';
+import {
+  isComment,
+  isDirective,
+  isDocument,
+  isTag,
+  isText,
+  Text,
+} from 'domhandler';
 import { readFile, writeFile } from 'fs/promises';
 import h from 'html-template-tag';
 import { Logger } from 'winston';
@@ -112,7 +119,8 @@ export class Blender {
       if (isText(htmlChild)) htmlTagName = 'text()';
       else if (isTag(htmlChild)) htmlTagName = htmlChild.tagName;
       else {
-        log.warn('unrecognized child', { type: htmlChild.type });
+        if (!isDirective(htmlChild) && !isComment(htmlChild))
+          log.warn('unrecognized child', { type: htmlChild.type });
         continue;
       }
       const htmlTagNum = (htmlCounts.get(htmlTagName) ?? 0) + 1;
