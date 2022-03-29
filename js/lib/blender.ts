@@ -121,7 +121,7 @@ export class Blender {
 
       // Inconsistent tag names.
       if (jsonTagName !== htmlTagName) {
-        log.warn('inconsistent tags', { jsonTagName, htmlTagName });
+        log.warn('inconsistent tags', { jsonKey, htmlTagName });
         htmlChildren.unshift(htmlChild);
         continue;
       }
