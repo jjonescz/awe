@@ -113,7 +113,8 @@ export class Blender {
       else if (isTag(htmlChild)) htmlTagName = htmlChild.tagName;
       else {
         log.warn('unrecognized child', { type: htmlChild.type });
-        break;
+        dataEntries.unshift([jsonKey, jsonValue]);
+        continue;
       }
 
       // Inconsistent tag names.
