@@ -72,7 +72,7 @@ export class Blender {
       const [key, value] = dataEntries.shift()!;
       // Ignore some duplicate ones.
       if (key === 'whiteSpace' || key === 'id') continue;
-      xmlNode.attr(`_${key}`, value);
+      xmlNode.attr(`_${key}`, value?.toString());
     }
 
     // Only children should be on this JSON level now.
