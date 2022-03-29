@@ -137,7 +137,7 @@ export class DemoApp {
     // Extract visuals.
     log.debug('extract visuals');
     res.write(views.logEntry('Extracting visuals...'));
-    const pageInfo = new PageInfo(url, url, html);
+    const pageInfo = new PageInfo(url, url, html, /* isSwde */ false);
     const recipe = new PageRecipe(pageInfo, ScrapeVersion.Exact);
     const extractor = new Extractor(page, recipe, log);
     await extractor.extract();
