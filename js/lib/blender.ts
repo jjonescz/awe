@@ -135,7 +135,7 @@ export class Blender {
         jsonValue as NodeData,
         this.dom(htmlChild),
         xmlChild,
-        xpath + jsonXpathElement
+        xpath === '/' ? jsonKey : xpath + jsonKey
       );
     }
   }
