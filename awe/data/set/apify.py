@@ -98,60 +98,19 @@ class Website(awe.data.set.pages.Website):
             prev_page_count=prev_page_count,
         )
 
-        if not self.vertical.dataset.convert:
-            self.df = self.read_json_df()
-            self.vertical.dataset.filter_label_keys(self.df)
-            self.page_count = len(self.df)
-            print(f'Loaded {self.dataset_json_path!r}.')
-        else:
-            # Convert dataset.
-            self.db = awe.data.set.db.Database(self.dataset_db_path)
-            if not self.db.fresh:
-                self.page_count = len(self.db)
+        if self.vertical.dataset.convert:
+            db = awe.data.set.db.Database(self.dataset_db_path)
+            if not db.fresh:
+                self.page_count = len(db)
+                self.db = db
+                self.init_pages()
             else:
-                df = self.read_json_df()
-                self.vertical.dataset.filter_label_keys(df)
-                self.page_count = len(df)
-
-                # Gather DataFrame columns to convert into metadata.
-                selector_cols = {
-                    col for col in df.columns
-                    if col.startswith(SELECTOR_PREFIX)
-                }
-                metadata_cols = selector_cols | {
-                    col[len(SELECTOR_PREFIX):]
-                    for col in selector_cols
-                }
-
-                # Add rows to database.
-                progress = tqdm(enumerate(df.iloc),
-                    desc=self.dataset_db_path,
-                    total=self.page_count
-                )
-                for idx, row in progress:
-                    metadata_dict = {
-                        k: v
-                        for k, v in row.items()
-                        if k in metadata_cols
-                    }
-                    metadata_json = json5.dumps(metadata_dict)
-                    visuals_path = f'{self.dir_path}/pages/localized_html_{slugify.slugify(row.url)}-exact.json'
-                    with open(visuals_path, mode='r', encoding='utf-8') as file:
-                        visuals = file.read()
-                    self.db.add(idx,
-                        url=row.url,
-                        html_text=row.localizedHtml,
-                        visuals=visuals,
-                        metadata=metadata_json
-                    )
-                    if idx % 100 == 1:
-                        self.db.save()
-                self.db.save()
-
-        self.pages = [
-            Page(website=self, index=idx)
-            for idx in range(self.page_count)
-        ]
+                self.load_json_df()
+                self.init_pages()
+                self.convert_to_db(db)
+        else:
+            self.load_json_df()
+            self.init_pages()
 
     @property
     def dir_path(self):
@@ -171,8 +130,50 @@ class Website(awe.data.set.pages.Website):
                 f'JSON not found ({self.dataset_json_path!r}).')
         return pd.read_json(self.dataset_json_path)
 
+    def load_json_df(self):
+        self.df = self.read_json_df()
+        self.vertical.dataset.filter_label_keys(self.df)
+        self.page_count = len(self.df)
+        print(f'Loaded {self.dataset_json_path!r}.')
+
+    def init_pages(self):
+        self.pages = [
+            Page(website=self, index=idx)
+            for idx in range(self.page_count)
+        ]
+
     def save_json_df(self):
         self.df.to_json(self.dataset_json_path)
+
+    def convert_to_db(self, db: awe.data.set.db.Database):
+        # Gather DataFrame columns to convert into metadata.
+        selector_cols = {
+            col for col in self.df.columns
+            if col.startswith(SELECTOR_PREFIX)
+        }
+        metadata_cols = selector_cols | {
+            col[len(SELECTOR_PREFIX):]
+            for col in selector_cols
+        }
+
+        # Add rows to database.
+        for page in tqdm(self.pages, desc=self.dataset_db_path):
+            page: Page
+            metadata_dict = {
+                k: v
+                for k, v in page.metadata.items()
+                if k in metadata_cols
+            }
+            metadata_json = json5.dumps(metadata_dict)
+            db.add(page.index,
+                url=page.url,
+                html_text=page.get_html_text(),
+                visuals=page.get_visuals_json_text(),
+                metadata=metadata_json
+            )
+            if page.index % 100 == 1:
+                db.save()
+        db.save()
 
 @dataclasses.dataclass(eq=False)
 class Page(awe.data.set.pages.Page):
