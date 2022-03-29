@@ -96,9 +96,13 @@ export class Controller {
 
               // Blend JSON + HTML = XML.
               if (this.blendOnly) {
-                const blender = new Blender(new PageRecipe(page, version));
+                const recipe = new PageRecipe(page, version);
+                const log = logger.child({ file, suffix: recipe.suffix });
+                const blender = new Blender(recipe, log);
                 await blender.loadJsonData();
-                await blender.loadHtmlDom();
+                blender.loadHtmlDom();
+                blender.blend();
+                await blender.save();
                 continue;
               }
 

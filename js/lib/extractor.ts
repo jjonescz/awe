@@ -23,7 +23,7 @@ type ElementData = {
   whiteSpace?: true;
 };
 
-type NodeData = TreeData & ElementData;
+export type NodeData = TreeData & ElementData;
 
 type ElementInfo = ElementData & {
   tagName: string;
