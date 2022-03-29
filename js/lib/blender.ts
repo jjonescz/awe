@@ -22,7 +22,7 @@ type Node = cheerio.Cheerio<cheerio.NodeWithChildren>;
 export class Blender {
   private data: DomData = { timestamp: null };
   private dom: cheerio.CheerioAPI = cheerio.load('');
-  private result: cheerio.CheerioAPI = cheerio.load('<html/>', { xml: true });
+  private result: cheerio.CheerioAPI = cheerio.load('', { xml: true });
 
   public constructor(
     public readonly recipe: PageRecipe,
