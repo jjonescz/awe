@@ -68,6 +68,14 @@ export class Blender {
       xmlNode.attr(`_${key}`, value);
     }
 
+    // Only children should be on this JSON level now.
+    for (const [key, _] of dataEntries) {
+      if (!key.startsWith('/')) {
+        log.warn('unexpected key without slash', { key });
+        return;
+      }
+    }
+
     // Handle all HTML attributes.
     const htmlEl = htmlNode[0];
     if (isText(htmlEl)) {
@@ -83,6 +91,7 @@ export class Blender {
     }
 
     // Handle all children in both JSON and HTML in parallel.
+    const htmlCounts: Map<string, number> = new Map();
     const htmlChildren = isText(htmlEl) ? [] : htmlEl.children;
     while (true) {
       const anyJson = dataEntries.length !== 0;
@@ -97,37 +106,32 @@ export class Blender {
       // End of children.
       if (!anyJson) break;
 
-      const [jsonKey, jsonValue] = dataEntries.shift()!;
-      const htmlChild = htmlChildren.shift()!;
-
-      // Only children should be on this JSON level now.
-      if (!jsonKey.startsWith('/')) {
-        log.warn('unexpected key without slash', { jsonKey });
-        break;
-      }
-
-      const jsonXpathElement = jsonKey.substring(1);
-      const jsonTagName = stripIndexer(jsonXpathElement);
-
       // Get HTML tag name.
+      const htmlChild = htmlChildren.shift()!;
       let htmlTagName: string;
       if (isText(htmlChild)) htmlTagName = 'text()';
       else if (isTag(htmlChild)) htmlTagName = htmlChild.tagName;
       else {
         log.warn('unrecognized child', { type: htmlChild.type });
-        dataEntries.unshift([jsonKey, jsonValue]);
         continue;
       }
+      const htmlTagNum = (htmlCounts.get(htmlTagName) ?? 0) + 1;
+      htmlCounts.set(htmlTagName, htmlTagNum);
 
-      // Inconsistent tag names.
-      if (jsonTagName !== htmlTagName) {
-        log.warn('inconsistent tags', { jsonKey, htmlTagName });
-        htmlChildren.unshift(htmlChild);
+      // Find corresponding JSON child.
+      const xpathElementBare = `/${htmlTagName}`;
+      const xpathElement = `${xpathElementBare}[${htmlTagNum}]`;
+      const dataEntryIndex = dataEntries.findIndex(
+        ([key, _]) => key === xpathElementBare || key === xpathElement
+      );
+      if (dataEntryIndex < 0) {
+        log.warn('non-existent child', { xpathElement });
         continue;
       }
+      const [jsonKey, jsonValue] = dataEntries.splice(dataEntryIndex, 1)[0];
 
       // Create XML node.
-      const tagName = jsonTagName === 'text()' ? 'text' : jsonTagName;
+      const tagName = htmlTagName === 'text()' ? 'text' : htmlTagName;
       const xmlChild = this.result<cheerio.NodeWithChildren, string>(
         h`<${tagName}>`
       );
@@ -142,9 +146,4 @@ export class Blender {
       );
     }
   }
-}
-
-function stripIndexer(xpathElement: string) {
-  const end = xpathElement.indexOf('[');
-  return xpathElement.substring(0, end < 0 ? undefined : end);
 }
