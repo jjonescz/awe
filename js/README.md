@@ -76,3 +76,9 @@ and re-scrape using:
 ```bash
 pnpm start -- -d ../ --files=../data/invalid_pages.txt -oH -T=1000 -j=8 -S
 ```
+
+To blend JSON and HTML into XML:
+
+```bash
+pnpm start -- -d ../data/apify/notinoEn -g 'pages/localized_html_*.htm' -T=1000 -B
+```

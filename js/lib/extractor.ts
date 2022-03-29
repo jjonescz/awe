@@ -2,6 +2,7 @@ import { writeFile } from 'fs/promises';
 import { ElementHandle, Page } from 'puppeteer-core';
 import winston from 'winston';
 import { logger } from './logging';
+import { PageInfo } from './page-info';
 import { PageRecipe } from './page-recipe';
 
 type TreeData = {
@@ -32,10 +33,7 @@ type ElementInfo = ElementData & {
  * Structure in which extracted visual attributes are stored for an element and
  * its descendants.
  */
-export type DomData = TreeData & {
-  /** From {@link SwdePage.timestamp}. */
-  timestamp: string;
-};
+export type DomData = TreeData & Pick<PageInfo, 'timestamp'>;
 
 const CHILD_SELECTOR = '* | text()';
 

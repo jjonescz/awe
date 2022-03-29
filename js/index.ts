@@ -139,6 +139,10 @@ class Program extends Command {
       char: 'F',
       description: 'take only this many pages from each folder',
     }),
+    blendOnly: flags.boolean({
+      char: 'B',
+      description: 'blend existing JSON and HTML into XML',
+    }),
   };
 
   async run() {
@@ -233,6 +237,7 @@ class Program extends Command {
     controller.skipSave = flags.skipSave;
     controller.skipExtraction = flags.skipExtraction;
     controller.validateOnly = flags.validateOnly;
+    controller.blendOnly = flags.blendOnly;
 
     // Scrape pages.
     try {

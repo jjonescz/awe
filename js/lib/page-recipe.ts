@@ -17,6 +17,10 @@ export class PageRecipe {
     return replaceExtension(this.page.fullPath, `${this.suffix}.json`);
   }
 
+  public get xmlPath() {
+    return replaceExtension(this.jsonPath, '.xml');
+  }
+
   public get htmlPath() {
     return replaceExtension(this.jsonPath, '.htm');
   }

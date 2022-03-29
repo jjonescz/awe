@@ -1,6 +1,7 @@
 import progress from 'cli-progress';
 import path from 'path';
 import { from, lastValueFrom, mergeMap } from 'rxjs';
+import { Blender } from './blender';
 import { DATA_DIR } from './constants';
 import { logger } from './logging';
 import { PageController } from './page-controller';
@@ -23,6 +24,8 @@ export class Controller {
   public skipExtraction = false;
   /** Only validate existing extraction outcomes. */
   public validateOnly = false;
+  /** Only blend existing JSON and HTML into XML. */
+  public blendOnly = false;
 
   public constructor(public readonly scraper: Scraper) {}
 
@@ -88,6 +91,14 @@ export class Controller {
                     result: result.toString(),
                   });
                 }
+                continue;
+              }
+
+              // Blend JSON + HTML = XML.
+              if (this.blendOnly) {
+                const blender = new Blender(new PageRecipe(page, version));
+                await blender.loadJsonData();
+                await blender.loadHtmlDom();
                 continue;
               }
 
