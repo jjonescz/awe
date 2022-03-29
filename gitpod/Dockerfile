@@ -3,7 +3,7 @@
 # Base image defined in `/gradient/Dockerfile`. Exact tag is specified so Gitpod
 # rebuilds the workspace when the base image changes (and the tag is manually
 # updated).
-FROM janjones/awe-gradient:1647936271
+FROM janjones/awe-gradient:1648286194
 
 ARG USER="gitpod"
 ENV HOME=/home/${USER}
