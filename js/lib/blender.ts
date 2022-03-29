@@ -122,7 +122,8 @@ export class Blender {
       // Inconsistent tag names.
       if (jsonTagName !== htmlTagName) {
         log.warn('inconsistent tags', { jsonTagName, htmlTagName });
-        break;
+        htmlChildren.unshift(htmlChild);
+        continue;
       }
 
       // Create XML node.
