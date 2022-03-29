@@ -33,3 +33,5 @@ inflection==0.5.1
 transformers==4.15.0
 sentencepiece==0.1.96
 datasets==1.18.0
+# JSON
+ijson==3.1.4

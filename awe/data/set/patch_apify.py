@@ -1,21 +1,31 @@
 # Run: `python -m awe.data.set.patch_apify`
 
+import json
+
+import ijson
 from tqdm.auto import tqdm
 
-import awe.data.set.apify
 
 def main():
-    # In Notino, `<noscript>` in head is not HTML compliant, so it gets parsed
-    # wrong by Lexbor.
-    ds = awe.data.set.apify.Dataset(only_websites=('notinoEn',))
-    w = ds.verticals[0].websites[0]
-    for page in tqdm(w.pages, desc='notinoEn'):
-        page: awe.data.set.apify.Page
-        html = page.get_html_text()
-        html = html.replace('<noscript>&lt;link', '<noscript><link')
-        html = html.replace('&gt;</noscript>', '></noscript>')
-        w.db.replace(page.index, page.url, html, w.db.get_visuals(page.index), w.db.get_metadata(page.index))
-    w.db.save()
+    input_path = 'data/apify/notinoEn/augmented_dataset.json'
+    output_path = 'data/apify/notinoEn/slim_dataset.json'
+    with open(input_path, mode='rb') as input_file:
+        with open(output_path, mode='w', encoding='utf-8') as output_file:
+            output_file.write('[\n')
+            rows = ijson.items(input_file, 'item')
+            after_first = False
+            for input_row in tqdm(rows, desc=input_path, total=2000):
+                output_row = {
+                    k: v
+                    for k, v in input_row.items()
+                    if k == 'url' or k.startswith('selector_')
+                }
+                if after_first:
+                    output_file.write(',\n')
+                else:
+                    after_first = True
+                json.dump(output_row, output_file)
+            output_file.write(']\n')
 
 if __name__ == '__main__':
     main()
