@@ -63,6 +63,8 @@ export class Blender {
     // Handle all visual attributes on this JSON level.
     while (dataEntries.length !== 0 && !dataEntries[0][0].startsWith('/')) {
       const [key, value] = dataEntries.shift()!;
+      // Ignore some duplicate ones.
+      if (key === 'whiteSpace' || key === 'id') continue;
       xmlNode.attr(`_${key}`, value);
     }
 
