@@ -19,6 +19,20 @@ export function replaceExtension(fullPath: string, ext: string) {
   });
 }
 
+export function replacePrefix(
+  fullPath: string,
+  prefix: string,
+  replacement: string
+) {
+  const parsed = path.parse(fullPath);
+  if (!parsed.name.startsWith(prefix)) return fullPath;
+  return path.format({
+    ...parsed,
+    base: undefined,
+    name: `${replacement}${parsed.name.substring(prefix.length)}`,
+  });
+}
+
 export function addSuffix(fullPath: string, suffix: string) {
   const parsed = path.parse(fullPath);
   return path.format({
