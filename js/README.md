@@ -56,12 +56,12 @@ Extracting visuals from Apify dataset (note that some pages require enabled
 JavaScript, so beware of that `-S` option):
 
 ```bash
-pnpm start -- -d ../data/apify/alzaEn -g 'pages/localized_html_*.htm' -oH -T=1000 -j=8 -S
-pnpm start -- -d ../data/apify/bestbuyEn -g 'pages/localized_html_*.htm' -oH -T=1000 -j=8 -S
-pnpm start -- -d ../data/apify/conradEn -g 'pages/localized_html_*.htm' -oH -T=1000 -j=8 -S
-pnpm start -- -d ../data/apify/ikeaEn -g 'pages/localized_html_*.htm' -oH -T=1000 -j=8 -S
-pnpm start -- -d ../data/apify/notinoEn -g 'pages/localized_html_*.htm' -oH -T=1000 -j=8
-pnpm start -- -d ../data/apify/tescoEn -g 'pages/localized_html_*.htm' -oH -T=1000 -j=8 -S
+pnpm start -- -d ../data/apify/alzaEn -g 'pages/localized_html_*.htm' -o -T=1000 -j=8 -SH
+pnpm start -- -d ../data/apify/bestbuyEn -g 'pages/localized_html_*.htm' -o -T=1000 -j=8 -SH
+pnpm start -- -d ../data/apify/conradEn -g 'pages/localized_html_*.htm' -o -T=1000 -j=8 -SH
+pnpm start -- -d ../data/apify/ikeaEn -g 'pages/localized_html_*.htm' -o -T=1000 -j=8 -SH
+pnpm start -- -d ../data/apify/notinoEn -g 'pages/localized_html_*.htm' -o -T=1000 -j=8
+pnpm start -- -d ../data/apify/tescoEn -g 'pages/localized_html_*.htm' -o -T=1000 -j=8 -SH
 ```
 
 And validating them:
@@ -74,7 +74,7 @@ To save a list of invalid, add argument `--save-list=data/invalid_pages.txt -q`
 and re-scrape using:
 
 ```bash
-pnpm start -- -d ../ --files=../data/invalid_pages.txt -oH -T=1000 -j=8 -S
+pnpm start -- -d ../ --files=../data/invalid_pages.txt -o -T=1000 -j=8 -SH
 ```
 
 To blend JSON and HTML into XML:
