@@ -5,7 +5,6 @@ import { PageInfo } from './page-info';
 import { PageRecipe } from './page-recipe';
 import { PageScraper } from './page-scraper';
 import { ScrapeVersion, scrapeVersionToSwdeHandling } from './scrape-version';
-import { addSuffix } from './utils';
 
 /** {@link PageScraper} controller to scrape one {@link SwdePage}. */
 export class PageController {
@@ -28,7 +27,8 @@ export class PageController {
     const extractor = new Extractor(
       this.pageScraper.page,
       recipe,
-      this.pageScraper.logger
+      this.pageScraper.logger,
+      /* extractXml */ this.controller.extractXml
     );
 
     // Check if not already scraped.

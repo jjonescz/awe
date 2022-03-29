@@ -139,7 +139,7 @@ export class DemoApp {
     res.write(views.logEntry('Extracting visuals...'));
     const pageInfo = new PageInfo(url, url, html, /* isSwde */ false);
     const recipe = new PageRecipe(pageInfo, ScrapeVersion.Exact);
-    const extractor = new Extractor(page, recipe, log);
+    const extractor = new Extractor(page, recipe, log, /* extractXml */ false);
     await extractor.extract();
     const visuals = extractor.data;
 

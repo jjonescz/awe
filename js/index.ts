@@ -143,6 +143,10 @@ class Program extends Command {
       char: 'B',
       description: 'blend existing JSON and HTML into XML',
     }),
+    extractXml: flags.boolean({
+      char: 'X',
+      description: 'extract visuals together with HTML as XML',
+    }),
   };
 
   async run() {

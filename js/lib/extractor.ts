@@ -70,7 +70,8 @@ export class Extractor {
   constructor(
     public readonly page: Page,
     public readonly recipe: PageRecipe,
-    public readonly logger: winston.Logger
+    public readonly logger: winston.Logger,
+    public readonly extractXml: boolean
   ) {
     this.data = {
       timestamp: recipe.page.timestamp!,

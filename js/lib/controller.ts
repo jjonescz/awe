@@ -27,6 +27,8 @@ export class Controller {
   public validateOnly = false;
   /** Only blend existing JSON and HTML into XML. */
   public blendOnly = false;
+  /** Extract HTML and visuals together as XML instead of just visuals as JSON. */
+  public extractXml = false;
 
   public constructor(public readonly scraper: Scraper) {}
 
