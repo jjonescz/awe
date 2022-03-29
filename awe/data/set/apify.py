@@ -91,6 +91,9 @@ class Website(awe.data.set.pages.Website):
     db: Optional[awe.data.set.db.Database] = dataclasses.field(repr=False, default=None)
     df: Optional[pd.DataFrame] = dataclasses.field(repr=False, default=None)
 
+    exact_html: bool = dataclasses.field(repr=False, default=False)
+    """Whether exact `.html` files have been extracted for this website."""
+
     def __init__(self, vertical: Vertical, dir_name: str, prev_page_count: int):
         super().__init__(
             vertical=vertical,
@@ -137,6 +140,10 @@ class Website(awe.data.set.pages.Website):
         print(f'Loaded {self.dataset_json_path!r}.')
 
     def init_pages(self):
+        # Detect whether exact HTML files exist.
+        self.exact_html = True
+        self.exact_html = os.path.exists(Page(self, 0).html_path)
+
         self.pages = [
             Page(website=self, index=idx)
             for idx in range(self.page_count)
@@ -204,6 +211,12 @@ class Page(awe.data.set.pages.Page):
         return f'localized_html_{self.url_slug}'
 
     @property
+    def html_file_name(self):
+        if self.website.exact_html:
+            return f'{self.file_name_no_extension}{self.visuals_suffix}.html'
+        return super().html_file_name
+
+    @property
     def visuals_suffix(self):
         return '-exact'
 
@@ -220,6 +233,9 @@ class Page(awe.data.set.pages.Page):
     def get_html_text(self):
         if self.db is not None:
             return self.db.get_html_text(self.index)
+        if self.website.exact_html:
+            # Exact HTML is not available in the DataFrame, only in file.
+            return super().get_html_text()
         return self.row.localizedHtml
 
     def get_labels(self):
