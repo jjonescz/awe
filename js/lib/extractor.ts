@@ -18,17 +18,14 @@ type ElementData = {
   box?: readonly [number, number, number, number];
   /** Value of `id` attribute (for debugging purposes). */
   id?: string;
-  /** Font size in pixels. @default 16 */
-  fontSize?: number;
-  backgroundColor?: Color;
+  /** Whether this text element is only white-space. */
+  whiteSpace?: true;
 };
 
 type NodeData = TreeData & ElementData;
 
 type ElementInfo = ElementData & {
   tagName: string;
-  /** Whether this text element is only white-space. */
-  whiteSpace?: true;
 };
 
 /**
