@@ -7,6 +7,7 @@ import {
   isText,
   Text,
 } from 'domhandler';
+import { existsSync } from 'fs';
 import { readFile, writeFile } from 'fs/promises';
 import h from 'html-template-tag';
 import { Logger } from 'winston';
@@ -28,6 +29,7 @@ type Node = cheerio.Cheerio<cheerio.NodeWithChildren>;
  */
 export class Blender {
   private data: DomData = { timestamp: null };
+  public htmlPath: string = '';
   private dom: cheerio.CheerioAPI = cheerio.load('');
   private result: cheerio.CheerioAPI = cheerio.load('', { xml: true });
 
@@ -41,8 +43,11 @@ export class Blender {
     this.data = JSON.parse(json);
   }
 
-  public loadHtmlDom() {
-    this.dom = cheerio.load(this.recipe.page.html);
+  public async loadHtmlDom({ useExact = false } = {}) {
+    const html = useExact
+      ? await readFile(this.recipe.htmlPath, { encoding: 'utf-8' })
+      : this.recipe.page.html;
+    this.dom = cheerio.load(html);
     this.dom.prototype.element = function (this: Node) {
       return this[0];
     };

@@ -1,4 +1,5 @@
 import progress from 'cli-progress';
+import { existsSync } from 'fs';
 import path from 'path';
 import { from, lastValueFrom, mergeMap } from 'rxjs';
 import { Blender } from './blender';
@@ -97,10 +98,14 @@ export class Controller {
               // Blend JSON + HTML = XML.
               if (this.blendOnly) {
                 const recipe = new PageRecipe(page, version);
-                const log = logger.child({ file, suffix: recipe.suffix });
+                const useExact = existsSync(recipe.htmlPath);
+                const log = logger.child({
+                  file: useExact ? recipe.htmlPath : file,
+                  suffix: recipe.suffix,
+                });
                 const blender = new Blender(recipe, log);
                 await blender.loadJsonData();
-                blender.loadHtmlDom();
+                await blender.loadHtmlDom({ useExact });
                 blender.blend();
                 await blender.save();
                 continue;
