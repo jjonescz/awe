@@ -22,7 +22,7 @@ export class PageRecipe {
   }
 
   public get htmlPath() {
-    return replaceExtension(this.jsonPath, '.htm');
+    return replaceExtension(this.jsonPath, this.page.isSwde ? '.htm' : '.html');
   }
 
   public get screenshotFullPath() {

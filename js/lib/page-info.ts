@@ -15,7 +15,8 @@ export class PageInfo {
   public constructor(
     public readonly fullPath: string,
     public readonly url: string,
-    public readonly html: string
+    public readonly html: string,
+    public readonly isSwde: boolean
   ) {}
 
   public get id() {
@@ -29,12 +30,12 @@ export class PageInfo {
     const match = contents.match(BASE_TAG_REGEX);
     if (match !== null) {
       const [_, url, html] = match;
-      return new PageInfo(fullPath, url, html);
+      return new PageInfo(fullPath, url, html, /* isSwde */ true);
     }
 
     // If it's not an SWDE page, use `file://` URL.
     const url = pathToFileURL(fullPath).toString();
-    return new PageInfo(fullPath, url, contents);
+    return new PageInfo(fullPath, url, contents, /* isSwde */ false);
   }
 
   public withHtml(html: string) {
@@ -44,8 +45,11 @@ export class PageInfo {
   }
 
   public stringify() {
-    // First character is UTF-8 BOM marker.
-    return `\uFEFF<base href="${this.url}"/>\n${this.html}`;
+    if (this.isSwde) {
+      // First character is UTF-8 BOM marker.
+      return `\uFEFF<base href="${this.url}"/>\n${this.html}`;
+    }
+    return this.html;
   }
 
   public async saveAs(fullPath: string) {
