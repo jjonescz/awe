@@ -111,3 +111,15 @@ export function urlsEqual(a: string, b: string) {
 export function enumerate<T>(array: T[]) {
   return array.map((v, i) => [i, v] as const);
 }
+
+export function removeWhere<T>(
+  array: T[],
+  predicate: (item: T, index: number) => boolean
+) {
+  let i = array.length;
+  while (i--) {
+    if (predicate(array[i], i)) {
+      array.splice(i, 1);
+    }
+  }
+}

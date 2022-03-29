@@ -7,12 +7,16 @@ import {
   isText,
   Text,
 } from 'domhandler';
-import { existsSync } from 'fs';
 import { readFile, writeFile } from 'fs/promises';
 import h from 'html-template-tag';
 import { Logger } from 'winston';
 import { DomData, NodeData } from './extractor';
 import { PageRecipe } from './page-recipe';
+import { removeWhere } from './utils';
+
+// Ignore SVGs and `<noscript>` elements, they are parsed differently by
+// Puppeteer and cheerio.
+const IGNORED_TAG_NAMES = new Set(['svg', 'noscript']);
 
 type Node = cheerio.Cheerio<cheerio.NodeWithChildren>;
 
@@ -105,6 +109,17 @@ export class Blender {
     // Handle all children in both JSON and HTML in parallel.
     const htmlCounts: Map<string, number> = new Map();
     const htmlChildren = isText(htmlEl) ? [] : htmlEl.children;
+
+    // Remove ignored tag names from JSON.
+    removeWhere(dataEntries, ([key, _]) =>
+      IGNORED_TAG_NAMES.has(extractTagName(key))
+    );
+    // Remove ignored tag names from HTML.
+    removeWhere(
+      htmlChildren,
+      (child) => isTag(child) && IGNORED_TAG_NAMES.has(child.tagName)
+    );
+
     while (true) {
       const anyJson = dataEntries.length !== 0;
       const anyHtml = htmlChildren.length !== 0;
@@ -121,9 +136,11 @@ export class Blender {
       // Get HTML tag name.
       const htmlChild = htmlChildren.shift()!;
       let htmlTagName: string;
-      if (isText(htmlChild)) htmlTagName = 'text()';
-      else if (isTag(htmlChild)) htmlTagName = htmlChild.tagName;
-      else {
+      if (isText(htmlChild)) {
+        htmlTagName = 'text()';
+      } else if (isTag(htmlChild)) {
+        htmlTagName = htmlChild.tagName;
+      } else {
         if (!isDirective(htmlChild) && !isComment(htmlChild))
           log.warn('unrecognized child', { type: htmlChild.type });
         continue;
@@ -159,4 +176,9 @@ export class Blender {
       );
     }
   }
+}
+
+function extractTagName(xpathElement: string) {
+  const end = xpathElement.indexOf('[');
+  return xpathElement.substring(1, end < 0 ? undefined : end);
 }
