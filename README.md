@@ -48,6 +48,11 @@ issue GDB command `backtrace`.
 
 **Get HTML from a scraping log**: For example, if it's on line 11, run
 `sed '11!d' data/scraping-logs/2022-03-21T13-26-38.056Z.txt | jq -r '.html' > data.html`.
+(or `.visuals > data.json`).
+
+**Start Jupyter server in Gitpod:** Run
+`jupyter notebook --allow-root --no-browser --NotebookApp.token=''
+--NotebookApp.disable_check_xsrf=True --notebook-dir="$(pwd)"`.
 
 ### Release
 
