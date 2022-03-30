@@ -290,8 +290,9 @@ class PageLabels(awe.data.set.labels.PageLabels):
         # situation is that the value is empty (but it can be string or list).
         if not label_value and len(self.get_labeled_nodes(label_key)) == 0:
             selector = self.get_selector(label_key)
-            warnings.warn(f'Ignoring non-existent {selector=} for ' + \
-                f'{label_key=} ({self.page.url}).')
+            warnings.warn(f'Non-existent selector {selector=} for ' + \
+                f'{label_key=} ({self.page.html_path!r}).')
+            self.page.valid = False
             return []
 
         return [label_value]
@@ -314,5 +315,5 @@ class PageLabels(awe.data.set.labels.PageLabels):
             return self.page.dom.tree.css(selector)
         except awe.data.parsing.Error as e:
             raise RuntimeError(
-                f'Invalid selector {repr(selector)} for {label_key=} ' + \
-                f'({self.page.url}).') from e
+                f'Invalid selector {selector!r} for {label_key=} ' + \
+                f'({self.page.html_path!r}).') from e
