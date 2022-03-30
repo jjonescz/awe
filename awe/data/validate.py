@@ -135,6 +135,8 @@ if args.save_list is not None:
 # Validate.
 def validate():
     validator.validate_pages(pages, max_invalid=args.max_errors)
+    print(f'Validation complete (invalid={validator.num_invalid}, ' +
+        f'pages={len(pages)}).')
 if args.quiet:
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore', module=r'awe\.data\.validation')
