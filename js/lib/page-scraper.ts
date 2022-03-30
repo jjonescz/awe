@@ -311,9 +311,34 @@ export class PageScraper {
       return false;
     }
 
-    // Navigate to page's URL. This will be intercepted in `onRequest`.
+    return await this.wrapNavigation((page, options) =>
+      page.goto(this.swdePage.url, options)
+    );
+  }
+
+  public async freeze() {
+    const wasJavaScriptEnabled = this.page.isJavaScriptEnabled();
+    this.logger.verbose('freeze', { wasJavaScriptEnabled });
+    const html = await this.page.content();
     try {
-      await this.page.goto(this.swdePage.url, {
+      this.page.setJavaScriptEnabled(false);
+      return await this.wrapNavigation((page, options) =>
+        page.setContent(html, options)
+      );
+    } finally {
+      this.page.setJavaScriptEnabled(wasJavaScriptEnabled);
+    }
+  }
+
+  private async wrapNavigation(
+    navigator: (
+      page: puppeteer.Page,
+      options: puppeteer.WaitForOptions
+    ) => Promise<unknown>
+  ) {
+    // Navigate to page. This will be intercepted in `onRequest`.
+    try {
+      await navigator(this.page, {
         waitUntil: 'networkidle0',
       });
     } catch (e) {
@@ -328,7 +353,6 @@ export class PageScraper {
         return false;
       }
     }
-
     return true;
   }
 

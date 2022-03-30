@@ -68,6 +68,11 @@ export class PageController {
       return false;
     }
 
+    // Freeze if desired.
+    if (this.controller.freeze) {
+      await this.pageScraper.freeze();
+    }
+
     // Abort remaining requests.
     await this.pageScraper.stop();
 

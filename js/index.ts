@@ -147,6 +147,13 @@ class Program extends Command {
       char: 'X',
       description: 'extract visuals together with HTML as XML',
     }),
+    freeze: flags.boolean({
+      char: 'Z',
+      description:
+        'freeze HTML before extracting visuals ' +
+        '(reloads the page with JavaScript disabled)',
+      exclusive: ['disableJavaScript'],
+    }),
   };
 
   async run() {
@@ -243,6 +250,7 @@ class Program extends Command {
     controller.validateOnly = flags.validateOnly;
     controller.blendOnly = flags.blendOnly;
     controller.extractXml = flags.extractXml;
+    controller.freeze = flags.freeze;
 
     // Scrape pages.
     try {

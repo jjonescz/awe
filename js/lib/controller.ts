@@ -29,6 +29,8 @@ export class Controller {
   public blendOnly = false;
   /** Extract HTML and visuals together as XML instead of just visuals as JSON. */
   public extractXml = false;
+  /** Freeze HTML before extracting visuals. */
+  public freeze = false;
 
   public constructor(public readonly scraper: Scraper) {}
 
