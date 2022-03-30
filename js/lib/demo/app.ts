@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import puppeteer from 'puppeteer-core';
 import { Logger } from 'winston';
 import { Extractor } from '../extractor';
+import { logFile } from '../logging';
 import { PageInfo } from '../page-info';
 import { PageRecipe } from '../page-recipe';
 import { ScrapeVersion } from '../scrape-version';
@@ -81,7 +82,7 @@ export class DemoApp {
 
   public static async start(options: DemoOptions, logger: Logger) {
     const log = logger.child({});
-    log.info('start', { options });
+    log.info('start', { options, logLevel: log.level, logFile });
 
     // Load model info.
     const model = await loadModel();
