@@ -87,7 +87,8 @@ export class Inference {
   };
 
   private onStderr = (data: string) => {
-    if (this.shouldForward()) console.error(`PYTERR: ${data}`);
+    if (this.shouldForward() || this.log.isDebugEnabled())
+      console.error(`PYTERR: ${data}`);
     this.log.silly('python stderr', { data });
   };
 
