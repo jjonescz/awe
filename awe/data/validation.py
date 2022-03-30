@@ -51,9 +51,12 @@ class Validator:
                 total += actual
                 if actual < expected:
                     page.valid = False
+                    selector = page_labels.get_selector(key)
+                    selector_str = '' if selector is None else f'({selector=})'
                     warnings.warn(
                         f'Found {actual} < {expected} nodes labeled ' +
-                        f'{key!r}={values!r} ({page.html_path!r}).')
+                        f'{key!r}{selector_str}={values!r} ' +
+                        f'({page.html_path!r}).')
 
                 # Check that labeled nodes are not empty.
                 for node in nodes:

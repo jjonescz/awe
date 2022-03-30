@@ -1,4 +1,5 @@
 import abc
+from typing import Optional
 
 import awe.data.graph.dom
 import awe.data.parsing
@@ -16,6 +17,10 @@ class PageLabels(abc.ABC):
         List of label names that could be present on the `page` (e.g., `name`,
         `price`).
         """
+
+    # pylint: disable-next=no-self-use,unused-argument
+    def get_selector(self, label_key: str) -> Optional[str]:
+        return None
 
     @abc.abstractmethod
     def get_label_values(self, label_key: str) -> list[str]:
