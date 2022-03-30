@@ -55,12 +55,14 @@ class Dataset(awe.data.set.pages.Dataset):
         self.verticals = list(self._iterate_verticals())
 
     def _iterate_verticals(self):
-        page_count = 0
-        for name in tqdm(VERTICAL_NAMES, desc='verticals'):
-            if (self.only_verticals is not None
-                and name not in self.only_verticals):
-                continue
+        # Get list of verticals to load.
+        if self.only_verticals:
+            vertical_names = self.only_verticals
+        else:
+            vertical_names = VERTICAL_NAMES
 
+        page_count = 0
+        for name in tqdm(vertical_names, desc='verticals'):
             vertical = Vertical(
                 dataset=self,
                 name=name,

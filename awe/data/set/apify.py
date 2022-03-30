@@ -66,17 +66,19 @@ class Vertical(awe.data.set.pages.Vertical):
                 f'Dataset directory does not exist ({self.dir_path}).')
             return
 
+        # Get list of websites to load.
+        if self.dataset.only_websites is not None:
+            website_dirs = self.dataset.only_websites
+        else:
+            website_dirs = [
+                subdir for subdir in sorted(os.listdir(self.dir_path))
+                # Ignore some directories.
+                if (not os.path.isdir(os.path.join(self.dir_path, subdir)) or
+                    subdir.startswith('.') or subdir == 'Datasets')
+            ]
+
         page_count = 0
-        for subdir in tqdm(sorted(os.listdir(self.dir_path)), desc='websites'):
-            if (self.dataset.only_websites is not None
-                and subdir not in self.dataset.only_websites):
-                continue
-
-            # Ignore some directories.
-            if (not os.path.isdir(os.path.join(self.dir_path, subdir)) or
-                subdir.startswith('.') or subdir == 'Datasets'):
-                continue
-
+        for subdir in tqdm(website_dirs, desc='websites'):
             website = Website(
                 vertical=self,
                 dir_name=subdir,
