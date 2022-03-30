@@ -309,6 +309,7 @@ class PageLabels(awe.data.set.labels.PageLabels):
         if ' + ' in selector:
             new_selector = selector.replace(' + ', ' ~ ')
             warnings.warn(f'Patched selector {selector!r} to {new_selector!r}.')
+            self.page.valid = False
             selector = new_selector
 
         try:
