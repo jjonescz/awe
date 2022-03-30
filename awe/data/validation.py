@@ -33,7 +33,8 @@ class Validator:
             self.validate_page(page)
             if page.valid is False:
                 self.num_invalid += 1
-                self.file.write(f'{page.original_html_path}\n')
+                if self.file is not None:
+                    self.file.write(f'{page.original_html_path}\n')
             if max_invalid is not None and self.num_invalid >= max_invalid:
                 break
 
