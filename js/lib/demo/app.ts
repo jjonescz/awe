@@ -123,14 +123,26 @@ export class DemoApp {
     const page = await this.browser.newPage();
     page.setDefaultTimeout(0); // disable default timeout
     page.setDefaultNavigationTimeout(10_000); // 10 seconds
-    await DemoApp.wrapNavigation((o) => page.goto(url, o), res, log);
+    const nav1 = await DemoApp.wrapNavigation(
+      (o) => page.goto(url, o),
+      res,
+      log
+    );
+    if (nav1 === 'fail') return;
     const html = await page.content();
 
     // Freeze the page.
-    log.debug('freeze page');
-    res.write(views.logEntry('Freezing page...'));
-    page.setJavaScriptEnabled(false);
-    await DemoApp.wrapNavigation((o) => page.setContent(html, o), res, log);
+    if (nav1 !== 'timeout') {
+      log.debug('freeze page');
+      res.write(views.logEntry('Freezing page...'));
+      page.setJavaScriptEnabled(false);
+      const nav2 = await DemoApp.wrapNavigation(
+        (o) => page.setContent(html, o),
+        res,
+        log
+      );
+      if (nav2 === 'fail') return;
+    }
 
     // Extract visuals.
     log.debug('extract visuals');
@@ -241,11 +253,12 @@ export class DemoApp {
       if (error?.name === 'TimeoutError') {
         log.debug('goto timeout', { error: error?.stack });
         res.write(views.logEntry('Navigation timeout.'));
+        return 'timeout';
       } else {
         log.debug('goto failed', { error: error?.stack });
         res.write(views.logEntry(`Navigation failed: ${error}`));
         res.end();
-        return;
+        return 'fail';
       }
     }
   }
