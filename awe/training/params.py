@@ -6,7 +6,7 @@ import warnings
 from typing import Optional
 
 import awe.data.constants
-import awe.training.logging
+import awe.training.versioning
 
 
 class TokenizerFamily(str, enum.Enum):
@@ -117,7 +117,7 @@ class Params:
 
     @classmethod
     def load_version(cls,
-        version: awe.training.logging.Version,
+        version: awe.training.versioning.Version,
         normalize: bool = False
     ):
         return cls.load_file(version.params_path, normalize=normalize)
@@ -145,7 +145,7 @@ class Params:
 
         return result
 
-    def save_version(self, version: awe.training.logging.Version):
+    def save_version(self, version: awe.training.versioning.Version):
         self.save_file(version.params_path)
 
     def save_file(self, path: str):

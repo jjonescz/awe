@@ -6,13 +6,13 @@ import traceback
 
 import awe.data.parsing
 import awe.data.set.live
-import awe.training.logging
+import awe.training.versioning
 import awe.training.params
 import awe.training.trainer
 
 
 def main():
-    version = awe.training.logging.Version.get_latest()
+    version = awe.training.versioning.Version.get_latest()
     checkpoint = version.get_checkpoints()[-1]
     params = awe.training.params.Params.load_version(version)
     print(f'{params=}')

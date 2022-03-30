@@ -26,7 +26,7 @@ import awe.model.classifier
 import awe.model.decoding
 import awe.model.eval
 import awe.training.context
-import awe.training.logging
+import awe.training.versioning
 import awe.training.params
 
 
@@ -63,7 +63,7 @@ class Trainer:
     evaluator: awe.model.eval.Evaluator
     device: torch.device
     model: awe.model.classifier.Model
-    version: awe.training.logging.Version
+    version: awe.training.versioning.Version
     writer: Optional[torch.utils.tensorboard.SummaryWriter] = None
     trainer: pl.Trainer
     optim: torch.optim.Optimizer
@@ -239,15 +239,15 @@ class Trainer:
 
     def create_version(self):
         if self.params.restore_num is not None:
-            self.version = awe.training.logging.Version(
+            self.version = awe.training.versioning.Version(
                 number=self.params.restore_num,
                 name=self.params.version_name
             )
             self.restore_version(self.version)
             print(self.restore_model())
         else:
-            awe.training.logging.Version.delete_last(self.params.version_name)
-            self.version = awe.training.logging.Version.create_new(
+            awe.training.versioning.Version.delete_last(self.params.version_name)
+            self.version = awe.training.versioning.Version.create_new(
                 self.params.version_name
             )
             self.restored_state = None
@@ -260,7 +260,7 @@ class Trainer:
             log_dir=self.version.version_dir_path,
         )
 
-    def restore_version(self, version: awe.training.logging.Version):
+    def restore_version(self, version: awe.training.versioning.Version):
         checkpoints = version.get_checkpoints()
         if len(checkpoints) == 0:
             raise RuntimeError(f'No checkpoints ({version.version_dir_path!r})')
@@ -276,7 +276,7 @@ class Trainer:
 
         self.restore_checkpoint(checkpoints[-1])
 
-    def restore_checkpoint(self, checkpoint: awe.training.logging.Checkpoint):
+    def restore_checkpoint(self, checkpoint: awe.training.versioning.Checkpoint):
         print(f'Loading {checkpoint.file_path!r}...')
         self.restored_state = torch.load(checkpoint.file_path,
             # Load GPU tensors to CPU if GPU is not available.
