@@ -102,7 +102,8 @@ And validating them:
 ```
 
 To save a list of invalid, add argument `--save-list=data/invalid_pages.txt -q`
-and re-scrape using:
+and re-scrape using `-d ../ --files=../data/invalid_pages.txt` instead of `-d
+-g` arguments, e.g.:
 
 ```bash
 pnpm start -- -d ../ --files=../data/invalid_pages.txt -o -T=1000 -j=8 -SH
