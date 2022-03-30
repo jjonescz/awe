@@ -110,23 +110,19 @@ export class Blender {
     const htmlCounts: Map<string, number> = new Map();
     const htmlChildren = isText(htmlEl) ? [] : htmlEl.children;
 
-    // Remove ignored tag names from JSON.
-    removeWhere(dataEntries, ([key, _]) =>
-      IGNORED_TAG_NAMES.has(extractTagName(key))
-    );
-    // Remove ignored tag names from HTML.
-    removeWhere(
-      htmlChildren,
-      (child) => isTag(child) && IGNORED_TAG_NAMES.has(child.tagName)
-    );
-
     while (true) {
       const anyJson = dataEntries.length !== 0;
       const anyHtml = htmlChildren.length !== 0;
 
       // Inconsistent count of children.
-      if (anyJson !== anyHtml) {
-        log.warn('unexpected end', { anyJson, anyHtml });
+      if (anyJson && !anyHtml) {
+        // Remove ignored tag names from JSON.
+        removeWhere(dataEntries, ([key, _]) =>
+          IGNORED_TAG_NAMES.has(extractTagName(key))
+        );
+
+        if (dataEntries.length !== 0)
+          log.warn('unexpected end of HTML', { nextJson: dataEntries[0][0] });
         break;
       }
 
@@ -139,6 +135,7 @@ export class Blender {
       if (isText(htmlChild)) {
         htmlTagName = 'text()';
       } else if (isTag(htmlChild)) {
+        if (IGNORED_TAG_NAMES.has(htmlChild.tagName)) continue;
         htmlTagName = htmlChild.tagName;
       } else {
         if (!isDirective(htmlChild) && !isComment(htmlChild))
@@ -155,7 +152,7 @@ export class Blender {
         ([key, _]) => key === xpathElementBare || key === xpathElement
       );
       if (dataEntryIndex < 0) {
-        log.warn('non-existent child', { xpathElement });
+        log.warn('non-existent JSON child', { xpathElement });
         continue;
       }
       const [jsonKey, jsonValue] = dataEntries.splice(dataEntryIndex, 1)[0];
