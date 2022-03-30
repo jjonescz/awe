@@ -60,6 +60,15 @@ class Vertical(awe.data.set.pages.Vertical):
     def dir_path(self):
         return self.dataset.dir_path
 
+    @staticmethod
+    def get_website_dirs(dir_path: str = DIR):
+        return [
+            subdir for subdir in sorted(os.listdir(dir_path))
+            # Ignore some directories.
+            if (not os.path.isdir(os.path.join(dir_path, subdir)) or
+                subdir.startswith('.') or subdir == 'Datasets')
+        ]
+
     def _iterate_websites(self):
         if not os.path.exists(self.dir_path):
             warnings.warn(
@@ -70,12 +79,7 @@ class Vertical(awe.data.set.pages.Vertical):
         if self.dataset.only_websites is not None:
             website_dirs = self.dataset.only_websites
         else:
-            website_dirs = [
-                subdir for subdir in sorted(os.listdir(self.dir_path))
-                # Ignore some directories.
-                if (not os.path.isdir(os.path.join(self.dir_path, subdir)) or
-                    subdir.startswith('.') or subdir == 'Datasets')
-            ]
+            website_dirs = Vertical.get_website_dirs(self.dir_path)
 
         page_count = 0
         for subdir in tqdm(website_dirs, desc='websites'):
