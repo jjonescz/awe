@@ -127,6 +127,7 @@ export class DemoApp {
     // Freeze the page.
     log.debug('freeze page');
     res.write(views.logEntry('Freezing page...'));
+    page.setJavaScriptEnabled(false);
     await DemoApp.wrapNavigation((o) => page.setContent(html, o), res, log);
 
     // Extract visuals.
