@@ -29,6 +29,7 @@ def patch_alza():
     df = pd.read_json(input_path)
     selector_category = df.columns.get_loc('selector_category')
     selector_specification = df.columns.get_loc('selector_specification')
+    value_specification = df.columns.get_loc('specification')
     localized_html = df.columns.get_loc('localizedHtml')
     bug_1 = 0
     bug_2 = 0
@@ -41,12 +42,17 @@ def patch_alza():
 
         if df.iloc[idx, selector_specification] == ALZA_PARAMS_SELECTOR:
             # Bug 2.
-            tree = awe.data.parsing.parse_html(df.iloc[idx, localized_html])
-            if not tree.css_matches(ALZA_PARAMS_SELECTOR):
-                df.iloc[idx, selector_specification] = ''
-                bug_2 += 1
-            else:
-                # Bug 3.
+            removed_spec = False
+            if df.iloc[idx, value_specification] == []:
+                tree = awe.data.parsing.parse_html(df.iloc[idx, localized_html])
+                if not tree.css_matches(ALZA_PARAMS_SELECTOR):
+                    df.iloc[idx, selector_specification] = ''
+                    df.iloc[idx, value_specification] = ''
+                    bug_2 += 1
+                    removed_spec = True
+
+            # Bug 3.
+            if not removed_spec:
                 df.iloc[idx, selector_specification] = '#cpcm_cpc_mediaParams > .params'
                 bug_3 += 1
 

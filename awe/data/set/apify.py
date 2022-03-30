@@ -280,7 +280,8 @@ class PageLabels(awe.data.set.labels.PageLabels):
         # Check that when CSS selector is empty string, gold value is empty.
         if not self.has_label(label_key):
             assert label_value == '', \
-                f'Unexpected non-empty {label_value=} for {label_key=}.'
+                f'Unexpected non-empty {label_value=} for {label_key=} ' + \
+                f'({self.page.html_path!r}).'
             return []
 
         # HACK: Sometimes in the dataset, the node does not exist even though it
