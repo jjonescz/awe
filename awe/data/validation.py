@@ -42,11 +42,13 @@ class Validator:
         # Check that label key-value pairs are consistent.
         if self.labels:
             page_labels = page.get_labels()
+            total = 0
             for key in page_labels.label_keys:
                 values = page_labels.get_label_values(key)
                 nodes = page_labels.get_labeled_nodes(key)
                 expected = len(values)
                 actual = len(nodes)
+                total += actual
                 if actual < expected:
                     page.valid = False
                     warnings.warn(
@@ -61,6 +63,10 @@ class Validator:
                         warnings.warn(
                             f'Node {xpath!r} labeled {key!r} is empty ' +
                             f'({page.html_path!r}).')
+
+            if total == 0:
+                page.valid = False
+                warnings.warn(f'Nothing labeled in page {page.html_path!r}.')
 
         # Check that extracted visual DOM has the same structure as parsed DOM.
         if self.visuals:
