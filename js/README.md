@@ -98,12 +98,12 @@ pnpm start -- -d ../data/apify/tescoEn -g 'pages/localized_html_*.htm' -o -T=100
 And validating them:
 
 ```bash
-(cd .. && python -m awe.data.validate --no-labels --visuals --max-errors=1 [<website_name>])
+(cd .. && python -m awe.data.validate --visuals --max-errors=1 [<website_name>])
 ```
 
-To save a list of invalid, add argument `--save-list=data/invalid_pages.txt -q`
-and re-scrape using `-d ../ --files=../data/invalid_pages.txt` instead of `-d
--g` arguments, e.g.:
+To save a list of invalid, replace `--max-errors=1` with
+`--save-list=data/invalid_pages.txt -q` and re-scrape using `-d ../
+--files=../data/invalid_pages.txt` instead of `-d -g` arguments, e.g.:
 
 ```bash
 pnpm start -- -d ../ --files=../data/invalid_pages.txt -o -T=1000 -j=8 -SH
