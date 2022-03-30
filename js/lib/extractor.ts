@@ -108,11 +108,6 @@ export class Extractor {
       const key = `/${tagName}` as const;
       const indexedKey = (i: number) => `${key}[${i}]` as const;
       let finalKey = key;
-      // If parent already contains this child, we have to add indices.
-      if (parent[key] !== undefined) {
-        parent[indexedKey(1)] = parent[key];
-        delete parent[key];
-      }
       // If parent already contains an indexed child, find new available index.
       if (parent[indexedKey(1)] !== undefined) {
         for (let i = 2; ; i++) {
@@ -122,6 +117,18 @@ export class Extractor {
           }
         }
       }
+      // Otherwise, determine whether we have to add index `[1]`.
+      else {
+        const siblings = await element.$x(`(../${tagName})[2]`);
+        if (siblings.length !== 0) {
+          finalKey = indexedKey(1);
+        }
+      }
+
+      // Note that we never change `parent[key]`, we only *append*, therefore
+      // the order should match the original order. This is actually not
+      // required (and the processing code should not count on that), but it
+      // helps when looking at the JSON manually.
       parent[finalKey] = container;
 
       // Add children to the queue.
