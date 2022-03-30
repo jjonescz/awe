@@ -121,6 +121,8 @@ export class DemoApp {
     log.debug('load page');
     res.write(views.logEntry('Loading page...'));
     const page = await this.browser.newPage();
+    page.setDefaultTimeout(0); // disable default timeout
+    page.setDefaultNavigationTimeout(10_000); // 10 seconds
     await DemoApp.wrapNavigation((o) => page.goto(url, o), res, log);
     const html = await page.content();
 
