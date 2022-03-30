@@ -2,8 +2,9 @@
 
 This repository contains source code for AI-based structured web data extractor.
 
-- Author: [Jan Joneš](https://github.com/jjonescz)
-- Thesis: [assignment](https://is.cuni.cz/studium/dipl_st/index.php?id=&tid=&do=main&doo=detail&did=241832)
+- 👨‍💻 Author: [Jan Joneš](https://github.com/jjonescz)
+- 📜 Thesis: [assignment](https://is.cuni.cz/studium/dipl_st/index.php?id=&tid=&do=main&doo=detail&did=241832)
+- 🚀 Demo: [live](https://bit.ly/awedemo), [DockerHub](https://hub.docker.com/repository/docker/janjones/awe-demo)
 
 ## Directory structure
 
