@@ -290,9 +290,9 @@ class PageLabels(awe.data.set.labels.PageLabels):
         # situation is that the value is empty (but it can be string or list).
         if not label_value and len(self.get_labeled_nodes(label_key)) == 0:
             selector = self.get_selector(label_key)
+            self.page.valid = False
             warnings.warn(f'Non-existent selector {selector=} for ' + \
                 f'{label_key=} ({self.page.html_path!r}).')
-            self.page.valid = False
             return []
 
         return [label_value]
@@ -309,7 +309,6 @@ class PageLabels(awe.data.set.labels.PageLabels):
         if ' + ' in selector:
             new_selector = selector.replace(' + ', ' ~ ')
             warnings.warn(f'Patched selector {selector!r} to {new_selector!r}.')
-            self.page.valid = False
             selector = new_selector
 
         try:
