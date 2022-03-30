@@ -80,5 +80,5 @@ pnpm start -- -d ../ --files=../data/invalid_pages.txt -o -T=1000 -j=8 -SH
 To blend JSON and HTML into XML:
 
 ```bash
-pnpm start -- -d ../data/apify/notinoEn -g 'pages/localized_html_*.htm' -T=1000 -B
+pnpm start -- -d ../data/apify/notinoEn -g 'pages/localized_html_*.htm' -B
 ```
