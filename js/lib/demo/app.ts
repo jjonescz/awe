@@ -118,21 +118,13 @@ export class DemoApp {
     log.debug('load page');
     res.write(views.logEntry('Loading page...'));
     const page = await this.browser.newPage();
-    try {
-      await page.goto(url, { waitUntil: 'networkidle0' });
-    } catch (e) {
-      const error = e as Error;
-      if (error?.name === 'TimeoutError') {
-        log.debug('goto timeout', { error: error?.stack });
-        res.write(views.logEntry('Navigation timeout.'));
-      } else {
-        log.debug('goto failed', { error: error?.stack });
-        res.write(views.logEntry(`Navigation failed: ${error}`));
-        res.end();
-        return;
-      }
-    }
+    await DemoApp.wrapNavigation((o) => page.goto(url, o), res, log);
     const html = await page.content();
+
+    // Freeze the page.
+    log.debug('freeze page');
+    res.write(views.logEntry('Freezing page...'));
+    await DemoApp.wrapNavigation((o) => page.setContent(html, o), res, log);
 
     // Extract visuals.
     log.debug('extract visuals');
@@ -230,4 +222,25 @@ export class DemoApp {
     res.write(views.layoutEnd());
     res.end();
   };
+
+  private static async wrapNavigation(
+    navigator: (options: puppeteer.WaitForOptions) => Promise<unknown>,
+    res: Response,
+    log: Logger
+  ) {
+    try {
+      await navigator({ waitUntil: 'networkidle0' });
+    } catch (e) {
+      const error = e as Error;
+      if (error?.name === 'TimeoutError') {
+        log.debug('goto timeout', { error: error?.stack });
+        res.write(views.logEntry('Navigation timeout.'));
+      } else {
+        log.debug('goto failed', { error: error?.stack });
+        res.write(views.logEntry(`Navigation failed: ${error}`));
+        res.end();
+        return;
+      }
+    }
+  }
 }
