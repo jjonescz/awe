@@ -123,12 +123,17 @@ if args.skip_pages is not None:
 if args.max_pages is not None:
     pages = pages[:args.max_pages]
 
+validator = awe.data.validation.Validator(
+    labels=not args.no_labels,
+    visuals=args.visuals
+)
+
+# Write invalid pages to a file (iteratively during the validation).
+if args.save_list is not None:
+    validator.write_invalid_to(args.save_list)
+
 # Validate.
 def validate():
-    validator = awe.data.validation.Validator(
-        labels=not args.no_labels,
-        visuals=args.visuals
-    )
     validator.validate_pages(pages, max_invalid=args.max_errors)
 if args.quiet:
     with warnings.catch_warnings():
@@ -160,7 +165,5 @@ if args.save_back:
 
 # Save new list of invalid pages.
 if args.save_list is not None:
-    save_paths = sorted(p.original_html_path for p in pages if p.valid is False)
-    with open(args.save_list, mode='w', encoding='utf-8', newline='\n') as f:
-        f.writelines(f'{p}\n' for p in save_paths)
-    print(f'Saved {len(save_paths)} to {args.save_list!r}.')
+    validator.file.close()
+    print(f'Saved {validator.num_invalid} to {args.save_list!r}.')
