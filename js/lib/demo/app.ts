@@ -121,15 +121,24 @@ export class DemoApp {
     log.debug('load page');
     res.write(views.logEntry('Loading page...'));
     const page = await this.browser.newPage();
-    page.setDefaultTimeout(0); // disable default timeout
-    page.setDefaultNavigationTimeout(10_000); // 10 seconds
     const nav1 = await DemoApp.wrapNavigation(
       (o) => page.goto(url, o),
       res,
       log
     );
     if (nav1 === 'fail') return;
-    const html = await page.content();
+
+    // Extract HTML. This can fail if navigation timeouts at a bad time.
+    let html: string;
+    try {
+      html = await page.content();
+    } catch (e) {
+      const error = e as Error;
+      log.error('content fail', { error: error?.stack });
+      res.write(views.logEntry('Loading failed.'));
+      res.end();
+      return;
+    }
 
     // Freeze the page.
     if (nav1 !== 'timeout') {
