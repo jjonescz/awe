@@ -9,7 +9,9 @@ import { loadModel, ModelInfo } from './model-info';
 import { Inference, NodePrediction } from './python';
 import * as views from './views';
 
-class DemoOptions {
+export class DemoOptions {
+  public readonly debug: boolean;
+  /** More verbose logging. */
   public readonly port: number;
   /** Log full HTML and visuals to `scraping_logs`. */
   public readonly logInputs: boolean;
@@ -17,6 +19,7 @@ class DemoOptions {
   public readonly mockInference: boolean;
 
   public constructor() {
+    this.debug = !!process.env.DEBUG;
     this.port = parseInt(process.env.PORT || '3000');
     this.logInputs = !!process.env.LOG_INPUTS;
     this.mockInference = !!process.env.MOCK_INFERENCE;
@@ -59,7 +62,7 @@ export class DemoApp {
 
     if (!options.mockInference) {
       // Start Python inference shell.
-      this.python = new Inference(log);
+      this.python = new Inference(options, log);
 
       // Close the server when Python closes.
       this.python.shell.on('close', () => {
@@ -76,8 +79,7 @@ export class DemoApp {
     }
   }
 
-  public static async start(logger: Logger) {
-    const options = new DemoOptions();
+  public static async start(options: DemoOptions, logger: Logger) {
     const log = logger.child({});
     log.info('start', { options });
 

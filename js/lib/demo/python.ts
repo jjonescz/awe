@@ -1,6 +1,7 @@
 import { PythonShell, PythonShellError } from 'python-shell';
 import { Logger } from 'winston';
 import { DomData } from '../extractor';
+import { DemoOptions } from './app';
 
 export interface InferenceInput {
   url: string;
@@ -24,7 +25,10 @@ export class Inference {
   private resolve: PromiseResolve<void>;
   private reject: (reason?: any) => void;
 
-  public constructor(private readonly log: Logger) {
+  public constructor(
+    private readonly options: DemoOptions,
+    private readonly log: Logger
+  ) {
     // Create a promise that will be fulfilled when Python inference is fully
     // loaded.
     this.resolve = () => {};
@@ -87,7 +91,7 @@ export class Inference {
   };
 
   private onStderr = (data: string) => {
-    if (this.shouldForward() || this.log.isDebugEnabled())
+    if (this.shouldForward() || this.options.debug)
       console.error(`PYTERR: ${data}`);
     this.log.silly('python stderr', { data });
   };

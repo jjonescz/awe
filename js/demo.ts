@@ -1,5 +1,6 @@
-import { DemoApp } from './lib/demo/app';
+import { DemoApp, DemoOptions } from './lib/demo/app';
 import { logger } from './lib/logging';
 
-logger.level = process.env.DEBUG ? 'debug' : 'verbose';
-DemoApp.start(logger);
+const options = new DemoOptions();
+logger.level = options.debug ? 'debug' : 'verbose';
+DemoApp.start(options, logger);
