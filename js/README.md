@@ -1,11 +1,42 @@
 # JavaScript
 
-This folder contains code for extracting visual attributes from SWDE dataset. To
-get started, execute:
+This folder contains code for extracting visual attributes from datasets (SWDE
+and Apify) and the demo (which can extract visual attributes from live pages and
+call Python for inference).
+
+First, install Node.js packages (this and following commands assume the current
+working directory is `js`):
+
+```bash
+pnpm install
+```
+
+To get started with the extraction, execute:
 
 ```bash
 pnpm start -- --help
 ```
+
+To start the demo locally (see [`demo/README.md`](../demo/README.md) for a
+containerized version):
+
+1. Make sure there is a pre-trained model in `logs`.
+
+   ```bash
+   cd ..
+   gh auth login
+   gh release download v0.1 --pattern logs.tar.gz
+   tar xvzf logs.tar.gz
+   rm logs.tar.gz
+   cd js
+   ```
+
+2. Start the demo. See `DemoOptions` in `app.ts` for more options (passed as
+   environment variables).
+
+   ```bash
+   DEBUG=1 pnpm run server
+   ```
 
 ## Architecture
 
