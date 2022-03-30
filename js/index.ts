@@ -242,6 +242,7 @@ class Program extends Command {
     controller.skipExtraction = flags.skipExtraction;
     controller.validateOnly = flags.validateOnly;
     controller.blendOnly = flags.blendOnly;
+    controller.extractXml = flags.extractXml;
 
     // Scrape pages.
     try {

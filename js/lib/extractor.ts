@@ -1,5 +1,5 @@
 import { writeFile } from 'fs/promises';
-import { ElementHandle, Page } from 'puppeteer-core';
+import { ElementHandle, JSONObject, Page } from 'puppeteer-core';
 import winston from 'winston';
 import { logger } from './logging';
 import { PageInfo } from './page-info';
@@ -21,6 +21,11 @@ type ElementData = {
   id?: string;
   /** Whether this text element is only white-space. */
   whiteSpace?: true;
+
+  // The following are present only in XML mode.
+  tagName?: string;
+  args?: Record<string, string>;
+  text?: string;
 };
 
 export type NodeData = TreeData & ElementData;
@@ -28,6 +33,10 @@ export type NodeData = TreeData & ElementData;
 type ElementInfo = ElementData & {
   tagName: string;
 };
+
+interface EvaluateOptions extends JSONObject {
+  extractXml: boolean;
+}
 
 /**
  * Structure in which extracted visual attributes are stored for an element and
@@ -152,152 +161,171 @@ export class Extractor {
 
   /** Runs code inside browser for an {@link element}. */
   public evaluate(element: ElementHandle<Element>) {
-    return element.evaluate((e) => {
-      // Ignore text fragments, they don't have computed style.
-      if (e.nodeName === '#text') {
+    return element.evaluate(Extractor.evaluateClient, <EvaluateOptions>{
+      extractXml: this.extractXml,
+    });
+  }
+
+  /** This method runs inside browser. */
+  private static evaluateClient(e: Element, o: EvaluateOptions) {
+    // Ignore text fragments, they don't have computed style.
+    if (e.nodeName === '#text') {
+      if (o.extractXml) {
         return {
           tagName: 'text()',
-          whiteSpace: /^\s*$/.test(e.textContent ?? '')
-            ? (true as const)
-            : undefined,
+          text: e.textContent ?? '',
         };
       }
-
-      // Note that we cannot reference outside functions easily, hence we define
-      // them here.
-
-      /** Omits {@link value} if {@link condition} is met. */
-      const unless = <T>(value: T, condition: boolean) => {
-        if (condition) return undefined;
-        if (value === undefined)
-          throw new Error('Ambiguous attribute value undefined.');
-        return value;
-      };
-
-      /** Omits {@link value} if it's equal to {@link defaultValue}. */
-      const except = <T>(value: T, defaultValue: T) => {
-        return unless(value, value === defaultValue);
-      };
-
-      /** Parses CSS pixels. */
-      const pixels = (value?: string) => {
-        if (value === undefined) return undefined;
-
-        const match = value.match(/^(.+)(px)?$/);
-        if (match === null) throw new Error(`Cannot parse pixels: '${value}'`);
-        return parseInt(match[1]);
-      };
-
-      const toHex = (value: number) => {
-        return value.toString(16).padStart(2, '0') as `${string}`;
-      };
-
-      /** Parses CSS color. */
-      const color = (value: string) => {
-        // Remove whitespace.
-        value = value.replaceAll(/\s+/g, '');
-
-        // Parse `rgb(r,g,b)` and `rgba(r,g,b,a)` patterns.
-        const match = value.match(/^rgba?\((\d+),(\d+),(\d+)(,([0-9.]+))?\)$/);
-        if (match === null) throw new Error(`Cannot parse color: '${value}'`);
-        const [_full, r, g, b, _last, a] = match;
-
-        // Stringify color to common hex format.
-        const rh = toHex(parseInt(r));
-        const gh = toHex(parseInt(g));
-        const bh = toHex(parseInt(b));
-        const ah = toHex(Math.floor(255 * parseFloat(a ?? '1')));
-        return `#${rh}${gh}${bh}${ah}` as const;
-      };
-
-      const isTransparent = (value: string) => {
-        return isTransparentHex(color(value));
-      };
-
-      const isTransparentHex = (value: Color) => {
-        return value.endsWith('00');
-      };
-
-      /** Parses CSS color, but returns `undefined` if it's transparent. */
-      const visibleColor = (value: string) => {
-        const parsed = color(value);
-        if (isTransparentHex(parsed)) return undefined;
-        return parsed;
-      };
-
-      /** Parses one side of a border. */
-      const borderSide = (
-        style: CSSStyleDeclaration,
-        prefix: string,
-        name = prefix
-      ) => {
-        if (
-          style.getPropertyValue(`${prefix}-width`) === '0px' ||
-          style.getPropertyValue(`${prefix}-style`) === 'none' ||
-          isTransparent(style.getPropertyValue(`${prefix}-color`))
-        ) {
-          // Ignore invisible borders.
-          return {};
-        }
-        return {
-          [name]: style.getPropertyValue(prefix),
-        };
-      };
-
-      /** Parses border. */
-      const border = (style: CSSStyleDeclaration, prefix = 'border') => {
-        // If the border is same on each side, it will be in `border` property.
-        if (style.getPropertyValue(prefix) !== '') {
-          return borderSide(style, prefix);
-        }
-
-        // Otherwise, `border` will be empty string and we must process each
-        // side separately.
-        return {
-          ...borderSide(style, `${prefix}-left`, `${prefix}Left`),
-          ...borderSide(style, `${prefix}-top`, `${prefix}Top`),
-          ...borderSide(style, `${prefix}-right`, `${prefix}Right`),
-          ...borderSide(style, `${prefix}-bottom`, `${prefix}Bottom`),
-        };
-      };
-
-      // Pick some properties from element's computed style.
-      const style = getComputedStyle(e);
-      const picked = {
-        fontFamily: except(style.fontFamily, '"Times New Roman"'),
-        fontSize: except(pixels(style.fontSize), 16),
-        fontWeight: except(style.fontWeight, '400'),
-        fontStyle: except(style.fontStyle, 'normal'),
-        textAlign: except(style.textAlign, 'start'),
-        textDecoration: unless(
-          style.textDecoration,
-          style.textDecorationLine === 'none'
-        ),
-        color: except(color(style.color), '#000000ff'),
-        backgroundColor: visibleColor(style.backgroundColor),
-        backgroundImage: except(style.backgroundImage, 'none'),
-        ...border(style),
-        boxShadow: except(style.boxShadow, 'none'),
-        cursor: except(style.cursor, 'auto'),
-        letterSpacing: pixels(except(style.letterSpacing, 'normal')),
-        lineHeight: pixels(except(style.lineHeight, 'normal')),
-        opacity: except(style.opacity, '1'),
-        ...borderSide(style, 'outline'),
-        overflow: except(style.overflow, 'visible'),
-        pointerEvents: except(style.pointerEvents, 'auto'),
-        textShadow: except(style.textShadow, 'none'),
-        textOverflow: except(style.textOverflow, 'clip'),
-        textTransform: except(style.textTransform, 'none'),
-        zIndex: except(style.zIndex, 'auto'),
-      };
-
-      // Construct `ElementInfo`.
       return {
-        id: e.getAttribute('id') ?? undefined,
-        tagName: e.nodeName.toLowerCase(),
-        ...picked,
+        tagName: 'text()',
+        whiteSpace: /^\s*$/.test(e.textContent ?? '')
+          ? (true as const)
+          : undefined,
       };
-    });
+    }
+
+    // Note that we cannot reference outside functions easily, hence we define
+    // them here.
+
+    /** Omits {@link value} if {@link condition} is met. */
+    const unless = <T>(value: T, condition: boolean) => {
+      if (condition) return undefined;
+      if (value === undefined)
+        throw new Error('Ambiguous attribute value undefined.');
+      return value;
+    };
+
+    /** Omits {@link value} if it's equal to {@link defaultValue}. */
+    const except = <T>(value: T, defaultValue: T) => {
+      return unless(value, value === defaultValue);
+    };
+
+    /** Parses CSS pixels. */
+    const pixels = (value?: string) => {
+      if (value === undefined) return undefined;
+
+      const match = value.match(/^(.+)(px)?$/);
+      if (match === null) throw new Error(`Cannot parse pixels: '${value}'`);
+      return parseInt(match[1]);
+    };
+
+    const toHex = (value: number) => {
+      return value.toString(16).padStart(2, '0') as `${string}`;
+    };
+
+    /** Parses CSS color. */
+    const color = (value: string) => {
+      // Remove whitespace.
+      value = value.replaceAll(/\s+/g, '');
+
+      // Parse `rgb(r,g,b)` and `rgba(r,g,b,a)` patterns.
+      const match = value.match(/^rgba?\((\d+),(\d+),(\d+)(,([0-9.]+))?\)$/);
+      if (match === null) throw new Error(`Cannot parse color: '${value}'`);
+      const [_full, r, g, b, _last, a] = match;
+
+      // Stringify color to common hex format.
+      const rh = toHex(parseInt(r));
+      const gh = toHex(parseInt(g));
+      const bh = toHex(parseInt(b));
+      const ah = toHex(Math.floor(255 * parseFloat(a ?? '1')));
+      return `#${rh}${gh}${bh}${ah}` as const;
+    };
+
+    const isTransparent = (value: string) => {
+      return isTransparentHex(color(value));
+    };
+
+    const isTransparentHex = (value: Color) => {
+      return value.endsWith('00');
+    };
+
+    /** Parses CSS color, but returns `undefined` if it's transparent. */
+    const visibleColor = (value: string) => {
+      const parsed = color(value);
+      if (isTransparentHex(parsed)) return undefined;
+      return parsed;
+    };
+
+    /** Parses one side of a border. */
+    const borderSide = (
+      style: CSSStyleDeclaration,
+      prefix: string,
+      name = prefix
+    ) => {
+      if (
+        style.getPropertyValue(`${prefix}-width`) === '0px' ||
+        style.getPropertyValue(`${prefix}-style`) === 'none' ||
+        isTransparent(style.getPropertyValue(`${prefix}-color`))
+      ) {
+        // Ignore invisible borders.
+        return {};
+      }
+      return {
+        [name]: style.getPropertyValue(prefix),
+      };
+    };
+
+    /** Parses border. */
+    const border = (style: CSSStyleDeclaration, prefix = 'border') => {
+      // If the border is same on each side, it will be in `border` property.
+      if (style.getPropertyValue(prefix) !== '') {
+        return borderSide(style, prefix);
+      }
+
+      // Otherwise, `border` will be empty string and we must process each
+      // side separately.
+      return {
+        ...borderSide(style, `${prefix}-left`, `${prefix}Left`),
+        ...borderSide(style, `${prefix}-top`, `${prefix}Top`),
+        ...borderSide(style, `${prefix}-right`, `${prefix}Right`),
+        ...borderSide(style, `${prefix}-bottom`, `${prefix}Bottom`),
+      };
+    };
+
+    // Pick some properties from element's computed style.
+    const style = getComputedStyle(e);
+    const picked = {
+      fontFamily: except(style.fontFamily, '"Times New Roman"'),
+      fontSize: except(pixels(style.fontSize), 16),
+      fontWeight: except(style.fontWeight, '400'),
+      fontStyle: except(style.fontStyle, 'normal'),
+      textAlign: except(style.textAlign, 'start'),
+      textDecoration: unless(
+        style.textDecoration,
+        style.textDecorationLine === 'none'
+      ),
+      color: except(color(style.color), '#000000ff'),
+      backgroundColor: visibleColor(style.backgroundColor),
+      backgroundImage: except(style.backgroundImage, 'none'),
+      ...border(style),
+      boxShadow: except(style.boxShadow, 'none'),
+      cursor: except(style.cursor, 'auto'),
+      letterSpacing: pixels(except(style.letterSpacing, 'normal')),
+      lineHeight: pixels(except(style.lineHeight, 'normal')),
+      opacity: except(style.opacity, '1'),
+      ...borderSide(style, 'outline'),
+      overflow: except(style.overflow, 'visible'),
+      pointerEvents: except(style.pointerEvents, 'auto'),
+      textShadow: except(style.textShadow, 'none'),
+      textOverflow: except(style.textOverflow, 'clip'),
+      textTransform: except(style.textTransform, 'none'),
+      zIndex: except(style.zIndex, 'auto'),
+    };
+
+    // Construct `ElementInfo`.
+    if (o.extractXml) {
+      const attrs: Record<string, string> = {};
+      for (let i = 0; i < e.attributes.length; i++) {
+        const attr = e.attributes.item(0)!;
+        attrs[attr.name] = attr.value;
+      }
+      return { tagName: e.nodeName.toLowerCase(), attrs, ...picked };
+    }
+    return {
+      id: e.getAttribute('id') ?? undefined,
+      tagName: e.nodeName.toLowerCase(),
+      ...picked,
+    };
   }
 
   public async save() {
