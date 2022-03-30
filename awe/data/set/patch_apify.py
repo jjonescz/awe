@@ -7,6 +7,10 @@ import ijson
 import pandas as pd
 from tqdm.auto import tqdm
 
+import awe.data.parsing
+
+ALZA_PARAMS_SELECTOR = '.params'
+
 
 def main():
     patch_alza()
@@ -16,7 +20,8 @@ def patch_alza():
     """
     Patches two bugs in dataset `alzaEn`.
     1. Selector for category contains unnecessary space.
-    2. Selector for params (`.params`) sometimes matches an empty node.
+    2. Some `.params` don't exist on the page.
+    2. Selector `.params` sometimes matches an empty node.
     """
 
     input_path = 'data/apify/alzaEn/augmented_dataset.json'
@@ -24,21 +29,29 @@ def patch_alza():
     df = pd.read_json(input_path)
     selector_category = df.columns.get_loc('selector_category')
     selector_specification = df.columns.get_loc('selector_specification')
+    localized_html = df.columns.get_loc('localizedHtml')
     bug_1 = 0
     bug_2 = 0
+    bug_3 = 0
     for idx in tqdm(range(len(df)), total=len(df), desc=input_path):
         # Bug 1.
         if df.iloc[idx, selector_category] == '.breadcrumbs .js-breadcrumbs':
             df.iloc[idx, selector_category] = '.breadcrumbs.js-breadcrumbs'
             bug_1 += 1
 
-        # Bug 2.
-        if df.iloc[idx, selector_specification] == '.params':
-            df.iloc[idx, selector_specification] = '#cpcm_cpc_mediaParams > .params'
-            bug_2 += 1
+        if df.iloc[idx, selector_specification] == ALZA_PARAMS_SELECTOR:
+            # Bug 2.
+            tree = awe.data.parsing.parse_html(df.iloc[idx, localized_html])
+            if not tree.css_matches(ALZA_PARAMS_SELECTOR):
+                df.iloc[idx, selector_specification] = ''
+                bug_2 += 1
+            else:
+                # Bug 3.
+                df.iloc[idx, selector_specification] = '#cpcm_cpc_mediaParams > .params'
+                bug_3 += 1
 
     if bug_1 > 0 or bug_2 > 0:
-        print(f'Saving {input_path!r} ({bug_1=} {bug_2=})...')
+        print(f'Saving {input_path!r} ({bug_1=} {bug_2=} {bug_3=})...')
         df.to_json(input_path)
 
 def patch_notino():
