@@ -82,7 +82,8 @@ class Vertical(awe.data.set.pages.Vertical):
             website_dirs = Vertical.get_website_dirs(self.dir_path)
 
         page_count = 0
-        for subdir in tqdm(website_dirs, desc='websites'):
+        for subdir in (p := tqdm(website_dirs, desc='websites')):
+            p.set_description(subdir)
             website = Website(
                 vertical=self,
                 dir_name=subdir,
