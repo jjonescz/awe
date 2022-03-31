@@ -157,7 +157,8 @@ class Website(awe.data.set.pages.Website):
     def dataset_db_path(self):
         return f'{self.dir_path}/dataset.db'
 
-    def read_json_df(self, file_path: str):
+    @staticmethod
+    def read_json_df(file_path: str):
         if not os.path.exists(file_path):
             raise RuntimeError(
                 f'JSON not found ({file_path!r}).')
