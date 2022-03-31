@@ -56,7 +56,7 @@ def patch_alza():
 
     if bug_1 > 0 or bug_2 > 0:
         print(f'Saving {input_path!r} ({bug_1=} {bug_2=} {bug_3=})...')
-        df.to_json(input_path)
+        awe.data.set.apify.Website.save_json_df(df, input_path)
 
 def patch_tesco():
     """
@@ -76,7 +76,7 @@ def patch_tesco():
 
     if counter > 0:
         print(f'Saving {input_path!r} ({counter=})...')
-        df.to_json(input_path)
+        awe.data.set.apify.Website.save_json_df(df, input_path)
 
 if __name__ == '__main__':
     main()

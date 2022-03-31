@@ -180,8 +180,9 @@ class Website(awe.data.set.pages.Website):
             for idx in range(self.page_count)
         ]
 
-    def save_json_df(self):
-        self.df.to_json(self.dataset_json_path)
+    @staticmethod
+    def save_json_df(df: pd.DataFrame, file_path: str):
+        df.to_json(file_path, orient='records')
 
     def convert_to_db(self, db: awe.data.set.db.Database):
         # Gather DataFrame columns to convert into metadata.
