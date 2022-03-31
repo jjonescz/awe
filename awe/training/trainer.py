@@ -214,6 +214,7 @@ class Trainer:
             {
                 'label_key': node.label_keys[0],
                 'text': node.text,
+                'url': node.dom.page.url,
             } | {
                 'attrs': t for t in [get_text(node)]
                 if not self.params.tokenize_node_attrs_only_ancestors and t
