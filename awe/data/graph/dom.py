@@ -306,6 +306,10 @@ class Node:
         return not self.is_root and self.parsed.parent is None
 
     @property
+    def is_empty(self):
+        return awe.data.html_utils.is_empty(self.parsed)
+
+    @property
     def html_tag(self):
         return self.parsed.tag
 

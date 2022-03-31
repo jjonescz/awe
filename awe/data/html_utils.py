@@ -59,6 +59,9 @@ def is_comment(node: 'awe.data.parsing.Node'):
 def is_leaf(node: 'awe.data.parsing.Node'):
     return node.child is None
 
+def is_empty(node: 'awe.data.parsing.Node'):
+    return node.child is None and not node.text(deep=False)
+
 def get_xpath_tag(node: 'awe.data.parsing.Node'):
     return 'text()' if is_text(node) else node.tag
 
