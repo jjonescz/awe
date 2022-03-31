@@ -363,7 +363,8 @@ class PageLabels(awe.data.set.labels.PageLabels):
         # `lxb_selectors_sibling` at source/lexbor/selectors/selectors.c:266).
         if '+' in selector:
             new_selector = selector.replace('+', '~')
-            warnings.warn(f'Patched selector {selector!r} to {new_selector!r}.')
+            warnings.warn(f'Patched {label_key} selector {selector!r} to ' +
+                f'{new_selector!r}.')
             selector = new_selector
 
         try:
