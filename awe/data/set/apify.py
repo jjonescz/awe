@@ -65,8 +65,8 @@ class Vertical(awe.data.set.pages.Vertical):
         return [
             subdir for subdir in sorted(os.listdir(dir_path))
             # Ignore some directories.
-            if (not os.path.isdir(os.path.join(dir_path, subdir)) or
-                subdir.startswith('.') or subdir == 'Datasets')
+            if (os.path.isdir(os.path.join(dir_path, subdir)) and
+                not subdir.startswith('.') and subdir != 'Datasets')
         ]
 
     def _iterate_websites(self):
