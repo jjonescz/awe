@@ -29,6 +29,7 @@ class Dataset(awe.data.set.pages.Dataset):
 
     def __init__(self,
         only_websites: Optional[list[str]] = None,
+        exclude_websites: list[str] = (),
         convert: bool = True,
         only_label_keys: Optional[list[str]] = None
     ):
@@ -37,6 +38,7 @@ class Dataset(awe.data.set.pages.Dataset):
             dir_path=DIR,
         )
         self.only_websites = only_websites
+        self.exclude_websites = exclude_websites
         self.convert = convert
         self.only_label_keys = only_label_keys
         self.verticals = [
@@ -66,12 +68,12 @@ class Vertical(awe.data.set.pages.Vertical):
     def dir_path(self):
         return self.dataset.dir_path
 
-    @staticmethod
-    def get_website_dirs(dir_path: str = DIR):
+    def get_website_dirs(self):
         return [
-            subdir for subdir in sorted(os.listdir(dir_path))
+            subdir for subdir in sorted(os.listdir(self.dir_path))
             # Ignore some directories.
-            if (os.path.isdir(os.path.join(dir_path, subdir)) and
+            if (subdir not in self.dataset.exclude_websites and
+                os.path.isdir(os.path.join(self.dir_path, subdir)) and
                 not subdir.startswith('.') and subdir != 'Datasets')
         ]
 
@@ -85,7 +87,7 @@ class Vertical(awe.data.set.pages.Vertical):
         if self.dataset.only_websites is not None:
             website_dirs = self.dataset.only_websites
         else:
-            website_dirs = Vertical.get_website_dirs(self.dir_path)
+            website_dirs = self.get_website_dirs()
 
         page_count = 0
         for subdir in (p := tqdm(website_dirs, desc='websites')):

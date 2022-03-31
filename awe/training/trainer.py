@@ -103,6 +103,7 @@ class Trainer:
             )
         elif self.params.dataset == awe.training.params.Dataset.apify:
             self.ds = awe.data.set.apify.Dataset(
+                exclude_websites=self.params.exclude_websites,
                 only_label_keys=self.params.label_keys
             )
         else:

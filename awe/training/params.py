@@ -37,6 +37,7 @@ class Params:
     label_keys: list[str] = ('name', 'price', 'shortDescription', 'images')
     train_website_indices: list[int] = (0, 3, 4, 5, 7)
     """Only the first vertical for now."""
+    exclude_websites: list[str] = ()
     train_subset: Optional[int] = 2000
     val_subset: Optional[int] = 50
 
