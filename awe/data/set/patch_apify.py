@@ -14,13 +14,14 @@ ALZA_PARAMS_SELECTOR = '.params'
 
 
 def main():
-    # patch_alza()
-    # patch_tesco()
+    patch_alza()
+    patch_tesco()
     patch_notino()
 
 def patch_alza():
     """
-    Patches two bugs in dataset `alzaEn`.
+    Patches dataset `alzaEn`.
+
     1. Selector for category contains unnecessary space.
     2. Some `.params` don't exist on the page.
     2. Selector `.params` sometimes matches an empty node.
