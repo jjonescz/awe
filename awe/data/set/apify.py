@@ -109,7 +109,9 @@ class Website(awe.data.set.pages.Website):
 
         self.exact_html = os.path.exists(self.slim_dataset_json_path)
 
-        if self.vertical.dataset.convert:
+        # Convert if desired and no `slim_dataset` exists (in the latter case,
+        # conversion would be counter-productive).
+        if self.vertical.dataset.convert and not self.exact_html:
             db = awe.data.set.db.Database(self.dataset_db_path)
             if not db.fresh:
                 self.page_count = len(db)
