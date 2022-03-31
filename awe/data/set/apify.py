@@ -307,8 +307,25 @@ class PageLabels(awe.data.set.labels.PageLabels):
             selector = new_selector
 
         try:
-            return self.page.dom.tree.css(selector)
+            nodes = self.page.dom.tree.css(selector)
         except awe.data.parsing.Error as e:
             raise RuntimeError(
                 f'Invalid selector {selector!r} for {label_key=} ' + \
                 f'({self.page.html_path!r}).') from e
+
+        # Discard empty labeled nodes (if there are more than 1 labeled).
+        if len(nodes) > 1:
+            orig_length = len(nodes)
+            nodes = [
+                n for n in nodes
+                if not awe.data.html_utils.is_empty(n)
+            ]
+            if len(nodes) == 0:
+                raise RuntimeError(
+                    f'Only empty nodes match {selector=} for {label_key=} ' +
+                    f'({self.page.html_path!r}).')
+            if orig_length != len(nodes):
+                warnings.warn(
+                    f'Removed empty nodes labeled {label_key} ({selector=}).')
+
+        return nodes
