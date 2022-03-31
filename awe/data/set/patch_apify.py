@@ -11,7 +11,6 @@ ALZA_PARAMS_SELECTOR = '.params'
 
 def main():
     patch_alza()
-    patch_tesco()
 
 def patch_alza():
     """
@@ -56,26 +55,6 @@ def patch_alza():
 
     if bug_1 > 0 or bug_2 > 0:
         print(f'Saving {input_path!r} ({bug_1=} {bug_2=} {bug_3=})...')
-        awe.data.set.apify.Website.save_json_df(df, input_path)
-
-def patch_tesco():
-    """
-    Patches dataset `tescoEn`, replacing `+` in a selector with `~` because the
-    former crashes Lexbor (our HTML parser).
-    """
-
-    input_path = 'data/apify/tescoEn/augmented_dataset.json'
-    print(f'Patching {input_path!r}...')
-    df = pd.read_json(input_path)
-    selector_specification = df.columns.get_loc('selector_specification')
-    counter = 0
-    for idx in tqdm(range(len(df)), total=len(df), desc=input_path):
-        if df.iloc[idx, selector_specification] == '.product-info-block + section.tabularContent, div.product-info-block--undefined, div.product-info-block--undefined~.product-info-block':
-            df.iloc[idx, selector_specification] = '.product-info-block ~ section.tabularContent, div.product-info-block--undefined, div.product-info-block--undefined~.product-info-block'
-            counter += 1
-
-    if counter > 0:
-        print(f'Saving {input_path!r} ({counter=})...')
         awe.data.set.apify.Website.save_json_df(df, input_path)
 
 if __name__ == '__main__':
