@@ -101,7 +101,7 @@ ENV GOPATH=/usr
 RUN go get github.com/prasmussen/gdrive@2.1.1
 
 # Install jless (JSON CLI).
-RUN curl -fsSL https://github.com/PaulJuliusMartinez/jless/releases/download/v0.7.2/jless-v0.7.2-x86_64-unknown-linux-gnu.zip -o jless.zip \
+RUN curl -fsSL https://github.com/PaulJuliusMartinez/jless/releases/download/v0.8.0/jless-v0.8.0-x86_64-unknown-linux-gnu.zip -o jless.zip \
     && unzip jless.zip -d /usr/bin \
     && rm jless.zip
 
