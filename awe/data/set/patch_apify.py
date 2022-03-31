@@ -1,9 +1,5 @@
 # Run: `python -m awe.data.set.patch_apify`
 
-import json
-import os
-
-import ijson
 import pandas as pd
 from tqdm.auto import tqdm
 
@@ -16,7 +12,6 @@ ALZA_PARAMS_SELECTOR = '.params'
 def main():
     patch_alza()
     patch_tesco()
-    patch_notino()
 
 def patch_alza():
     """
@@ -82,48 +77,6 @@ def patch_tesco():
     if counter > 0:
         print(f'Saving {input_path!r} ({counter=})...')
         df.to_json(input_path)
-
-def patch_notino():
-    """
-    Drops HTML from dataset `notinoEn`, it's not necessary (since exact HTML
-    must be extracted by the visuals extractor anyway) and can cause
-    out-of-memory when loading the JSON dataset.
-    """
-
-    input_path = 'data/apify/notinoEn/augmented_dataset.json'
-    output_path = 'data/apify/notinoEn/slim_dataset.json'
-
-    if os.path.exists(output_path):
-        print(f'Skipping notino patching, the output exists ({output_path!r}).')
-        return
-
-    print(f'Patching {input_path!r}...')
-    with open(input_path, mode='rb') as input_file:
-        with open(output_path, mode='w', encoding='utf-8') as output_file:
-            output_file.write('[\n')
-            rows = ijson.items(input_file, 'item')
-            after_first = False
-            for input_row in tqdm(rows, desc=input_path, total=2000):
-                # Keep only `url`, `selector_<key>` and the corresponding
-                # `<key>` columns.
-                label_keys = {
-                    k[len(awe.data.set.apify.SELECTOR_PREFIX):]
-                    for k in input_row.keys()
-                    if k.startswith(awe.data.set.apify.SELECTOR_PREFIX)
-                }
-                output_row = {
-                    k: v
-                    for k, v in input_row.items()
-                    if (k == 'url' or
-                        k.startswith(awe.data.set.apify.SELECTOR_PREFIX) or
-                        k in label_keys)
-                }
-                if after_first:
-                    output_file.write(',\n')
-                else:
-                    after_first = True
-                json.dump(output_row, output_file)
-            output_file.write(']\n')
 
 if __name__ == '__main__':
     main()
