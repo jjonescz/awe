@@ -6,6 +6,7 @@ import { logFile } from '../logging';
 import { PageInfo } from '../page-info';
 import { PageRecipe } from '../page-recipe';
 import { ScrapeVersion } from '../scrape-version';
+import { tryParseInt } from '../utils';
 import { loadModel, ModelInfo } from './model-info';
 import { Inference, NodePrediction } from './python';
 import * as views from './views';
@@ -18,12 +19,15 @@ export class DemoOptions {
   public readonly logInputs: boolean;
   /** Set when developing server UI to avoid waiting for Python. */
   public readonly mockInference: boolean;
+  /** Puppeteer page loading timeout in seconds. */
+  public readonly timeout: number;
 
   public constructor() {
     this.debug = !!process.env.DEBUG;
-    this.port = parseInt(process.env.PORT || '3000');
+    this.port = tryParseInt(process.env.PORT, 3000);
     this.logInputs = !!process.env.LOG_INPUTS;
     this.mockInference = !!process.env.MOCK_INFERENCE;
+    this.timeout = tryParseInt(process.env.TIMEOUT, 15);
   }
 }
 
@@ -94,6 +98,7 @@ export class DemoApp {
   private mainPage = async (req: Request, res: Response) => {
     // Parse parameters.
     const url = req.query['url']?.toString() ?? '';
+    const timeout = tryParseInt(req.query['timeout'], this.options.timeout);
     const log = this.log.child({ url: url });
     log.debug('run');
 
@@ -121,6 +126,7 @@ export class DemoApp {
     log.debug('load page');
     res.write(views.logEntry('Loading page...'));
     const page = await this.browser.newPage();
+    page.setDefaultTimeout(timeout * 1000);
     const nav1 = await DemoApp.wrapNavigation(
       (o) => page.goto(url, o),
       res,

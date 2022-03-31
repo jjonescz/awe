@@ -123,3 +123,9 @@ export function removeWhere<T>(
     }
   }
 }
+
+export function tryParseInt(input: any, defaultValue: number): number {
+  const result = parseInt(input?.toString());
+  if (isNaN(result)) return defaultValue;
+  return result;
+}
