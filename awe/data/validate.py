@@ -76,6 +76,13 @@ parser.add_argument('--convert',
     help='work with SQLite database rather than JSON',
     default=False
 )
+parser.add_argument('--filter-labels',
+    dest='filter_labels',
+    action='store_true',
+    help='filters apify label keys to only ' +
+        '"name", "price", "shortDescription", "images"',
+    default=False
+)
 args = parser.parse_args()
 
 # Validate arguments.
@@ -88,6 +95,8 @@ if len(args.target) == 0:
     args.target = None
 if args.dataset == 'apify':
     ds = awe.data.set.apify.Dataset(
+        only_label_keys=('name', 'price', 'shortDescription', 'images')
+            if args.filter_labels else None,
         only_websites=args.target,
         convert=args.convert
     )
