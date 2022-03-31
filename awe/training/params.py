@@ -34,6 +34,7 @@ class Params:
     # Dataset
     dataset: Dataset = Dataset.swde
     vertical: str = 'auto'
+    label_keys: list[str] = ('name', 'price', 'shortDescription', 'images')
     train_website_indices: list[int] = (0, 3, 4, 5, 7)
     """Only the first vertical for now."""
     train_subset: Optional[int] = 2000

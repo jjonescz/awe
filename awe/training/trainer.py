@@ -103,7 +103,7 @@ class Trainer:
             )
         elif self.params.dataset == awe.training.params.Dataset.apify:
             self.ds = awe.data.set.apify.Dataset(
-                only_label_keys=('name', 'price', 'shortDescription', 'images')
+                only_label_keys=self.params.label_keys
             )
         else:
             raise ValueError(
