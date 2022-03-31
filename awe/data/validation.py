@@ -42,6 +42,11 @@ class Validator:
         # Check that label key-value pairs are consistent.
         if self.labels:
             page_labels = page.get_labels()
+
+            def get_selector_str(key: str):
+                selector = page_labels.get_selector(key)
+                return '' if selector is None else f'({selector=})'
+
             total = 0
             for key in page_labels.label_keys:
                 values = page_labels.get_label_values(key)
@@ -51,11 +56,9 @@ class Validator:
                 total += actual
                 if actual < expected:
                     page.valid = False
-                    selector = page_labels.get_selector(key)
-                    selector_str = '' if selector is None else f'({selector=})'
                     warnings.warn(
                         f'Found {actual} < {expected} nodes labeled ' +
-                        f'{key!r}{selector_str}={values!r} ' +
+                        f'{key!r}{get_selector_str(key)}={values!r} ' +
                         f'({page.html_path!r}).')
 
                 # Check that labeled nodes are not empty.
@@ -64,7 +67,8 @@ class Validator:
                         page.valid = False
                         xpath = awe.data.html_utils.get_xpath(node)
                         warnings.warn(
-                            f'Node {xpath!r} labeled {key!r} is empty ' +
+                            f'Node {xpath!r} labeled {key!r}' +
+                            f'{get_selector_str(key)} is empty ' +
                             f'({page.html_path!r}).')
 
             if total == 0:
