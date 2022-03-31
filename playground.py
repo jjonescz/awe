@@ -1,9 +1,15 @@
-import awe.data.set.swde
-import awe.training.params
-import awe.training.trainer
-import awe.data.sampling
+import awe.data.set.apify
 
-params = awe.training.params.Params.load_user(normalize=True)
-trainer = awe.training.trainer.Trainer(params)
-trainer.ds = awe.data.set.swde.Dataset(suffix='-exact', convert=False, only_verticals=('auto',))
-trainer.prepare_features()
+ds = awe.data.set.apify.Dataset(
+    only_websites=('conradEn',),
+    only_label_keys=('name', 'price', 'shortDescription', 'images')
+)
+page = next(p for p in ds.get_all_pages() if p.html_path ==
+    'data/apify/conradEn/pages/localized_html_https-www-conrad-com-p-makita-bo4565j-random-orbit-sander-200-w-2317163.htm')
+page.cache_dom()
+page.dom.init_nodes()
+page_visuals = page.load_visuals()
+page_visuals.fill_tree_boxes(page.dom)
+page.dom.filter_nodes()
+page.dom.init_labels(propagate_to_leaves=False)
+print('Done')
