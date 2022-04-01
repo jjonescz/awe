@@ -284,7 +284,7 @@ class Page(awe.data.set.pages.Page):
     @property
     def url_slug(self):
         return slugify.slugify(self.url,
-            max_length=100 if self.website.short_slog else None
+            max_length=100 if self.website.short_slog else 0
         )
 
     @property
