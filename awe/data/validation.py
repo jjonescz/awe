@@ -79,7 +79,13 @@ class Validator:
         if self.visuals:
             page_dom = page.dom
             page_dom.init_nodes()
-            page_visuals = page.load_visuals()
+
+            try:
+                page_visuals = page.load_visuals()
+            except FileNotFoundError as e:
+                page.valid = False
+                warnings.warn(f'No visuals for page {page.html_path!r}: {e}.')
+                return
 
             # Check that extracted visual DOM has the same structure as parsed
             # DOM.
@@ -89,6 +95,7 @@ class Validator:
                 page.valid = False
                 warnings.warn(
                     f'Cannot fill page visuals ({page.html_path!r}): {e}')
+                return
 
             # Check that all target nodes have a bounding box.
             if self.labeled_boxes:
