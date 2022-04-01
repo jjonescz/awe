@@ -16,7 +16,23 @@ class Validator:
     ignore_missing_visuals: bool = False
     labeled_boxes: bool = True
     num_invalid: int = 0
+    num_ignored_missing_visuals: int = 0
+    num_tested: int = 0
     file: Optional[TextIOWrapper] = None
+
+    def summary(self):
+        stats = {
+            'invalid': self.num_invalid,
+            'ignored_missing_visuals': self.num_ignored_missing_visuals,
+            'tested': self.num_tested,
+        }
+        return {
+            k: v for k, v in stats.items()
+            if k == 'invalid' or v != 0
+        }
+
+    def summary_str(self):
+        return ', '.join(f'{k}={v}' for k, v in self.summary().items())
 
     def write_invalid_to(self, file_path: str):
         self.file = open(file_path, mode='w', encoding='utf-8')
@@ -30,9 +46,9 @@ class Validator:
         for page in pages:
             page.valid = None
 
-        self.num_invalid = 0
         for page in tqdm(pages, desc=progress_bar) if progress_bar is not None else pages:
             self.validate_page(page)
+            self.num_tested += 1
             if page.valid is False:
                 self.num_invalid += 1
                 if self.file is not None:
@@ -85,6 +101,7 @@ class Validator:
                 page_visuals = page.load_visuals()
             except FileNotFoundError as e:
                 if self.ignore_missing_visuals:
+                    self.num_ignored_missing_visuals += 1
                     return
                 page.valid = False
                 warnings.warn(f'No visuals for page {page.html_path!r}: {e}.')

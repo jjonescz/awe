@@ -151,7 +151,7 @@ if args.save_list is not None:
 # Validate.
 def validate():
     validator.validate_pages(pages, max_invalid=args.max_errors)
-    print(f'Validation complete (invalid={validator.num_invalid}, ' +
+    print(f'Validation complete ({validator.summary_str()}, ' +
         f'pages={len(pages)}).')
 if args.quiet:
     with warnings.catch_warnings():
