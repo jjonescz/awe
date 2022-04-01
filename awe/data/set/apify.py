@@ -22,6 +22,7 @@ SELECTOR_PREFIX = 'selector_'
 VISUALS_SUFFIX = '-exact'
 EXACT_EXTENSION = f'{VISUALS_SUFFIX}.html'
 PAGES_SUBDIR = 'pages'
+LONG_SLUG_WEBSITES = { 'alzaEn', 'bestbuyEn', 'conradEn', 'ikeaEn', 'notinoEn', 'tescoEn' }
 
 @dataclasses.dataclass
 class Dataset(awe.data.set.pages.Dataset):
@@ -159,6 +160,10 @@ class Website(awe.data.set.pages.Website):
     def dataset_db_path(self):
         return f'{self.dir_path}/dataset.db'
 
+    @property
+    def short_slog(self):
+        return self.name not in LONG_SLUG_WEBSITES
+
     @staticmethod
     def read_json_df(file_path: str):
         if not os.path.exists(file_path):
@@ -278,7 +283,9 @@ class Page(awe.data.set.pages.Page):
 
     @property
     def url_slug(self):
-        return slugify.slugify(self.url)
+        return slugify.slugify(self.url,
+            max_length=100 if self.website.short_slog else None
+        )
 
     @property
     def file_name_no_extension(self):
