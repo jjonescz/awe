@@ -83,6 +83,12 @@ parser.add_argument('--filter-labels',
         '"name", "price", "shortDescription", "images"',
     default=False
 )
+parser.add_argument('--ignore-missing-visuals',
+    dest='ignore_missing_visuals',
+    action='store_true',
+    help='ignores pages without visuals JSON',
+    default=False
+)
 args = parser.parse_args()
 
 # Validate arguments.
@@ -134,7 +140,8 @@ if args.max_pages is not None:
 
 validator = awe.data.validation.Validator(
     labels=not args.no_labels,
-    visuals=args.visuals
+    visuals=args.visuals,
+    ignore_missing_visuals=args.ignore_missing_visuals,
 )
 
 # Write invalid pages to a file (iteratively during the validation).
