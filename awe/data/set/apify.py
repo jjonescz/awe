@@ -283,9 +283,11 @@ class Page(awe.data.set.pages.Page):
 
     @property
     def url_slug(self):
+        # HACK: The slug is limited to 100 characters but setting
+        # `max_length=100` would sometimes omit the trailing dash.
         return slugify.slugify(self.url,
-            max_length=100 if self.website.short_slog else 0
-        )
+            max_length=101 if self.website.short_slog else 0
+        )[:100]
 
     @property
     def file_name_no_extension(self):
