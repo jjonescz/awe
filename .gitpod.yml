@@ -5,6 +5,9 @@ image:
 
 tasks:
   - init: ./sh/configure.sh
+    # Ensure all Python packages are installed (so that we don't have to rebuild
+    # the Gitpod image every time a new small Python dependency is added).
+    command: pip install -r gradient/requirements.txt
 
 vscode:
   extensions:
