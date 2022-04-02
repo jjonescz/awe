@@ -48,7 +48,7 @@ class Validator:
 
         for page in (p := tqdm(pages, desc=progress_bar)) if progress_bar is not None else pages:
             if p is not None:
-                p.set_postfix(self.summary())
+                p.set_postfix(self.summary(), refresh=False)
             self.validate_page(page)
             self.num_tested += 1
             if page.valid is False:
