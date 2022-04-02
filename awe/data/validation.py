@@ -129,7 +129,8 @@ class Validator:
                             warnings.warn(
                                 f'Node {n.get_xpath()!r} labeled ' +
                                 f'{self.get_selector_str(page, label_key)} ' +
-                                f'has no bounding box ({page.html_path!r}).')
+                                f'(among {len(labeled_nodes)}) has no ' +
+                                f'bounding box ({page.html_path!r}).')
 
         if page.valid is None:
             page.valid = True
