@@ -175,6 +175,14 @@ class Page(abc.ABC):
         return f'{self.dir_path}/{self.visuals_file_name}'
 
     @property
+    def screenshot_file_name(self):
+        return f'{self.file_name_no_extension}{self.visuals_suffix}-full.png'
+
+    @property
+    def screenshot_path(self):
+        return f'{self.dir_path}/{self.screenshot_file_name}'
+
+    @property
     @abc.abstractmethod
     def url(self) -> str:
         """Original URL of the page."""
