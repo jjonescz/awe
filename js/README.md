@@ -115,18 +115,24 @@ pnpm start -- -d ../ --files=../data/invalid_pages.txt -o -T=1000 -j=8 -SH
 To blend JSON and HTML into XML:
 
 ```bash
-pnpm start -- -d ../data/apify/notinoEn -g 'pages/localized_html_*.htm' -B
+pnpm start -- -d ../data/apify/alzaEn -g 'pages/localized_html_*.htm' -B
 ```
 
 To add new website to the above list (and determine which parameters are needed),
 try extracting a few pages with screenshots:
 
 ```bash
-pnpm start -- -d ../data/apify/notinoEn -g 'pages/localized_html_*.htm' -o -T=1000 -SH -t -m=2
+pnpm start -- -d ../data/apify/alzaEn -g 'pages/localized_html_*.htm' -o -T=1000 -SH -t -m=2
 ```
 
 And validate them (including manually looking at the screenshots):
 
 ```bash
-(cd .. && python -m awe.data.validate --visuals --ignore-missing-visuals --max-errors=1 notinoEn)
+(cd .. && python -m awe.data.validate --visuals --ignore-missing-visuals --max-errors=1 alzaEn)
+```
+
+To take 3 screenshots of a website:
+
+```bash
+pnpm start -- -d ../data/apify/alzaEn -g 'pages/localized_html_*.htm' -oRHt -T=1000 -m=3 -S
 ```
