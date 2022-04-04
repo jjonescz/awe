@@ -7,6 +7,7 @@ import warnings
 import awe.data.set.apify
 import awe.data.set.swde
 import awe.data.validation
+import awe.training.params
 
 # Parse CLI arguments.
 parser = argparse.ArgumentParser(
@@ -79,8 +80,7 @@ parser.add_argument('--convert',
 parser.add_argument('--filter-labels',
     dest='filter_labels',
     action='store_true',
-    help='filters apify label keys to only ' +
-        '"name", "price", "shortDescription", "images"',
+    help='filters apify label keys according to `data/params.json`',
     default=False
 )
 parser.add_argument('--ignore-missing-visuals',
@@ -100,9 +100,14 @@ if args.save_back and args.read_list is None:
 if len(args.target) == 0:
     args.target = None
 if args.dataset == 'apify':
+    if args.filter_labels:
+        only_label_keys = awe.training.params.Params.load_user().label_keys
+        print(f'Filtering label keys to {only_label_keys!r}.')
+    else:
+        only_label_keys = None
+
     ds = awe.data.set.apify.Dataset(
-        only_label_keys=('name', 'price', 'shortDescription', 'images')
-            if args.filter_labels else None,
+        only_label_keys=only_label_keys,
         only_websites=args.target,
         convert=args.convert
     )
