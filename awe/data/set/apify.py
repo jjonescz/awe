@@ -161,7 +161,7 @@ class Website(awe.data.set.pages.Website):
         return f'{self.dir_path}/dataset.db'
 
     @property
-    def short_slog(self):
+    def short_slug(self):
         return self.name not in LONG_SLUG_WEBSITES
 
     @staticmethod
@@ -283,11 +283,11 @@ class Page(awe.data.set.pages.Page):
 
     @property
     def url_slug(self):
-        # HACK: The slug is limited to 100 characters but setting
-        # `max_length=100` would sometimes omit the trailing dash.
-        return slugify.slugify(self.url,
-            max_length=101 if self.website.short_slog else 0
-        )[:100]
+        if self.website.short_slug:
+            # HACK: The slug is limited to 100 characters but setting
+            # `max_length=100` would sometimes omit the trailing dash.
+            return slugify.slugify(self.url, max_length=101)[:100]
+        return slugify.slugify(self.url)
 
     @property
     def file_name_no_extension(self):
