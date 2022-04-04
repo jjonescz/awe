@@ -39,6 +39,7 @@ def plot_screenshot_with_boxes(
         name='Set1',
         lut=len(page_labels.label_keys)
     )
+    rects = {}
     for idx, label_key in enumerate(page_labels.label_keys):
         for labeled_node in page_labels.get_labeled_nodes(label_key):
             node = page_dom.find_parsed_node(labeled_node)
@@ -52,6 +53,8 @@ def plot_screenshot_with_boxes(
                     linewidth=2,
                     label=label_key,
                 )
+                rects[label_key] = rect
                 ax.add_patch(rect)
 
-    ax.legend()
+    # Show legend.
+    ax.legend(rects.values(), rects.keys())
