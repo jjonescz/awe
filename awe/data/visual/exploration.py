@@ -1,3 +1,5 @@
+import math
+
 import matplotlib.patches
 import matplotlib.pyplot as plt
 
@@ -11,11 +13,23 @@ def plot_screenshot_with_boxes(page: awe.data.set.pages.Page):
     page_visuals = page.load_visuals()
     page_dom.init_nodes()
     page_visuals.fill_tree_boxes(page_dom)
-    page_dom.filter_nodes()
+    # page_dom.filter_nodes()
+
+    # Find max y.
+    max_y = 0
+    for label_key in page_labels.label_keys:
+        for labeled_node in page_labels.get_labeled_nodes(label_key):
+            node = page_dom.find_parsed_node(labeled_node)
+            if (b := node.box) is not None:
+                if (y := b.y + b.height) > max_y:
+                    max_y = y
+
+    # Crop the screenshot.
+    im = plt.imread(page.screenshot_path)
+    im = im[:math.ceil(max_y) + 5, :, :]
 
     # Plot the screenshot.
-    im = plt.imread(page.screenshot_path)
-    fig, ax = plt.subplots(figsize=(20,50))
+    fig, ax = plt.subplots(figsize=(10,20))
     ax.imshow(im)
 
     # Plot bounding boxes.
