@@ -1,5 +1,6 @@
 import math
 
+import matplotlib.cm
 import matplotlib.patches
 import matplotlib.pyplot as plt
 
@@ -13,7 +14,6 @@ def plot_screenshot_with_boxes(page: awe.data.set.pages.Page):
     page_visuals = page.load_visuals()
     page_dom.init_nodes()
     page_visuals.fill_tree_boxes(page_dom)
-    # page_dom.filter_nodes()
 
     # Find max y.
     max_y = 0
@@ -33,7 +33,11 @@ def plot_screenshot_with_boxes(page: awe.data.set.pages.Page):
     ax.imshow(im)
 
     # Plot bounding boxes.
-    for label_key in page_labels.label_keys:
+    cmap = matplotlib.cm.get_cmap(
+        name='Set1',
+        lut=len(page_labels.label_keys)
+    )
+    for idx, label_key in enumerate(page_labels.label_keys):
         for labeled_node in page_labels.get_labeled_nodes(label_key):
             node = page_dom.find_parsed_node(labeled_node)
             if (b := node.box) is not None:
@@ -42,9 +46,11 @@ def plot_screenshot_with_boxes(page: awe.data.set.pages.Page):
                     width=b.width,
                     height=b.height,
                     fill=False,
-                    edgecolor='red',
-                    linewidth=2
+                    edgecolor=cmap(idx),
+                    linewidth=2,
+                    label=label_key,
                 )
                 ax.add_patch(rect)
 
+    ax.legend()
     return fig, ax
