@@ -88,6 +88,7 @@ JavaScript, so beware of that `-S` option):
 
 ```bash
 pnpm start -- -d ../data/apify/alzaEn -g 'pages/localized_html_*.htm' -o -T=1000 -j=8 -SH
+pnpm start -- -d ../data/apify/asosEn -g 'pages/localized_html_*.htm' -o -T=1000 -j=8 -SH
 pnpm start -- -d ../data/apify/bestbuyEn -g 'pages/localized_html_*.htm' -o -T=1000 -j=8 -SH
 pnpm start -- -d ../data/apify/bloomingdalesEn -g 'pages/localized_html_*.htm' -o -T=1000 -j=8 -SH
 pnpm start -- -d ../data/apify/conradEn -g 'pages/localized_html_*.htm' -o -T=1000 -j=8 -SH
