@@ -39,7 +39,9 @@ class Params:
     """Only the first vertical for now."""
     exclude_websites: list[str] = ()
     train_subset: Optional[int] = 2000
+    """Number of pages per website."""
     val_subset: Optional[int] = 50
+    """Number of pages per website."""
 
     # Trainer
     epochs: int = 5

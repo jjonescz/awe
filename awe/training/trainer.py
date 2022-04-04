@@ -48,6 +48,22 @@ class RunInput:
 
     progress_dict: Optional[dict[str]] = None
 
+class Subsetter:
+    def __init__(self):
+        self.rng = np.random.default_rng(42)
+
+    def __call__(self,
+        websites: list[awe.data.set.pages.Website],
+        subset: Optional[int]
+    ):
+        if subset is None:
+            return [p for w in websites for p in w.pages]
+        return [
+            p
+            for w in websites
+            for p in self.rng.choice(w.pages, subset, replace=False)
+        ]
+
 class Trainer:
     ds: awe.data.set.pages.Dataset = None
     label_map: awe.training.context.LabelMap
@@ -140,19 +156,10 @@ class Trainer:
         val_website_names = [w.name for w in self.val_websites]
         print(f'{train_website_names=}, {val_website_names=}')
 
-        # Take pages.
-        train_pages = [p for w in self.train_websites for p in w.pages]
-        val_pages = [p for w in self.val_websites for p in w.pages]
-        print(f'{len(train_pages)=}, {len(val_pages)=}')
-
-        # Take subset.
-        rng = np.random.default_rng(42)
-        def subset(pages, subset):
-            if subset is None:
-                return pages
-            return rng.choice(pages, subset, replace=False)
-        self.train_pages = subset(train_pages, self.params.train_subset)
-        self.val_pages = subset(val_pages, self.params.val_subset)
+        # Take subsets.
+        subsetter = Subsetter()
+        self.train_pages = subsetter(self.train_websites, self.params.train_subset)
+        self.val_pages = subsetter(self.val_websites, self.params.val_subset)
         print(f'{len(self.train_pages)=}, {len(self.val_pages)=}')
 
     def create_dataloaders(self):
