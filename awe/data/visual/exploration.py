@@ -7,7 +7,10 @@ import matplotlib.pyplot as plt
 import awe.data.set.pages
 
 
-def plot_screenshot_with_boxes(page: awe.data.set.pages.Page):
+def plot_screenshot_with_boxes(
+    ax: matplotlib.axes.Axes,
+    page: awe.data.set.pages.Page
+):
     # Load visuals.
     page_dom = page.dom
     page_labels = page.get_labels()
@@ -29,7 +32,6 @@ def plot_screenshot_with_boxes(page: awe.data.set.pages.Page):
     im = im[:math.ceil(max_y) + 5, :, :]
 
     # Plot the screenshot.
-    fig, ax = plt.subplots(figsize=(10,20))
     ax.imshow(im)
 
     # Plot bounding boxes.
@@ -53,4 +55,3 @@ def plot_screenshot_with_boxes(page: awe.data.set.pages.Page):
                 ax.add_patch(rect)
 
     ax.legend()
-    return fig, ax
