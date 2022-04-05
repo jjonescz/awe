@@ -463,7 +463,6 @@ class Trainer:
         for batch in run.loader:
             outputs = self.model.forward(batch)
             evaluation.add(awe.model.classifier.Prediction(batch, outputs))
-            self.step += 1
             self.val_progress.update()
         return self._eval(run, evaluation)
 
