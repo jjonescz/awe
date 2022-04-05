@@ -8,6 +8,21 @@ import matplotlib.pyplot as plt
 import awe.data.set.pages
 
 
+def find_y_bounds(page: awe.data.set.pages.Page):
+    """Finds ys for cropping."""
+
+    min_y, max_y = sys.maxsize, 0
+    for label_key in page_labels.label_keys:
+        for labeled_node in page_labels.get_labeled_nodes(label_key):
+            node = page_dom.find_parsed_node(labeled_node)
+            if (b := node.box) is not None:
+                if b.y < min_y:
+                    min_y = b.y
+                if (y := b.y + b.height) > max_y:
+                    max_y = y
+
+    return min_y, max_y
+
 def plot_screenshot_with_boxes(
     ax: matplotlib.axes.Axes,
     page: awe.data.set.pages.Page
@@ -19,19 +34,9 @@ def plot_screenshot_with_boxes(
     page_dom.init_nodes()
     page_visuals.fill_tree_light(page_dom)
 
-    # Find ys for cropping.
-    min_y, max_y = sys.maxsize, 0
-    for label_key in page_labels.label_keys:
-        for labeled_node in page_labels.get_labeled_nodes(label_key):
-            node = page_dom.find_parsed_node(labeled_node)
-            if (b := node.box) is not None:
-                if b.y < min_y:
-                    min_y = b.y
-                if (y := b.y + b.height) > max_y:
-                    max_y = y
-
     # Crop the screenshot.
     im = plt.imread(page.screenshot_path)
+    min_y, max_y = find_y_bounds(page)
     offset = math.floor(min_y) - 5
     im = im[offset:math.ceil(max_y) + 5, :, :]
 
