@@ -53,6 +53,8 @@ class WordLstm(torch.nn.Module):
             )
 
             self.out_dim = self.trainer.params.lstm_dim
+            if self.lstm.bidirectional:
+                self.out_dim *= 2
         else:
             self.out_dim = word_dim
 
@@ -70,19 +72,11 @@ class WordLstm(torch.nn.Module):
             word_output, (_, _) = self.lstm(embedded_words)
                 # [num_nodes, max_num_words, D * lstm_dim]
 
-            # Aggregate forward and backward vectors.
-            if self.lstm.bidirectional:
-                word_output = torch.reshape(word_output,
-                    (word_output.shape[0], word_output.shape[1],
-                    word_output.shape[2] // 2, 2))
-                    # [num_nodes, max_num_words, lstm_dim, D]
-                word_output = torch.mean(word_output, dim=-1)
-                    # [num_nodes, max_num_words, lstm_dim]
+            # Aggregate across words.
+            node_vectors = torch.mean(word_output, dim=1)
+                # [num_nodes, D * lstm_dim]
 
-            word_output = self.dropout(word_output)
-
-            # Keep only the last word output (whole text representation).
-            node_vectors = word_output[:, -1, ...] # [num_nodes, lstm_dim]
+            node_vectors = self.dropout(node_vectors)
         else:
             # If not using LSTM, aggregate word embeddings.
             f = getattr(torch, self.trainer.params.word_vector_function)
