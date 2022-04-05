@@ -19,8 +19,7 @@ class Database:
                         id integer primary key,
                         url text not null,
                         html text not null,
-                        visuals text,
-                        metadata text
+                        visuals text
                     );
                 ''')
 
@@ -29,17 +28,15 @@ class Database:
         url: str,
         html_text: str,
         visuals: Optional[str] = None,
-        metadata: Optional[str] = None
     ):
         self.db.execute('''
-            insert into pages(id, url, html, visuals, metadata)
-                values(:id, :url, :html, :visuals, :metadata)
+            insert into pages(id, url, html, visuals)
+                values(:id, :url, :html, :visuals)
         ''', {
             'id': idx,
             'url': url,
             'html': html_text,
             'visuals': visuals,
-            'metadata': metadata
         })
 
     def save(self):
@@ -50,7 +47,6 @@ class Database:
         url: str,
         html_text: str,
         visuals: Optional[str] = None,
-        metadata: Optional[str] = None
     ):
         with self.db:
             self.db.execute('''
@@ -58,15 +54,13 @@ class Database:
                     set
                         url = :url,
                         html = :html,
-                        visuals = :visuals,
-                        metadata = :metadata
+                        visuals = :visuals
                     where id = :id
             ''', {
                 'id': idx,
                 'url': url,
                 'html': html_text,
                 'visuals': visuals,
-                'metadata': metadata
             })
 
     def __len__(self) -> int:
@@ -91,6 +85,3 @@ class Database:
 
     def get_visuals(self, idx: int) -> Optional[str]:
         return self._get(idx, 'visuals')
-
-    def get_metadata(self, idx: int) -> Optional[str]:
-        return self._get(idx, 'metadata')

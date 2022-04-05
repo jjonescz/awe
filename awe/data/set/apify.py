@@ -6,7 +6,6 @@ import warnings
 from typing import Optional
 
 import ijson
-import json5
 import pandas as pd
 import slugify
 from tqdm.auto import tqdm
@@ -194,30 +193,12 @@ class Website(awe.data.set.pages.Website):
         df.to_json(file_path, orient='records')
 
     def convert_to_db(self, db: awe.data.set.db.Database):
-        # Gather DataFrame columns to convert into metadata.
-        selector_cols = {
-            col for col in self.df.columns
-            if col.startswith(SELECTOR_PREFIX)
-        }
-        metadata_cols = selector_cols | {
-            col[len(SELECTOR_PREFIX):]
-            for col in selector_cols
-        }
-
         # Add rows to database.
         for page in tqdm(self.pages, desc=self.dataset_db_path):
             page: Page
-            metadata_dict = {
-                k: v
-                for k, v in page.metadata.items()
-                if k in metadata_cols
-            }
-            metadata_json = json5.dumps(metadata_dict)
             db.add(page.index,
                 url=page.url,
                 html_text=page.get_html_text(),
-                visuals=page.get_visuals_json_text(),
-                metadata=metadata_json
             )
             if page.index % 100 == 1:
                 db.save()
@@ -278,10 +259,7 @@ class Page(awe.data.set.pages.Page):
 
     @property
     def metadata(self):
-        if self.df is not None:
-            return self.row
-        json_text = self.db.get_metadata(self.index)
-        return json5.loads(json_text)
+        return self.row
 
     @property
     def url_slug(self):
@@ -327,8 +305,6 @@ class Page(awe.data.set.pages.Page):
         return PageLabels(self)
 
     def get_visuals_json_text(self):
-        if self.db is not None:
-            return self.db.get_visuals(self.index)
         return self.create_visuals().get_json_str()
 
     def load_visuals(self):
