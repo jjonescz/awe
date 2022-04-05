@@ -45,7 +45,7 @@ class Sampler:
                 if self.trainer.params.load_visuals:
                     # Load visuals.
                     page_visuals = page.load_visuals()
-                    page_visuals.fill_tree_boxes(page.dom)
+                    page_visuals.fill_tree_light(page.dom)
 
                     page.dom.filter_nodes()
                 page.dom.init_labels(

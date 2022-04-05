@@ -16,7 +16,7 @@ def plot_screenshot_with_boxes(
     page_labels = page.get_labels()
     page_visuals = page.load_visuals()
     page_dom.init_nodes()
-    page_visuals.fill_tree_boxes(page_dom)
+    page_visuals.fill_tree_light(page_dom)
 
     # Find max y.
     max_y = 0

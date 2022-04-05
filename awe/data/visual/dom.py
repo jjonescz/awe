@@ -36,10 +36,10 @@ class DomData:
         """Reads DOM data from JSON."""
         self.load_json_str(self.get_json_str())
 
-    def fill_tree_boxes(self, dom: awe.data.graph.dom.Dom):
+    def fill_tree_light(self, dom: awe.data.graph.dom.Dom):
         """
-        Lighter version of `fill_tree` that loads only bounding boxes, without
-        any validation for now.
+        Lighter version of `fill_tree` that loads only bounding boxes and
+        features specified in trainer params, without any validation for now.
         """
 
         queue = [(dom.root, self.data['/html'])]

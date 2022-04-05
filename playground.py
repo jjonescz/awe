@@ -9,7 +9,7 @@ page = next(p for p in ds.get_all_pages() if p.html_path ==
 page.cache_dom()
 page.dom.init_nodes()
 page_visuals = page.load_visuals()
-page_visuals.fill_tree_boxes(page.dom)
+page_visuals.fill_tree_light(page.dom)
 page.dom.filter_nodes()
 page.dom.init_labels(propagate_to_leaves=False)
 print('Done')
