@@ -133,7 +133,8 @@ class Website(awe.data.set.pages.Website):
                 self.db = db
                 self.init_pages()
             else:
-                self.load_json_df(slim=False)
+                # Load slim dataset if exact HTMLs exist.
+                self.load_json_df(slim=self.exact_html)
                 self.init_pages()
                 self.convert_to_db(db)
             self.load_json_df(slim=True)
