@@ -8,6 +8,7 @@ import awe.data.parsing
 import awe.data.set.pages
 import awe.data.validation
 import awe.features.extraction
+import awe.features.visual
 import awe.training.params
 
 if TYPE_CHECKING:
@@ -54,7 +55,13 @@ class Sampler:
 
                     # Load visuals.
                     page_visuals = page.load_visuals()
-                    page_visuals.fill_tree_light(page.dom)
+                    visual_feat = self.trainer.extractor.get_feature(
+                        awe.features.visual.Visuals
+                    )
+                    page_visuals.fill_tree_light(page.dom,
+                        attrs=visual_feat.visual_attributes \
+                            if visual_feat is not None else ()
+                    )
 
                     page.dom.filter_nodes()
                 page.dom.init_labels(
