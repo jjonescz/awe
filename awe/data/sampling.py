@@ -43,6 +43,15 @@ class Sampler:
                     awe.data.parsing.filter_tree(page.dom.tree)
                 page.dom.init_nodes()
                 if self.trainer.params.load_visuals:
+                    # Mark nodes that need visuals parsed.
+                    for node in page.dom.nodes:
+                        if (self.trainer.params.classify_only_text_nodes or
+                            self.trainer.params.classify_only_variable_nodes):
+                            if node.is_text:
+                                node.parent.needs_visuals = True
+                        elif not node.is_text:
+                            node.needs_visuals = True
+
                     # Load visuals.
                     page_visuals = page.load_visuals()
                     page_visuals.fill_tree_light(page.dom)

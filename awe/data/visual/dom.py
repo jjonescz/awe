@@ -42,9 +42,9 @@ class DomData:
         attrs: list[awe.data.visual.attribute.VisualAttribute] = (),
     ):
         """
-        Lighter version of `fill_tree` that loads only bounding boxes and
-        features specified in the parameter `attrs`, without any validation for
-        now.
+        Lighter version of `fill_tree` that loads only bounding boxes (for all
+        nodes) and visuals specified in the parameter `attrs` (for nodes with
+        `needs_visuals` set), without any validation for now.
         """
 
         queue = [(dom.root, self.data['/html'])]
@@ -55,7 +55,7 @@ class DomData:
             # Load node's visuals.
             if (box := data.get('box')) is not None:
                 node.box = awe.data.visual.structs.BoundingBox(*box)
-            if not node.is_text:
+            if not node.needs_visuals:
                 for attr in attrs:
                     self.load_visual_attribute(data, node, attr)
 

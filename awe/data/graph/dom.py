@@ -264,6 +264,9 @@ class Node:
     box: Optional[awe.data.visual.structs.BoundingBox] = \
         dataclasses.field(repr=False, default=None)
 
+    needs_visuals: bool = dataclasses.field(repr=False, default=False)
+    """Whether `visuals` should be loaded for this node."""
+
     visuals: dict[str, Any] = dataclasses.field(init=False, default_factory=dict)
     """`VisualAttribute.name` -> attribute's value or `None`."""
 
