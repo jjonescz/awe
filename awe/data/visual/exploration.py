@@ -1,4 +1,5 @@
 import math
+import sys
 
 import matplotlib.cm
 import matplotlib.patches
@@ -18,18 +19,21 @@ def plot_screenshot_with_boxes(
     page_dom.init_nodes()
     page_visuals.fill_tree_light(page_dom)
 
-    # Find max y.
-    max_y = 0
+    # Find ys for cropping.
+    min_y, max_y = sys.maxsize, 0
     for label_key in page_labels.label_keys:
         for labeled_node in page_labels.get_labeled_nodes(label_key):
             node = page_dom.find_parsed_node(labeled_node)
             if (b := node.box) is not None:
+                if b.y < min_y:
+                    min_y = b.y
                 if (y := b.y + b.height) > max_y:
                     max_y = y
 
     # Crop the screenshot.
     im = plt.imread(page.screenshot_path)
-    im = im[:math.ceil(max_y) + 5, :, :]
+    offset = math.floor(min_y) - 5
+    im = im[offset:math.ceil(max_y) + 5, :, :]
 
     # Plot the screenshot.
     ax.imshow(im)
@@ -45,7 +49,7 @@ def plot_screenshot_with_boxes(
             node = page_dom.find_parsed_node(labeled_node)
             if (b := node.box) is not None:
                 rect = matplotlib.patches.Rectangle(
-                    xy=(b.x, b.y),
+                    xy=(b.x, b.y - offset),
                     width=b.width,
                     height=b.height,
                     fill=False,
