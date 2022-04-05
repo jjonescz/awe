@@ -55,7 +55,7 @@ class DomData:
             # Load node's visuals.
             if (box := data.get('box')) is not None:
                 node.box = awe.data.visual.structs.BoundingBox(*box)
-            if not node.needs_visuals:
+            if node.needs_visuals:
                 for attr in attrs:
                     self.load_visual_attribute(data, node, attr)
 
