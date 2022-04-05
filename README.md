@@ -46,7 +46,7 @@ page through web browser.
 **Debug CPython code:** Run `gdb -ex=r --args python <path_to_script>.py`. Then
 issue GDB command `backtrace`.
 
-**Get HTML from a scraping log**: For example, if it's on line 11, run
+**Get HTML from a scraping log:** For example, if it's on line 11, run
 `sed '11!d' data/scraping-logs/2022-03-21T13-26-38.056Z.txt | jq -r '.html' > data.html`.
 (or `.visuals > data.json`).
 
