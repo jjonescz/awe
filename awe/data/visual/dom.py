@@ -9,6 +9,7 @@ import awe.data.html_utils
 import awe.data.parsing
 import awe.data.visual.attribute
 import awe.data.visual.structs
+import awe.training.params
 import awe.utils
 
 XPATH_ELEMENT_REGEX = re.compile(r'^/(.*?)(\[(\d+)\])?$')
@@ -36,10 +37,14 @@ class DomData:
         """Reads DOM data from JSON."""
         self.load_json_str(self.get_json_str())
 
-    def fill_tree_light(self, dom: awe.data.graph.dom.Dom):
+    def fill_tree_light(self,
+        dom: awe.data.graph.dom.Dom,
+        attrs: list[awe.data.visual.attribute.VisualAttribute] = (),
+    ):
         """
         Lighter version of `fill_tree` that loads only bounding boxes and
-        features specified in trainer params, without any validation for now.
+        features specified in the parameter `attrs`, without any validation for
+        now.
         """
 
         queue = [(dom.root, self.data['/html'])]
@@ -50,6 +55,9 @@ class DomData:
             # Load node's visuals.
             if (box := data.get('box')) is not None:
                 node.box = awe.data.visual.structs.BoundingBox(*box)
+            if not node.is_text:
+                for attr in attrs:
+                    self.load_visual_attribute(data, node, attr)
 
             # Add children to queue.
             for child in node.children:
@@ -106,36 +114,52 @@ class DomData:
             assert real_id == extracted_id, f'IDs of {xpath!r} do not ' + \
                 f'match ({real_id=} vs {extracted_id=}) in {self.path!r}.'
 
-        # Load `node_data` into `node`.
-        def load_attribute(
-            snake_case: str,
-            parser: Callable[[Any, dict[str, Any]], Any] = lambda x: x,
-            default: Callable[[awe.data.graph.dom.Node], Any] = lambda _: None
-        ):
-            camel_case = awe.utils.to_camel_case(snake_case)
-            val = node_data.get(camel_case) or default(node)
-            if val is not None:
-                try:
-                    result = parser(val, node_data)
-                except ValueError as e:
-                    d = default(node)
-                    warnings.warn(f'Cannot parse {snake_case}={val!r} ' + \
-                        f'using default={d!r} in {self.path!r}: {str(e)}')
-                    node.dom.page.valid = False
-                    result = parser(d, node_data)
-                return result
-            return None
-
-        node.box = load_attribute('box', parser=lambda b, _: \
-            awe.data.visual.structs.BoundingBox(b[0], b[1], b[2], b[3]))
+        # Load bounding box.
+        node.box = self.load_attribute(node_data, node, 'box',
+            parser=lambda b, _: awe.data.visual.structs.BoundingBox(
+                b[0], b[1], b[2], b[3]
+            )
+        )
 
         # Load visual attributes except for text fragments (they don't have
         # their own but inherit them from their container node instead).
         if not node.is_text:
             for a in awe.data.visual.attribute.VISUAL_ATTRIBUTES.values():
-                node.visuals[a.name] = load_attribute(
-                    a.name, a.parse, a.get_default)
+                self.load_visual_attribute(node_data, node, a)
         return True
+
+
+    def load_attribute(self,
+        node_data: dict[str],
+        node: awe.data.graph.dom.Node,
+        snake_case: str,
+        parser: Callable[[Any, dict[str, Any]], Any] = lambda x: x,
+        default: Callable[[awe.data.graph.dom.Node], Any] = lambda _: None
+    ):
+        """Loads `node_data` element into `node`."""
+
+        camel_case = awe.utils.to_camel_case(snake_case)
+        val = node_data.get(camel_case) or default(node)
+        if val is not None:
+            try:
+                result = parser(val, node_data)
+            except ValueError as e:
+                d = default(node)
+                warnings.warn(f'Cannot parse {snake_case}={val!r} ' + \
+                    f'using default={d!r} in {self.path!r}: {str(e)}')
+                node.dom.page.valid = False
+                result = parser(d, node_data)
+            return result
+        return None
+
+    def load_visual_attribute(self,
+        node_data: dict[str],
+        node: awe.data.graph.dom.Node,
+        attr: awe.data.visual.attribute.VisualAttribute,
+    ):
+        node.visuals[attr.name] = self.load_attribute(
+            node_data, node, attr.name, attr.parse, attr.get_default
+        )
 
     def find(self, xpath: str):
         elements = xpath.split('/')[1:]
