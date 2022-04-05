@@ -6,6 +6,7 @@ import awe.data.set.pages
 import awe.features.dom
 import awe.features.feature
 import awe.features.text
+import awe.features.visual
 import awe.training.params
 import awe.utils
 
@@ -29,6 +30,8 @@ class Extractor:
             self.features.append(awe.features.dom.HtmlTag(trainer))
         if self.trainer.params.position:
             self.features.append(awe.features.dom.Position(trainer))
+        if self.trainer.params.load_visuals:
+            self.features.append(awe.features.visual.Visuals(trainer))
 
     def prepare_page(self, page_dom: awe.data.graph.dom.Dom, train: bool):
         """Prepares features for the `page`."""
