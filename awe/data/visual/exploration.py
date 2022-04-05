@@ -17,13 +17,18 @@ def plot_websites(websites: list[awe.data.set.pages.Website]):
     ])
 
 def plot_pages(pages: list[awe.data.set.pages.Page]):
+    # Find page dimensions.
+    explorers = [PageExplorer(page) for page in pages]
+    height = sum(e.height/100 for e in explorers)
+
     fig, axs = plt.subplots(len(pages),
-        figsize=(10, len(pages) * 20),
-        facecolor='white'
+        figsize=(10, height),
+        facecolor='white',
+        gridspec_kw={'height_ratios': [e.height for e in explorers]}
     )
-    for ax, page in tqdm(zip(axs, pages), desc='pages', total=len(pages)):
-        PageExplorer(page).plot_screenshot_with_boxes(ax)
-        ax.set_title(page.website.name)
+    for ax, e in tqdm(zip(axs, explorers), desc='pages', total=len(pages)):
+        e.plot_screenshot_with_boxes(ax)
+        ax.set_title(e.page.website.name)
     return fig
 
 class PageExplorer:
@@ -36,7 +41,15 @@ class PageExplorer:
         self.page_dom.init_nodes()
         self.page_visuals.fill_tree_light(self.page_dom)
 
-    def find_y_bounds(self):
+        min_y, max_y = self._find_y_bounds()
+        self.min_y = math.floor(min_y) - 5
+        self.max_y = math.ceil(max_y) + 5
+
+    @property
+    def height(self):
+        return self.max_y - self.min_y
+
+    def _find_y_bounds(self):
         """Finds ys for cropping."""
 
         min_y, max_y = sys.maxsize, 0
@@ -54,9 +67,7 @@ class PageExplorer:
     def plot_screenshot_with_boxes(self, ax: matplotlib.axes.Axes):
         # Crop the screenshot.
         im = plt.imread(self.page.screenshot_path)
-        min_y, max_y = self.find_y_bounds()
-        offset = math.floor(min_y) - 5
-        im = im[offset:math.ceil(max_y) + 5, :, :]
+        im = im[self.min_y:self.max_y + 1, :, :]
 
         # Plot the screenshot.
         ax.imshow(im)
@@ -72,7 +83,7 @@ class PageExplorer:
                 node = self.page_dom.find_parsed_node(labeled_node)
                 if (b := node.box) is not None:
                     rect = matplotlib.patches.Rectangle(
-                        xy=(b.x, b.y - offset),
+                        xy=(b.x, b.y - self.min_y),
                         width=b.width,
                         height=b.height,
                         fill=False,
