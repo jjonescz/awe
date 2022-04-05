@@ -32,6 +32,7 @@ class Dataset(awe.data.set.pages.Dataset):
         only_websites: Optional[list[str]] = None,
         exclude_websites: list[str] = (),
         convert: bool = True,
+        convert_slim: bool = False,
         only_label_keys: Optional[list[str]] = None
     ):
         super().__init__(
@@ -41,6 +42,7 @@ class Dataset(awe.data.set.pages.Dataset):
         self.only_websites = only_websites
         self.exclude_websites = exclude_websites
         self.convert = convert
+        self.convert_slim = convert_slim
         self.only_label_keys = only_label_keys
         self.verticals = [
             Vertical(dataset=self, name='products', prev_page_count=0)
@@ -122,9 +124,8 @@ class Website(awe.data.set.pages.Website):
             glob.iglob(f'{self.dir_path}/{PAGES_SUBDIR}/*{EXACT_EXTENSION}')
         )
 
-        # Convert if desired and no exact HTML exists (otherwise, conversion
-        # would be counter-productive).
-        if self.vertical.dataset.convert and not self.exact_html:
+        # Convert if desired.
+        if self.vertical.dataset.convert:
             self.create_slim_dataset()
             db = awe.data.set.db.Database(self.dataset_db_path)
             if not db.fresh:
@@ -137,7 +138,7 @@ class Website(awe.data.set.pages.Website):
                 self.convert_to_db(db)
             self.load_json_df(slim=True)
         else:
-            if self.vertical.dataset.convert and self.exact_html:
+            if self.vertical.dataset.convert_slim:
                 self.create_slim_dataset()
                 self.load_json_df(slim=True)
             else:
