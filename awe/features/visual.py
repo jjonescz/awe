@@ -6,6 +6,7 @@ import awe.data.graph.dom
 import awe.data.visual.attribute
 import awe.data.visual.context
 import awe.features.feature
+import awe.utils
 
 if TYPE_CHECKING:
     import awe.model.classifier
@@ -30,6 +31,9 @@ class Visuals(awe.features.feature.Feature):
             if enabled is None or a.name in enabled
             if disabled is None or a.name not in disabled
         ]
+
+    def get_pickled_keys(self):
+        return ('extraction',)
 
     @property
     def labels(self):

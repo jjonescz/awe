@@ -12,7 +12,6 @@ import awe.data.graph.dom
 import awe.features.bert_tokenization
 import awe.features.feature
 import awe.training.params
-import awe.utils
 
 if TYPE_CHECKING:
     import awe.features.extraction
@@ -63,7 +62,7 @@ def humanize_string(text: str):
     text = inflection.humanize(text)
     return text
 
-class WordIdentifiers(awe.features.feature.Feature, awe.utils.PickleSubset):
+class WordIdentifiers(awe.features.feature.Feature):
     """Identifiers of word tokens. Used for pre-trained GloVe embeddings."""
 
     max_num_words: int = 0

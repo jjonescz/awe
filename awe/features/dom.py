@@ -5,22 +5,21 @@ import torch
 import awe.features.feature
 import awe.data.graph.dom
 import awe.data.visual.structs
-import awe.utils
 
 if TYPE_CHECKING:
     import awe.model.classifier
 
 
-class HtmlTag(awe.features.feature.Feature, awe.utils.PickleSubset):
+class HtmlTag(awe.features.feature.Feature):
     _html_tags: set[str]
     html_tag_ids: dict[str, int]
+
+    def get_pickled_keys(self):
+        return ('html_tag_ids',)
 
     def __post_init__(self, restoring: bool):
         if not restoring:
             self._html_tags = set()
-
-    def get_pickled_keys(self):
-        return ('html_tag_ids',)
 
     def prepare(self, node: awe.data.graph.dom.Node, train: bool):
         # Find most semantic HTML tag for the node.
@@ -51,6 +50,9 @@ class HtmlTag(awe.features.feature.Feature, awe.utils.PickleSubset):
 class Position(awe.features.feature.Feature):
     root_box: awe.data.visual.structs.BoundingBox
     out_dim: int = 4
+
+    def get_pickled_keys(self):
+        return ('root_box',)
 
     def prepare(self, node: awe.data.graph.dom.Node, train: bool):
         if node.is_root:

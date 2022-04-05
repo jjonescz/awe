@@ -5,16 +5,20 @@ import torch
 
 import awe.data.graph.dom
 import awe.features.context
+import awe.utils
 
 if TYPE_CHECKING:
     import awe.model.classifier
     import awe.training.trainer
 
 
-class Feature(abc.ABC):
+class Feature(awe.utils.PickleSubset, abc.ABC):
     def __init__(self, trainer: 'awe.training.trainer.Trainer'):
         self.trainer = trainer
         self.__post_init__(restoring=False)
+
+    def get_pickled_keys(self):
+        return ()
 
     def __post_init__(self, restoring: bool):
         """Can be used by derived classes to do initialization."""
