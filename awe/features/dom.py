@@ -52,7 +52,7 @@ class Position(awe.features.feature.Feature):
     root_box: awe.data.visual.structs.BoundingBox
     out_dim: int = 4
 
-    def prepare(self, node: awe.data.graph.dom.Node, _):
+    def prepare(self, node: awe.data.graph.dom.Node, train: bool):
         if node.is_root:
             self.root_box = node.box
 
@@ -70,4 +70,4 @@ class Position(awe.features.feature.Feature):
             [self.root_box.width, self.root_box.height],
             device=self.trainer.device
         ) # [2]
-        return torch.cat(coords / rect, torch.log(size / rect)) # [N, 4]
+        return torch.cat((coords / rect, torch.log(size / rect)), dim=-1) # [N, 4]
