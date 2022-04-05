@@ -1,3 +1,4 @@
+import itertools
 import math
 import os
 import sys
@@ -10,23 +11,31 @@ from tqdm.auto import tqdm
 import awe.data.set.pages
 
 
-def plot_websites(websites: list[awe.data.set.pages.Website]):
+def plot_websites(websites: list[awe.data.set.pages.Website], n_cols: int = 1):
     return plot_pages([
-        next(p for p in w.pages if os.path.exists(p.screenshot_path))
+        tuple(itertools.islice(
+            (p for p in w.pages if os.path.exists(p.screenshot_path)),
+            n_cols
+        ))
         for w in websites
     ])
 
-def plot_pages(pages: list[awe.data.set.pages.Page]):
-    # Find page dimensions.
-    explorers = [PageExplorer(page) for page in pages]
-    height = sum(e.height/100 for e in explorers)
+def plot_pages(pages: list[tuple[awe.data.set.pages.Page]]):
+    n_cols = len(pages[0])
 
-    fig, axs = plt.subplots(len(pages),
-        figsize=(10, height),
+    # Find page dimensions.
+    explorers = [[PageExplorer(page) for page in row] for row in pages]
+    heights = [max(e.height/100 for e in row) for row in explorers]
+    height = sum(heights)
+
+    fig, axs = plt.subplots(len(pages), n_cols,
+        figsize=(10 * n_cols, height),
         facecolor='white',
-        gridspec_kw={'height_ratios': [e.height for e in explorers]}
+        gridspec_kw={'height_ratios': heights}
     )
-    for ax, e in tqdm(zip(axs, explorers), desc='pages', total=len(pages)):
+    axs = axs.flatten()
+    explorers = [e for row in explorers for e in row]
+    for ax, e in tqdm(zip(axs, explorers), desc='pages', total=len(explorers)):
         e.plot_screenshot_with_boxes(ax)
         ax.set_title(e.page.website.name)
     return fig
