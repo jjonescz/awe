@@ -1,3 +1,4 @@
+import math
 from typing import TYPE_CHECKING
 
 import torch
@@ -48,28 +49,26 @@ class HtmlTag(awe.features.feature.Feature):
         )
 
 class Position(awe.features.feature.Feature):
-    root_box: awe.data.visual.structs.BoundingBox
     out_dim: int = 4
 
-    def get_pickled_keys(self):
-        return ('root_box',)
-
-    def prepare(self, node: awe.data.graph.dom.Node, train: bool):
-        if node.is_root:
-            self.root_box = node.box
-
     def compute(self, batch: 'awe.model.classifier.ModelInput'):
-        # For each node, compute its relative xy position and size.
-        coords = torch.tensor(
-            [(n.box.x, n.box.y) for n in batch],
+        return torch.tensor(
+            [compute_position(n) for n in batch],
             device=self.trainer.device
-        ) # [N, 2]
-        size = torch.tensor(
-            [(n.box.width, n.box.height) for n in batch],
-            device=self.trainer.device
-        ) # [N, 2]
-        rect = torch.tensor(
-            [self.root_box.width, self.root_box.height],
-            device=self.trainer.device
-        ) # [2]
-        return torch.cat((coords / rect, torch.log(size / rect)), dim=-1) # [N, 4]
+        )
+
+def compute_position(node: awe.data.graph.dom.Node):
+    """Computes node's relative xy position and size."""
+
+    root_box = node.dom.root.box
+    return (
+        node.box.x / root_box.width,
+        node.box.y / root_box.height,
+        _safe_log(node.box.width / root_box.width),
+        _safe_log(node.box.height / root_box.height),
+    )
+
+def _safe_log(x: float):
+    if x > 0:
+        return math.log(x)
+    return 0
