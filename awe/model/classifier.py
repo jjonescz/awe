@@ -125,19 +125,18 @@ class Model(torch.nn.Module):
                 head_features += self.ancestor_dim
 
         # Classification head
-        D = 64
         num_labels = len(self.trainer.label_map.id_to_label) + 1
-        self.head = torch.nn.Sequential(*filter(lambda x: x is not None, (
-            torch.nn.Linear(head_features, 2 * D),
-            torch.nn.LayerNorm(2 * D) if self.trainer.params.layer_norm else None,
-            torch.nn.ReLU(),
-            torch.nn.Dropout(),
-            torch.nn.Linear(2 * D, D),
-            torch.nn.LayerNorm(D) if self.trainer.params.layer_norm else None,
-            torch.nn.ReLU(),
-            torch.nn.Dropout(),
-            torch.nn.Linear(D, num_labels)
-        )))
+        head_layers = []
+        head_dims = [head_features]
+        head_dims.extend(self.trainer.params.head_dims)
+        for prev_dim, next_dim in zip(head_dims, head_dims[1:]):
+            head_layers.append(torch.nn.Linear(prev_dim, next_dim))
+            if self.trainer.params.layer_norm:
+                head_layers.append(torch.nn.LayerNorm(next_dim))
+            head_layers.append(torch.nn.ReLU())
+            head_layers.append(torch.nn.Dropout())
+        head_layers.append(torch.nn.Linear(head_dims[-1], num_labels))
+        self.head = torch.nn.Sequential(*head_layers)
 
         self.loss = torch.nn.CrossEntropyLoss(
             label_smoothing=self.trainer.params.label_smoothing
