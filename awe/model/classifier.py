@@ -75,7 +75,7 @@ class Model(torch.nn.Module):
         # Node position
         self.position = self.trainer.extractor.get_feature(awe.features.dom.Position)
         if self.position is not None:
-            self.node_feature_dim += 2
+            self.node_feature_dim += self.position.out_dim
 
         # Word LSTM
         if self.trainer.params.word_vector_function is not None:
