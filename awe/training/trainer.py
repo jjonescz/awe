@@ -275,7 +275,7 @@ class Trainer:
         # Check params.
         restored_params = awe.training.params.Params.load_version(version)
         difference = self.params.difference(restored_params,
-            ignore_vars=('restore_num',)
+            ignore_vars=('restore_num', 'epochs')
         )
         if difference:
             raise RuntimeError(
@@ -377,6 +377,13 @@ class Trainer:
                     epoch_idx=epoch_idx,
                     best_val_loss=best_val_loss
                 )
+
+        # Save the final epoch.
+        self.save_checkpoint(
+            epoch_idx=epoch_idx, # pylint: disable=undefined-loop-variable
+            best_val_loss=best_val_loss
+        )
+
         self._finalize()
 
     def save_checkpoint(self, epoch_idx: int, best_val_loss: int = sys.maxsize):
