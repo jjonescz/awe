@@ -10,6 +10,7 @@ import awe.data.graph.dom
 import awe.features.dom
 import awe.features.extraction
 import awe.features.text
+import awe.features.visual
 import awe.model.word_lstm
 import awe.training.params
 
@@ -76,6 +77,11 @@ class Model(torch.nn.Module):
         self.position = self.trainer.extractor.get_feature(awe.features.dom.Position)
         if self.position is not None:
             self.node_feature_dim += self.position.out_dim
+
+        # Node visuals
+        self.visuals = self.trainer.extractor.get_feature(awe.features.visual.Visuals)
+        if self.visuals is not None:
+            self.node_feature_dim += self.visuals.out_dim
 
         # Word LSTM
         if self.trainer.params.word_vector_function is not None:
@@ -178,9 +184,11 @@ class Model(torch.nn.Module):
             attrs=not self.trainer.params.tokenize_node_attrs_only_ancestors
         )
 
-        # Add more HTML node features.
+        # Add more node features.
         if self.position is not None:
             x = append(x, self.position.compute(batch))
+        if self.visuals is not None:
+            x = append(x, self.visuals.compute(batch))
 
         if self.trainer.params.word_vector_function is not None:
             if self.trainer.params.friend_cycles:

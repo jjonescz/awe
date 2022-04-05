@@ -16,6 +16,7 @@ class Visuals(awe.features.feature.Feature):
     """Visual features."""
 
     extraction: awe.data.visual.context.Extraction
+    out_dim: int = None
 
     def __post_init__(self, restoring: bool):
         self.extraction = awe.data.visual.context.Extraction()
@@ -44,7 +45,12 @@ class Visuals(awe.features.feature.Feature):
         ]
 
     def prepare(self, node: awe.data.graph.dom.Node, train: bool):
-        self._compute(node, freezed=not train)
+        out_dim = len(self._compute(node, freezed=not train))
+        if self.out_dim is None:
+            self.out_dim = out_dim
+        elif self.out_dim != out_dim:
+            raise RuntimeError('Unexpected different visuals out dim ' +
+                f'({self.out_dim} -> {out_dim}).')
 
     def freeze(self):
         self.extraction.freeze()
