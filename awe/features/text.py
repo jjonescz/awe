@@ -159,24 +159,18 @@ class WordIdentifiers(awe.features.feature.Feature, awe.utils.PickleSubset):
                 )
 
     def compute(self, batch: list[list[awe.data.graph.dom.Node]]):
-        # Account for friend cycles.
-        num_words = self.max_num_words
-        if self.trainer.params.friend_cycles:
-            num_words *= max(1, self.trainer.params.max_friends)
-
         # Get word token indices.
-        result = torch.zeros(len(batch), num_words,
-            dtype=torch.int32,
-            device=self.trainer.device,
+        return torch.nn.utils.rnn.pack_sequence(
+            [
+                torch.tensor(self.node_token_ids[node],
+                    dtype=torch.int32,
+                    device=self.trainer.device,
+                )
+                for row in batch
+                for node in row
+            ],
+            enforce_sorted=False
         )
-        for row_idx, row in enumerate(batch):
-            for node_idx, node in enumerate(row):
-                for token_idx, token_id in enumerate(self.node_token_ids[node]):
-                    if token_idx >= self.max_num_words:
-                        break
-                    word_idx = self.max_num_words * node_idx + token_idx
-                    result[row_idx, word_idx] = token_id
-        return result
 
     def compute_attr(self, batch: list[list[awe.data.graph.dom.Node]]):
         return torch.nn.utils.rnn.pad_sequence(

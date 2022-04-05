@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import awe.data.glove
 import awe.data.graph.dom
 import awe.features.text
+import awe.model.lstm_utils
 
 if TYPE_CHECKING:
     import awe.model.classifier
@@ -48,7 +49,6 @@ class WordLstm(torch.nn.Module):
 
         if self.trainer.params.word_vector_function == 'lstm':
             self.lstm = torch.nn.LSTM(word_dim, self.trainer.params.lstm_dim,
-                batch_first=True,
                 **(self.trainer.params.lstm_args or {})
             )
 
@@ -63,23 +63,27 @@ class WordLstm(torch.nn.Module):
         word_ids = self.trainer.model.word_ids.compute(batch)
 
         # Embed words.
-        embedded_words = self.trainer.model.word_embedding(word_ids)
+        embedded_words = self.trainer.model.word_embedding(word_ids.data)
             # [num_nodes, max_num_words, word_dim]
         embedded_words = self.dropout(embedded_words)
+        packed_words = awe.model.lstm_utils.re_pack(word_ids, embedded_words)
 
         if self.trainer.params.word_vector_function == 'lstm':
             # Run through LSTM.
-            word_output, (_, _) = self.lstm(embedded_words)
-                # [num_nodes, max_num_words, D * lstm_dim]
+            word_output, (_, _) = self.lstm(packed_words)
+            padded_words, _ = torch.nn.utils.rnn.pad_packed_sequence(word_output)
+                # [max_num_words, num_nodes, D * lstm_dim]
 
             # Aggregate across words.
-            node_vectors = torch.mean(word_output, dim=1)
+            node_vectors = torch.mean(padded_words, dim=0)
                 # [num_nodes, D * lstm_dim]
 
             node_vectors = self.dropout(node_vectors)
         else:
             # If not using LSTM, aggregate word embeddings.
+            padded_words, _ = torch.nn.utils.rnn.pad_packed_sequence(packed_words)
+                # [max_num_words, num_nodes, word_dim]
             f = getattr(torch, self.trainer.params.word_vector_function)
-            node_vectors = f(embedded_words, dim=1) # [num_nodes, word_dim]
+            node_vectors = f(padded_words, dim=0) # [num_nodes, word_dim]
 
         return node_vectors
