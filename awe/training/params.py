@@ -93,7 +93,6 @@ class Params:
     word_vector_function: Optional[str] = 'sum' # 'lstm', 'sum', 'mean'
     lstm_dim: int = 100
     lstm_args: Optional[dict[str]] = None
-    filter_node_words: bool = False
 
     # Word and char IDs
     cutoff_words: Optional[int] = 15
