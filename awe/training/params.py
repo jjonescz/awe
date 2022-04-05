@@ -113,6 +113,10 @@ class Params:
     tag_name_embedding: bool = False
     position: bool = False
 
+    # Visual features
+    enabled_visuals: Optional[list[str]] = None
+    disabled_visuals: Optional[list[str]] = None
+
     # Classifier
     learning_rate: float = 1e-3
     label_smoothing: float = 0.0
