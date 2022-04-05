@@ -354,6 +354,11 @@ class Trainer:
                 # in a proper state.
                 continue
 
+            # Test-save a checkpoint to surface errors early (like improperly
+            # reloaded Python modules).
+            if epoch_idx == 0:
+                self.save_checkpoint(epoch_idx=0).delete()
+
             train_metrics = self._train_epoch(train_run, val_run)
             val_metrics = self._validate_epoch(val_run)
 
@@ -404,6 +409,8 @@ class Trainer:
         # Also save JSON for inference UI.
         with open(self.version.info_path, 'w', encoding='utf-8') as f:
             json.dump(self.get_info(), f, indent=2, sort_keys=True)
+
+        return ckpt
 
     def get_info(self):
         website_url_domains = [

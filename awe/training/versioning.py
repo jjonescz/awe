@@ -168,3 +168,6 @@ class Checkpoint:
     @property
     def file_path(self):
         return f'{self.version.checkpoints_dir_path}/{self.file_name}'
+
+    def delete(self):
+        os.remove(self.file_path)
