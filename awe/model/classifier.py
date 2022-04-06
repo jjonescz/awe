@@ -126,6 +126,8 @@ class Model(torch.nn.Module):
                     out_dim,
                     **(self.trainer.params.ancestor_lstm_args or {})
                 )
+                if self.ancestor_lstm.bidirectional:
+                    out_dim *= 2
                 head_features += out_dim
             elif self.trainer.params.ancestor_function == 'attention':
                 self.ancestor_attention = torch.nn.Linear(self.ancestor_dim, 1)
@@ -315,10 +317,12 @@ class Model(torch.nn.Module):
         if self.trainer.params.ancestor_function == 'lstm':
             # Use LSTM.
             ancestor_chains, _ = self.ancestor_lstm(ancestor_features)
-                # [n_ancestors, N, D * anc_dim]
+                # [n_ancestors, N, D * anc_out_dim]
 
-            # Extract only the last sequence (representation of all ancestors).
-            ancestor_chains = ancestor_chains[-1, :, :] # [N, anc_out_dim]
+            # Aggregate across ancestors.
+            ancestor_chains = torch.mean(ancestor_chains, dim=0)
+                # [N, D * anc_out_dim]
+
             ancestor_chains = self.dropout(ancestor_chains)
         else:
             # Use simple aggregation function (sum or mean).
