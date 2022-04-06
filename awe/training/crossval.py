@@ -53,9 +53,6 @@ def main():
     print('Counts:')
     print({ k: len(vs) for k, vs in all_values.items() })
 
-if __name__ == '__main__':
-    main()
-
 def get_cyclic_permutation_indices(seq_len: int, perm_idx: int, perm_len: int):
     return [(perm_idx + idx) % seq_len for idx in range(perm_len)]
 
@@ -104,3 +101,6 @@ SWDE_VERTICAL_WEBSITES = {
         "studentaid", "usnews"
     ]
 }
+
+if __name__ == '__main__':
+    main()
