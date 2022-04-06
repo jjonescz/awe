@@ -347,6 +347,7 @@ class Trainer:
             progress=lambda: self.val_progress,
             progress_metrics=val_progress_metrics
         )
+        remove_last_checkpoint = None
         for epoch_idx in tqdm(range(self.params.epochs), desc='train'):
             if epoch_idx < start_epoch_idx:
                 # Skip over restored epochs in this way, so the progress bar is
@@ -374,6 +375,11 @@ class Trainer:
             if is_better_val_loss:
                 best_val_loss = val_metrics['loss']
 
+            # Remove temporary checkpoint.
+            if remove_last_checkpoint is not None:
+                remove_last_checkpoint.delete()
+                remove_last_checkpoint = None
+
             # Save model checkpoint if better loss reached or if Nth epoch.
             if is_better_val_loss or (
                 self.params.save_every_n_epochs is not None and
@@ -383,12 +389,15 @@ class Trainer:
                     epoch_idx=epoch_idx,
                     best_val_loss=best_val_loss
                 )
-
-        # Save the final epoch.
-        self.save_checkpoint(
-            epoch_idx=epoch_idx, # pylint: disable=undefined-loop-variable
-            best_val_loss=best_val_loss
-        )
+            else:
+                # Otherwise, save checkpoint temporarily. If training is
+                # canceled, it'll be available, otherwise, it'll be deleted in
+                # the next epoch. Except for the final epoch, that is always
+                # preserved.
+                remove_last_checkpoint = self.save_checkpoint(
+                    epoch_idx=epoch_idx,
+                    best_val_loss=best_val_loss
+                )
 
         self._finalize()
 
