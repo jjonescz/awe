@@ -19,12 +19,14 @@ def main():
     trainer.load_dataset()
 
     all_metrics: list[dict[str, float]] = []
+    orig_name = params.version_name
     seed_len = len(params.train_website_indices)
     website_names = SWDE_VERTICAL_WEBSITES[params.vertical] \
         if params.dataset == awe.training.params.Dataset.swde \
         else [w.name for w in trainer.ds.verticals[0].websites]
     print(f'{website_names=}, {seed_len=}')
     for perm_idx in range(len(trainer.ds.verticals[0].websites)):
+        trainer.params.version_name = f'{orig_name}-{perm_idx}'
         trainer.params.train_website_indices = get_cyclic_permutation_indices(
             seq_len=len(website_names),
             perm_idx=perm_idx,
