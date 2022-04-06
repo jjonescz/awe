@@ -37,6 +37,8 @@ class RunInput:
 
     loader: torch.utils.data.DataLoader
 
+    name: str
+
     prefix: Optional[str] = None
     """
     Prefix used in TensorBoard. When `None`, logging to TensorBoard is disabled.
@@ -201,6 +203,7 @@ class Trainer:
     ):
         return RunInput(
             pages=pages,
+            name=desc,
             loader=self.create_dataloader(
                 pages=pages,
                 desc=desc,
@@ -342,6 +345,7 @@ class Trainer:
         train_run = RunInput(
             pages=self.train_pages,
             loader=self.train_loader,
+            name='train',
             prefix='train',
             progress=lambda: self.train_progress,
             progress_metrics=train_progress_metrics
@@ -349,6 +353,7 @@ class Trainer:
         val_run = RunInput(
             pages=self.val_pages,
             loader=self.val_loader,
+            name='val',
             prefix='val',
             progress=lambda: self.val_progress,
             progress_metrics=val_progress_metrics
@@ -531,6 +536,13 @@ class Trainer:
         self._reset_loop()
         metrics = self._validate_epoch(run)
         self._finalize()
+
+        # Save metrics.
+        results_file_path = self.version.get_results_path(run.desc)
+        with open(results_file_path, mode='w', encoding='utf-8') as f:
+            json.dump(metrics, f)
+        print(f'Saved {run.name!r} to {results_file_path!r}.')
+
         return metrics
 
     def predict(self, run: RunInput):
