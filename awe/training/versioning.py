@@ -17,6 +17,8 @@ class Version:
 
     @staticmethod
     def _iterate_all():
+        if not os.path.isdir(LOG_DIR):
+            return
         for dirname in os.listdir(LOG_DIR):
             match = re.match(r'(\d+)-(.*)', dirname)
             if match is not None:
