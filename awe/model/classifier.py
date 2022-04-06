@@ -11,6 +11,7 @@ import awe.features.dom
 import awe.features.extraction
 import awe.features.text
 import awe.features.visual
+import awe.model.lstm_utils
 import awe.model.word_lstm
 import awe.training.params
 
@@ -100,6 +101,24 @@ class Model(torch.nn.Module):
             head_features = self.node_feature_dim * 2
         else:
             head_features = self.node_feature_dim
+
+        # XPath
+        if self.trainer.params.xpath:
+            xpath_dim = 30
+            xpath_out_dim = 10
+            num_html_tags = len(self.html_tag.html_tag_ids) + 1
+            self.xpath_embedding = torch.nn.Embedding(
+                num_html_tags,
+                xpath_dim
+            )
+            self.xpath_lstm = torch.nn.LSTM(
+                xpath_dim,
+                xpath_out_dim,
+                bidirectional=True
+            )
+            if self.xpath_lstm.bidirectional:
+                xpath_out_dim *= 2
+            head_features += xpath_out_dim
 
         # Ancestor chain
         if self.trainer.params.ancestor_chain:
@@ -276,6 +295,36 @@ class Model(torch.nn.Module):
         return torch.concat((node_features, neighborhood), dim=-1)
             # [N, 2 * node_features]
 
+    def get_xpath(self, batch: list[awe.data.graph.dom.Node]):
+        # Get features for each ancestor.
+        ancestor_html_tag_ids = torch.nn.utils.rnn.pack_sequence(
+            [
+                self.html_tag.compute(node.get_all_ancestors())
+                for node in batch
+            ],
+            enforce_sorted=False
+        )
+
+        # Embed.
+        embedded_ancestors = self.xpath_embedding(ancestor_html_tag_ids.data)
+        embedded_ancestors = self.dropout(embedded_ancestors)
+        packed_ancestors = awe.model.lstm_utils.re_pack(
+            ancestor_html_tag_ids, embedded_ancestors
+        )
+
+        # Run through LSTM.
+        lstm_output, (_, _) = self.xpath_lstm(packed_ancestors)
+        padded_ancestors, _ = torch.nn.utils.rnn.pad_packed_sequence(lstm_output)
+            # [max_num_ancestors, num_nodes, D * lstm_dim]
+
+        # Aggregate.
+        node_vectors = torch.mean(padded_ancestors, dim=0)
+            # [num_nodes, D * lstm_dim]
+
+        node_vectors = self.dropout(node_vectors)
+
+        return node_vectors
+
     def get_ancestor_chain(self, batch: list[awe.data.graph.dom.Node]):
         # Get features for each ancestor.
         n_ancestors = self.trainer.params.n_ancestors
@@ -338,6 +387,10 @@ class Model(torch.nn.Module):
             x = self.propagate_visual_neighbors(batch)
         else:
             x = self.get_node_features(batch)
+
+        # Append XPath
+        if self.trainer.params.xpath:
+            x = append(x, self.get_xpath(batch))
 
         # Append ancestor chain.
         if self.trainer.params.ancestor_chain:

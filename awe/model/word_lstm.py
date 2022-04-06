@@ -64,7 +64,6 @@ class WordLstm(torch.nn.Module):
 
         # Embed words.
         embedded_words = self.trainer.model.word_embedding(word_ids.data)
-            # [num_nodes, max_num_words, word_dim]
         embedded_words = self.dropout(embedded_words)
         packed_words = awe.model.lstm_utils.re_pack(word_ids, embedded_words)
 

@@ -384,6 +384,17 @@ class Node:
                 node = node.parent
             yield node
 
+    def get_all_ancestors(self):
+        result = list(self.iterate_all_ancestors())
+        result.reverse()
+        return result
+
+    def iterate_all_ancestors(self):
+        node = self
+        while node is not None:
+            yield node
+            node = node.parent
+
     def distance_to(self, other: 'Node'):
         return abs(self.deep_index - other.deep_index)
 

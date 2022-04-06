@@ -70,6 +70,9 @@ class Params:
     neighbor_distance: VisualNeighborDistance = VisualNeighborDistance.rect
     neighbor_normalize: Optional[AttentionNormalization] = AttentionNormalization.softmax
 
+    # XPath
+    xpath: bool = False
+
     # Ancestor chain
     ancestor_chain: bool = False
     n_ancestors: int = 5
