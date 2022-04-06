@@ -76,8 +76,10 @@ class Trainer:
     val_websites: list[awe.data.set.pages.Website]
     train_pages: list[awe.data.set.pages.Page]
     val_pages: list[awe.data.set.pages.Page]
+    test_pages: list[awe.data.set.pages.Page]
     train_loader: torch.utils.data.DataLoader
     val_loader: torch.utils.data.DataLoader
+    test_loader: torch.utils.data.DataLoader
     evaluator: awe.model.eval.Evaluator
     device: torch.device
     model: awe.model.classifier.Model
@@ -161,9 +163,10 @@ class Trainer:
         subsetter = Subsetter()
         self.train_pages = subsetter(self.train_websites, self.params.train_subset)
         self.val_pages = subsetter(self.val_websites, self.params.val_subset)
-        print(f'{len(self.train_pages)=}, {len(self.val_pages)=}')
+        self.test_pages = subsetter(self.val_websites, self.params.test_subset)
+        print(f'{len(self.train_pages)=}, {len(self.val_pages)=}, {len(self.test_pages)=}')
 
-    def create_dataloaders(self):
+    def create_dataloaders(self, create_test: bool = False):
         """Splits data to train/val sets and prepares features on them."""
 
         # Create dataloaders.
@@ -171,6 +174,11 @@ class Trainer:
             shuffle=True,
             train=True,
         )
+        if create_test:
+            # IMPORTANT: This must be created before val if variable nodes
+            # finding is enabled. Because it works only once and test is
+            # superset of val, it would not work the other way around.
+            self.test_loader = self.create_dataloader(self.test_pages, desc='test')
         self.val_loader = self.create_dataloader(self.val_pages, 'val')
 
     def create_dataloader(self,
@@ -545,6 +553,14 @@ class Trainer:
         print(f'Saved {run.name!r} to {results_file_path!r}.')
 
         return metrics
+
+    def test(self):
+        test_run = RunInput(
+            pages=self.test_pages,
+            name='test',
+            loader=self.test_loader
+        )
+        return self.validate(test_run)
 
     def predict(self, run: RunInput):
         predictions: list[awe.model.classifier.Prediction] = []

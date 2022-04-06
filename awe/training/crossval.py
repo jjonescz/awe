@@ -1,6 +1,8 @@
 # 1. Set parameters in `data/params.json`.
 # 2. Run `python -m awe.training.crossval`.
 
+import json
+
 import numpy as np
 
 import awe.training.params
@@ -34,15 +36,11 @@ def main():
         )
         trainer.init_features()
         trainer.split_data()
-        trainer.create_dataloaders()
+        trainer.create_dataloaders(create_test=True)
         trainer.create_model()
         trainer.create_version()
         trainer.train()
-
-        # Test on all pages.
-        test_pages = [p for w in trainer.val_websites for p in w.pages]
-        test_run = trainer.create_run(pages=test_pages, desc='test')
-        all_metrics.append(trainer.validate(test_run))
+        all_metrics.append(trainer.test())
 
     # Compute mean metrics.
     keys = { k for m in all_metrics for k in m.keys() }
@@ -50,10 +48,12 @@ def main():
         k: [v for m in all_metrics if (v := m.get(k)) is not None]
         for k in keys
     }
+    mean_metrics = { k: np.mean(vs) for k, vs in all_values.items() }
+    metric_counts = { k: len(vs) for k, vs in all_values.items() }
     print('Mean metrics:')
-    print({ k: np.mean(vs) for k, vs in all_values.items() })
+    print(json.dumps(mean_metrics, indent=2, sort_keys=True))
     print('Counts:')
-    print({ k: len(vs) for k, vs in all_values.items() })
+    print(json.dumps(metric_counts, indent=2, sort_keys=True))
 
 def get_cyclic_permutation_indices(seq_len: int, perm_idx: int, perm_len: int):
     return [(perm_idx + idx) % seq_len for idx in range(perm_len)]

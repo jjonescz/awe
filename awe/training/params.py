@@ -42,6 +42,8 @@ class Params:
     """Number of pages per website."""
     val_subset: Optional[int] = 50
     """Number of pages per website."""
+    test_subset: Optional[int] = None
+    """Number of pages per website."""
 
     # Trainer
     epochs: int = 5
