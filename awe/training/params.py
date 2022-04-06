@@ -122,6 +122,7 @@ class Params:
     label_smoothing: float = 0.0
     layer_norm: bool = False
     head_dims: list[int] = (128, 64)
+    head_dropout: float = 0.5
 
     @classmethod
     def load_version(cls,

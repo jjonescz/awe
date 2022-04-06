@@ -140,7 +140,7 @@ class Model(torch.nn.Module):
             if self.trainer.params.layer_norm:
                 head_layers.append(torch.nn.LayerNorm(next_dim))
             head_layers.append(torch.nn.ReLU())
-            head_layers.append(torch.nn.Dropout())
+            head_layers.append(torch.nn.Dropout(self.trainer.params.head_dropout))
         head_layers.append(torch.nn.Linear(head_dims[-1], num_labels))
         self.head = torch.nn.Sequential(*head_layers)
 
