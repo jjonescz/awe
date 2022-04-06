@@ -105,7 +105,7 @@ class Model(torch.nn.Module):
         if self.trainer.params.ancestor_chain:
             # For each ancestor we have slim features and its distance (the
             # latter only except LSTM, it learns distance differently).
-            self.ancestor_dist = self.trainer.params.ancestor_function == 'lstm'
+            self.ancestor_dist = self.trainer.params.ancestor_function != 'lstm'
             input_ancestor_dim = self.slim_node_feature_dim + (
                 1 if self.ancestor_dist else 0
             )
