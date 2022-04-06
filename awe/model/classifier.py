@@ -58,7 +58,7 @@ class Model(torch.nn.Module):
         self.html_tag = self.trainer.extractor.get_feature(awe.features.dom.HtmlTag)
         if self.html_tag is not None:
             num_html_tags = len(self.html_tag.html_tag_ids) + 1
-            embedding_dim = 32
+            embedding_dim = self.trainer.params.tag_name_embedding_dim
             self.tag_embedding = torch.nn.Embedding(
                 num_html_tags,
                 embedding_dim

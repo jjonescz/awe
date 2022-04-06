@@ -111,6 +111,7 @@ class Params:
 
     # HTML DOM features
     tag_name_embedding: bool = False
+    tag_name_embedding_dim: int = 30
     position: bool = False
 
     # Visual features
