@@ -541,7 +541,7 @@ class Trainer:
         # Save metrics.
         results_file_path = self.version.get_results_path(run.name)
         with open(results_file_path, mode='w', encoding='utf-8') as f:
-            json.dump(metrics, f)
+            json.dump(metrics, f, indent=2, sort_keys=True)
         print(f'Saved {run.name!r} to {results_file_path!r}.')
 
         return metrics
