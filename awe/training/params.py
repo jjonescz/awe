@@ -49,6 +49,8 @@ class Params:
     restore_num: Optional[int] = None
     batch_size: int = 16
     save_every_n_epochs: Optional[int] = 1
+    save_better_val_loss_checkpoint: bool = True
+    save_temporary_checkpoint: bool = True
     log_every_n_steps: int = 10
     eval_every_n_steps: Optional[int] = 50
     use_gpu: bool = True

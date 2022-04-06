@@ -392,7 +392,8 @@ class Trainer:
                 remove_last_checkpoint = None
 
             # Save model checkpoint if better loss reached or if Nth epoch.
-            if is_better_val_loss or (
+            if (self.params.save_better_val_loss_checkpoint and
+                is_better_val_loss) or (
                 self.params.save_every_n_epochs is not None and
                 epoch_idx % self.params.save_every_n_epochs == 0
             ):
@@ -400,7 +401,7 @@ class Trainer:
                     epoch_idx=epoch_idx,
                     best_val_loss=best_val_loss
                 )
-            else:
+            elif self.params.save_temporary_checkpoint:
                 # Otherwise, save checkpoint temporarily. If training is
                 # canceled, it'll be available, otherwise, it'll be deleted in
                 # the next epoch. Except for the final epoch, that is always
