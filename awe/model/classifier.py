@@ -103,8 +103,12 @@ class Model(torch.nn.Module):
 
         # Ancestor chain
         if self.trainer.params.ancestor_chain:
-            # For each ancestor we have slim features and its distance.
-            input_ancestor_dim = self.slim_node_feature_dim + 1
+            # For each ancestor we have slim features and its distance (the
+            # latter only except LSTM, it learns distance differently).
+            self.ancestor_dist = self.trainer.params.ancestor_function == 'lstm'
+            input_ancestor_dim = self.slim_node_feature_dim + (
+                1 if self.ancestor_dist else 0
+            )
 
             # We can summarize features of each ancestor using one layer.
             if self.trainer.params.ancestor_summarize:
@@ -282,16 +286,17 @@ class Model(torch.nn.Module):
             # [N * n_ancestors, slim_dim]
 
         # Append distance of ancestors.
-        ancestor_distances = torch.arange(
-            n_ancestors, 0, -1,
-            device=self.trainer.device
-        ).expand((len(batch), n_ancestors)).flatten() # [N * n_ancestors]
-        ancestor_distances = ancestor_distances.reshape((-1, 1))
-            # [N * n_ancestors, 1]
-        ancestor_features = torch.concat(
-            (ancestor_distances, ancestor_features),
-            dim=-1
-        ) # [N * n_ancestors, slim_dim + 1]
+        if self.ancestor_dist:
+            ancestor_distances = torch.arange(
+                n_ancestors, 0, -1,
+                device=self.trainer.device
+            ).expand((len(batch), n_ancestors)).flatten() # [N * n_ancestors]
+            ancestor_distances = ancestor_distances.reshape((-1, 1))
+                # [N * n_ancestors, 1]
+            ancestor_features = torch.concat(
+                (ancestor_distances, ancestor_features),
+                dim=-1
+            ) # [N * n_ancestors, slim_dim + 1]
 
         # Summarize ancestor features.
         if self.trainer.params.ancestor_summarize:
