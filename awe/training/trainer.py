@@ -228,12 +228,18 @@ class Trainer:
                 if not self.params.tokenize_node_attrs_only_ancestors and t
             } | {
                 f'anc_{i}': f'<{a.html_tag}>{get_text(a)}'
-                for i, a in enumerate(node.iterate_ancestors(self.params.n_ancestors))
-                if self.params.ancestor_chain
+                for i, a in (
+                    enumerate(node.iterate_ancestors(self.params.n_ancestors))
+                    if self.params.ancestor_chain
+                    else ()
+                )
             } | {
                 f'neighbor_{i}': v.neighbor.text
-                for i, v in enumerate(node.visual_neighbors)
-                if self.params.visual_neighbors
+                for i, v in (
+                    enumerate(node.visual_neighbors)
+                    if self.params.visual_neighbors
+                    else ()
+                )
             }
             for node in nodes
             if node.label_keys
