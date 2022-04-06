@@ -161,12 +161,17 @@ class WordIdentifiers(awe.features.feature.Feature):
         # Get word token indices.
         return torch.nn.utils.rnn.pack_sequence(
             [
-                torch.tensor(self.node_token_ids[node],
+                torch.tensor(
+                    [
+                        token_id
+                        for node in row
+                        for token_id in self.node_token_ids[node]
+                    ]
+                    if len(row) > 0 else [0],
                     dtype=torch.int32,
                     device=self.trainer.device,
                 )
                 for row in batch
-                for node in row
             ],
             enforce_sorted=False
         )
