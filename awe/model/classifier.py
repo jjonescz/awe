@@ -220,6 +220,12 @@ class Model(torch.nn.Module):
                 # Expand partner and friend nodes.
                 friend_batch = [None] * (len(batch) * 3)
                 for i, n in zip(range(0, len(friend_batch), 3), batch):
+                    if n.friends is None:
+                        raise RuntimeError(
+                            f'Node has no friends ({n.get_xpath()!r} in ' +
+                            f'{n.dom.page.html_path!r}).'
+                        )
+
                     friend_batch[i] = [n]
                     friend_batch[i + 1] = n.get_partner_set()
                     friend_batch[i + 2] = n.friends
