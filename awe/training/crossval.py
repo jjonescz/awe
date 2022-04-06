@@ -5,6 +5,7 @@ import json
 
 import numpy as np
 
+import awe.data.set.pages
 import awe.training.params
 import awe.training.trainer
 
@@ -34,6 +35,13 @@ def main():
             perm_idx=perm_idx,
             perm_len=seed_len
         )
+
+        # Clear cache, because the whole dataset might not fit into memory and
+        # we iteratively load everything across all cross-validation rounds.
+        trainer.ds.clear_cache(awe.data.set.pages.ClearCacheRequest(
+            labels=False
+        ))
+
         trainer.init_features()
         trainer.split_data()
         trainer.create_dataloaders(create_test=True)
