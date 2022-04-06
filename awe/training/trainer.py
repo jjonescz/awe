@@ -492,7 +492,7 @@ class Trainer:
     def _validate_epoch_core(self, run: RunInput):
         self.model.eval()
         if self.val_progress is None:
-            self.val_progress = tqdm(desc='val')
+            self.val_progress = tqdm(desc=f'val {run.name}')
         self.val_progress.reset(total=len(run.loader))
         evaluation = self.evaluator.start_evaluation()
         for batch in run.loader:
@@ -538,7 +538,7 @@ class Trainer:
         self._finalize()
 
         # Save metrics.
-        results_file_path = self.version.get_results_path(run.desc)
+        results_file_path = self.version.get_results_path(run.name)
         with open(results_file_path, mode='w', encoding='utf-8') as f:
             json.dump(metrics, f)
         print(f'Saved {run.name!r} to {results_file_path!r}.')
