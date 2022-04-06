@@ -114,8 +114,7 @@ class Trainer:
         if self.params.dataset == awe.training.params.Dataset.swde:
             self.ds = awe.data.set.swde.Dataset(
                 suffix='-exact',
-                only_verticals=(self.params.vertical,),
-                convert=False
+                only_verticals=(self.params.vertical,)
             )
         elif self.params.dataset == awe.training.params.Dataset.apify:
             self.ds = awe.data.set.apify.Dataset(
