@@ -61,6 +61,8 @@ class Website:
     prev_page_count: int = dataclasses.field(repr=False, default=None)
     page_count: int = dataclasses.field(repr=False, default=None)
 
+    found_variable_nodes: bool = dataclasses.field(repr=False, default=False)
+
     def find_variable_nodes(self, max_variable_nodes_per_website: int = 300):
         """
         Determines whether text nodes are variable or fixed in pages across the
@@ -111,6 +113,8 @@ class Website:
                 for node in dom.nodes:
                     if node.is_text:
                         node.is_variable_text = node.get_xpath() in variable_nodes
+
+        self.found_variable_nodes = True
 
 @dataclasses.dataclass(eq=False)
 class Page(abc.ABC):

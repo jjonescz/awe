@@ -79,7 +79,8 @@ class Sampler:
                 desc=f'find variable nodes in {desc}'
             ):
                 website: awe.data.set.pages.Website
-                website.find_variable_nodes()
+                if not website.found_variable_nodes:
+                    website.find_variable_nodes()
 
         for page in tqdm(pages, desc=f'prepare {desc}'):
             # Compute friend cycles.
