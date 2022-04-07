@@ -17,11 +17,12 @@ def main():
     params = awe.training.params.Params.load_user()
 
     # Load all saved metrics.
+    last_version = None
     all_metrics = []
     idx = 0
     while True:
         version = awe.training.versioning.Version(
-            number=args.version_num,
+            number=args.version_num + idx,
             name=f'{params.version_name}-{idx}'
         )
         if not version.exists():
@@ -32,6 +33,10 @@ def main():
         with open(results_path, mode='r', encoding='utf-8') as f:
             all_metrics.append(json.load(f))
         idx += 1
+        last_version = version
+
+    if last_version is None:
+        return
 
     # Compute mean metrics.
     keys = { k for m in all_metrics for k in m.keys() }
@@ -39,12 +44,19 @@ def main():
         k: [v for m in all_metrics if (v := m.get(k)) is not None]
         for k in keys
     }
-    mean_metrics = { k: np.mean(vs) for k, vs in all_values.items() }
-    metric_counts = { k: len(vs) for k, vs in all_values.items() }
-    print('Mean metrics:')
-    print(json.dumps(mean_metrics, indent=2, sort_keys=True))
-    print('Counts:')
-    print(json.dumps(metric_counts, indent=2, sort_keys=True))
+    aggregated_metrics = {
+        k: {
+            'mean': np.mean(vs),
+            'count': len(vs)
+        }
+        for k, vs in all_values.items()
+    }
+
+    # Save under the last version dir.
+    file_path = last_version.get_results_path('crossval')
+    with open(file_path, mode='w', encoding='utf-8') as f:
+        json.dump(aggregated_metrics, f, indent=2, sort_keys=True)
+    print(f'Saved to {file_path!r}.')
 
 def parse_args():
     parser = argparse.ArgumentParser(
