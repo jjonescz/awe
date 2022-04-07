@@ -12,15 +12,23 @@ import awe.training.trainer
 def main():
     args = parse_args()
 
-    params = awe.training.params.Params.load_user(normalize=True)
+    params = awe.training.params.Params.load_user(
+        normalize=not args.print_max_index
+    )
     if params is None:
         return
-    print(f'{params=}')
+    if not args.print_max_index:
+        print(f'{params=}')
 
     # Like FreeDOM and SimpDOM, use cyclic permutations.
     trainer = awe.training.trainer.Trainer(params)
     trainer.load_pretrained()
     trainer.load_dataset()
+
+    total_count = len(trainer.ds.verticals[0].websites)
+    if args.print_max_index:
+        print(total_count - 1)
+        return
 
     orig_name = params.version_name
     seed_len = len(params.train_website_indices)
@@ -30,7 +38,7 @@ def main():
     print(f'{website_names=}, {seed_len=}')
 
     start_idx = args.index
-    end_idx = args.index + (args.count or len(trainer.ds.verticals[0].websites))
+    end_idx = args.index + (args.count or total_count)
     for perm_idx in range(start_idx, end_idx):
         trainer.params.version_name = f'{orig_name}-{perm_idx}'
         trainer.params.train_website_indices = get_cyclic_permutation_indices(
@@ -69,6 +77,12 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description='Runs cross-validation training',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument('--print-max-index',
+        dest='print_max_index',
+        action='store_true',
+        default=False,
+        help='only print max index and exit'
     )
     parser.add_argument('-i',
         dest='index',
