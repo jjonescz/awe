@@ -1,9 +1,7 @@
 # 1. Set parameters in `data/params.json`.
 # 2. Run `python -m awe.training.crossval`.
 
-import json
-
-import numpy as np
+import argparse
 
 import awe.data.set.pages
 import awe.training.params
@@ -11,6 +9,8 @@ import awe.training.trainer
 
 
 def main():
+    args = parse_args()
+
     params = awe.training.params.Params.load_user(normalize=True)
     if params is None:
         return
@@ -21,14 +21,16 @@ def main():
     trainer.load_pretrained()
     trainer.load_dataset()
 
-    all_metrics: list[dict[str, float]] = []
     orig_name = params.version_name
     seed_len = len(params.train_website_indices)
     website_names = SWDE_VERTICAL_WEBSITES[params.vertical] \
         if params.dataset == awe.training.params.Dataset.swde \
         else [w.name for w in trainer.ds.verticals[0].websites]
     print(f'{website_names=}, {seed_len=}')
-    for perm_idx in range(len(trainer.ds.verticals[0].websites)):
+
+    start_idx = args.index
+    end_idx = args.index + (args.count or len(trainer.ds.verticals[0].websites))
+    for perm_idx in range(start_idx, end_idx):
         trainer.params.version_name = f'{orig_name}-{perm_idx}'
         trainer.params.train_website_indices = get_cyclic_permutation_indices(
             seq_len=len(website_names),
@@ -48,20 +50,7 @@ def main():
         trainer.create_model()
         trainer.create_version()
         trainer.train()
-        all_metrics.append(trainer.test())
-
-    # Compute mean metrics.
-    keys = { k for m in all_metrics for k in m.keys() }
-    all_values = {
-        k: [v for m in all_metrics if (v := m.get(k)) is not None]
-        for k in keys
-    }
-    mean_metrics = { k: np.mean(vs) for k, vs in all_values.items() }
-    metric_counts = { k: len(vs) for k, vs in all_values.items() }
-    print('Mean metrics:')
-    print(json.dumps(mean_metrics, indent=2, sort_keys=True))
-    print('Counts:')
-    print(json.dumps(metric_counts, indent=2, sort_keys=True))
+        trainer.test()
 
 def get_cyclic_permutation_indices(seq_len: int, perm_idx: int, perm_len: int):
     return [(perm_idx + idx) % seq_len for idx in range(perm_len)]
@@ -73,6 +62,24 @@ def get_cyclic_permutation(seq: list[str], perm_idx: int, perm_len: int):
         perm_len=perm_len
     )
     return [seq[idx] for idx in indices]
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='Runs cross-validation training',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument('-i',
+        dest='index',
+        type=int,
+        default=0,
+        help='start index'
+    )
+    parser.add_argument('-c',
+        dest='count',
+        type=int,
+        help='max count'
+    )
+    return parser.parse_args()
 
 # Ordering from SimpDOM source code.
 SWDE_VERTICAL_WEBSITES = {
