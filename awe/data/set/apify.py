@@ -11,6 +11,7 @@ import slugify
 from tqdm.auto import tqdm
 
 import awe.data.constants
+import awe.data.html_utils
 import awe.data.parsing
 import awe.data.set.db
 import awe.data.set.labels
