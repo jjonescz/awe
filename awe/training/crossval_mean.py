@@ -31,6 +31,7 @@ def main():
             break
         with open(results_path, mode='r', encoding='utf-8') as f:
             all_metrics.append(json.load(f))
+        idx += 1
 
     # Compute mean metrics.
     keys = { k for m in all_metrics for k in m.keys() }
