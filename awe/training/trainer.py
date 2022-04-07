@@ -558,7 +558,9 @@ class Trainer:
         test_run = RunInput(
             pages=self.test_pages,
             name='test',
-            loader=self.test_loader
+            loader=self.test_loader,
+            progress=lambda: self.val_progress,
+            progress_metrics=('loss', 'f1/page')
         )
         return self.validate(test_run)
 
