@@ -152,7 +152,7 @@ export function layoutEnd() {
         for thesis <a href="https://is.cuni.cz/studium/dipl_st/index.php?id=&tid=&do=main&doo=detail&did=241832" rel="external">AI-based Structured Web Data Extraction</a>.
       </p>
       <p>
-        Last updated 2022-03-28.
+        Last updated 2022-04-08.
       </p>
     </details>
     </body>
