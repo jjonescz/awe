@@ -25,6 +25,10 @@ export class PageRecipe {
     return replaceExtension(this.jsonPath, this.page.isSwde ? '.htm' : '.html');
   }
 
+  public get mhtmlPath() {
+    return replaceExtension(this.jsonPath, '.mhtml');
+  }
+
   public get screenshotFullPath() {
     return replaceExtension(this.jsonPath, '-full.png');
   }

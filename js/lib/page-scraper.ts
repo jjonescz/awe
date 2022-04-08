@@ -1,4 +1,6 @@
+import { writeFile } from 'fs/promises';
 import puppeteer from 'puppeteer-core';
+import { pathToFileURL } from 'url';
 import winston from 'winston';
 import { AssetPageStats } from './asset-stats';
 import { SWDE_TIMESTAMP } from './constants';
@@ -316,14 +318,21 @@ export class PageScraper {
     );
   }
 
-  public async freeze() {
+  public async freeze(snapshotPath: string) {
     const wasJavaScriptEnabled = this.page.isJavaScriptEnabled();
     this.logger.verbose('freeze', { wasJavaScriptEnabled });
-    const html = await this.page.content();
+
+    // Capture snapshot.
+    const cdp = await this.page.target().createCDPSession();
+    const { data } = await cdp.send('Page.captureSnapshot', {
+      format: 'mhtml',
+    });
+    await writeFile(snapshotPath, data, { encoding: 'utf-8' });
+
     try {
       this.page.setJavaScriptEnabled(false);
       return await this.wrapNavigation((page, options) =>
-        page.setContent(html, options)
+        page.goto(pathToFileURL(snapshotPath).toString(), options)
       );
     } finally {
       this.page.setJavaScriptEnabled(wasJavaScriptEnabled);

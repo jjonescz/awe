@@ -70,7 +70,7 @@ export class PageController {
 
     // Freeze if desired.
     if (this.controller.freeze) {
-      await this.pageScraper.freeze();
+      await this.pageScraper.freeze(recipe.mhtmlPath);
     }
 
     // Abort remaining requests.
