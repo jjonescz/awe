@@ -58,8 +58,19 @@ issue GDB command `backtrace`.
 
 #### Upload pre-trained model
 
-```bash
-tar czf logs.tar.gz logs/1-version-name/
-gh auth login
-gh release upload v0.1 logs.tar.gz
-```
+1. Ensure some params are disabled in `params.json`:
+
+   - `validate_data: false`
+   - `classify_only_variable_nodes: false`
+
+2. Add `description` and `examples` to `info.json`
+
+3. Create release on GitHub (at the code the model was trained with).
+
+3. Pack and upload the checkpoint.
+
+   ```bash
+   tar czf logs.tar.gz logs/1-version-name/
+   gh auth login
+   gh release upload v0.1 logs.tar.gz
+   ```
