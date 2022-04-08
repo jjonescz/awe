@@ -125,7 +125,7 @@ try extracting a few pages with screenshots:
 pnpm start -- -d ../data/apify/alzaEn -g 'pages/localized_html_*.htm' -o -T=1000 -SH -t=1 -m=2
 ```
 
-And validate them (including manually looking at the screenshots):
+And validate them (including manually running `awe/data/set/explore.ipynb`):
 
 ```bash
 (cd .. && python -m awe.data.validate --visuals --skip-without-visuals --max-errors=1 alzaEn)
