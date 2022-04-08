@@ -33,7 +33,7 @@ def plot_pages(pages: list[tuple[awe.data.set.pages.Page]]):
         facecolor='white',
         gridspec_kw={'height_ratios': heights}
     )
-    axs = axs.flatten()
+    axs = axs.flatten() if len(pages) > 1 or n_cols > 1 else [axs]
     explorers = [e for row in explorers for e in row]
     for ax, e in tqdm(zip(axs, explorers), desc='pages', total=len(explorers)):
         e.plot_screenshot_with_boxes(ax)
