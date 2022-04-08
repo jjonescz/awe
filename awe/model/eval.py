@@ -79,11 +79,18 @@ class Evaluation:
         if self.pred_set_dirty:
             self.pred_set_dirty = False
             self.compute_page_wide(metrics_dict)
+            if self.evaluator.trainer.params.exact_match:
+                self.compute_page_wide(metrics_dict, exact_match=True)
 
         return metrics_dict
 
-    def compute_page_wide(self, metrics_dict: dict[str, float]):
+    def compute_page_wide(self,
+        metrics_dict: dict[str, float],
+        exact_match: bool = False,
+    ):
         """Computes page-wide metrics and adds them to `metrics_dict`."""
+
+        em = '_em' if exact_match else ''
 
         per_label = {
             label_key: awe.model.metrics.PredStats() for label_key
@@ -96,22 +103,37 @@ class Evaluation:
 
             for label_key, pred_list in pred_page.preds.items():
                 stats = per_label[label_key]
-                gold = [
-                    n
-                    for g in page.dom.labeled_nodes.get(label_key)
-                    for n in g
-                ]
-                if not gold:
+                gold_groups = page.dom.labeled_nodes.get(label_key)
+                gold_list = [n for g in gold_groups for n in g]
+
+                if not gold_list:
                     # Negative sample is when no node is labeled.
                     if not pred_list:
                         stats.true_negatives += 1
                     else:
                         stats.false_negatives += 1
+                elif exact_match:
+                    # In exact match, we count only whole groups.
+                    any_group_predicted = False
+                    for gold_group in gold_groups:
+                        # Check the whole group is predicted.
+                        if all(
+                            any(pred.node == gold_node for pred in pred_list)
+                            for gold_node in gold_group
+                        ):
+                            any_group_predicted = True
+                            break
+                    if any_group_predicted:
+                        stats.true_positives += 1
+                    else:
+                        stats.false_positives += 1
                 else:
-                    # Find most confident prediction.
+                    # Find most confident prediction (i.e., top-1 score).
                     best_pred = awe.utils.where_max(pred_list,
                         lambda p: p.confidence).node
-                    if best_pred in gold:
+
+                    # It's enough to predict one node.
+                    if best_pred in gold_list:
                         stats.true_positives += 1
                     else:
                         stats.false_positives += 1
@@ -122,14 +144,14 @@ class Evaluation:
             for label_key, stats in per_label.items()
         }
         for k, m in per_label_metrics.items():
-            metrics_dict.update(m.to_dict(postfix=f'/label_{k}'))
+            metrics_dict.update(m.to_dict(postfix=f'/label_{k}{em}'))
 
         # Average per-label stats to page-wide stats.
         page_metrics = awe.model.metrics.F1Metrics.from_vector(sum(
             metrics.to_vector() for metrics in per_label_metrics.values())
             / len(per_label))
 
-        metrics_dict.update(page_metrics.to_dict(postfix='/page'))
+        metrics_dict.update(page_metrics.to_dict(postfix=f'/page{em}'))
 
     def add(self, pred: 'awe.model.classifier.Prediction'):
         self.add_fast(pred.outputs)

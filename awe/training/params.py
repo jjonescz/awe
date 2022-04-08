@@ -57,6 +57,14 @@ class Params:
     eval_every_n_steps: Optional[int] = 50
     use_gpu: bool = True
 
+    # Metrics
+    exact_match: bool = False
+    """
+    Record also exact match metrics.
+
+    Useful when `propagate_labels_to_leaves` is `True`.
+    """
+
     # Sampling
     load_visuals: bool = False
     classify_only_text_nodes: bool = False
