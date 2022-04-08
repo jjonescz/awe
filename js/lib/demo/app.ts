@@ -21,6 +21,8 @@ export class DemoOptions {
   public readonly mockInference: boolean;
   /** Puppeteer page loading timeout in seconds. */
   public readonly timeout: number;
+  /** Send artificially large response chunks to bypass network buffering. */
+  public readonly largeChunks: number;
 
   public constructor() {
     this.debug = !!process.env.DEBUG;
@@ -28,6 +30,15 @@ export class DemoOptions {
     this.logInputs = !!process.env.LOG_INPUTS;
     this.mockInference = !!process.env.MOCK_INFERENCE;
     this.timeout = tryParseInt(process.env.TIMEOUT, 15);
+    this.largeChunks = tryParseInt(process.env.LARGE_CHUNKS, 0);
+  }
+
+  public get largeChunk() {
+    if (this.largeChunks > 0) {
+      return '<!--' + 'x'.repeat(this.largeChunks) + '-->';
+    } else {
+      return null;
+    }
   }
 }
 
@@ -103,7 +114,8 @@ export class DemoApp {
     log.debug('run');
 
     // Start writing response so it's asynchronous.
-    res.setHeader('transfer-encoding', 'chunked');
+    res.setHeader('Transfer-Encoding', 'chunked');
+    res.flushHeaders();
     res.write(views.layoutStart());
     res.write(views.info(this.model));
     res.write(views.form(this.model, { url }));
@@ -119,12 +131,14 @@ export class DemoApp {
     if (this.browser instanceof Promise) {
       log.debug('wait for Puppeteer');
       res.write(views.logEntry('Waiting for Puppeteer one-time init...'));
+      this.flushChunk(res);
       this.browser = await this.browser;
     }
 
     // Run through Puppeteer.
     log.debug('load page');
     res.write(views.logEntry('Loading page...'));
+    this.flushChunk(res);
     const page = await this.browser.newPage();
     page.setDefaultTimeout(timeout * 1000);
     const nav1 = await DemoApp.wrapNavigation(
@@ -150,6 +164,7 @@ export class DemoApp {
     if (nav1 !== 'timeout') {
       log.debug('freeze page');
       res.write(views.logEntry('Freezing page...'));
+      this.flushChunk(res);
       page.setJavaScriptEnabled(false);
       const nav2 = await DemoApp.wrapNavigation(
         (o) => page.setContent(html, o),
@@ -162,6 +177,7 @@ export class DemoApp {
     // Extract visuals.
     log.debug('extract visuals');
     res.write(views.logEntry('Extracting visuals...'));
+    this.flushChunk(res);
     const pageInfo = new PageInfo(url, url, html, /* isSwde */ false);
     const recipe = new PageRecipe(pageInfo, ScrapeVersion.Exact);
     const extractor = new Extractor(page, recipe, log, /* extractXml */ false);
@@ -181,12 +197,14 @@ export class DemoApp {
       if (pythonLoading !== null) {
         log.debug('wait for Python');
         res.write(views.logEntry('Waiting for inference one-time init...'));
+        this.flushChunk(res);
         await pythonLoading;
       }
 
       // Call Python inference.
       log.debug('inference');
       res.write(views.logEntry('Running inference...'));
+      this.flushChunk(res);
       response = await this.python.send({ url, html, visuals });
     } else {
       // Mock inference.
@@ -224,6 +242,7 @@ export class DemoApp {
     }
     log.debug('response', { response });
     res.write(views.logEntry('Rendering screenshot...'));
+    this.flushChunk(res);
 
     // Log full inputs if they haven't been logged already and there was an
     // error during inference.
@@ -275,6 +294,12 @@ export class DemoApp {
         res.end();
         return 'fail';
       }
+    }
+  }
+
+  private flushChunk(res: Response) {
+    if (this.options.largeChunk !== null) {
+      res.write(this.options.largeChunk);
     }
   }
 }
