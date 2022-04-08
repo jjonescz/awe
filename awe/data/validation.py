@@ -13,17 +13,14 @@ import awe.data.set.pages
 class Validator:
     labels: bool = True
     visuals: bool = True
-    ignore_missing_visuals: bool = False
     labeled_boxes: bool = True
     num_invalid: int = 0
-    num_ignored_missing_visuals: int = 0
     num_tested: int = 0
     file: Optional[TextIOWrapper] = None
 
     def summary(self):
         stats = {
             'invalid': self.num_invalid,
-            'ignored_missing_visuals': self.num_ignored_missing_visuals,
             'tested': self.num_tested,
         }
         return {
@@ -102,9 +99,6 @@ class Validator:
             try:
                 page_visuals = page.load_visuals()
             except FileNotFoundError as e:
-                if self.ignore_missing_visuals:
-                    self.num_ignored_missing_visuals += 1
-                    return
                 page.valid = False
                 warnings.warn(f'No visuals for page {page.html_path!r}: {e}.')
                 return

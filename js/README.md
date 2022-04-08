@@ -128,7 +128,7 @@ pnpm start -- -d ../data/apify/alzaEn -g 'pages/localized_html_*.htm' -o -T=1000
 And validate them (including manually looking at the screenshots):
 
 ```bash
-(cd .. && python -m awe.data.validate --visuals --ignore-missing-visuals --max-errors=1 alzaEn)
+(cd .. && python -m awe.data.validate --visuals --skip-without-visuals --max-errors=1 alzaEn)
 ```
 
 To take 3 screenshots of a website:

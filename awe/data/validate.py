@@ -83,8 +83,8 @@ parser.add_argument('--filter-labels',
     help='filters apify label keys according to `data/params.json`',
     default=False
 )
-parser.add_argument('--ignore-missing-visuals',
-    dest='ignore_missing_visuals',
+parser.add_argument('--skip-without-visuals',
+    dest='skip_without_visuals',
     action='store_true',
     help='ignores pages without visuals JSON',
     default=False
@@ -109,13 +109,14 @@ if args.dataset == 'apify':
     ds = awe.data.set.apify.Dataset(
         only_label_keys=only_label_keys,
         only_websites=args.target,
-        convert=args.convert
+        convert=args.convert,
+        skip_without_visuals=args.skip_without_visuals,
     )
 elif args.dataset == 'swde':
     ds = awe.data.set.swde.Dataset(
         suffix='-exact',
         only_verticals=args.target,
-        convert=args.convert
+        convert=args.convert,
     )
 
 # Get its pages.
@@ -146,7 +147,6 @@ if args.max_pages is not None:
 validator = awe.data.validation.Validator(
     labels=not args.no_labels,
     visuals=args.visuals,
-    ignore_missing_visuals=args.ignore_missing_visuals,
 )
 
 # Write invalid pages to a file (iteratively during the validation).

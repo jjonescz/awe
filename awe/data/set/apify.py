@@ -33,6 +33,7 @@ class Dataset(awe.data.set.pages.Dataset):
         exclude_websites: list[str] = (),
         convert: bool = True,
         convert_slim: bool = False,
+        skip_without_visuals: bool = False,
         only_label_keys: Optional[list[str]] = None
     ):
         super().__init__(
@@ -43,6 +44,7 @@ class Dataset(awe.data.set.pages.Dataset):
         self.exclude_websites = exclude_websites
         self.convert = convert
         self.convert_slim = convert_slim
+        self.skip_without_visuals = skip_without_visuals
         self.only_label_keys = only_label_keys
         self.verticals = [
             Vertical(dataset=self, name='products', prev_page_count=0)
@@ -138,6 +140,10 @@ class Website(awe.data.set.pages.Website):
                 self.init_pages()
                 self.convert_to_db(db)
             self.load_json_df(slim=True)
+
+            # Remove pages without visuals from the slim dataset.
+            if self.vertical.dataset.skip_without_visuals:
+                self.save_json_df(self.df, self.slim_dataset_json_path)
         else:
             if self.vertical.dataset.convert_slim:
                 self.create_slim_dataset()
@@ -188,6 +194,12 @@ class Website(awe.data.set.pages.Website):
             Page(website=self, index=idx)
             for idx in range(self.page_count)
         ]
+        if self.vertical.dataset.skip_without_visuals:
+            self.pages = [
+                p for p in self.pages
+                if p.visuals_exist()
+            ]
+            self.page_count = len(self.pages)
 
     @staticmethod
     def save_json_df(df: pd.DataFrame, file_path: str):
@@ -305,12 +317,12 @@ class Page(awe.data.set.pages.Page):
     def get_labels(self):
         return PageLabels(self)
 
-    def get_visuals_json_text(self):
-        return self.create_visuals().get_json_str()
+    def visuals_exist(self):
+        return self.create_visuals().exists()
 
     def load_visuals(self):
         visuals = self.create_visuals()
-        visuals.load_json_str(self.get_visuals_json_text())
+        visuals.load_json()
         return visuals
 
 class PageLabels(awe.data.set.labels.PageLabels):
