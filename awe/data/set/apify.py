@@ -138,12 +138,12 @@ class Website(awe.data.set.pages.Website):
                 # Load slim dataset if exact HTMLs exist.
                 self.load_json_df(slim=self.exact_html)
                 self.init_pages()
+                if self.vertical.dataset.skip_without_visuals:
+                    self.remove_pages_without_visuals()
+                    if self.exact_html:
+                        self.save_json_df(self.df, self.slim_dataset_json_path)
                 self.convert_to_db(db)
             self.load_json_df(slim=True)
-
-            # Remove pages without visuals from the slim dataset.
-            if self.vertical.dataset.skip_without_visuals:
-                self.save_json_df(self.df, self.slim_dataset_json_path)
         else:
             if self.vertical.dataset.convert_slim:
                 self.create_slim_dataset()
@@ -151,6 +151,8 @@ class Website(awe.data.set.pages.Website):
             else:
                 self.load_json_df(slim=False)
             self.init_pages()
+            if self.vertical.dataset.skip_without_visuals:
+                self.remove_pages_without_visuals()
 
     @property
     def dir_path(self):
@@ -194,12 +196,19 @@ class Website(awe.data.set.pages.Website):
             Page(website=self, index=idx)
             for idx in range(self.page_count)
         ]
-        if self.vertical.dataset.skip_without_visuals:
-            self.pages = [
-                p for p in self.pages
-                if p.visuals_exist()
-            ]
-            self.page_count = len(self.pages)
+
+    def remove_pages_without_visuals(self):
+        remove_indices = [
+            p.index for p in self.pages
+            if not p.visuals_exist()
+        ]
+        self.df.drop(index=remove_indices, inplace=True)
+        print('Removed pages without visuals ' +
+            f'({self.page_count} -> {len(self.df)}).')
+        self.page_count = len(self.df)
+        self.pages = self.pages[:self.page_count]
+        # Re-index.
+        self.df.index = range(self.page_count)
 
     @staticmethod
     def save_json_df(df: pd.DataFrame, file_path: str):
