@@ -80,7 +80,7 @@ pnpm start -- -j=8 -e="C:\Program Files\Google\Chrome\Application\chrome.exe" -T
 Taking screenshots of 3 pages of each website of `auto` vertical:
 
 ```bash
-pnpm start -- -g 'auto/*/????.htm' -oRHt -T=10000 -F=3 -S
+pnpm start -- -g 'auto/*/????.htm' -oRH t=1 -T=10000 -F=3 -S
 ```
 
 Extracting visuals from Apify dataset (note that some pages require enabled
@@ -122,7 +122,7 @@ To add new website to the above list (and determine which parameters are needed)
 try extracting a few pages with screenshots:
 
 ```bash
-pnpm start -- -d ../data/apify/alzaEn -g 'pages/localized_html_*.htm' -o -T=1000 -SH -t -m=2
+pnpm start -- -d ../data/apify/alzaEn -g 'pages/localized_html_*.htm' -o -T=1000 -SH -t=1 -m=2
 ```
 
 And validate them (including manually looking at the screenshots):
@@ -134,5 +134,5 @@ And validate them (including manually looking at the screenshots):
 To take 3 screenshots of a website:
 
 ```bash
-pnpm start -- -d ../data/apify/alzaEn -g 'pages/localized_html_*.htm' -oRHt -T=1000 -m=3 -S
+pnpm start -- -d ../data/apify/alzaEn -g 'pages/localized_html_*.htm' -oRH -t=1 -T=1000 -m=3 -S
 ```

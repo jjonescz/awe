@@ -15,8 +15,8 @@ import { ValidationResultType, Validator } from './validator';
 
 /** Container for multiple {@link PageController}s. */
 export class Controller {
-  /** Take screenshot of each page. */
-  public takeScreenshot = true;
+  /** Take screenshot of every n-th page. */
+  public takeScreenshot = 0;
   /** Skip already-scraped pages. */
   public skipExisting = false;
   /** Skip HTML page saving. */
@@ -74,7 +74,7 @@ export class Controller {
     const startTime = process.hrtime();
     const observable = from(files).pipe(
       mergeMap(
-        async (file) => {
+        async (file, index) => {
           // Show stats.
           showStats(
             this.scraper.stats.toString(),
@@ -119,7 +119,7 @@ export class Controller {
               for (let retries = 0; retries < 2; retries++) {
                 const pageController = await this.for(page);
                 try {
-                  if (!(await pageController.scrape(version))) {
+                  if (!(await pageController.scrape(version, index))) {
                     logger.verbose('retrying', { file, version, retries });
                     continue;
                   } else {

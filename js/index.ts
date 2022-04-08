@@ -49,9 +49,10 @@ class Program extends Command {
       default: '**/????.htm',
       dependsOn: ['baseDir'],
     }),
-    screenshot: flags.boolean({
+    screenshot: flags.integer({
       char: 't',
-      description: 'take screenshot of each page',
+      description: 'take screenshot of every n-th page',
+      default: 0,
     }),
     skip: flags.integer({
       char: 's',

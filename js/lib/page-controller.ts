@@ -19,8 +19,11 @@ export class PageController {
     return new PageController(controller, page, pageScraper);
   }
 
-  /** Scrapes the specified {@link version}. */
-  public async scrape(version: ScrapeVersion) {
+  /** Scrapes the specified {@link version}.
+   *
+   * @param index absolute index among all scraped pages.
+   */
+  public async scrape(version: ScrapeVersion, index: number) {
     const recipe = new PageRecipe(this.page, version);
 
     // Prepare dependencies.
@@ -32,14 +35,16 @@ export class PageController {
     );
 
     // Check if not already scraped.
+    const shouldTakeScreenshot =
+      this.controller.takeScreenshot > 0 &&
+      this.controller.takeScreenshot % (index + 1) == 0;
     if (this.controller.skipExisting) {
       const jsonExists = existsSync(recipe.jsonPath);
       const jsonNeeded = !this.controller.skipExtraction && !jsonExists;
       const htmlExists = existsSync(recipe.htmlPath);
       const htmlNeeded = !this.controller.skipSave && !htmlExists;
       const screenshotExists = existsSync(recipe.screenshotFullPath);
-      const screenshotNeeded =
-        this.controller.takeScreenshot && !screenshotExists;
+      const screenshotNeeded = shouldTakeScreenshot && !screenshotExists;
       const metadata = {
         jsonNeeded,
         jsonPath: recipe.jsonPath,
@@ -104,7 +109,7 @@ export class PageController {
     }
 
     // Take screenshot.
-    if (this.controller.takeScreenshot) {
+    if (shouldTakeScreenshot) {
       await this.screenshot(recipe.screenshotPreviewPath, { fullPage: false });
       await this.screenshot(recipe.screenshotFullPath, { fullPage: true });
     }
