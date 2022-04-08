@@ -129,6 +129,8 @@ class Sampler:
                 visuals=False
             )
             validator.validate_pages(pages, progress_bar=f'validate {desc}')
+            if validator.num_invalid > 0:
+                raise RuntimeError(f'Validation failed ({desc}).')
 
         # Select nodes.
         return [
