@@ -1,4 +1,4 @@
-import { writeFile } from 'fs/promises';
+import { unlink, writeFile } from 'fs/promises';
 import puppeteer from 'puppeteer-core';
 import { pathToFileURL } from 'url';
 import winston from 'winston';
@@ -336,6 +336,9 @@ export class PageScraper {
       );
     } finally {
       this.page.setJavaScriptEnabled(wasJavaScriptEnabled);
+
+      // Remove snapshot.
+      await unlink(snapshotPath);
     }
   }
 
