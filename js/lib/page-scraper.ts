@@ -72,6 +72,15 @@ export class PageScraper {
   };
 
   private async handleRequest(request: puppeteer.HTTPRequest) {
+    // Ignore requests matching specified patterns.
+    if (ignoreUrl(request.url())) {
+      this.logger.debug('ignored', { url: request.url() });
+      await request.abort();
+      this.scraper.stats.ignored++;
+      this.assetStats.error(request);
+      return;
+    }
+
     // Check for infinite loops.
     const url = normalizeUrl(request.url());
     const numHandled = this.handled.get(url) ?? 0;
@@ -156,15 +165,6 @@ export class PageScraper {
     if (offline) {
       await this.handleOfflineRequest(request, timestamp, offline);
     } else {
-      // Ignore requests matching specified patterns.
-      if (ignoreUrl(request.url())) {
-        this.logger.debug('ignored', { url: request.url() });
-        await request.abort();
-        this.scraper.stats.ignored++;
-        this.assetStats.error(request);
-        return;
-      }
-
       if (this.scraper.rememberAborted && offline === null) {
         // This request didn't complete last time, abort it.
         this.logger.debug('aborted', { url: request.url() });

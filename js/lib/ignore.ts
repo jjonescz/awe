@@ -35,6 +35,8 @@ export const ignoreStartingWith = [
   'http://l.addthiscdn.com/live/',
   // From `auto-yahoo`.
   'http://autos.yahoo.com/darla/fc.php',
+  // From `notinoEn`.
+  'https://publicapi.databreakers.com/',
 ];
 
 export function ignoreUrl(url: string) {
