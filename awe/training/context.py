@@ -19,4 +19,4 @@ class LabelMap:
     def get_label_id(self, node: awe.data.graph.dom.Node):
         if len(node.label_keys) == 0:
             return 0
-        return self.label_to_id[node.label_keys[0]]
+        return self.label_to_id[node.label_keys[0][0]]

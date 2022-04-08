@@ -116,15 +116,16 @@ class Validator:
             # Check that all target nodes have a bounding box.
             if self.labeled_boxes:
                 page_dom.init_labels(propagate_to_leaves=False)
-                for label_key, labeled_nodes in page_dom.labeled_nodes.items():
-                    for n in labeled_nodes:
-                        if n.box is None:
-                            page.valid = False
-                            warnings.warn(
-                                f'Node {n.get_xpath()!r} labeled ' +
-                                f'{self.get_selector_str(page, label_key)} ' +
-                                f'(among {len(labeled_nodes)}) has no ' +
-                                f'bounding box ({page.html_path!r}).')
+                for label_key, labeled_groups in page_dom.labeled_nodes.items():
+                    for labeled_nodes in labeled_groups:
+                        for n in labeled_nodes:
+                            if n.box is None:
+                                page.valid = False
+                                warnings.warn(
+                                    f'Node {n.get_xpath()!r} labeled ' +
+                                    f'{self.get_selector_str(page, label_key)} ' +
+                                    f'(among {len(labeled_nodes)}) has no ' +
+                                    f'bounding box ({page.html_path!r}).')
 
         if page.valid is None:
             page.valid = True

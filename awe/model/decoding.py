@@ -58,9 +58,12 @@ class Decoder:
         }
 
         for label_key in self.get_label_keys():
-            labeled_nodes = page.dom.labeled_nodes.get(label_key)
-            if labeled_nodes is not None:
-                d[f'gold_{label_key}'] = [self.decode_node(n) for n in labeled_nodes]
+            labeled_groups = page.dom.labeled_nodes.get(label_key)
+            if labeled_groups is not None:
+                d[f'gold_{label_key}'] = [
+                    [self.decode_node(n) for n in group]
+                    for group in labeled_groups
+                ]
             pred_nodes = get_pred_nodes(label_key, page_pred)
             d[f'pred_{label_key}'] = [self.decode_node_pred(n) for n in pred_nodes]
 

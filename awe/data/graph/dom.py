@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 class Dom:
     root: Optional['Node'] = None
     nodes: Optional[list['Node']] = None
-    labeled_nodes: dict[str, list['Node']]
+    labeled_nodes: dict[str, list[list['Node']]]
     friend_cycles_computed: bool = False
     visual_neighbors_computed: bool = False
 
@@ -60,14 +60,20 @@ class Dom:
             parsed_nodes = self.page.labels.get_labeled_nodes(label_key)
             if propagate_to_leaves:
                 parsed_nodes = awe.data.html_utils.expand_leaves(parsed_nodes)
+            else:
+                parsed_nodes = [parsed_nodes]
 
             # Find the labeled nodes in our DOM.
-            labeled_nodes = [self.find_parsed_node(n) for n in parsed_nodes]
+            labeled_nodes = [
+                [self.find_parsed_node(n) for n in group]
+                for group in parsed_nodes
+            ]
 
             # Fill node labeling.
             self.labeled_nodes[label_key] = labeled_nodes
-            for node in labeled_nodes:
-                node.label_keys.append(label_key)
+            for group_idx, group in enumerate(labeled_nodes):
+                for node in group:
+                    node.label_keys.append((label_key, group_idx))
 
     def compute_friend_cycles(self,
         max_ancestor_distance: int = 5,
@@ -232,10 +238,10 @@ class Node:
     `None` if this is the only such child.
     """
 
-    label_keys: list[str] = dataclasses.field(default_factory=list)
+    label_keys: list[(str, int)] = dataclasses.field(default_factory=list)
     """
-    Label keys of the node or `[]` if the node doesn't correspond to any target
-    attribute.
+    Label keys and group indices of the node or `[]` if the node doesn't
+    correspond to any target attribute.
     """
 
     deep_index: Optional[int] = dataclasses.field(repr=False, default=None)

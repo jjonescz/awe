@@ -89,9 +89,10 @@ class Website:
         labeled_xpaths = set()
         for page in self.pages:
             if (dom := page.try_get_dom()) is not None:
-                for labeled_nodes in dom.labeled_nodes.values():
-                    for node in labeled_nodes:
-                        labeled_xpaths.add(node.get_xpath())
+                for labeled_groups in dom.labeled_nodes.values():
+                    for labeled_nodes in labeled_groups:
+                        for node in labeled_nodes:
+                            labeled_xpaths.add(node.get_xpath())
 
         # Split XPaths into variable/fixed sets.
         variable_nodes = set() # XPaths

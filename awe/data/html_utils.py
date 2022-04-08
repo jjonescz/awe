@@ -67,7 +67,7 @@ def get_xpath_tag(node: 'awe.data.parsing.Node'):
 
 def expand_leaves(nodes: list['awe.data.parsing.Node']):
     """Inner nodes are expanded to all their leaf nodes."""
-    return [l for n in nodes for l in iter_leaves(n)]
+    return [list(iter_leaves(n)) for n in nodes]
 
 def iter_leaves(node: 'awe.data.parsing.Node'):
     if is_leaf(node):

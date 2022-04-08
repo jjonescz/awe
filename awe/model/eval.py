@@ -89,7 +89,7 @@ class Evaluation:
 
                 for label_key, pred_list in pred_page.preds.items():
                     stats = per_label[label_key]
-                    gold = page.dom.labeled_nodes.get(label_key)
+                    gold = [n for n in page.dom.labeled_nodes.get(label_key)]
                     if not gold:
                         # Negative sample is when no node is labeled.
                         if not pred_list:
