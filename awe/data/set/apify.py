@@ -331,7 +331,10 @@ class Page(awe.data.set.pages.Page):
 
     def load_visuals(self):
         visuals = self.create_visuals()
-        visuals.load_json()
+        if self.db is not None:
+            visuals.load_json_str(self.db.get_visuals(self.index))
+        else:
+            visuals.load_json()
         return visuals
 
 class PageLabels(awe.data.set.labels.PageLabels):
