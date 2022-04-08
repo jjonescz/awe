@@ -37,7 +37,7 @@ export class PageController {
     // Check if not already scraped.
     const shouldTakeScreenshot =
       this.controller.takeScreenshot > 0 &&
-      this.controller.takeScreenshot % (index + 1) == 0;
+      (index + 1) % this.controller.takeScreenshot == 0;
     if (this.controller.skipExisting) {
       const jsonExists = existsSync(recipe.jsonPath);
       const jsonNeeded = !this.controller.skipExtraction && !jsonExists;
