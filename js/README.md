@@ -95,6 +95,7 @@ pnpm start -- -d ../data/apify/conradEn -g 'pages/localized_html_*.htm' -o -T=10
 pnpm start -- -d ../data/apify/etsyEn -g 'pages/localized_html_*.htm' -o -T=1000 -j=8 -SH
 pnpm start -- -d ../data/apify/ikeaEn -g 'pages/localized_html_*.htm' -o -T=1000 -j=8 -SH
 pnpm start -- -d ../data/apify/notinoEn -g 'pages/localized_html_*.htm' -o -T=1000 -j=8 -Z
+pnpm start -- -d ../data/apify/radioshackEn -g 'pages/localized_html_*.htm' -o -T=1000 -j=8 -SH
 pnpm start -- -d ../data/apify/tescoEn -g 'pages/localized_html_*.htm' -o -T=1000 -j=8 -SH
 ```
 
