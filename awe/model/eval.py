@@ -78,53 +78,58 @@ class Evaluation:
         # Compute page-wide metrics.
         if self.pred_set_dirty:
             self.pred_set_dirty = False
-            per_label = {
-                label_key: awe.model.metrics.PredStats() for label_key
-                in self.evaluator.trainer.label_map.label_to_id.keys()
-            }
-            for page, pred_page in self.pred_set.preds.items():
-                # Skip pages that haven't been predicted yet.
-                if pred_page.num_predicted == 0:
-                    continue
-
-                for label_key, pred_list in pred_page.preds.items():
-                    stats = per_label[label_key]
-                    gold = [
-                        n
-                        for g in page.dom.labeled_nodes.get(label_key)
-                        for n in g
-                    ]
-                    if not gold:
-                        # Negative sample is when no node is labeled.
-                        if not pred_list:
-                            stats.true_negatives += 1
-                        else:
-                            stats.false_negatives += 1
-                    else:
-                        # Find most confident prediction.
-                        best_pred = awe.utils.where_max(pred_list,
-                            lambda p: p.confidence).node
-                        if best_pred in gold:
-                            stats.true_positives += 1
-                        else:
-                            stats.false_positives += 1
-
-            # Log per-label stats.
-            per_label_metrics = {
-                label_key: awe.model.metrics.F1Metrics.compute(stats)
-                for label_key, stats in per_label.items()
-            }
-            for k, m in per_label_metrics.items():
-                metrics_dict.update(m.to_dict(postfix=f'/label_{k}'))
-
-            # Average per-label stats to page-wide stats.
-            page_metrics = awe.model.metrics.F1Metrics.from_vector(sum(
-                metrics.to_vector() for metrics in per_label_metrics.values())
-                / len(per_label))
-
-            metrics_dict.update(page_metrics.to_dict(postfix='/page'))
+            self.compute_page_wide(metrics_dict)
 
         return metrics_dict
+
+    def compute_page_wide(self, metrics_dict: dict[str, float]):
+        """Computes page-wide metrics and adds them to `metrics_dict`."""
+
+        per_label = {
+            label_key: awe.model.metrics.PredStats() for label_key
+            in self.evaluator.trainer.label_map.label_to_id.keys()
+        }
+        for page, pred_page in self.pred_set.preds.items():
+            # Skip pages that haven't been predicted yet.
+            if pred_page.num_predicted == 0:
+                continue
+
+            for label_key, pred_list in pred_page.preds.items():
+                stats = per_label[label_key]
+                gold = [
+                    n
+                    for g in page.dom.labeled_nodes.get(label_key)
+                    for n in g
+                ]
+                if not gold:
+                    # Negative sample is when no node is labeled.
+                    if not pred_list:
+                        stats.true_negatives += 1
+                    else:
+                        stats.false_negatives += 1
+                else:
+                    # Find most confident prediction.
+                    best_pred = awe.utils.where_max(pred_list,
+                        lambda p: p.confidence).node
+                    if best_pred in gold:
+                        stats.true_positives += 1
+                    else:
+                        stats.false_positives += 1
+
+        # Log per-label stats.
+        per_label_metrics = {
+            label_key: awe.model.metrics.F1Metrics.compute(stats)
+            for label_key, stats in per_label.items()
+        }
+        for k, m in per_label_metrics.items():
+            metrics_dict.update(m.to_dict(postfix=f'/label_{k}'))
+
+        # Average per-label stats to page-wide stats.
+        page_metrics = awe.model.metrics.F1Metrics.from_vector(sum(
+            metrics.to_vector() for metrics in per_label_metrics.values())
+            / len(per_label))
+
+        metrics_dict.update(page_metrics.to_dict(postfix='/page'))
 
     def add(self, pred: 'awe.model.classifier.Prediction'):
         self.add_fast(pred.outputs)
