@@ -77,6 +77,12 @@ parser.add_argument('--convert',
     help='work with SQLite database rather than JSON',
     default=False
 )
+parser.add_argument('--convert-slim',
+    dest='convert_slim',
+    action='store_true',
+    help='work with slim JSON without HTML texts',
+    default=False
+)
 parser.add_argument('--filter-labels',
     dest='filter_labels',
     action='store_true',
@@ -110,6 +116,7 @@ if args.dataset == 'apify':
         only_label_keys=only_label_keys,
         only_websites=args.target,
         convert=args.convert,
+        convert_slim=args.convert_slim,
         skip_without_visuals=args.skip_without_visuals,
     )
 elif args.dataset == 'swde':
