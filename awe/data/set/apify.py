@@ -378,7 +378,7 @@ class PageLabels(awe.data.set.labels.PageLabels):
         if '+' in selector:
             new_selector = selector.replace('+', '~')
             warnings.warn(f'Patched {label_key} selector {selector!r} to ' +
-                f'{new_selector!r}.')
+                f'{new_selector!r} in {self.page.website.name!r}.')
             selector = new_selector
 
         try:
@@ -401,6 +401,7 @@ class PageLabels(awe.data.set.labels.PageLabels):
                     f'({self.page.html_path!r}).')
             if orig_length != len(nodes):
                 warnings.warn(
-                    f'Removed empty nodes labeled {label_key} ({selector=}).')
+                    f'Removed empty nodes labeled {label_key} ({selector=}) ' +
+                    f'in {self.page.website.name!r}.')
 
         return nodes
