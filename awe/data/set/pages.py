@@ -2,6 +2,8 @@ import abc
 import collections
 import dataclasses
 import itertools
+import urllib.parse
+import os
 from typing import TYPE_CHECKING, Optional
 
 import awe.data.graph.dom
@@ -62,6 +64,12 @@ class Website:
     page_count: int = dataclasses.field(repr=False, default=None)
 
     found_variable_nodes: bool = dataclasses.field(repr=False, default=False)
+
+    def get_common_prefix(self):
+        return os.path.commonprefix([p.url for p in self.pages])
+
+    def get_domain(self):
+        return urllib.parse.urlparse(self.get_common_prefix()).netloc
 
     def find_variable_nodes(self, max_variable_nodes_per_website: int = 300):
         """
