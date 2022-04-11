@@ -171,3 +171,12 @@ def filter_nodes(
         if e > 0 and included.get(label_key, 0) == 0:
             raise RuntimeError(f'Excluded all {e} node(s) ' +
                 f'labeled {label_key!r} ({page.html_path!r}).')
+
+class Collater:
+    """
+    Prepares data for model. When called, takes batch of samples and returns
+    batch of model inputs.
+    """
+
+    def __call__(self, samples: list[Sample]):
+        return samples

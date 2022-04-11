@@ -202,6 +202,7 @@ class Trainer:
         return torch.utils.data.DataLoader(
             nodes,
             batch_size=self.params.batch_size,
+            collate_fn=awe.data.sampling.Collater(),
             shuffle=shuffle,
         )
 
