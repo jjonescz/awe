@@ -1,3 +1,5 @@
+import warnings
+
 import awe.data.graph.dom
 
 class LabelMap:
@@ -19,4 +21,8 @@ class LabelMap:
     def get_label_id(self, node: awe.data.graph.dom.Node):
         if len(node.label_keys) == 0:
             return 0
+        if len(node.label_keys) > 1:
+            warnings.warn(
+                f'More then one label key for {node.get_xpath()!r} ' +
+                f'{node.label_keys!r} ({node.dom.page.html_path!r}).')
         return self.label_to_id[node.label_keys[0][0]]
