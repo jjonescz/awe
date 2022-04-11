@@ -176,9 +176,10 @@ class Trainer:
         )
         if create_test:
             # IMPORTANT: This must be created before val if variable nodes
-            # finding is enabled. Because it works only once and test is
-            # superset of val, it would not work the other way around.
-            self.test_loader = self.create_dataloader(self.test_pages, desc='test')
+            # finding is enabled. Because the search is executed only once and
+            # test is superset of val, not all variable nodes would be found the
+            # other way around.
+            self.test_loader = self.create_dataloader(self.test_pages, 'test')
         self.val_loader = self.create_dataloader(self.val_pages, 'val')
 
     def create_dataloader(self,
