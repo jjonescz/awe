@@ -197,10 +197,11 @@ class Trainer:
         if any(flags.values()):
             desc = f'{desc} ({", ".join(k for k, v in flags.items() if v)})'
 
+        nodes = self.sampler.load(pages, desc=desc, train=train)
+        print(f'Sampled {desc!r} nodes: {len(nodes):,}')
         return torch.utils.data.DataLoader(
-            self.sampler.load(pages, desc=desc, train=train),
+            nodes,
             batch_size=self.params.batch_size,
-            collate_fn=awe.data.sampling.Collater(),
             shuffle=shuffle,
         )
 
