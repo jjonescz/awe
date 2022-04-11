@@ -144,14 +144,14 @@ class Evaluation:
             for label_key, stats in per_label.items()
         }
         for k, m in per_label_metrics.items():
-            metrics_dict.update(m.to_dict(postfix=f'/label_{k}{em}'))
+            metrics_dict.update(m.to_dict(postfix=f'{em}/label_{k}'))
 
         # Average per-label stats to page-wide stats.
         page_metrics = awe.model.metrics.F1Metrics.from_vector(sum(
             metrics.to_vector() for metrics in per_label_metrics.values())
             / len(per_label))
 
-        metrics_dict.update(page_metrics.to_dict(postfix=f'/page{em}'))
+        metrics_dict.update(page_metrics.to_dict(postfix=f'{em}/page'))
 
     def add(self, pred: 'awe.model.classifier.Prediction'):
         self.add_fast(pred.outputs)
