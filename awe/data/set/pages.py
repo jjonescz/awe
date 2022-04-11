@@ -5,7 +5,7 @@ import gc
 import itertools
 import urllib.parse
 import os
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Callable, Optional
 
 import awe.data.graph.dom
 import awe.data.visual.dom
@@ -69,7 +69,7 @@ class Website:
 
     @property
     @abc.abstractmethod
-    def variable_nodes_file_path(self):
+    def variable_nodes_file_path(self) -> str:
         """Path to a file containing list of variable node XPaths."""
 
     def get_common_prefix(self):
@@ -78,16 +78,20 @@ class Website:
     def get_domain(self):
         return urllib.parse.urlparse(self.get_common_prefix()).netloc
 
-    def get_variable_xpaths(self, max_variable_nodes_per_website: int = 300):
+    def get_variable_xpaths(self,
+        max_variable_nodes_per_website: int = 300,
+        dom_selector: Callable[['Page'], Optional[awe.data.graph.dom.Dom]] \
+            = lambda p: p.try_get_dom(),
+    ):
         # Try cache first.
         if os.path.exists(self.variable_nodes_file_path):
             with open(self.variable_nodes_file_path, mode='r', encoding='utf-8') as f:
-                return set(line.rstrip() for line in f.readlines())
+                return set(line.rstrip() for line in f)
 
         # Find texts for each XPath across pages.
         nodes = collections.defaultdict(set) # XPath -> set of texts
         for page in self.pages:
-            if (dom := page.try_get_dom()) is not None:
+            if (dom := dom_selector(page)) is not None:
                 for node in dom.nodes:
                     if node.is_text:
                         nodes[node.get_xpath()].add(node.text)
@@ -102,7 +106,7 @@ class Website:
         # Ensure labeled nodes are variable.
         labeled_xpaths = set()
         for page in self.pages:
-            if (dom := page.try_get_dom()) is not None:
+            if (dom := dom_selector(page)) is not None:
                 for labeled_groups in dom.labeled_nodes.values():
                     for labeled_nodes in labeled_groups:
                         for node in labeled_nodes:
@@ -122,10 +126,15 @@ class Website:
         # Save to cache.
         with open(self.variable_nodes_file_path, mode='w', encoding='utf-8') as f:
             f.writelines(f'{xpath}\n' for xpath in variable_nodes)
+        print(f'Saved {self.variable_nodes_file_path!r}.')
 
         return variable_nodes
 
-    def find_variable_nodes(self, max_variable_nodes_per_website: int = 300):
+    def find_variable_nodes(self,
+        max_variable_nodes_per_website: int = 300,
+        dom_selector: Callable[['Page'], Optional[awe.data.graph.dom.Dom]] \
+            = lambda p: p.try_get_dom(),
+    ):
         """
         Determines whether text nodes are variable or fixed in pages across the
         website (as defined in the SimpDOM paper). Only considers pages with
@@ -133,12 +142,13 @@ class Website:
         """
 
         variable_nodes = self.get_variable_xpaths(
-            max_variable_nodes_per_website=max_variable_nodes_per_website
+            max_variable_nodes_per_website=max_variable_nodes_per_website,
+            dom_selector=dom_selector,
         )
 
         # Flag variable nodes.
         for page in self.pages:
-            if (dom := page.try_get_dom()) is not None:
+            if (dom := dom_selector(page)) is not None:
                 for node in dom.nodes:
                     if node.is_text:
                         node.is_variable_text = node.get_xpath() in variable_nodes
