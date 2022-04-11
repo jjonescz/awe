@@ -39,7 +39,7 @@ class Dataset:
     def clear_cache(self, request: ClearCacheRequest):
         for page in self.get_all_pages():
             page.clear_cache(request)
-        gc.collect()
+        return gc.collect()
 
 @dataclasses.dataclass
 class Vertical:
