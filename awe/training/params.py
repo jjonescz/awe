@@ -71,6 +71,10 @@ class Params:
     classify_only_variable_nodes: bool = False
     propagate_labels_to_leaves: bool = False
     validate_data: bool = True
+    none_cutoff: Optional[int] = None
+    """
+    From 0 to 100,000. The lower, the more non-target nodes will be sampled.
+    """
 
     # Friend cycles
     friend_cycles: bool = False

@@ -1,6 +1,7 @@
 import collections
 from typing import TYPE_CHECKING, Callable
 
+import numpy as np
 from tqdm.auto import tqdm
 
 import awe.data.graph.dom
@@ -24,6 +25,7 @@ class Sampler:
 
     def __init__(self, trainer: 'awe.training.trainer.Trainer'):
         self.trainer = trainer
+        self.rng = np.random.default_rng(42)
 
     def load(self,
         pages: list[awe.data.set.pages.Page],
@@ -144,34 +146,41 @@ class Sampler:
         page: awe.data.set.pages.Page
     ) -> list[Sample]:
         if self.trainer.params.visual_neighbors:
-            return filter_nodes(page, lambda n: n.visual_neighbors is not None)
+            return self.filter_nodes(page, lambda n: n.visual_neighbors is not None)
         if self.trainer.params.classify_only_variable_nodes:
-            return filter_nodes(page, lambda n: n.is_variable_text)
+            return self.filter_nodes(page, lambda n: n.is_variable_text)
         if self.trainer.params.classify_only_text_nodes:
-            return filter_nodes(page, lambda n: n.is_text)
+            return self.filter_nodes(page, lambda n: n.is_text)
         return page.dom.nodes
 
-def filter_nodes(
-    page: awe.data.set.pages.Page,
-    predicate: Callable[[awe.data.graph.dom.Node], bool]
-):
-    included = collections.defaultdict(int)
-    excluded = collections.defaultdict(int)
-    for node in page.dom.nodes:
-        if predicate(node):
-            if len(node.label_keys) != 0:
-                for label_key in node.label_keys:
-                    included[label_key] += 1
-            yield node
-        elif len(node.label_keys) != 0:
-            for label_key in node.label_keys:
-                excluded[label_key] += 1
+    def filter_nodes(self,
+        page: awe.data.set.pages.Page,
+        predicate: Callable[[awe.data.graph.dom.Node], bool]
+    ):
+        included = collections.defaultdict(int)
+        excluded = collections.defaultdict(int)
+        for node in page.dom.nodes:
+            # If the node is not labeled, cut it off with some probability (to
+            # have more balanced data).
+            if self.trainer.params.none_cutoff is not None:
+                rand_int = self.rng.integers(0, 100_000)
+                if rand_int >= self.trainer.params.none_cutoff:
+                    continue
 
-    for label_key in page.labels.label_keys:
-        e = excluded.get(label_key, 0)
-        if e > 0 and included.get(label_key, 0) == 0:
-            raise RuntimeError(f'Excluded all {e} node(s) ' +
-                f'labeled {label_key!r} ({page.html_path!r}).')
+            if predicate(node):
+                if len(node.label_keys) != 0:
+                    for label_key in node.label_keys:
+                        included[label_key] += 1
+                yield node
+            elif len(node.label_keys) != 0:
+                for label_key in node.label_keys:
+                    excluded[label_key] += 1
+
+        for label_key in page.labels.label_keys:
+            e = excluded.get(label_key, 0)
+            if e > 0 and included.get(label_key, 0) == 0:
+                raise RuntimeError(f'Excluded all {e} node(s) ' +
+                    f'labeled {label_key!r} ({page.html_path!r}).')
 
 class Collater:
     """
