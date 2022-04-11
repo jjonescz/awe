@@ -180,4 +180,6 @@ class Collater:
     """
 
     def __call__(self, samples: list[Sample]):
+        # Note that even this simple function is needed because PyTorch would
+        # complain that the input is not a Tensor if using the default collater.
         return samples
