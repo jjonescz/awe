@@ -202,6 +202,8 @@ class Website(awe.data.set.pages.Website):
             p.index for p in self.pages
             if not p.visuals_exist()
         ]
+        if len(remove_indices) == 0:
+            return
         self.df.drop(index=remove_indices, inplace=True)
         print('Removed pages without visuals ' +
             f'({self.page_count} -> {len(self.df)}).')
