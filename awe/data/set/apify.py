@@ -171,6 +171,10 @@ class Website(awe.data.set.pages.Website):
         return f'{self.dir_path}/dataset.db'
 
     @property
+    def variable_nodes_file_path(self):
+        return f'{self.dir_path}/variable_nodes.txt'
+
+    @property
     def short_slug(self):
         return self.name not in LONG_SLUG_WEBSITES
 

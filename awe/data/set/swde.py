@@ -193,6 +193,10 @@ class Website(awe.data.set.pages.Website):
         return f'{self.vertical.dir_path}/{self.dir_name}'
 
     @property
+    def variable_nodes_file_path(self):
+        return f'{self.dir_path}/variable_nodes.txt'
+
+    @property
     def groundtruth_path_prefix(self):
         return f'{self.vertical.groundtruth_path_prefix}-{self.name}'
 

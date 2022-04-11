@@ -67,18 +67,22 @@ class Website:
 
     found_variable_nodes: bool = dataclasses.field(repr=False, default=False)
 
+    @property
+    @abc.abstractmethod
+    def variable_nodes_file_path(self):
+        """Path to a file containing list of variable node XPaths."""
+
     def get_common_prefix(self):
         return os.path.commonprefix([p.url for p in self.pages])
 
     def get_domain(self):
         return urllib.parse.urlparse(self.get_common_prefix()).netloc
 
-    def find_variable_nodes(self, max_variable_nodes_per_website: int = 300):
-        """
-        Determines whether text nodes are variable or fixed in pages across the
-        website (as defined in the SimpDOM paper). Only considers pages with
-        cached DOM.
-        """
+    def get_variable_xpaths(self, max_variable_nodes_per_website: int = 300):
+        # Try cache first.
+        if os.path.exists(self.variable_nodes_file_path):
+            with open(self.variable_nodes_file_path, mode='r', encoding='utf-8') as f:
+                return set(line.rstrip() for line in f.readlines())
 
         # Find texts for each XPath across pages.
         nodes = collections.defaultdict(set) # XPath -> set of texts
@@ -106,7 +110,6 @@ class Website:
 
         # Split XPaths into variable/fixed sets.
         variable_nodes = set() # XPaths
-        fixed_nodes = set() # XPaths
         for xpath, variability in node_vars:
             if ((
                     variability > 5
@@ -115,8 +118,23 @@ class Website:
                 or xpath in labeled_xpaths
             ):
                 variable_nodes.add(xpath)
-            else:
-                fixed_nodes.add(xpath)
+
+        # Save to cache.
+        with open(self.variable_nodes_file_path, mode='w', encoding='utf-8') as f:
+            f.writelines(f'{xpath}\n' for xpath in variable_nodes)
+
+        return variable_nodes
+
+    def find_variable_nodes(self, max_variable_nodes_per_website: int = 300):
+        """
+        Determines whether text nodes are variable or fixed in pages across the
+        website (as defined in the SimpDOM paper). Only considers pages with
+        cached DOM.
+        """
+
+        variable_nodes = self.get_variable_xpaths(
+            max_variable_nodes_per_website=max_variable_nodes_per_website
+        )
 
         # Flag variable nodes.
         for page in self.pages:
