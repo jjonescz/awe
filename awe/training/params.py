@@ -143,6 +143,7 @@ class Params:
     layer_norm: bool = False
     head_dims: list[int] = (128, 64)
     head_dropout: float = 0.5
+    gradient_clipping: Optional[float] = None
 
     @classmethod
     def load_version(cls,

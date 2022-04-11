@@ -471,6 +471,11 @@ class Trainer:
             fast_eval.add_fast(outputs)
             total_eval.add_fast(outputs)
             outputs.loss.backward()
+            if self.params.gradient_clipping is not None:
+                torch.nn.utils.clip_grad_norm_(
+                    self.model.parameters(),
+                    self.params.gradient_clipping
+                )
             self.optim.step()
             self.step += 1
             self.train_progress.update()
