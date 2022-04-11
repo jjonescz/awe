@@ -62,6 +62,8 @@ class Validator:
         return f'{key!r}{s}'
 
     def validate_page(self, page: awe.data.set.pages.Page):
+        page_dom = page.dom
+
         # Check that label key-value pairs are consistent.
         if self.labels:
             total = 0
@@ -92,9 +94,22 @@ class Validator:
                 page.valid = False
                 warnings.warn(f'Nothing labeled in page {page.html_path!r}.')
 
-        if self.visuals:
-            page_dom = page.dom
+            # Check that one node has only one label.
             page_dom.init_nodes()
+            page_dom.init_labels()
+            for key, labeled_groups in page_dom.labeled_nodes.items():
+                for labeled_nodes in labeled_groups:
+                    for node in labeled_nodes:
+                        if len(node.label_keys) != 1:
+                            page.valid = False
+                            warnings.warn(
+                                f'Node {node.get_xpath()!r} has more than ' +
+                                f'one label key {node.label_keys!r} ' +
+                                f'({page.html_path!r}).')
+
+        if self.visuals:
+            if page_dom.root is None:
+                page_dom.init_nodes()
 
             try:
                 page_visuals = page.load_visuals()
