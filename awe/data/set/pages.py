@@ -7,6 +7,8 @@ import urllib.parse
 import os
 from typing import TYPE_CHECKING, Callable, Optional
 
+from tqdm.auto import tqdm
+
 import awe.data.graph.dom
 import awe.data.visual.dom
 
@@ -90,7 +92,7 @@ class Website:
 
         # Find texts for each XPath across pages.
         nodes = collections.defaultdict(set) # XPath -> set of texts
-        for page in self.pages:
+        for page in tqdm(self.pages, desc='texts'):
             if (dom := dom_selector(page)) is not None:
                 for node in dom.nodes:
                     if node.is_text:
@@ -105,7 +107,7 @@ class Website:
 
         # Ensure labeled nodes are variable.
         labeled_xpaths = set()
-        for page in self.pages:
+        for page in tqdm(self.pages, desc='labels'):
             if (dom := dom_selector(page)) is not None:
                 for labeled_groups in dom.labeled_nodes.values():
                     for labeled_nodes in labeled_groups:
