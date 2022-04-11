@@ -241,6 +241,8 @@ class Page(abc.ABC):
         """Loads visual attributes for the page."""
 
     def clear_cache(self, request: ClearCacheRequest):
+        if request.dom or request.dom_dirty_flags:
+            self.website.found_variable_nodes = False
         if request.dom:
             self._dom = None
         if request.labels:
