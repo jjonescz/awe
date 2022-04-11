@@ -1,9 +1,10 @@
 # Run: `python -m awe.data.find_variable_nodes`.
 
+from tqdm.auto import tqdm
+
 import awe.data.set.pages
 import awe.data.set.swde
 
-from tqdm.auto import tqdm
 
 def main():
     ds = awe.data.set.swde.Dataset(
