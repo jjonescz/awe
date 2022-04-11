@@ -95,6 +95,12 @@ parser.add_argument('--skip-without-visuals',
     help='ignores pages without visuals JSON',
     default=False
 )
+parser.add_argument('--zip-websites',
+    dest='zip_websites',
+    action='store_true',
+    help='zip websites',
+    default=False
+)
 args = parser.parse_args()
 
 # Validate arguments.
@@ -127,7 +133,7 @@ elif args.dataset == 'swde':
     )
 
 # Get its pages.
-pages = ds.get_all_pages(zip_websites=False)
+pages = ds.get_all_pages(zip_websites=args.zip_websites)
 
 # Keep only pages from previous list of invalid pages.
 if args.read_list is not None:
