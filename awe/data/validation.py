@@ -12,6 +12,7 @@ import awe.data.set.pages
 @dataclasses.dataclass
 class Validator:
     labels: bool = True
+    only_cached_dom: bool = False
     visuals: bool = True
     labeled_boxes: bool = True
     num_invalid: int = 0
@@ -62,7 +63,10 @@ class Validator:
         return f'{key!r}{s}'
 
     def validate_page(self, page: awe.data.set.pages.Page):
-        page_dom = page.dom
+        if self.only_cached_dom:
+            page_dom = page.try_get_dom()
+        else:
+            page_dom = page.dom
 
         # Check that label key-value pairs are consistent.
         if self.labels:
@@ -95,17 +99,19 @@ class Validator:
                 warnings.warn(f'Nothing labeled in page {page.html_path!r}.')
 
             # Check that one node has only one label.
-            page_dom.init_nodes()
-            page_dom.init_labels()
-            for key, labeled_groups in page_dom.labeled_nodes.items():
-                for labeled_nodes in labeled_groups:
-                    for node in labeled_nodes:
-                        if len(node.label_keys) != 1:
-                            page.valid = False
-                            warnings.warn(
-                                f'Node {node.get_xpath()!r} has more than ' +
-                                f'one label key {node.label_keys!r} ' +
-                                f'({page.html_path!r}).')
+            if page_dom is not None:
+                if page_dom.root is None:
+                    page_dom.init_nodes()
+                    page_dom.init_labels()
+                for key, labeled_groups in page_dom.labeled_nodes.items():
+                    for labeled_nodes in labeled_groups:
+                        for node in labeled_nodes:
+                            if len(node.label_keys) != 1:
+                                page.valid = False
+                                warnings.warn(
+                                    f'Node {node.get_xpath()!r} has more than ' +
+                                    f'one label key {node.label_keys!r} ' +
+                                    f'({page.html_path!r}).')
 
         if self.visuals:
             if page_dom.root is None:

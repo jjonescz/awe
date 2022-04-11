@@ -124,6 +124,7 @@ class Sampler:
         # Validate.
         if self.trainer.params.validate_data:
             validator = awe.data.validation.Validator(
+                only_cached_dom=True,
                 # It is not needed to validate visuals as that's automatically
                 # performed when they are loaded (a few lines above).
                 visuals=False
