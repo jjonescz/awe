@@ -2,7 +2,6 @@
 # 2. Run `python -m awe.training.crossval`.
 
 import argparse
-import gc
 
 import awe.data.set.pages
 import awe.training.params
@@ -52,7 +51,6 @@ def main():
         trainer.ds.clear_cache(awe.data.set.pages.ClearCacheRequest(
             labels=False
         ))
-        gc.collect()
 
         trainer.init_features()
         trainer.split_data()
