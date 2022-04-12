@@ -16,8 +16,6 @@ import awe.training.params
 if TYPE_CHECKING:
     import awe.training.trainer
 
-Sample = awe.data.graph.dom.Node
-
 class Sampler:
     """
     Prepares data samples for training. Method `load` takes pages and returns
@@ -242,7 +240,7 @@ class Collater:
     batch of model inputs.
     """
 
-    def __call__(self, samples: list[Sample]):
+    def __call__(self, samples: list[awe.data.graph.dom.Node]):
         # Note that even this simple function is needed because PyTorch would
         # complain that the input is not a Tensor if using the default collater.
         return samples
