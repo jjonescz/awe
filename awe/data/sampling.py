@@ -127,6 +127,12 @@ class Sampler:
             # Re-compute labels (some nodes might have been filtered out).
             self.init_labels(page)
 
+            # Deselect nodes that have no bounding box.
+            if params.visual_neighbors:
+                for node in page.dom.nodes:
+                    if node.sample and node.box is None:
+                        node.sample = False
+
         self.check_sampled_nodes(page)
 
     def prepare_features_for_page(self, page: awe.data.set.pages.Page):

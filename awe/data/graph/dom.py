@@ -86,14 +86,14 @@ class Dom:
 
         descendants = collections.defaultdict(list)
 
-        target_nodes = [n for n in self.nodes if n.sample]
+        sample_nodes = [n for n in self.nodes if n.sample]
 
-        for node in target_nodes:
+        for node in sample_nodes:
             ancestors = node.get_ancestors(max_ancestor_distance)
             for ancestor in ancestors:
                 descendants[ancestor].append(node)
 
-        for node in target_nodes:
+        for node in sample_nodes:
             ancestors = node.get_ancestors(max_ancestor_distance)
             friends: set[Node] = set()
             for ancestor in ancestors:
@@ -123,25 +123,22 @@ class Dom:
         self.friend_cycles_computed = True
 
     def compute_visual_neighbors(self, n_neighbors: int = 4):
-        target_nodes = [
-            n for n in self.page.dom.nodes
-            if n.is_text and n.box is not None
-        ]
-        coords = np.array([n.box.center_point for n in target_nodes])
+        sample_nodes = [n for n in self.page.dom.nodes if n.sample]
+        coords = np.array([n.box.center_point for n in sample_nodes])
         n_neighbors += 1 # 0th neighbor is the node itself
         nn = sklearn.neighbors.NearestNeighbors(n_neighbors=n_neighbors)
 
         if len(coords) < nn.n_neighbors:
             warnings.warn('Full neighborhood.')
             # Too little samples, everyone is neighbor with everyone else.
-            for node in target_nodes:
+            for node in sample_nodes:
                 neighbors = [
                     VisualNeighbor.create(
                         distance=node.distance_to(n),
                         node=node,
                         neighbor=n
                     )
-                    for n in target_nodes
+                    for n in sample_nodes
                 ]
                 neighbors.sort(key=lambda n: n.distance)
                 # Repeat the last visual neighbor if there is still too little
@@ -155,7 +152,7 @@ class Dom:
 
         nn.fit(coords)
         d, i = nn.kneighbors(coords)
-        for node, distances, indices in zip(target_nodes, d, i):
+        for node, distances, indices in zip(sample_nodes, d, i):
             node.visual_neighbors = [
                 VisualNeighbor.create(
                     distance=dist,
@@ -164,18 +161,15 @@ class Dom:
                 )
                 for dist, neighbor in zip(
                     distances[1:],
-                    (target_nodes[idx] for idx in indices[1:])
+                    (sample_nodes[idx] for idx in indices[1:])
                 )
             ]
 
         self.visual_neighbors_computed = True
 
     def compute_visual_neighbors_rect(self, n_neighbors: int = 4):
-        target_nodes = [
-            n for n in self.page.dom.nodes
-            if n.is_text and n.box is not None
-        ]
-        coords = np.array([c for n in target_nodes for c in n.box.corners])
+        sample_nodes = [n for n in self.page.dom.nodes if n.sample]
+        coords = np.array([c for n in sample_nodes for c in n.box.corners])
         n_neighbors += 1 # 0th neighbor is the node itself
         nn = sklearn.neighbors.NearestNeighbors(n_neighbors=n_neighbors * 4)
 
@@ -187,7 +181,7 @@ class Dom:
 
         nn.fit(coords)
         d, i = nn.kneighbors(coords)
-        for idx, node in enumerate(target_nodes):
+        for idx, node in enumerate(sample_nodes):
             neighbors = [
                 VisualNeighbor.create(
                     distance=dist,
@@ -200,7 +194,7 @@ class Dom:
                 )
                 for dist, neighbor in zip(
                     distances,
-                    (target_nodes[idx // 4] for idx in indices)
+                    (sample_nodes[idx // 4] for idx in indices)
                 )
             ]
 
