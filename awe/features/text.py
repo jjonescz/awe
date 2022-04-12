@@ -165,9 +165,9 @@ class WordIdentifiers(awe.features.feature.Feature):
                     [
                         token_id
                         for node in row
+                        if node.is_text
                         for token_id in self.node_token_ids[node]
-                    ]
-                    if len(row) > 0 else [0],
+                    ] or [0],
                     dtype=torch.int32,
                     device=self.trainer.device,
                 )
