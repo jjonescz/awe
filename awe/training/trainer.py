@@ -204,7 +204,7 @@ class Trainer:
         )
         nodes = sampler.load()
         num_labels = collections.Counter(
-            None if not n.label_keys else n.label_keys[0]
+            None if not n.label_keys else n.label_keys[0][0]
             for n in nodes
         )
         print(f'Sampled {desc!r} nodes {dict(num_labels)}.')
