@@ -94,7 +94,7 @@ class Website:
 
         # Find texts for each XPath across pages.
         nodes = collections.defaultdict(set) # XPath -> set of texts
-        for page in tqdm(self.pages, desc='texts'):
+        for page in tqdm(self.pages, desc='texts', leave=False):
             page: Page
             dom = page.dom
             dom.init_nodes()
@@ -111,7 +111,7 @@ class Website:
 
         # Ensure labeled nodes are variable.
         labeled_xpaths = set()
-        for page in tqdm(self.pages, desc='labels'):
+        for page in tqdm(self.pages, desc='labels', leave=False):
             page: Page
             dom = page.dom
             dom.init_nodes()
