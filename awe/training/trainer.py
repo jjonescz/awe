@@ -70,7 +70,6 @@ class Trainer:
     ds: awe.data.set.pages.Dataset = None
     label_map: awe.training.context.LabelMap
     extractor: awe.features.extraction.Extractor
-    sampler: awe.data.sampling.Sampler
     vertical: awe.data.set.pages.Vertical
     train_websites: list[awe.data.set.pages.Website]
     val_websites: list[awe.data.set.pages.Website]
@@ -138,7 +137,6 @@ class Trainer:
 
         self.label_map = awe.training.context.LabelMap()
         self.extractor = awe.features.extraction.Extractor(self)
-        self.sampler = awe.data.sampling.Sampler(self)
 
     def split_data(self):
         set_seed(42)
@@ -197,7 +195,13 @@ class Trainer:
         if any(flags.values()):
             desc = f'{desc} ({", ".join(k for k, v in flags.items() if v)})'
 
-        nodes = self.sampler.load(pages, desc=desc, train=train)
+        sampler = awe.data.sampling.Sampler(
+            trainer=self,
+            pages=pages,
+            desc=desc,
+            train=train
+        )
+        nodes = sampler.load()
         print(f'Sampled {desc!r} nodes: {len(nodes):,}')
         return torch.utils.data.DataLoader(
             nodes,
