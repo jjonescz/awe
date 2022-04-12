@@ -69,6 +69,7 @@ class Params:
     load_visuals: bool = False
     classify_only_text_nodes: bool = False
     classify_only_variable_nodes: bool = False
+    classify_also_html_tags: list[str] = ()
     propagate_labels_to_leaves: bool = False
     validate_data: bool = True
     none_cutoff: Optional[int] = None

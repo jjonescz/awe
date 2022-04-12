@@ -28,7 +28,10 @@ class Dom:
         self.labeled_nodes = {}
         self.tree = awe.data.parsing.parse_html(page.get_html_text())
 
-    def init_nodes(self):
+    def init_nodes(self, filter_tree: bool = False):
+        if filter_tree:
+            awe.data.parsing.filter_tree(self.tree)
+
         # Get all nodes.
         self.root = Node(dom=self, parsed=self.tree.root, parent=None)
         self.nodes = list(self.root.traverse())
@@ -247,6 +250,9 @@ class Node:
     deep_index: Optional[int] = dataclasses.field(repr=False, default=None)
     """Iteration index of the node inside the `page`."""
 
+    sample: bool = dataclasses.field(repr=False, default=False)
+    """Whether this node has been selected for classification."""
+
     friends: Optional[list['Node']] = dataclasses.field(repr=False, default=None)
     """
     Only set if the current node is a text node. Contains set of text nodes
@@ -260,9 +266,6 @@ class Node:
     One of `friends` such that the current node and the friend are the only two
     text nodes under a common ancestor. Usually, this is the closest friend.
     """
-
-    is_variable_text: bool = dataclasses.field(repr=False, default=False)
-    """Whether this text node is variable across pages in a website."""
 
     semantic_html_tag: Optional[str] = dataclasses.field(repr=False, default=None)
     """Most semantic HTML tag (found by `HtmlTag` feature)."""
@@ -317,6 +320,10 @@ class Node:
     @property
     def is_empty(self):
         return awe.data.html_utils.is_empty(self.parsed)
+
+    @property
+    def is_leaf(self):
+        return awe.data.html_utils.is_leaf(self.parsed)
 
     @property
     def html_tag(self):

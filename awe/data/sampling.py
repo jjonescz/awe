@@ -1,5 +1,6 @@
 import collections
-from typing import TYPE_CHECKING, Callable
+import hashlib
+from typing import TYPE_CHECKING
 
 import numpy as np
 from tqdm.auto import tqdm
@@ -23,151 +24,199 @@ class Sampler:
     list of samples.
     """
 
-    def __init__(self, trainer: 'awe.training.trainer.Trainer'):
-        self.trainer = trainer
-        self.rng = np.random.default_rng(42)
+    var_nodes: dict[str, set[str]]
 
-    def load(self,
+    def __init__(self,
+        trainer: 'awe.training.trainer.Trainer',
         pages: list[awe.data.set.pages.Page],
         desc: str,
         train: bool = False
     ):
-        """
-        Pass `prepare` to run feature preparation on the pages (should be only
-        done for training pages).
-        """
+        self.trainer = trainer
+        self.pages = pages
+        self.desc = desc
+        self.train = train
 
-        # Prepare DOM trees.
-        for page in tqdm(pages, desc=f'init {desc}'):
-            page: awe.data.set.pages.Page
-            if page.cache_dom().root is None:
-                if not self.trainer.params.load_visuals:
-                    # If not loading visuals, we can filter nodes in one pass.
-                    awe.data.parsing.filter_tree(page.dom.tree)
-                page.dom.init_nodes()
-                if self.trainer.params.load_visuals:
-                    # Mark nodes that need visuals parsed.
-                    for node in page.dom.nodes:
-                        if (self.trainer.params.classify_only_text_nodes or
-                            self.trainer.params.classify_only_variable_nodes):
-                            if node.is_text:
-                                node.parent.needs_visuals = True
-                        elif not node.is_text:
-                            node.needs_visuals = True
+        # Compute deterministic hash of inputs.
+        input_hash = hashlib.sha256()
+        input_hash.update(f'{len(pages)}-{desc}'.encode('utf-8'))
+        seed = np.frombuffer(input_hash.digest(), dtype='uint32')
 
-                    # Load visuals.
-                    page_visuals = page.load_visuals()
-                    visual_feat = self.trainer.extractor.get_feature(
-                        awe.features.visual.Visuals
-                    )
-                    page_visuals.fill_tree_light(page.dom,
-                        attrs=visual_feat.visual_attributes \
-                            if visual_feat is not None else ()
-                    )
+        self.rng = np.random.default_rng(seed)
+        self.visual_feat = self.trainer.extractor.get_feature(
+            awe.features.visual.Visuals
+        )
 
-                    page.dom.filter_nodes()
-                page.dom.init_labels(
-                    propagate_to_leaves=
-                        self.trainer.params.propagate_labels_to_leaves
-                )
+    def load(self):
+        params = self.trainer.params
 
-        # Find variable nodes.
-        if self.trainer.params.classify_only_variable_nodes:
-            websites = {}
-            for page in pages:
-                websites.setdefault(page.website.name, page.website)
+        if params.classify_only_variable_nodes:
+            self.find_variable_nodes()
+
+        self.init_dom_trees()
+
+        self.prepare_features()
+
+        if params.validate_data:
+            self.validate()
+
+        return [n for p in self.pages for n in p.dom.nodes if n.sample]
+
+    def find_variable_nodes(self):
+        # Find all websites contained in `pages`.
+        websites = {}
+        for page in self.pages:
+            websites.setdefault(page.website.name, page.website)
+
+        # For each website, get list of variable nodes.
+        self.var_nodes = {
+            website.name: website.find_variable_xpaths()
             for website in tqdm(
                 websites.values(),
-                desc=f'find variable nodes in {desc}'
-            ):
-                website: awe.data.set.pages.Website
-                if not website.found_variable_nodes:
-                    website.find_variable_nodes()
+                desc=f'find variable nodes in {self.desc}'
+            )
+        }
 
-        for page in tqdm(pages, desc=f'prepare {desc}'):
-            # Compute friend cycles.
-            if (
-                self.trainer.params.friend_cycles
-                and not page.dom.friend_cycles_computed
-            ):
-                page.dom.compute_friend_cycles(
-                    max_friends=self.trainer.params.max_friends,
-                    only_variable_nodes=self.trainer.params.classify_only_variable_nodes
-                )
+    def init_dom_trees(self):
+        for page in tqdm(self.pages, desc=f'init {self.desc}'):
+            page: awe.data.set.pages.Page
+            if page.cache_dom().root is None:
+                self.init_dom_tree(page)
 
-            # Compute visual neighbors.
-            if (
-                self.trainer.params.visual_neighbors
-                and not page.dom.visual_neighbors_computed
-            ):
-                neighbor_distance = self.trainer.params.neighbor_distance
-                D = awe.training.params.VisualNeighborDistance
-                if neighbor_distance == D.center_point:
-                    f = page.dom.compute_visual_neighbors
-                elif neighbor_distance == D.rect:
-                    f = page.dom.compute_visual_neighbors_rect
-                else:
-                    raise ValueError(
-                        f'Unrecognized param {neighbor_distance=}.')
-                f(n_neighbors=self.trainer.params.n_neighbors)
-
-            if train:
-                # Add all label keys to a map.
-                for label_key in page.labels.label_keys:
-                    self.trainer.label_map.map_label_to_id(label_key)
-
-            # Prepare features.
-            self.trainer.extractor.prepare_page(page.dom, train=train)
+    def prepare_features(self):
+        for page in tqdm(self.pages, desc=f'prepare {self.desc}'):
+            self.prepare_features_for_page(page)
 
         # Freeze features.
-        if train:
+        if self.train:
             self.trainer.extractor.freeze()
 
-        # Validate.
-        if self.trainer.params.validate_data:
-            validator = awe.data.validation.Validator(
-                only_cached_dom=True,
-                # It is not needed to validate visuals as that's automatically
-                # performed when they are loaded (a few lines above).
-                visuals=False
+    def validate(self):
+        validator = awe.data.validation.Validator(
+            only_cached_dom=True,
+            # It is not needed to validate visuals as that's automatically
+            # performed when they are loaded (a few lines above).
+            visuals=False
+        )
+        validator.validate_pages(self.pages,
+            progress_bar=f'validate {self.desc}'
+        )
+        if validator.num_invalid > 0:
+            raise RuntimeError(f'Validation failed for {self.desc!r}.')
+
+    def is_variable_node(self, node: awe.data.graph.dom.Node):
+        return node.get_xpath() in self.var_nodes[node.dom.page.website.name]
+
+    def init_dom_tree(self, page: awe.data.set.pages.Page):
+        params = self.trainer.params
+
+        page.dom.init_nodes(
+            # If not loading visuals, we can filter nodes in one pass.
+            filter_tree=not params.load_visuals
+        )
+        self.init_labels(page)
+
+        # Select nodes for classification.
+        for node in page.dom.nodes:
+            node.sample = self.should_sample(node)
+
+        if params.load_visuals:
+            self.load_visuals(page)
+            page.dom.filter_nodes()
+
+            # Re-compute labels (some nodes might have been filtered out).
+            self.init_labels(page)
+
+        self.check_sampled_nodes(page)
+
+    def prepare_features_for_page(self, page: awe.data.set.pages.Page):
+        params = self.trainer.params
+
+        # Compute friend cycles.
+        if params.friend_cycles and not page.dom.friend_cycles_computed:
+            page.dom.compute_friend_cycles(
+                max_friends=params.max_friends,
+                only_variable_nodes=params.classify_only_variable_nodes
             )
-            validator.validate_pages(pages, progress_bar=f'validate {desc}')
-            if validator.num_invalid > 0:
-                raise RuntimeError(f'Validation failed ({desc}).')
 
-        # Select nodes.
-        return [
-            node
-            for page in pages
-            for node in self.select_nodes_for_page(page)
-        ]
+        # Compute visual neighbors.
+        if params.visual_neighbors and not page.dom.visual_neighbors_computed:
+            neighbor_distance = params.neighbor_distance
+            D = awe.training.params.VisualNeighborDistance
+            if neighbor_distance == D.center_point:
+                f = page.dom.compute_visual_neighbors
+            elif neighbor_distance == D.rect:
+                f = page.dom.compute_visual_neighbors_rect
+            else:
+                raise ValueError(
+                    f'Unrecognized param {neighbor_distance=}.')
+            f(n_neighbors=params.n_neighbors)
 
-    def select_nodes_for_page(self,
-        page: awe.data.set.pages.Page
-    ) -> list[Sample]:
-        if self.trainer.params.visual_neighbors:
-            return self.filter_nodes(page, lambda n: n.visual_neighbors is not None)
-        if self.trainer.params.classify_only_variable_nodes:
-            return self.filter_nodes(page, lambda n: n.is_variable_text)
-        if self.trainer.params.classify_only_text_nodes:
-            return self.filter_nodes(page, lambda n: n.is_text)
-        return page.dom.nodes
+        if self.train:
+            # Add all label keys to a map.
+            for label_key in page.labels.label_keys:
+                self.trainer.label_map.map_label_to_id(label_key)
 
-    def filter_nodes(self,
-        page: awe.data.set.pages.Page,
-        predicate: Callable[[awe.data.graph.dom.Node], bool]
-    ):
+        # Prepare features.
+        self.trainer.extractor.prepare_page(page.dom, train=self.train)
+
+    def load_visuals(self, page: awe.data.set.pages.Page):
+        # Mark nodes that need visuals parsed.
+        for node in page.dom.nodes:
+            if node.sample:
+                if node.is_text:
+                    node.parent.needs_visuals = True
+                else:
+                    node.needs_visuals = True
+
+        # Load visuals.
+        page_visuals = page.load_visuals()
+        page_visuals.fill_tree_light(page.dom,
+            attrs=self.visual_feat.visual_attributes \
+                if self.visual_feat is not None else ()
+        )
+
+    def init_labels(self, page: awe.data.set.pages.Page):
+        params = self.trainer.params
+
+        page.dom.init_labels(
+            propagate_to_leaves=params.propagate_labels_to_leaves
+        )
+
+    def should_sample(self, node: awe.data.graph.dom.Node):
+        params = self.trainer.params
+
+        # If the node is not labeled, cut it off with some probability (to
+        # have more balanced data).
+        if not node.label_keys and params.none_cutoff is not None:
+            if self.rng.integers(0, 100_000) >= params.none_cutoff:
+                return False
+
+        if params.classify_only_variable_nodes:
+            return (
+                self.is_text_or_correct_leaf(node) and
+                self.is_variable_node(node)
+            )
+
+        if params.classify_only_text_nodes:
+            return self.is_text_or_correct_leaf(node)
+
+        return True
+
+    def is_text_or_correct_leaf(self, node: awe.data.graph.dom.Node):
+        params = self.trainer.params
+
+        return (
+            node.is_text or
+            (node.is_leaf and node.html_tag in
+            params.classify_also_html_tags)
+        )
+
+    def check_sampled_nodes(self, page: awe.data.set.pages.Page):
         included = collections.defaultdict(int)
         excluded = collections.defaultdict(int)
         for node in page.dom.nodes:
-            # If the node is not labeled, cut it off with some probability (to
-            # have more balanced data).
-            if self.trainer.params.none_cutoff is not None:
-                rand_int = self.rng.integers(0, 100_000)
-                if rand_int >= self.trainer.params.none_cutoff:
-                    continue
-
-            if predicate(node):
+            if node.sample:
                 if len(node.label_keys) != 0:
                     for label_key in node.label_keys:
                         included[label_key] += 1

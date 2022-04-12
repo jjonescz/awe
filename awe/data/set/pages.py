@@ -5,7 +5,7 @@ import gc
 import itertools
 import urllib.parse
 import os
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING, Optional
 
 from tqdm.auto import tqdm
 
@@ -67,8 +67,6 @@ class Website:
     prev_page_count: int = dataclasses.field(repr=False, default=None)
     page_count: int = dataclasses.field(repr=False, default=None)
 
-    found_variable_nodes: bool = dataclasses.field(repr=False, default=False)
-
     @property
     @abc.abstractmethod
     def variable_nodes_file_path(self) -> str:
@@ -80,11 +78,15 @@ class Website:
     def get_domain(self):
         return urllib.parse.urlparse(self.get_common_prefix()).netloc
 
-    def get_variable_xpaths(self,
+    def find_variable_xpaths(self,
         max_variable_nodes_per_website: int = 300,
-        dom_selector: Callable[['Page'], Optional[awe.data.graph.dom.Dom]] \
-            = lambda p: p.try_get_dom(),
-    ):
+    ) -> set[str]:
+        """
+        Determines whether text nodes are variable or fixed in pages across the
+        website (as defined in the SimpDOM paper).
+        Returns the set of variable XPaths.
+        """
+
         # Try cache first.
         if os.path.exists(self.variable_nodes_file_path):
             with open(self.variable_nodes_file_path, mode='r', encoding='utf-8') as f:
@@ -93,10 +95,12 @@ class Website:
         # Find texts for each XPath across pages.
         nodes = collections.defaultdict(set) # XPath -> set of texts
         for page in tqdm(self.pages, desc='texts'):
-            if (dom := dom_selector(page)) is not None:
-                for node in dom.nodes:
-                    if node.is_text:
-                        nodes[node.get_xpath()].add(node.text)
+            page: Page
+            dom = page.dom
+            dom.init_nodes()
+            for node in dom.nodes:
+                if node.is_text:
+                    nodes[node.get_xpath()].add(node.text)
 
         # Sort nodes by variability.
         node_vars = sorted(
@@ -108,11 +112,14 @@ class Website:
         # Ensure labeled nodes are variable.
         labeled_xpaths = set()
         for page in tqdm(self.pages, desc='labels'):
-            if (dom := dom_selector(page)) is not None:
-                for labeled_groups in dom.labeled_nodes.values():
-                    for labeled_nodes in labeled_groups:
-                        for node in labeled_nodes:
-                            labeled_xpaths.add(node.get_xpath())
+            page: Page
+            dom = page.dom
+            dom.init_nodes()
+            dom.init_labels()
+            for labeled_groups in dom.labeled_nodes.values():
+                for labeled_nodes in labeled_groups:
+                    for node in labeled_nodes:
+                        labeled_xpaths.add(node.get_xpath())
 
         # Split XPaths into variable/fixed sets.
         variable_nodes = set() # XPaths
@@ -131,31 +138,6 @@ class Website:
         print(f'Saved {self.variable_nodes_file_path!r}.')
 
         return variable_nodes
-
-    def find_variable_nodes(self,
-        max_variable_nodes_per_website: int = 300,
-        dom_selector: Callable[['Page'], Optional[awe.data.graph.dom.Dom]] \
-            = lambda p: p.try_get_dom(),
-    ):
-        """
-        Determines whether text nodes are variable or fixed in pages across the
-        website (as defined in the SimpDOM paper). Only considers pages with
-        cached DOM.
-        """
-
-        variable_nodes = self.get_variable_xpaths(
-            max_variable_nodes_per_website=max_variable_nodes_per_website,
-            dom_selector=dom_selector,
-        )
-
-        # Flag variable nodes.
-        for page in self.pages:
-            if (dom := dom_selector(page)) is not None:
-                for node in dom.nodes:
-                    if node.is_text:
-                        node.is_variable_text = node.get_xpath() in variable_nodes
-
-        self.found_variable_nodes = True
 
 @dataclasses.dataclass(eq=False)
 class Page(abc.ABC):
