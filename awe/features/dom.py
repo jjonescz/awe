@@ -1,14 +1,10 @@
 import math
-from typing import TYPE_CHECKING
 
 import torch
 
 import awe.features.feature
 import awe.data.graph.dom
 import awe.data.visual.structs
-
-if TYPE_CHECKING:
-    import awe.model.classifier
 
 
 class HtmlTag(awe.features.feature.Feature):
@@ -39,7 +35,7 @@ class HtmlTag(awe.features.feature.Feature):
         }
         self._html_tags = None
 
-    def compute(self, batch: 'awe.model.classifier.ModelInput'):
+    def compute(self, batch: list[awe.data.graph.dom.Node]):
         return torch.tensor(
             [
                 self.html_tag_ids.get(node.semantic_html_tag, 0)
@@ -51,7 +47,7 @@ class HtmlTag(awe.features.feature.Feature):
 class Position(awe.features.feature.Feature):
     out_dim: int = 4
 
-    def compute(self, batch: 'awe.model.classifier.ModelInput'):
+    def compute(self, batch: list[awe.data.graph.dom.Node]):
         return torch.tensor(
             [compute_position(n) for n in batch],
             device=self.trainer.device

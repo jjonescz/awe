@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 import torch
 
 import awe.data.graph.dom
@@ -7,9 +5,6 @@ import awe.data.visual.attribute
 import awe.data.visual.context
 import awe.features.feature
 import awe.utils
-
-if TYPE_CHECKING:
-    import awe.model.classifier
 
 
 class Visuals(awe.features.feature.Feature):
@@ -55,7 +50,7 @@ class Visuals(awe.features.feature.Feature):
     def freeze(self):
         self.extraction.freeze()
 
-    def compute(self, batch: 'awe.model.classifier.ModelInput'):
+    def compute(self, batch: list[awe.data.graph.dom.Node]):
         return torch.tensor(
             [
                 self._compute(node, freezed=True)

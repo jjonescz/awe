@@ -8,7 +8,6 @@ import awe.features.context
 import awe.utils
 
 if TYPE_CHECKING:
-    import awe.model.classifier
     import awe.training.trainer
 
 
@@ -38,5 +37,5 @@ class Feature(awe.utils.PickleSubset, abc.ABC):
         """
 
     @abc.abstractmethod
-    def compute(self, batch: 'awe.model.classifier.ModelInput') -> torch.FloatTensor:
+    def compute(self, batch: list[awe.data.graph.dom.Node]) -> torch.FloatTensor:
         """Computes a feature vector for the given `batch` of nodes."""

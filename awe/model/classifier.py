@@ -18,8 +18,6 @@ import awe.training.params
 if TYPE_CHECKING:
     import awe.training.trainer
 
-ModelInput = list[awe.data.graph.dom.Node]
-
 @dataclasses.dataclass
 class ModelOutput:
     loss: torch.FloatTensor
@@ -34,7 +32,7 @@ class ModelOutput:
 
 @dataclasses.dataclass
 class Prediction:
-    batch: ModelInput
+    batch: list[awe.data.graph.dom.Node]
     outputs: ModelOutput
 
 class Model(torch.nn.Module):
@@ -387,7 +385,7 @@ class Model(torch.nn.Module):
 
         return ancestor_chains
 
-    def forward(self, batch: ModelInput) -> ModelOutput:
+    def forward(self, batch: list[awe.data.graph.dom.Node]) -> ModelOutput:
         # Propagate visual neighbors.
         if self.trainer.params.visual_neighbors:
             x = self.propagate_visual_neighbors(batch)
