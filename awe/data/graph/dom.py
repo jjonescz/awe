@@ -81,16 +81,12 @@ class Dom:
     def compute_friend_cycles(self,
         max_ancestor_distance: int = 5,
         max_friends: int = 10,
-        only_variable_nodes: bool = True,
     ):
         """Finds friends and partner for each text node (from SimpDOM paper)."""
 
         descendants = collections.defaultdict(list)
 
-        if only_variable_nodes:
-            target_nodes = [n for n in self.nodes if n.is_variable_text]
-        else:
-            target_nodes = [n for n in self.nodes if n.is_text]
+        target_nodes = [n for n in self.nodes if n.sample]
 
         for node in target_nodes:
             ancestors = node.get_ancestors(max_ancestor_distance)

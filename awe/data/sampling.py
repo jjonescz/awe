@@ -136,7 +136,6 @@ class Sampler:
         if params.friend_cycles and not page.dom.friend_cycles_computed:
             page.dom.compute_friend_cycles(
                 max_friends=params.max_friends,
-                only_variable_nodes=params.classify_only_variable_nodes
             )
 
         # Compute visual neighbors.
