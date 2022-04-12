@@ -52,7 +52,10 @@ class Dom:
         index_path = awe.data.html_utils.get_index_path(node)
         return self.root.find_by_index_path(index_path)
 
-    def init_labels(self, propagate_to_leaves: bool = False):
+    def init_labels(self,
+        propagate_to_leaves: bool = False,
+        propagate_to_descendants: bool = False,
+    ):
         # Clear DOM node labeling.
         self.labeled_nodes.clear()
         for node in self.nodes:
@@ -61,7 +64,9 @@ class Dom:
         for label_key in self.page.labels.label_keys:
             # Get labeled nodes.
             parsed_nodes = self.page.labels.get_labeled_nodes(label_key)
-            if propagate_to_leaves:
+            if propagate_to_descendants:
+                parsed_nodes = awe.data.html_utils.expand_descendants(parsed_nodes)
+            elif propagate_to_leaves:
                 parsed_nodes = awe.data.html_utils.expand_leaves(parsed_nodes)
             else:
                 parsed_nodes = [parsed_nodes]
@@ -240,7 +245,7 @@ class Node:
     deep_index: Optional[int] = dataclasses.field(repr=False, default=None)
     """Iteration index of the node inside the `page`."""
 
-    sample: bool = dataclasses.field(repr=False, default=False)
+    sample: bool = dataclasses.field(default=False)
     """Whether this node has been selected for classification."""
 
     friends: Optional[list['Node']] = dataclasses.field(repr=False, default=None)

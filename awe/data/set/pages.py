@@ -115,7 +115,7 @@ class Website:
             page: Page
             dom = page.dom
             dom.init_nodes()
-            dom.init_labels()
+            dom.init_labels(propagate_to_descendants=True)
             for labeled_groups in dom.labeled_nodes.values():
                 for labeled_nodes in labeled_groups:
                     for node in labeled_nodes:

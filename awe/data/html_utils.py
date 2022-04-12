@@ -77,3 +77,8 @@ def iter_leaves(node: 'awe.data.parsing.Node'):
             n: 'awe.data.parsing.Node'
             if is_leaf(n):
                 yield n
+
+def expand_descendants(
+    nodes: list['awe.data.parsing.Node']
+) -> list[list['awe.data.parsing.Node']]:
+    return [list(n.traverse(include_text=True)) for n in nodes]
