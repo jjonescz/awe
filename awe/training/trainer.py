@@ -1,3 +1,4 @@
+import collections
 import dataclasses
 import itertools
 import json
@@ -202,7 +203,11 @@ class Trainer:
             train=train
         )
         nodes = sampler.load()
-        print(f'Sampled {desc!r} nodes: {len(nodes):,}')
+        num_labels = collections.Counter(
+            None if not n.label_keys else n.label_keys[0]
+            for n in nodes
+        )
+        print(f'Sampled {desc!r} nodes {dict(num_labels)}.')
         return torch.utils.data.DataLoader(
             nodes,
             batch_size=self.params.batch_size,
