@@ -227,6 +227,7 @@ class Website(awe.data.set.pages.Website):
             db.add(page.index,
                 url=page.url,
                 html_text=page.get_html_text(),
+                visuals=page.create_visuals().get_json_str(),
             )
             if page.index % 100 == 1:
                 db.save()
