@@ -54,6 +54,22 @@ issue GDB command `backtrace`.
 `jupyter notebook --allow-root --no-browser --NotebookApp.token=''
 --NotebookApp.disable_check_xsrf=True --notebook-dir="$(pwd)"`.
 
+### Training
+
+To start cross-validation, use `tmux`, run `./sh/crossval.sh`, and detach it.
+Then, to check progress, run:
+
+```sh
+tmux capture-pane -S - && tmux save-buffer $(pwd)/out.txt
+```
+
+Afterwards, save `out.txt` as `crossval-tmux.txt` in logdir of the last version,
+and compute mean across all cross-validation runs:
+
+```sh
+python -m awe.training.crossval_mean <first_version_num>
+```
+
 ### Release
 
 #### Upload pre-trained model
