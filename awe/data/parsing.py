@@ -64,7 +64,7 @@ def parse_html(html_text: str):
     return tree
 
 def filter_tree(tree: Tree):
-    # Ignore more nodes.
+    # Ignore white space text fragments.
     remove_where(tree, filter_node)
 
 def normalize_node_text(text: str):
