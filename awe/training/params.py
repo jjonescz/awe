@@ -140,7 +140,7 @@ class Params:
 
     # Classifier
     learning_rate: float = 1e-3
-    label_smoothing: float = 0.0
+    label_smoothing: float = 0.0 # e.g., 0.1
     layer_norm: bool = False
     head_dims: list[int] = (128, 64)
     head_dropout: float = 0.5
