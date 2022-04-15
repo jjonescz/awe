@@ -61,7 +61,7 @@ class Sampler:
             if not self.validate():
                 if params.ignore_invalid_pages:
                     pages = [p for p in pages if p.valid]
-                    warnings.warn('Ignored invalid pages ' +
+                    warnings.warn(f'Ignored invalid pages in {self.desc!r} ' +
                         f'({len(self.pages)} -> {len(pages)}).')
                 else:
                     raise RuntimeError(f'Validation failed for {self.desc!r}.')
