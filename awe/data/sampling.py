@@ -1,5 +1,6 @@
 import collections
 import hashlib
+import warnings
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -55,10 +56,17 @@ class Sampler:
 
         self.prepare_features()
 
+        pages = self.pages
         if params.validate_data:
-            self.validate()
+            if not self.validate():
+                if params.ignore_invalid_pages:
+                    pages = [p for p in pages if p.valid]
+                    warnings.warn('Ignored invalid pages ' +
+                        f'({len(self.pages)} -> {len(pages)}).')
+                else:
+                    raise RuntimeError(f'Validation failed for {self.desc!r}.')
 
-        return [n for p in self.pages for n in p.dom.nodes if n.sample]
+        return [n for p in pages for n in p.dom.nodes if n.sample]
 
     def find_variable_nodes(self):
         # Find all websites contained in `pages`.
@@ -99,8 +107,7 @@ class Sampler:
         validator.validate_pages(self.pages,
             progress_bar=f'validate {self.desc}'
         )
-        if validator.num_invalid > 0:
-            raise RuntimeError(f'Validation failed for {self.desc!r}.')
+        return validator.num_invalid == 0
 
     def is_variable_node(self, node: awe.data.graph.dom.Node):
         return node.get_xpath() in self.var_nodes[node.dom.page.website.name]

@@ -72,6 +72,7 @@ class Params:
     classify_also_html_tags: list[str] = ()
     propagate_labels_to_leaves: bool = False
     validate_data: bool = True
+    ignore_invalid_pages: bool = False
     none_cutoff: Optional[int] = None
     """
     From 0 to 100,000. The lower, the more non-target nodes will be sampled.
