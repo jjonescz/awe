@@ -12,15 +12,13 @@ import awe.data.set.swde
 def main():
     args = parse_args()
 
-    if args.dataset == 'swde':
-        ds = awe.data.set.swde.Dataset(
-            suffix='-exact',
-            only_verticals=('auto',),
-        )
-    elif args.dataset == 'apify':
+    if args.target == 'apify':
         ds = awe.data.set.apify.Dataset()
     else:
-        raise ValueError(f'Unrecognized {args.dataset=}.')
+        ds = awe.data.set.swde.Dataset(
+            suffix='-exact',
+            only_verticals=(args.target,),
+        )
 
     for website in (p := tqdm(ds.verticals[0].websites)):
         website: awe.data.set.pages.Website
@@ -32,9 +30,8 @@ def parse_args():
         description='Compute variable nodes',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument('dataset',
-        choices=['apify', 'swde'],
-        help='dataset'
+    parser.add_argument('target',
+        help='either "apify" or SWDE website name'
     )
     return parser.parse_args()
 
