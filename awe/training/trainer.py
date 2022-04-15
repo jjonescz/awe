@@ -64,8 +64,16 @@ class Subsetter:
         return [
             p
             for w in websites
-            for p in self.rng.choice(w.pages, subset, replace=False)
+            for p in self._subset_one(website=w, subset=subset)
         ]
+
+    def _subset_one(self, website: awe.data.set.pages.Website, subset: int):
+        if len(website.pages) <= subset:
+            warnings.warn(
+                f'Cannot subset {subset} from website {website.name!r}, ' +
+                f'taking all pages ({len(website.pages)}).')
+            return website.pages
+        return self.rng.choice(website.pages, subset, replace=False)
 
 class Trainer:
     ds: awe.data.set.pages.Dataset = None
