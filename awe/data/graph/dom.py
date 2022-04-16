@@ -32,11 +32,22 @@ class Dom:
         if filter_tree:
             awe.data.parsing.filter_tree(self.tree)
 
-        # Get all nodes.
-        self.root = Node(dom=self, parsed=self.tree.root, parent=None)
-        self.nodes = list(self.root.traverse())
-        for idx, node in enumerate(self.nodes):
-            node.deep_index = idx
+        # Initialize high-level object tree wrapping low-level parsed nodes.
+        # Note that the traversal is performed in a strict DFS order.
+        deep_index = 0
+        root = Node(dom=self, parsed=self.tree.root, parent=None)
+        nodes = []
+        stack = [root]
+        while len(stack) != 0:
+            node = stack.pop()
+            nodes.append(node)
+            node.deep_index = deep_index
+            node.create_children()
+            stack.extend(reversed(node.children))
+            deep_index += 1
+
+        self.root = root
+        self.nodes = nodes
 
     def filter_nodes(self):
         awe.data.parsing.filter_tree(self.tree)
@@ -278,19 +289,6 @@ class Node:
         dataclasses.field(repr=False, default=None)
     """Closest nodes visually."""
 
-    def __post_init__(self):
-        self.children = list(self._iterate_children())
-
-        # Compute `same_tag_index`es.
-        tags: dict[str, tuple[int, Node]] = {}
-        for child in self.children:
-            c, _ = tags.get(child.html_tag, (0, None))
-            child.same_tag_index = c
-            tags[child.html_tag] = (c + 1, child)
-        for c, child in tags.values():
-            if c == 1:
-                child.same_tag_index = None
-
     @property
     def id(self):
         return self.parsed.id
@@ -346,9 +344,21 @@ class Node:
             node = node.children[idx]
         return node
 
-    def _iterate_children(self):
-        for parsed_node in self.parsed.iter(include_text=True):
-            yield Node(dom=self.dom, parsed=parsed_node, parent=self)
+    def create_children(self):
+        self.children = [
+            Node(dom=self.dom, parsed=parsed_node, parent=self)
+            for parsed_node in self.parsed.iter(include_text=True)
+        ]
+
+        # Compute `same_tag_index`es.
+        tags: dict[str, tuple[int, Node]] = {}
+        for child in self.children:
+            c, _ = tags.get(child.html_tag, (0, None))
+            child.same_tag_index = c
+            tags[child.html_tag] = (c + 1, child)
+        for c, child in tags.values():
+            if c == 1:
+                child.same_tag_index = None
 
     def traverse(self):
         """Iterates tree rooted in the current node in DFS order."""
