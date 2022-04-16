@@ -19,9 +19,7 @@ class HtmlTag(awe.features.feature.Feature):
             self._html_tags = set()
 
     def prepare(self, node: awe.data.graph.dom.Node, train: bool):
-        # Find most semantic HTML tag for the node.
-        semantic = node.unwrap(tag_names={ 'span', 'div' })
-        node.semantic_html_tag = semantic.html_tag
+        node.semantic_html_tag = node.find_semantic_html_tag()
 
         if train:
             self._html_tags.add(node.semantic_html_tag)

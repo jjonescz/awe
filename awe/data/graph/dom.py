@@ -437,6 +437,12 @@ class Node:
             node = node.parent
         return node
 
+    def find_semantic_html_tag(self):
+        """Finds most semantic HTML tag for the node."""
+
+        semantic = self.unwrap(tag_names={ 'span', 'div' })
+        return semantic.html_tag
+
 @dataclasses.dataclass
 class VisualNeighbor:
     distance: float
