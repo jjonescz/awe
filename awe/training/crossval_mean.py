@@ -13,6 +13,7 @@ import awe.training.versioning
 
 def main():
     args = parse_args()
+    awe.training.versioning.LOG_DIR = args.logdir
 
     params = awe.training.params.Params.load_user()
 
@@ -36,6 +37,7 @@ def main():
         last_version = version
 
     if last_version is None:
+        print('Cannot find any version.')
         return
 
     # Compute mean metrics.
@@ -62,6 +64,10 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description='Evaluates cross-validation training',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument('--logdir',
+        default=awe.training.versioning.LOG_DIR,
+        help='directory where versions are stored'
     )
     parser.add_argument('version_num',
         type=int,
