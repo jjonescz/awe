@@ -139,13 +139,13 @@ class Dom:
         self.friend_cycles_computed = True
 
     def compute_visual_neighbors(self, n_neighbors: int = 4):
-        sample_nodes = [n for n in self.page.dom.nodes if n.sample]
+        sample_nodes = [n for n in self.nodes if n.sample]
         coords = np.array([n.box.center_point for n in sample_nodes])
         n_neighbors += 1 # 0th neighbor is the node itself
         nn = sklearn.neighbors.NearestNeighbors(n_neighbors=n_neighbors)
 
         if len(coords) < nn.n_neighbors:
-            warnings.warn('Full neighborhood.')
+            warnings.warn(f'Full neighborhood ({self.page.html_path!r}).')
             # Too little samples, everyone is neighbor with everyone else.
             for node in sample_nodes:
                 neighbors = [
@@ -184,14 +184,15 @@ class Dom:
         self.visual_neighbors_computed = True
 
     def compute_visual_neighbors_rect(self, n_neighbors: int = 4):
-        sample_nodes = [n for n in self.page.dom.nodes if n.sample]
+        sample_nodes = [n for n in self.nodes if n.sample]
         coords = np.array([c for n in sample_nodes for c in n.box.corners])
         n_neighbors += 1 # 0th neighbor is the node itself
         nn = sklearn.neighbors.NearestNeighbors(n_neighbors=n_neighbors * 4)
 
         if len(coords) < nn.n_neighbors:
             # Too little samples, cannot compare all corners.
-            warnings.warn('Falling back to center neighborhood.')
+            warnings.warn('Falling back to center neighborhood ' +
+                f'({self.page.html_path!r}).')
             self.compute_visual_neighbors(n_neighbors=n_neighbors-1)
             return
 
