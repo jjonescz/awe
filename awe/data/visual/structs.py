@@ -33,6 +33,9 @@ class BoundingBox:
     def corners(self):
         return self.top_left, self.top_right, self.bottom_left, self.bottom_right
 
+    def as_tuple(self):
+        return self.x, self.y, self.width, self.height
+
 @dataclasses.dataclass
 class Color:
     red: int
