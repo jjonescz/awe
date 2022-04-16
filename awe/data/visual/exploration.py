@@ -21,19 +21,19 @@ def plot_websites(websites: list[awe.data.set.pages.Website], n_cols: int = 1):
     ])
 
 def plot_pages(pages: list[tuple[awe.data.set.pages.Page]]):
-    n_cols = len(pages[0])
+    n_cols = max(len(row) for row in pages)
 
     # Find page dimensions.
-    explorers = [[PageExplorer(page) for page in row] for row in pages]
+    explorers = [[PageExplorer(page) for page in row] for row in pages if row]
     heights = [max(e.height/100 for e in row) for row in explorers]
     height = sum(heights)
 
-    fig, axs = plt.subplots(len(pages), n_cols,
+    fig, axs = plt.subplots(len(explorers), n_cols,
         figsize=(10 * n_cols, height),
         facecolor='white',
         gridspec_kw={'height_ratios': heights}
     )
-    axs = axs.flatten() if len(pages) > 1 or n_cols > 1 else [axs]
+    axs = axs.flatten() if len(explorers) > 1 or n_cols > 1 else [axs]
     explorers = [e for row in explorers for e in row]
     for ax, e in tqdm(zip(axs, explorers), desc='pages', total=len(explorers)):
         e.plot_screenshot_with_boxes(ax)
