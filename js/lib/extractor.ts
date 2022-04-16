@@ -119,7 +119,12 @@ export class Extractor {
       }
       // Otherwise, determine whether we have to add index `[1]`.
       else {
-        const siblings = await element.$x(`(../${tagName})[2]`);
+        // Note that `name(.) = "..."` is needed to avoid the need to escape tag
+        // names (e.g., tag names containing colon are problematic).
+        const siblings =
+          tagName === 'text()'
+            ? await element.$x('following-sibling::text()')
+            : await element.$x(`(../*)[name(.) = "${tagName}"][2]`);
         if (siblings.length !== 0) {
           finalKey = indexedKey(1);
         }
