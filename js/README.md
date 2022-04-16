@@ -77,10 +77,11 @@ performed via:
 pnpm start -- -j=8 -e="C:\Program Files\Google\Chrome\Application\chrome.exe" -T=1000 -S --files="..\data\swde\invalid_pages.txt"
 ```
 
-Taking screenshots of 3 pages of each website of `auto` vertical:
+Taking screenshots of every 500th page of the `auto` vertical (omit `RH` flags
+to also re-extract visuals and HTML to ensure consistency):
 
 ```bash
-pnpm start -- -g 'auto/*/????.htm' -oRH t=1 -T=10000 -F=3 -S
+pnpm start -- -g 'auto/*/????.htm' -oRHx t=500 -T=1000 -S
 ```
 
 Extracting visuals from Apify dataset (note that some pages require enabled
