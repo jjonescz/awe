@@ -322,6 +322,11 @@ class Node:
     def html_tag(self):
         return self.parsed.tag
 
+    def get_text_or_tag(self):
+        if self.is_text:
+            return f'={self.text}'
+        return f'<{self.html_tag}>'
+
     def get_xpath(self):
         return awe.data.html_utils.get_xpath(self.parsed)
 

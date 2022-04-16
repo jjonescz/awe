@@ -247,14 +247,10 @@ class Trainer:
                 return ''
             attrs = awe.features.text.get_node_attr_text(node)
             return awe.features.text.humanize_string(attrs)
-        def get_value(node: awe.data.graph.dom.Node):
-            if node.is_text:
-                return f'={node.text}'
-            return f'<{node.html_tag}>'
         return pd.DataFrame(
             {
                 'label_key': node.label_keys[0],
-                'value': get_value(node),
+                'value': node.get_text_or_tag(),
                 'url': node.dom.page.url,
             } | (
                 node.parent.visuals
@@ -269,7 +265,7 @@ class Trainer:
                     else ()
                 )
             } | {
-                f'neighbor_{i}': get_value(v.neighbor)
+                f'neighbor_{i}': v.neighbor.get_text_or_tag()
                 for i, v in (
                     enumerate(node.visual_neighbors)
                     if self.params.visual_neighbors
