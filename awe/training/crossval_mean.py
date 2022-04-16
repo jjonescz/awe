@@ -15,18 +15,15 @@ def main():
     args = parse_args()
     awe.training.versioning.LOG_DIR = args.logdir
 
-    params = awe.training.params.Params.load_user()
-
     # Load all saved metrics.
     last_version = None
     all_metrics = []
     idx = 0
     while True:
-        version = awe.training.versioning.Version(
-            number=args.version_num + idx,
-            name=f'{params.version_name}-{idx}'
+        version = awe.training.versioning.Version.find_by_number(
+            args.version_num + idx
         )
-        if not version.exists():
+        if version is None or not version.exists():
             break
         results_path = version.get_results_path('test')
         if not os.path.exists(results_path):

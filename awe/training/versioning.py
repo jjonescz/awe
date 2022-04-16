@@ -38,6 +38,13 @@ class Version:
         return awe.utils.where_max(existing_versions, lambda v: v.number)
 
     @classmethod
+    def find_by_number(cls, number: int):
+        for v in cls._iterate_all():
+            if v.number == number:
+                return v
+        return None
+
+    @classmethod
     def delete_last(cls, name: str):
         """
         If the last version has the given `name`, deletes it. If it has no name,
