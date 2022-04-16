@@ -24,16 +24,23 @@ def main():
     trainer.load_pretrained()
     trainer.load_dataset()
 
-    total_count = len(trainer.ds.verticals[0].websites)
+    websites = trainer.ds.verticals[0].websites
+    total_count = len(websites)
     if args.print_max_index:
         print(total_count - 1)
         return
 
     orig_name = params.version_name
     seed_len = len(params.train_website_indices)
-    website_names = SWDE_VERTICAL_WEBSITES[params.vertical] \
-        if params.dataset == awe.training.params.Dataset.swde \
-        else [w.name for w in trainer.ds.verticals[0].websites]
+    website_names = [w.name for w in websites]
+    if params.dataset == awe.training.params.Dataset.swde:
+        # Ensure ordering is consistent with SimpDOM.
+        website_names = [name
+            for name in SWDE_VERTICAL_WEBSITES[params.vertical]
+            # Some websites might not be present in our dataset (because of bugs
+            # in the SWDE dataset).
+            if name in website_names
+        ]
     print(f'{website_names=}, {seed_len=}')
 
     start_idx = args.index
