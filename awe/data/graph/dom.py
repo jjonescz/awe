@@ -436,7 +436,7 @@ class Node:
         while node.parent is not None and (
             node.is_text or (
                 node.html_tag in tag_names and
-                len(node.parent.children) == 1
+                (node is self or len(node.parent.children) == 1)
             )
         ):
             node = node.parent
