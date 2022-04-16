@@ -46,7 +46,10 @@ def main():
     aggregated_metrics = {
         k: {
             'mean': np.mean(vs),
-            'count': len(vs)
+            'std': np.std(vs),
+            'count': len(vs),
+            'min': np.min(vs),
+            'max': np.max(vs),
         }
         for k, vs in all_values.items()
     }
