@@ -442,10 +442,13 @@ class Node:
             node = node.parent
         return node
 
+    def find_semantic_ancestor(self):
+        return self.unwrap(tag_names={ 'span', 'div' })
+
     def find_semantic_html_tag(self):
         """Finds most semantic HTML tag for the node."""
 
-        semantic = self.unwrap(tag_names={ 'span', 'div' })
+        semantic = self.find_semantic_ancestor()
         return semantic.html_tag
 
 @dataclasses.dataclass
