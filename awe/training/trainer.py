@@ -14,6 +14,7 @@ import pytorch_lightning as pl
 import torch
 import torch.utils.data
 import torch.utils.tensorboard
+import torchinfo
 from tqdm.auto import tqdm
 
 import awe.data.graph.dom
@@ -27,8 +28,8 @@ import awe.model.classifier
 import awe.model.decoding
 import awe.model.eval
 import awe.training.context
-import awe.training.versioning
 import awe.training.params
+import awe.training.versioning
 
 
 @dataclasses.dataclass
@@ -299,6 +300,12 @@ class Trainer:
 
             # Save params.
             self.params.save_version(self.version)
+
+            # Save model details.
+            s = torchinfo.summary(self.model, verbose=0)
+            print(f'Saving {self.version.model_text_path!r}.')
+            with open(self.version.model_text_path, mode='w', encoding='utf-8') as f:
+                f.write(str(s))
 
         # Initialize TensorBoard logger.
         self.writer = torch.utils.tensorboard.SummaryWriter(

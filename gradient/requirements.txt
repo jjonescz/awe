@@ -7,6 +7,7 @@ ipywidgets==7.6.5
 # PyTorch
 torchtext==0.11.0
 pytorch-lightning==1.4.9
+torchinfo==1.6.5
 # HACK: https://github.com/PyTorchLightning/pytorch-lightning/issues/11524
 torchmetrics<0.7
 # TensorBoard
