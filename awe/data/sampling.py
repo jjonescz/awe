@@ -198,14 +198,14 @@ class Sampler:
 
         # If the node is not labeled, cut it off with some probability (to
         # have more balanced data).
-        if not node.label_keys and params.none_cutoff is not None:
+        if self.train and not node.label_keys and params.none_cutoff is not None:
             if self.rng.integers(0, 100_000) >= params.none_cutoff:
                 return False
 
         if params.classify_only_variable_nodes:
             return (
                 self.is_text_or_correct_leaf(node) and
-                self.is_variable_node(node)
+                (not self.train or self.is_variable_node(node))
             )
 
         if params.classify_only_text_nodes:
