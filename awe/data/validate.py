@@ -14,15 +14,13 @@ parser = argparse.ArgumentParser(
     description='Validates datasets',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter
 )
-parser.add_argument('-d',
-    dest='dataset',
-    choices=['apify', 'swde'],
-    default='apify',
-    help='dataset'
+parser.add_argument('-v',
+    dest='vertical',
+    help='vertical from SWDE to load; otherwise, Apify dataset is loaded'
 )
-parser.add_argument('target',
+parser.add_argument('websites',
     nargs='*',
-    help='websites (Apify) or verticals (SWDE) to validate'
+    help='websites to validate'
 )
 parser.add_argument('--read-list',
     dest='read_list',
@@ -109,9 +107,7 @@ if args.save_back and args.read_list is None:
         'Argument `--save-back` cannot be specified without `--read-list`.')
 
 # Open dataset.
-if len(args.target) == 0:
-    args.target = None
-if args.dataset == 'apify':
+if not args.vertical:
     if args.filter_labels:
         only_label_keys = awe.training.params.Params.load_user().label_keys
         print(f'Filtering label keys to {only_label_keys!r}.')
@@ -120,15 +116,16 @@ if args.dataset == 'apify':
 
     ds = awe.data.set.apify.Dataset(
         only_label_keys=only_label_keys,
-        only_websites=args.target,
+        only_websites=args.websites,
         convert=args.convert,
         convert_slim=args.convert_slim,
         skip_without_visuals=args.skip_without_visuals,
     )
-elif args.dataset == 'swde':
+else:
     ds = awe.data.set.swde.Dataset(
         suffix='-exact',
-        only_verticals=args.target,
+        only_verticals=(args.vertical,),
+        only_websites=args.websites,
         convert=args.convert,
     )
 

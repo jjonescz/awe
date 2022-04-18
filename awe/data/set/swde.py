@@ -43,6 +43,7 @@ class Dataset(awe.data.set.pages.Dataset):
     def __init__(self,
         suffix: Optional[str] = None,
         only_verticals: Optional[list[str]] = None,
+        only_websites: Optional[list[str]] = None,
         convert: bool = True
     ):
         super().__init__(
@@ -51,6 +52,7 @@ class Dataset(awe.data.set.pages.Dataset):
         )
         self.suffix = suffix
         self.only_verticals = only_verticals
+        self.only_websites = only_websites
         self.convert = convert
         self.verticals = list(self._iterate_verticals())
 
@@ -137,8 +139,19 @@ class Vertical(awe.data.set.pages.Vertical):
         return f'{self.groundtruth_dir}/{self.name}'
 
     def _iterate_websites(self, cls: type['Website']):
+        # Get list of websites to load.
+        website_dirs = sorted(os.listdir(self.dir_path))
+        if self.dataset.only_websites is not None:
+            website_dirs = [
+                d for d in website_dirs
+                if any(
+                    d.startswith(f'{self.name}-{w}(')
+                    for w in self.dataset.only_websites
+                )
+            ]
+
         page_count = 0
-        for subdir in sorted(os.listdir(self.dir_path)):
+        for subdir in website_dirs:
             website = cls(
                 vertical=self,
                 dir_name=subdir,

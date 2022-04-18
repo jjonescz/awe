@@ -77,7 +77,7 @@ pnpm start -- -g 'camera/camera-amazon*/????.htm' -T=1000 -t=500 -j=8 -S
 Validating it:
 
 ```bash
-(cd .. && python -m awe.data.validate --visuals -d swde --max-pages=2000 --save-list=data/invalid_pages.txt camera)
+(cd .. && python -m awe.data.validate --visuals -v camera --save-list=data/invalid_pages.txt amazon)
 ```
 
 And re-scraping invalid pages:
@@ -89,7 +89,7 @@ pnpm start -- -d ../ --files=../data/invalid_pages.txt -T=1000 -j=8 -S
 And re-validate them:
 
 ```bash
-(cd .. && python -m awe.data.validate --visuals -d swde --read-list=data/invalid_pages.txt --save-back camera)
+(cd .. && python -m awe.data.validate --visuals -v camera --read-list=data/invalid_pages.txt --save-back amazon)
 ```
 
 ### Apify dataset
