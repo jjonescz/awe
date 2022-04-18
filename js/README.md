@@ -64,25 +64,35 @@ To run with type-checking, run `pnpm test`.
 
 ## Execution
 
-Scraping was executed on a Windows computer using command:
+Scraping was executed in Gitpod.
 
-```ps1
-pnpm start -- -j=8 -e="C:\Program Files\Google\Chrome\Application\chrome.exe" -T=1000 -S -x
-```
+### SWDE dataset
 
-Re-scraping invalid pages (as determined by script `../validate.py`) was
-performed via:
-
-```ps1
-pnpm start -- -j=8 -e="C:\Program Files\Google\Chrome\Application\chrome.exe" -T=1000 -S --files="..\data\swde\invalid_pages.txt"
-```
-
-Taking screenshots of every 500th page of the `auto` vertical (omit `RH` flags
-to also re-extract visuals and HTML to ensure consistency):
+Extracting visuals from one website of the SWDE dataset:
 
 ```bash
-pnpm start -- -g 'auto/*/????.htm' -oRHx t=500 -T=1000 -S
+pnpm start -- -g 'camera/camera-amazon*/????.htm' -T=1000 -t=500 -j=8 -S
 ```
+
+Validating it:
+
+```bash
+(cd .. && python -m awe.data.validate --visuals -d swde --max-pages=2000 --save-list=data/invalid_pages.txt camera)
+```
+
+And re-scraping invalid pages:
+
+```bash
+pnpm start -- -d ../ --files=../data/invalid_pages.txt -T=1000 -j=8 -S
+```
+
+And re-validate them:
+
+```bash
+(cd .. && python -m awe.data.validate --visuals -d swde --read-list=data/invalid_pages.txt --save-back camera)
+```
+
+### Apify dataset
 
 Extracting visuals from Apify dataset (note that some pages require enabled
 JavaScript, so beware of that `-S` option):
