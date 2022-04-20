@@ -83,10 +83,9 @@ This folder contains files used to setup development environment on
 To run training as a CI job inside
 [Gradient Workflows](https://docs.paperspace.com/gradient/workflows/):
 
-1. Install CLI and login:
+1. Login to [Gradient CLI](https://docs.paperspace.com/gradient/cli/):
 
    ```bash
-   pip install gradient
    gradient apiKey <api_key>
    ```
 

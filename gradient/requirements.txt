@@ -37,3 +37,5 @@ sentencepiece==0.1.96
 datasets==1.18.0
 # JSON
 ijson==3.1.4
+# Cloud
+gradient==2.0.2
