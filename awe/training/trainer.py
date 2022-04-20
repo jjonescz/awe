@@ -402,7 +402,10 @@ class Trainer:
 
             # Test-save a checkpoint to surface errors early (like improperly
             # reloaded Python modules).
-            if epoch_idx == 0:
+            if epoch_idx == 0 and (self.params.save_temporary_checkpoint or
+                self.params.save_better_val_loss_checkpoint or
+                self.params.save_every_n_epochs
+            ):
                 self.save_checkpoint(epoch_idx=0).delete()
 
             train_metrics = self._train_epoch(train_run, val_run)
