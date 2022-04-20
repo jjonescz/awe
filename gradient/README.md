@@ -78,27 +78,6 @@ This folder contains files used to setup development environment on
    instruct VSCode to connect to Jupyter remote server `http://localhost:8890/`
    (it's started automatically in script `run.sh`).
 
-## Build image with data
-
-1. Open [a dummy repository](https://github.com/4GeeksAcademy/html-hello) in
-   Gitpod, so that `.gitpod.yml` of this repository is not used.
-
-2. Remove all contents and clone this repository instead:
-
-   ```bash
-   rm -rf .* *
-   git clone https://github.com/jjonescz/awe
-   ```
-
-3. Download prepared data (e.g., from GDrive).
-
-4. Build Docker image:
-
-   ```bash
-   docker build -t janjones/awe-data -f gradient/Dockerfile.data .
-   docker push janjones/awe-data
-   ```
-
 ## Training Workflow
 
 To run training as a CI job inside
@@ -110,26 +89,37 @@ To run training as a CI job inside
    gradient apiKey <api_key>
    ```
 
-2. Create a workflow (and copy the resulting ID):
+2. Create dataset `awe-data` and note its ID. Also create dataset `awe-model` to
+   store the trained model.
+
+3. Upload the `data` folder with prepared data:
+
+   ```bash
+   gradient datasets versions create --id <dataset_id>
+   gradient datasets files put --id <dataset_id>:<version_id> --source-path data
+   gradient datasets version commit --id <dataset_id>:<version_id>
+   ```
+
+4. Create a workflow (and copy the resulting ID):
 
    ```bash
    gradient workflows create --name crossval --projectId <project_id>
    ```
 
-3. Specify training parameters in `data/params.json`. Run this command to create
+5. Specify training parameters in `data/params.json`. Run this command to create
    new file or validate existing:
 
    ```bash
    python -m awe.training.params
    ```
 
-4. Upload the params to Gradient.
+6. Upload the params to Gradient.
 
    ```bash
    gradient secrets set project --id <project_id> --name MODEL_PARAMS --value "$(cat data/params.json)"
    ```
 
-5. Run the workflow:
+7. Run the workflow:
 
    ```bash
    gradient workflows run --id <workflow_id> --path ./gradient/crossval.yml
