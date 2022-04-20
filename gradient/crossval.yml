@@ -11,53 +11,14 @@ jobs:
     with:
       url: https://github.com/jjonescz/awe
 
-  PrepareData:
-    resources:
-      instance-type: C4
-    needs:
-      - CloneRepo
-    inputs:
-      repo: CloneRepo.outputs.repo
-      swde:
-        type: dataset
-        with:
-          ref: swde
-      apify:
-        type: dataset
-        with:
-          ref: apify
-    outputs:
-      src:
-        type: volume
-    uses: script@v1
-    with:
-      script: |-
-        cp -R /inputs/repo /outputs/src
-        cd /outputs/src
-        (
-          mkdir -p data/swde/data
-          cd data/swde/data
-          for f in /inputs/swde/*.zip
-          do 7zz x $f
-          done
-        )
-        (
-          mkdir -p data/apify
-          cd data/apify
-          for f in /inputs/apify/*.zip
-          do 7zz x $f
-          done
-        )
-      image: janjones/awe-gradient
-
   CrossValidation:
     resources:
       # See https://docs.paperspace.com/gradient/machines/.
       instance-type: P4000
     needs:
-      - PrepareData
+      - CloneRepo
     inputs:
-      src: PrepareData.outputs.src
+      repo: CloneRepo.outputs.repo
     outputs:
       model:
         type: dataset
@@ -68,11 +29,11 @@ jobs:
     uses: script@v1
     with:
       script: |-
-        cp -R /inputs/src /src
-        cd /src
+        cp -R /inputs/src /storage/awe/src
+        cd /storage/awe/src
         echo "$MODEL_PARAMS" > data/params.json
         date
         python -m awe.training.crossval || echo "Failed"
         mv logs /outputs/model/
         date
-      image: janjones/awe-gradient
+      image: janjones/awe-data
