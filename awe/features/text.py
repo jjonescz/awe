@@ -96,7 +96,9 @@ class WordIdentifiers(awe.features.feature.Feature):
             tokenizer = cls.from_pretrained(params.tokenizer_id)
             self._tokenize = tokenizer.tokenize
         elif family == awe.training.params.TokenizerFamily.bert:
-            tokenizer = awe.features.bert_tokenization.BasicTokenizer()
+            tokenizer = awe.features.bert_tokenization.BasicTokenizer(
+                split_on_symbol=(params.tokenizer_id == 'symbol')
+            )
             self._tokenize = tokenizer.tokenize
 
         self.glove = awe.data.glove.LazyEmbeddings.get_or_create()

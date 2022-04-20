@@ -121,13 +121,14 @@ def whitespace_tokenize(text):
 class BasicTokenizer(object):
   """Runs basic tokenization (punctuation splitting, lower casing, etc.)."""
 
-  def __init__(self, do_lower_case=True):
+  def __init__(self, do_lower_case=True, split_on_symbol=False):
     """Constructs a BasicTokenizer.
 
     Args:
       do_lower_case: Whether to lower case the input.
     """
     self.do_lower_case = do_lower_case
+    self.split_on_symbol  = split_on_symbol
 
   def tokenize(self, text):
     """Tokenizes a piece of text."""
@@ -172,7 +173,9 @@ class BasicTokenizer(object):
     output = []
     while i < len(chars):
       char = chars[i]
-      if _is_punctuation(char):
+      if _is_punctuation(char) or (
+          self.split_on_symbol and unicodedata.category(char).startswith('S')
+      ):
         output.append([char])
         start_new_word = True
       else:
