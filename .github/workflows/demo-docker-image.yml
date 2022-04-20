@@ -1,4 +1,4 @@
-# MANUAL: Requires secrets `DOCKER_USERNAME` and `DOCKER_USERNAME`.
+# MANUAL: Requires secrets `DOCKER_USERNAME` and `DOCKER_PASSWORD`.
 
 name: Demo Docker Image
 
