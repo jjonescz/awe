@@ -196,22 +196,32 @@ class Sampler:
     def should_sample(self, node: awe.data.graph.dom.Node):
         params = self.trainer.params
 
-        # If the node is not labeled, cut it off with some probability (to
-        # have more balanced data).
-        if self.train and not node.label_keys and params.none_cutoff is not None:
-            if self.rng.integers(0, 100_000) >= params.none_cutoff:
-                return False
-
         if params.classify_only_variable_nodes:
             return (
                 self.is_text_or_correct_leaf(node) and
-                (not self.train or self.is_variable_node(node))
+                (not self.train or self.is_variable_node(node)) and
+                not self.should_cutoff(node)
             )
 
         if params.classify_only_text_nodes:
-            return self.is_text_or_correct_leaf(node)
+            return (
+                self.is_text_or_correct_leaf(node) and
+                not self.should_cutoff(node)
+            )
 
         return True
+
+    def should_cutoff(self, node: awe.data.graph.dom.Node):
+        params = self.trainer.params
+
+        # If the node is not labeled, cut it off with some probability (to
+        # have more balanced data).
+        return (
+            self.train and
+            not node.label_keys and
+            params.none_cutoff is not None and
+            self.rng.integers(0, 100_000) >= params.none_cutoff
+        )
 
     def is_text_or_correct_leaf(self, node: awe.data.graph.dom.Node):
         params = self.trainer.params
