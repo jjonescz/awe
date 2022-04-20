@@ -1,0 +1,4 @@
+FROM janjones/awe-gradient
+
+# Add data.
+COPY ./data/ ./data/

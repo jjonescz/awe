@@ -78,6 +78,27 @@ This folder contains files used to setup development environment on
    instruct VSCode to connect to Jupyter remote server `http://localhost:8890/`
    (it's started automatically in script `run.sh`).
 
+## Build image with data
+
+1. Open [a dummy repository](https://github.com/4GeeksAcademy/html-hello) in
+   Gitpod, so that `.gitpod.yml` of this repository is not used.
+
+2. Remove all contents and clone this repository instead:
+
+   ```bash
+   rm -rf .* *
+   git clone https://github.com/jjonescz/awe
+   ```
+
+3. Download prepared data (e.g., from GDrive).
+
+4. Build Docker image:
+
+   ```bash
+   docker build -t janjones/awe-data -f gradient/Dockerfile.data .
+   docker push janjones/awe-data
+   ```
+
 ## Training Workflow
 
 To run training as a CI job inside
