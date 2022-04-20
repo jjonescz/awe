@@ -1,0 +1,61 @@
+# See https://docs.paperspace.com/gradient/workflows/.
+
+jobs:
+  CloneRepo:
+    resources:
+      instance-type: C4
+    outputs:
+      repo:
+        type: volume
+    uses: git-checkout@v1
+    with:
+      url: https://github.com/jjonescz/awe
+
+  CrossValidation:
+    resources:
+      # See https://docs.paperspace.com/gradient/machines/.
+      instance-type: P4000
+    needs:
+      - CloneRepo
+    inputs:
+      repo: CloneRepo.outputs.repo
+      swde:
+        type: dataset
+        with:
+          ref: swde
+      apify:
+        type: dataset
+        with:
+          ref: apify
+    outputs:
+      model:
+        type: dataset
+        with:
+          ref: awe-model
+    env:
+      MODEL_PARAMS: secret:MODEL_PARAMS
+    uses: script@v1
+    with:
+      script: |-
+        rsync -av --exclude=".git/" /inputs/repo /src
+        cd /src
+        (
+          mkdir -p data/swde/data
+          cd data/swde/data
+          for f in /inputs/swde/*.zip
+          do 7zz x $f
+          done
+        )
+        (
+          mkdir -p data/apify
+          cd data/apify
+          for f in /inputs/apify/*.zip
+          do 7zz x $f
+          done
+        )
+        echo "$MODEL_PARAMS" > data/params.json
+        date
+        python -m awe.training.crossval || echo "Failed"
+        mv logs /outputs/model/
+        date
+      image: janjones/awe-gradient

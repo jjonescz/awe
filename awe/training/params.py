@@ -201,3 +201,6 @@ class Params:
         a = self.as_set(ignore_vars)
         b = other.as_set(ignore_vars)
         return a.symmetric_difference(b)
+
+if __name__ == '__main__':
+    print(Params.load_user(normalize=True))

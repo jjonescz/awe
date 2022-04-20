@@ -77,3 +77,54 @@ This folder contains files used to setup development environment on
    persistent Jupyter server which lives as long as the Gradient machine,
    instruct VSCode to connect to Jupyter remote server `http://localhost:8890/`
    (it's started automatically in script `run.sh`).
+
+## Training Workflow
+
+To run training as a CI job inside
+[Gradient Workflows](https://docs.paperspace.com/gradient/workflows/):
+
+1. Install CLI and login:
+
+   ```bash
+   pip install gradient
+   gradient apiKey <api_key>
+   ```
+
+2. Create datasets `swde` and `apify` and note their IDs. Also create dataset
+   `awe-model` to store the trained model.
+
+3. Upload prepared data (`<vertical>.zip` files to `swde` and `<website>.zip`
+   files to `apify`):
+
+   ```bash
+   gradient datasets versions create --id <dataset_id>
+   for f in *.zip
+   do gradient datasets files put --id <dataset_id>:<version_id> --source-path $f
+   done
+   gradient datasets version commit --id <dataset_id>:<version_id>
+   ```
+
+4. Create a workflow (and copy the resulting ID):
+
+   ```bash
+   gradient workflows create --name crossval --projectId <project_id>
+   ```
+
+5. Specify training parameters in `data/params.json`. Run this command to create
+   new file or validate existing:
+
+   ```bash
+   python -m awe.training.params
+   ```
+
+6. Upload the params to Gradient.
+
+   ```bash
+   gradient secrets set project --id <project_id> --name MODEL_PARAMS --value "$(cat data/params.json)"
+   ```
+
+7. Run the workflow:
+
+   ```bash
+   gradient workflows run --id <workflow_id> --path ./gradient/crossval.yml
+   ```
