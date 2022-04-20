@@ -75,7 +75,7 @@ class Params:
     ignore_invalid_pages: bool = False
     none_cutoff: Optional[int] = None
     """
-    From 0 to 100,000. The lower, the more non-target nodes will be sampled.
+    From 0 to 100,000. The higher, the more non-target nodes will be sampled.
     """
 
     # Friend cycles
