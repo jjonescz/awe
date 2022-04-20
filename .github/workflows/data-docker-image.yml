@@ -1,0 +1,89 @@
+# MANUAL: Requires secrets `DOCKER_USERNAME`, `DOCKER_PASSWORD`, `GDRIVE_TOKEN`,
+# `GDRIVE_SWDE_FOLDER`, `GDRIVE_APIFY_FOLDER`.
+
+name: Data Docker Image
+
+on:
+  # Enable manual trigger.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Docker image tag (leave empty to use timestamp)"
+        required: false
+      tag2:
+        description: "Another Docker image tag"
+        required: false
+        default: "latest"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      DOCKER_BUILDKIT: 1
+
+    steps:
+      - name: Get GDrive CLI
+        run: go install github.com/prasmussen/gdrive@2.1.1
+
+      - name: Login to GDrive
+        run: |
+          mkdir -p ~/.gdrive
+          echo "${GDRIVE_TOKEN}" > ~/.gdrive/token_v2.json
+          export PATH=${PATH}:`go env GOPATH`/bin
+          gdrive about
+        env:
+          GDRIVE_TOKEN: ${{ secrets.GDRIVE_TOKEN }}
+
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Download data from GDrive
+        run: |
+          export PATH=${PATH}:`go env GOPATH`/bin
+          (
+            mkdir -p data/swde/data
+            cd data/swde/data
+            gdrive download query "trashed = false and '${GDRIVE_SWDE_FOLDER}' in parents"
+            for f in *.zip; do unzip $f; rm $f; done
+          )
+          (
+            mkdir -p data/apify
+            cd data/apify
+            gdrive download query "trashed = false and '${GDRIVE_APIFY_FOLDER}' in parents"
+            for f in *.zip; do unzip $f; rm $f; done
+          )
+        env:
+          GDRIVE_SWDE_FOLDER: ${{ secrets.GDRIVE_SWDE_FOLDER }}
+          GDRIVE_APIFY_FOLDER: ${{ secrets.GDRIVE_APIFY_FOLDER }}
+
+      - name: Compute Docker image tag
+        id: compute_tag
+        if: ${{ github.event.inputs.tag == null }}
+        run: echo "::set-output name=tag::$(date +%s)"
+
+      - name: Set Docker image tag
+        id: set_tag
+        run: echo "::set-output name=tag::${{ github.event.inputs.tag || steps.compute_tag.outputs.tag }}"
+
+      - name: Login to Docker
+        run: docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker image
+        run: |
+          docker build -f gradient/Dockerfile.data \
+            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            -t janjones/awe-data:${{ steps.set_tag.outputs.tag }} .
+
+      - name: Push Docker image
+        run: docker push janjones/awe-gradient:${{ steps.set_tag.outputs.tag }}
+
+      - name: Push Docker image as another tag
+        if: ${{ github.event.inputs.tag2 != null }}
+        run: |
+          docker tag janjones/awe-gradient:${{ steps.set_tag.outputs.tag }} \
+              janjones/awe-gradient:${{ github.event.inputs.tag2 }}
+          docker push janjones/awe-gradient:${{ github.event.inputs.tag2 }}
