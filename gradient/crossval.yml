@@ -11,10 +11,9 @@ jobs:
     with:
       url: https://github.com/jjonescz/awe
 
-  CrossValidation:
+  PrepareData:
     resources:
-      # See https://docs.paperspace.com/gradient/machines/.
-      instance-type: P4000
+      instance-type: C4
     needs:
       - CloneRepo
     inputs:
@@ -28,17 +27,13 @@ jobs:
         with:
           ref: apify
     outputs:
-      model:
-        type: dataset
-        with:
-          ref: awe-model
-    env:
-      MODEL_PARAMS: secret:MODEL_PARAMS
+      src:
+        type: volume
     uses: script@v1
     with:
       script: |-
-        rsync -av --exclude=".git/" /inputs/repo /src
-        cd /src
+        cp -R /inputs/repo /outputs/src
+        cd /outputs/src
         (
           mkdir -p data/swde/data
           cd data/swde/data
@@ -53,6 +48,28 @@ jobs:
           do 7zz x $f
           done
         )
+      image: janjones/awe-gradient
+
+  CrossValidation:
+    resources:
+      # See https://docs.paperspace.com/gradient/machines/.
+      instance-type: P4000
+    needs:
+      - PrepareData
+    inputs:
+      src: PrepareData.outputs.src
+    outputs:
+      model:
+        type: dataset
+        with:
+          ref: awe-model
+    env:
+      MODEL_PARAMS: secret:MODEL_PARAMS
+    uses: script@v1
+    with:
+      script: |-
+        cp -R /inputs/src /src
+        cd /src
         echo "$MODEL_PARAMS" > data/params.json
         date
         python -m awe.training.crossval || echo "Failed"
