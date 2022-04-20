@@ -7,6 +7,10 @@ on:
   # Enable manual trigger.
   workflow_dispatch:
     inputs:
+      dataset:
+        description: "Dataset to include ('apify' or 'swde')"
+        required: true
+        default: "swde"
       tag:
         description: "Docker image tag (leave empty to use timestamp)"
         required: false
@@ -38,23 +42,26 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v2
 
-      - name: Download data from GDrive
+      - name: Download SWDE data from GDrive
+        if: ${{ github.event.inputs.dataset == 'swde' }}
         run: |
           export PATH=${PATH}:`go env GOPATH`/bin
-          (
-            mkdir -p data/swde/data
-            cd data/swde/data
-            gdrive download query "trashed = false and '${GDRIVE_SWDE_FOLDER}' in parents"
-            for f in *.zip; do unzip $f; rm $f; done
-          )
-          (
-            mkdir -p data/apify
-            cd data/apify
-            gdrive download query "trashed = false and '${GDRIVE_APIFY_FOLDER}' in parents"
-            for f in *.zip; do unzip $f; rm $f; done
-          )
+          mkdir -p data/swde/data
+          cd data/swde/data
+          gdrive download query "trashed = false and '${GDRIVE_SWDE_FOLDER}' in parents"
+          for f in *.zip; do unzip $f; rm $f; done
         env:
           GDRIVE_SWDE_FOLDER: ${{ secrets.GDRIVE_SWDE_FOLDER }}
+
+      - name: Download Apify data from GDrive
+        if: ${{ github.event.inputs.dataset == 'apify' }}
+        run: |
+          export PATH=${PATH}:`go env GOPATH`/bin
+          mkdir -p data/apify
+          cd data/apify
+          gdrive download query "trashed = false and '${GDRIVE_APIFY_FOLDER}' in parents"
+          for f in *.zip; do unzip $f; rm $f; done
+        env:
           GDRIVE_APIFY_FOLDER: ${{ secrets.GDRIVE_APIFY_FOLDER }}
 
       - name: Compute Docker image tag
@@ -76,7 +83,7 @@ jobs:
         run: |
           docker build -f gradient/Dockerfile.data \
             --build-arg BUILDKIT_INLINE_CACHE=1 \
-            -t janjones/awe-data:${{ steps.set_tag.outputs.tag }} .
+            -t janjones/awe-data-${{ github.event.inputs.dataset }}:${{ steps.set_tag.outputs.tag }} .
 
       - name: Push Docker image
         run: docker push janjones/awe-gradient:${{ steps.set_tag.outputs.tag }}
@@ -84,6 +91,6 @@ jobs:
       - name: Push Docker image as another tag
         if: ${{ github.event.inputs.tag2 != null }}
         run: |
-          docker tag janjones/awe-gradient:${{ steps.set_tag.outputs.tag }} \
-              janjones/awe-gradient:${{ github.event.inputs.tag2 }}
-          docker push janjones/awe-gradient:${{ github.event.inputs.tag2 }}
+          docker tag janjones/awe-data-${{ github.event.inputs.dataset }}:${{ steps.set_tag.outputs.tag }} \
+              janjones/awe-data-${{ github.event.inputs.dataset }}:${{ github.event.inputs.tag2 }}
+          docker push janjones/awe-data-${{ github.event.inputs.dataset }}:${{ github.event.inputs.tag2 }}
