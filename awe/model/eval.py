@@ -106,9 +106,9 @@ class Evaluation:
                 gold_groups = page.dom.labeled_nodes.get(label_key)
                 gold_list = [n for g in gold_groups for n in g]
 
-                if not gold_list:
-                    # Negative sample is when no node is labeled.
-                    if not pred_list:
+                if not pred_list:
+                    # Negative sample is when no node is predicted.
+                    if not gold_list:
                         stats.true_negatives += 1
                     else:
                         stats.false_negatives += 1
