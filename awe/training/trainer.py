@@ -271,7 +271,11 @@ class Trainer:
             } | {
                 f'anc_{i}': f'<{a.html_tag}>{get_text(a)}'
                 for i, a in (
-                    enumerate(node.iterate_ancestors(self.params.n_ancestors))
+                    enumerate(
+                        node.iterate_ancestors(self.params.n_ancestors)
+                        if self.params.n_ancestors is not None
+                        else node.iterate_all_ancestors()
+                    )
                     if self.params.ancestor_chain
                     else ()
                 )
