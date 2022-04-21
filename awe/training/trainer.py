@@ -246,7 +246,10 @@ class Trainer:
         def get_text(node: awe.data.graph.dom.Node):
             if not self.params.tokenize_node_attrs:
                 return ''
-            attrs = awe.features.text.get_node_attr_text(node)
+            attrs = awe.features.text.get_node_attr_text(
+                node=node,
+                params=self.params
+            )
             return awe.features.text.humanize_string(attrs)
         return pd.DataFrame(
             {

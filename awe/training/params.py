@@ -107,7 +107,7 @@ class Params:
     tokenizer_fast: bool = True
     freeze_word_embeddings: bool = True
     pretrained_word_embeddings: bool = True
-    tokenize_node_attrs: bool = False
+    tokenize_node_attrs: list[str] = () # 'itemprop', 'id', 'name', 'class'
     tokenize_node_attrs_only_ancestors: bool = True
 
     # LSTM

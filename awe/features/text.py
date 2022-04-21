@@ -144,8 +144,7 @@ class WordIdentifiers(awe.features.feature.Feature):
 
         # Tokenize attribute values.
         if self.trainer.params.tokenize_node_attrs:
-            attr_text = get_node_attr_text(node)
-            if attr_text:
+            if (attr_text := self.get_node_attr_text(node)):
                 token_ids = list(itertools.islice(
                     (
                         token_id
@@ -179,18 +178,33 @@ class WordIdentifiers(awe.features.feature.Feature):
         )
 
     def compute_attr(self, batch: list[list[awe.data.graph.dom.Node]]):
-        return torch.nn.utils.rnn.pad_sequence(
+        return torch.nn.utils.rnn.pack_sequence(
             [
-                self.node_attr_token_ids.get(n, self.default_token_ids)
-                for n in batch
+                torch.tensor(
+                    [
+                        token_id
+                        for node in row
+                        if (token_ids := self.node_attr_token_ids.get(node))
+                        for token_id in token_ids
+                    ] or [0],
+                    dtype=torch.int32,
+                    device=self.trainer.device,
+                )
+                for row in batch
             ],
-            batch_first=True
+            enforce_sorted=False
         )
 
-def get_node_attr_text(node: awe.data.graph.dom.Node):
+    def get_node_attr_text(self, node: awe.data.graph.dom.Node):
+        return get_node_attr_text(node=node, params=self.trainer.params)
+
+def get_node_attr_text(
+    node: awe.data.graph.dom.Node,
+    params: awe.training.params.Params
+):
     attrs = node.get_attributes()
     return ' '.join(
         v
-        for a in ['itemprop', 'id', 'name', 'class']
+        for a in params.tokenize_node_attrs
         if (v := attrs.get(a, ''))
     )
