@@ -1,0 +1,102 @@
+# MANUAL: May require secrets `DOCKER_USERNAME`, `DOCKER_PASSWORD`,
+# `GDRIVE_TOKEN`, `GDRIVE_SWDE_FOLDER`, `GDRIVE_APIFY_FOLDER`.
+
+name: Training
+
+on:
+  # Enable manual trigger.
+  workflow_dispatch:
+    inputs:
+      login:
+        description: "Login to Docker?"
+        type: boolean
+        required: false
+        default: false
+      image:
+        description: "Docker image"
+        required: false
+        default: "janjones/awe-gradient:latest"
+      command:
+        description: "Training command"
+        required: false
+        default: "awe.training.training"
+      params:
+        description: "JSON with training params"
+        required: true
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get GDrive CLI
+        run: go install github.com/prasmussen/gdrive@2.1.1
+
+      - name: Login to GDrive
+        run: |
+          mkdir -p ~/.gdrive
+          echo "${GDRIVE_TOKEN}" > ~/.gdrive/token_v2.json
+          export PATH=${PATH}:`go env GOPATH`/bin
+          gdrive about
+        env:
+          GDRIVE_TOKEN: ${{ secrets.GDRIVE_TOKEN }}
+
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Initialize params
+        run: |
+          mkdir -p data
+          echo '${{ github.event.inputs.params }}' > data/params.json
+          cat data/params.json
+
+      - name: Download data from GDrive
+        run: |
+          export PATH=${PATH}:`go env GOPATH`/bin
+          export DATASET=$(jq -r '.dataset' data/params.json)
+          if [ $DATASET = 'swde' ]
+          then echo "Downloading SWDE dataset..."
+            (
+              mkdir -p data/swde/data
+              cd data/swde/data
+              gdrive download query "trashed = false and '${GDRIVE_SWDE_FOLDER}' in parents"
+              for f in *.zip; do unzip $f; rm $f; done
+            )
+          elif [ $DATASET = 'apify']
+          then echo "Downloading Apify dataset..."
+            (
+              mkdir -p data/apify
+              cd data/apify
+              gdrive download query "trashed = false and '${GDRIVE_APIFY_FOLDER}' in parents"
+              for f in *.zip; do unzip $f; rm $f; done
+            )
+          else
+            echo "Unrecognized dataset '$DATASET'"
+            exit 1
+          fi
+        env:
+          GDRIVE_SWDE_FOLDER: ${{ secrets.GDRIVE_SWDE_FOLDER }}
+          GDRIVE_APIFY_FOLDER: ${{ secrets.GDRIVE_APIFY_FOLDER }}
+
+      - name: Login to Docker
+        if: ${{ github.event.inputs.login == 'true' }}
+        run: docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Download Docker image
+        run: docker pull ${{ github.event.inputs.image }}
+
+      - name: Run training
+        run: |
+          docker run --rm -i -v "$(pwd):/storage/awe/src" \
+            ${{ github.event.inputs.image }} \
+            python -m ${{ github.event.inputs.command }}
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: Training Logs
+          path: logs
