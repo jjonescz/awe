@@ -29,7 +29,8 @@ jobs:
     uses: script@v1
     with:
       script: |-
-        cp -R /inputs/src /storage/awe/src
+        mkdir -p /storage/awe/src/awe
+        cp -R /inputs/src/awe /storage/awe/src/awe
         cd /storage/awe/src
         echo "$MODEL_PARAMS" > data/params.json
         date
