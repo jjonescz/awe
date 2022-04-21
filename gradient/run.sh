@@ -7,8 +7,6 @@ mkdir -p /storage/awe/src
 mkdir -p /storage/awe/.vscode-server
 ln -sT /storage/awe/.vscode-server ~/.vscode-server
 ln -sT /storage/.tmux.conf ~/.tmux.conf
-mkdir -p /storage/awe/tailscale
-ln -sT /storage/awe/tailscale /var/lib/tailscale
 
 # Generate a random alphanumeric string of length 48 (like Jupyter notebook
 # token, e.g., `c8de56fa4deed24899803e93c227592aef6538f93025fe01`). Inspired by
@@ -33,11 +31,6 @@ nohup nice jupyter notebook --allow-root --no-browser --port 8890 \
 
 # Start SSH server.
 echo "root:${JUPYTER_TOKEN}" | chpasswd && /usr/sbin/sshd -eD &
-
-# Start Tailscale proxy.
-mkdir -p /storage/awe/tailscale
-tailscaled --tun=userspace-networking &> /tailscaled.out.txt &
-(tailscale up --hostname "${PAPERSPACE_NOTEBOOK_REPO_ID:-$HOSTNAME}" && tailscale ip -4) &
 
 # Listen through huproxy.
 /huproxy/bin/huproxy -listen :8888

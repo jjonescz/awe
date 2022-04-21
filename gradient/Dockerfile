@@ -89,13 +89,6 @@ ENV GOPATH=/huproxy \
     PATH=/usr/local/go/bin:$PATH
 RUN go get github.com/google/huproxy@a131ee126ce30e57a8a47d259a0d02a835fa3189
 
-# Install Tailscaled proxy.
-RUN curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/focal.gpg | apt-key add - \
-    && curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/focal.list | tee /etc/apt/sources.list.d/tailscale.list \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends tailscale \
-    && rm -rf /var/lib/{apt,dpkg,cache,log}
-
 # Install Google Drive CLI.
 ENV GOPATH=/usr
 RUN go get github.com/prasmussen/gdrive@2.1.1
