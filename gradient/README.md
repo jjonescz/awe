@@ -83,7 +83,8 @@ This folder contains files used to setup development environment on
 To run training as a CI job inside
 [Gradient Workflows](https://docs.paperspace.com/gradient/workflows/):
 
-1. Prepare data and build a Docker image containing them:
+1. Prepare data (including GloVe embeddings by running `python -m awe.prepare`)
+   and build a Docker image containing them:
 
    ```bash
    docker build -t janjones/awe-data -f gradient/Dockerfile.data .
