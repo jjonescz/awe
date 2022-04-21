@@ -1,9 +1,15 @@
 # See https://docs.paperspace.com/gradient/workflows/.
 
+defaults:
+  resources:
+    instance-type: C4
+
+inputs:
+  params:
+    type: string
+
 jobs:
   CloneRepo:
-    resources:
-      instance-type: C4
     outputs:
       repo:
         type: volume
@@ -19,8 +25,7 @@ jobs:
       - CloneRepo
     inputs:
       repo: CloneRepo.outputs.repo
-    env:
-      MODEL_PARAMS: secret:MODEL_PARAMS
+      params: workflow.inputs.params
     uses: script@v1
     with:
       script: |-
@@ -28,7 +33,8 @@ jobs:
         cp -R /inputs/repo/awe /storage/awe/src/awe
         cd /storage/awe/src
         mkdir -p data
-        echo "$MODEL_PARAMS" > data/params.json
+        echo "$(cat /inputs/params)" > data/params.json
+        cat data/params.json
         date
         python -m awe.training.crossval || echo "Failed"
         pip install -q -U gradient

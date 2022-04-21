@@ -113,14 +113,9 @@ To run training as a CI job inside
    python -m awe.training.params
    ```
 
-5. Upload the params to Gradient.
+5. Run the workflow:
 
    ```bash
-   gradient secrets set project --id <project_id> --name MODEL_PARAMS --value "$(cat data/params.json)"
-   ```
-
-6. Run the workflow:
-
-   ```bash
-   gradient workflows run --id <workflow_id> --path ./gradient/crossval.yml
+   jq --null-input --arg params "$(cat data/params.json)" '{ "params": { "value": $params } }' > data/input.json
+   gradient workflows run --id <workflow_id> --path ./gradient/crossval.yml --inputPath data/input.json
    ```
