@@ -24,7 +24,7 @@ jobs:
     uses: script@v1
     with:
       script: |-
-        mkdir -p /storage/awe/src/awe
+        mkdir -p /storage/awe/src
         cp -R /inputs/repo/awe /storage/awe/src/awe
         cd /storage/awe/src
         mkdir -p data
