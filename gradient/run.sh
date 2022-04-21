@@ -15,11 +15,13 @@ if [ -z "$JUPYTER_TOKEN" ]; then
     JUPYTER_TOKEN=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 48 | head -n 1)
 fi
 
-# Print mocked Jupyter token, so that we can run this container as if it were a
+# Print mocked Jupyter token, so that the port is exposed as if it were a
 # notebook within Gradient.run. Inspired by
 # https://github.com/Paperspace/gradient-coder.
-echo "http://localhost:8888/?token=${JUPYTER_TOKEN}"
-echo "http://localhost:8888/\?token\=${JUPYTER_TOKEN}"
+echo "http://localhost:8888/lab?token=${JUPYTER_TOKEN}"
+echo "http://127.0.0.1:8888/lab?token=${JUPYTER_TOKEN}"
+echo "[I $(date +'%Y-%m-%d %T.123') ServerApp] http://localhost:8888/lab?token=${JUPYTER_TOKEN}"
+echo "[I $(date +'%Y-%m-%d %T.123') ServerApp]  or http://127.0.0.1:8888/lab?token=${JUPYTER_TOKEN}"
 
 # Print domain exposed by Gradient for localhost:8888.
 echo ${PAPERSPACE_FQDN}
