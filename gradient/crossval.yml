@@ -31,7 +31,7 @@ jobs:
         echo "$MODEL_PARAMS" > data/params.json
         date
         python -m awe.training.crossval || echo "Failed"
-        pip install -U gradient
+        pip install -q -U gradient
         gradient models upload logs --name awe-logs --modelType Custom --projectId $PROJECT_ID
         date
       image: janjones/awe-data
