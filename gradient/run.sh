@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # This script should be run after source code is mounted.
+mkdir -p /storage/awe/src
 
 # Persist VSCode directory and other config directories (used in `install.sh`).
 mkdir -p /storage/awe/.vscode-server
