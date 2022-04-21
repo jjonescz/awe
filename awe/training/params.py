@@ -95,6 +95,12 @@ class Params:
     ancestor_lstm_out_dim: int = 10
     ancestor_lstm_args: Optional[dict[str]] = None
     ancestor_tag_dim: Optional[int] = 30
+    xpath: bool = False
+    """
+    Like ancestor chain but only HTML tags and without limit on number of
+    ancestors. This is separate so it can be used alongside limited ancestor
+    chain.
+    """
 
     # Word vectors
     tokenizer_family: TokenizerFamily = TokenizerFamily.custom
