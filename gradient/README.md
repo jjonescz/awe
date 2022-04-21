@@ -100,28 +100,26 @@ To run training as a CI job inside
    gradient apiKey <api_key>
    ```
 
-3. Create dataset `awe-model` to store the trained model.
-
-4. Create a workflow (and copy the resulting ID):
+3. Create a workflow (and copy the resulting ID):
 
    ```bash
    gradient workflows create --name crossval --projectId <project_id>
    ```
 
-5. Specify training parameters in `data/params.json`. Run this command to create
+4. Specify training parameters in `data/params.json`. Run this command to create
    new file or validate existing:
 
    ```bash
    python -m awe.training.params
    ```
 
-6. Upload the params to Gradient.
+5. Upload the params to Gradient.
 
    ```bash
    gradient secrets set project --id <project_id> --name MODEL_PARAMS --value "$(cat data/params.json)"
    ```
 
-7. Run the workflow:
+6. Run the workflow:
 
    ```bash
    gradient workflows run --id <workflow_id> --path ./gradient/crossval.yml

@@ -19,22 +19,19 @@ jobs:
       - CloneRepo
     inputs:
       repo: CloneRepo.outputs.repo
-    outputs:
-      model:
-        type: dataset
-        with:
-          ref: awe-model
     env:
       MODEL_PARAMS: secret:MODEL_PARAMS
     uses: script@v1
     with:
       script: |-
         mkdir -p /storage/awe/src/awe
-        cp -R /inputs/src/awe /storage/awe/src/awe
+        cp -R /inputs/repo/awe /storage/awe/src/awe
         cd /storage/awe/src
+        mkdir -p data
         echo "$MODEL_PARAMS" > data/params.json
         date
         python -m awe.training.crossval || echo "Failed"
-        mv logs /outputs/model/
+        pip install -U gradient
+        gradient models upload logs --name awe-logs --modelType Custom --projectId $PROJECT_ID
         date
       image: janjones/awe-data
