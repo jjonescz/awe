@@ -36,4 +36,4 @@ jobs:
         python -m awe.training.crossval || echo "Failed"
         mv logs /outputs/model/
         date
-      image: janjones/awe-gradient
+      image: janjones/awe-data

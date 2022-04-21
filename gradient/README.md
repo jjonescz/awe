@@ -83,22 +83,23 @@ This folder contains files used to setup development environment on
 To run training as a CI job inside
 [Gradient Workflows](https://docs.paperspace.com/gradient/workflows/):
 
-1. Login to [Gradient CLI](https://docs.paperspace.com/gradient/cli/):
+1. Prepare data and build a Docker image containing them:
+
+   ```bash
+   docker build -t janjones/awe-data -f gradient/Dockerfile.data .
+   docker push janjones/awe-data
+   export TIMESTAMP=$(date +%s)
+   docker tag janjones/awe-data janjones/awe-data:$TIMESTAMP
+   docker push janjones/awe-data:$TIMESTAMP
+   ```
+
+2. Login to [Gradient CLI](https://docs.paperspace.com/gradient/cli/):
 
    ```bash
    gradient apiKey <api_key>
    ```
 
-2. Create dataset `awe-data` and note its ID. Also create dataset `awe-model` to
-   store the trained model.
-
-3. Upload the `data` folder with prepared data:
-
-   ```bash
-   gradient datasets versions create --id <dataset_id>
-   gradient datasets files put --id <dataset_id>:<version_id> --source-path data
-   gradient datasets version commit --id <dataset_id>:<version_id>
-   ```
+3. Create dataset `awe-model` to store the trained model.
 
 4. Create a workflow (and copy the resulting ID):
 
