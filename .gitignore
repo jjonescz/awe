@@ -1,6 +1,9 @@
 # Python compilation.
 __pycache__/
 
+# Python virtual environment.
+/.venv/
+
 # Jupyter.
 .ipynb_checkpoints/
 .Trash-0/
