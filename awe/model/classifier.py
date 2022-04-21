@@ -44,14 +44,14 @@ class Model(torch.nn.Module):
         self.trainer = trainer
         self.lr = lr
 
-        self.slim_node_feature_dim = 0
-
         self.dropout = torch.nn.Dropout(0.3)
 
         # Word embedding (shared for node text and attributes)
         self.word_ids = self.trainer.extractor.get_feature(awe.features.text.WordIdentifiers)
         if self.word_ids is not None:
             self.word_embedding = awe.model.word_lstm.WordEmbedding(self)
+
+        node_feature_dim = 0
 
         # HTML tag name embedding
         self.html_tag = self.trainer.extractor.get_feature(awe.features.dom.HtmlTag)
@@ -62,25 +62,32 @@ class Model(torch.nn.Module):
                 num_html_tags,
                 embedding_dim
             )
-            self.slim_node_feature_dim += embedding_dim
+            node_feature_dim += embedding_dim
 
-        self.node_feature_dim = self.slim_node_feature_dim
-
-        if self.trainer.params.tokenize_node_attrs:
-            self.slim_node_feature_dim += self.word_embedding.out_dim
-
-            if not self.trainer.params.tokenize_node_attrs_only_ancestors:
-                self.node_feature_dim += self.word_embedding.out_dim
+        # HTML attribute text embedding
+        if (
+            self.trainer.params.tokenize_node_attrs and
+            not self.trainer.params.tokenize_node_attrs_only_ancestors
+        ):
+            attr_out_dim = self.trainer.params.attr_lstm_out_dim
+            self.attr_lstm = torch.nn.LSTM(
+                self.word_embedding.out_dim,
+                attr_out_dim,
+                **(self.trainer.params.attr_lstm_args or {})
+            )
+            if self.attr_lstm.bidirectional:
+                attr_out_dim *= 2
+            node_feature_dim += attr_out_dim
 
         # Node position
         self.position = self.trainer.extractor.get_feature(awe.features.dom.Position)
         if self.position is not None:
-            self.node_feature_dim += self.position.out_dim
+            node_feature_dim += self.position.out_dim
 
         # Node visuals
         self.visuals = self.trainer.extractor.get_feature(awe.features.visual.Visuals)
         if self.visuals is not None:
-            self.node_feature_dim += self.visuals.out_dim
+            node_feature_dim += self.visuals.out_dim
 
         # Word LSTM
         if self.trainer.params.word_vector_function is not None:
@@ -88,70 +95,38 @@ class Model(torch.nn.Module):
             out_dim = self.lstm.out_dim
             if self.trainer.params.friend_cycles:
                 out_dim *= 3
-            self.node_feature_dim += out_dim
+            node_feature_dim += out_dim
 
         # Visual neighbors
         if self.trainer.params.visual_neighbors:
             self.neighbor_attention = torch.nn.Linear(
-                self.node_feature_dim * 2 + 3, 1
+                node_feature_dim * 2 + 3, 1
             )
             self.neighbor_softmax = torch.nn.Softmax(dim=-1)
-            head_features = self.node_feature_dim * 2
+            head_features = node_feature_dim * 2
         else:
-            head_features = self.node_feature_dim
-
-        # XPath
-        if self.trainer.params.xpath:
-            xpath_dim = 30
-            xpath_out_dim = 10
-            num_html_tags = len(self.html_tag.html_tag_ids) + 1
-            self.xpath_embedding = torch.nn.Embedding(
-                num_html_tags,
-                xpath_dim
-            )
-            self.xpath_lstm = torch.nn.LSTM(
-                xpath_dim,
-                xpath_out_dim,
-                bidirectional=True
-            )
-            if self.xpath_lstm.bidirectional:
-                xpath_out_dim *= 2
-            head_features += xpath_out_dim
+            head_features = node_feature_dim
 
         # Ancestor chain
         if self.trainer.params.ancestor_chain:
-            # For each ancestor we have slim features and its distance (the
-            # latter only except LSTM, it learns distance differently).
-            self.ancestor_dist = self.trainer.params.ancestor_function != 'lstm'
-            input_ancestor_dim = self.slim_node_feature_dim + (
-                1 if self.ancestor_dist else 0
-            )
-
-            # We can summarize features of each ancestor using one layer.
-            if self.trainer.params.ancestor_summarize:
-                self.ancestor_dim = self.trainer.params.ancestor_dim or input_ancestor_dim
-                self.ancestor_layer = torch.nn.Linear(input_ancestor_dim, self.ancestor_dim)
-            else:
-                self.ancestor_dim = input_ancestor_dim
-
-            # We then aggregate features for each group of ancestors.
-            if self.trainer.params.ancestor_function == 'lstm':
-                out_dim = (self.trainer.params.ancestor_lstm_out_dim or
-                    self.ancestor_dim)
-                self.ancestor_lstm = torch.nn.LSTM(
-                    self.ancestor_dim,
-                    out_dim,
-                    **(self.trainer.params.ancestor_lstm_args or {})
+            ancestor_input_dim = 0
+            if self.trainer.params.tokenize_node_attrs:
+                ancestor_input_dim += self.word_embedding.out_dim
+            if self.trainer.params.ancestor_tag_dim is not None:
+                self.xpath_embedding = torch.nn.Embedding(
+                    len(self.html_tag.html_tag_ids) + 1,
+                    self.trainer.params.ancestor_tag_dim
                 )
-                if self.ancestor_lstm.bidirectional:
-                    out_dim *= 2
-                head_features += out_dim
-            elif self.trainer.params.ancestor_function == 'attention':
-                self.ancestor_attention = torch.nn.Linear(self.ancestor_dim, 1)
-                self.ancestor_softmax = torch.nn.Softmax(dim=-1)
-                head_features += self.ancestor_dim
-            else:
-                head_features += self.ancestor_dim
+                ancestor_input_dim += self.trainer.params.ancestor_tag_dim
+            ancestor_out_dim = self.trainer.params.ancestor_lstm_out_dim
+            self.ancestor_lstm = torch.nn.LSTM(
+                ancestor_input_dim,
+                ancestor_out_dim,
+                **(self.trainer.params.ancestor_lstm_args or {})
+            )
+            if self.ancestor_lstm.bidirectional:
+                ancestor_out_dim *= 2
+            head_features += ancestor_out_dim
 
         # Classification head
         num_labels = len(self.trainer.label_map.id_to_label) + 1
@@ -176,13 +151,33 @@ class Model(torch.nn.Module):
             lr=(self.lr or self.trainer.params.learning_rate)
         )
 
-    def get_node_features_slim(self,
-        batch: list[awe.data.graph.dom.Node],
-        attrs: bool = True
-    ):
-        """
-        Features used for a node, its ancestor chain, and its visual neighbors.
-        """
+    def get_node_attrs(self, batch: list[awe.data.graph.dom.Node]):
+        # Get attr tokens.
+        attr_tokens = self.word_ids.compute_attr([[n] for n in batch])
+
+        # Embed attr tokens.
+        embedded_attrs = self.word_embedding(attr_tokens.data)
+        embedded_attrs = self.dropout(embedded_attrs) # [*, word_dim]
+        packed_attrs = awe.model.lstm_utils.re_pack(
+            attr_tokens, embedded_attrs
+        )
+
+        # Run through LSTM.
+        lstm_output, (_, _) = self.attr_lstm(packed_attrs)
+        padded_attrs, _ = torch.nn.utils.rnn.pad_packed_sequence(lstm_output)
+            # [max_num_attrs, num_nodes, D * lstm_dim]
+
+        # Aggregate.
+        node_vectors = torch.mean(padded_attrs, dim=0)
+            # [num_nodes, D * lstm_dim]
+
+        node_vectors = self.dropout(node_vectors)
+
+        return node_vectors
+
+    def get_node_features(self, batch: list[awe.data.graph.dom.Node]):
+        """Features used for a node and its visual neighbors."""
+
         x = None
 
         # Embed HTML tag names.
@@ -191,21 +186,11 @@ class Model(torch.nn.Module):
             x = append(x, self.tag_embedding(tag_ids)) # [N, embedding_dim]
 
         # Tokenize node attributes.
-        if attrs and self.trainer.params.tokenize_node_attrs:
-            word_ids = self.word_ids.compute_attr(batch) # [N, num_words]
-            word_embeddings = self.word_embedding(word_ids)
-                # [N, num_words, word_dim]
-            attrs = torch.sum(word_embeddings, dim=1) # [N, word_dim]
-            x = append(x, attrs)
-
-        return x
-
-    def get_node_features(self, batch: list[awe.data.graph.dom.Node]):
-        """Features used for a node and its visual neighbors."""
-
-        x = self.get_node_features_slim(batch,
-            attrs=not self.trainer.params.tokenize_node_attrs_only_ancestors
-        )
+        if (
+            self.trainer.params.tokenize_node_attrs and
+            not self.trainer.params.tokenize_node_attrs_only_ancestors
+        ):
+            x = append(x, self.get_node_attrs(batch))
 
         # Add more node features.
         if self.position is not None:
@@ -299,25 +284,54 @@ class Model(torch.nn.Module):
         return torch.concat((node_features, neighborhood), dim=-1)
             # [N, 2 * node_features]
 
-    def get_xpath(self, batch: list[awe.data.graph.dom.Node]):
-        # Get features for each ancestor.
-        ancestor_html_tag_ids = torch.nn.utils.rnn.pack_sequence(
-            [
-                self.html_tag.compute(node.get_all_ancestors())
-                for node in batch
-            ],
-            enforce_sorted=False
-        )
+    def get_ancestor_chain(self, batch: list[awe.data.graph.dom.Node]):
+        # Get ancestor chain.
+        n_ancestors = self.trainer.params.n_ancestors
+        ancestors = [
+            (
+                node.get_ancestor_chain(n_ancestors) if n_ancestors is not None
+                else node.get_all_ancestors()
+            )
+            for node in batch
+        ] # [N, n_ancestors]
 
-        # Embed.
-        embedded_ancestors = self.xpath_embedding(ancestor_html_tag_ids.data)
-        embedded_ancestors = self.dropout(embedded_ancestors)
+        ancestor_tags = None
+        ancestor_tokens = None
+        ancestor_features = None # [*, tag_dim + word_dim]
+
+        if self.trainer.params.ancestor_tag_dim is not None:
+            # Get ancestor HTML tags.
+            ancestor_tags = torch.nn.utils.rnn.pack_sequence(
+                [
+                    self.html_tag.compute(chain)
+                    for chain in ancestors
+                ],
+                enforce_sorted=False
+            )
+
+            # Embed ancestor HTML tags.
+            embedded_tags = self.xpath_embedding(ancestor_tags.data)
+            embedded_tags = self.dropout(embedded_tags) # [*, tag_dim]
+
+            ancestor_features = append(ancestor_features, embedded_tags)
+
+        if self.trainer.params.tokenize_node_attrs:
+            # Get ancestor attr tokens.
+            ancestor_tokens = self.word_ids.compute_attr(ancestors)
+
+            # Embed ancestor tokens.
+            embedded_words = self.word_embedding(ancestor_tokens.data)
+            embedded_words = self.dropout(embedded_words) # [*, word_dim]
+
+            ancestor_features = append(ancestor_features, embedded_tags)
+
+        # Pack ancestor features together.
         packed_ancestors = awe.model.lstm_utils.re_pack(
-            ancestor_html_tag_ids, embedded_ancestors
+            ancestor_tags or ancestor_tokens, ancestor_features
         )
 
         # Run through LSTM.
-        lstm_output, (_, _) = self.xpath_lstm(packed_ancestors)
+        lstm_output, (_, _) = self.ancestor_lstm(packed_ancestors)
         padded_ancestors, _ = torch.nn.utils.rnn.pad_packed_sequence(lstm_output)
             # [max_num_ancestors, num_nodes, D * lstm_dim]
 
@@ -329,72 +343,12 @@ class Model(torch.nn.Module):
 
         return node_vectors
 
-    def get_ancestor_chain(self, batch: list[awe.data.graph.dom.Node]):
-        # Get features for each ancestor.
-        n_ancestors = self.trainer.params.n_ancestors
-        ancestors = [
-            ancestor
-            for node in batch
-            for ancestor in node.get_ancestor_chain(n_ancestors)
-        ] # [N * n_ancestors]
-        ancestor_features = self.get_node_features_slim(ancestors)
-            # [N * n_ancestors, slim_dim]
-
-        # Append distance of ancestors.
-        if self.ancestor_dist:
-            ancestor_distances = torch.arange(
-                n_ancestors, 0, -1,
-                device=self.trainer.device
-            ).expand((len(batch), n_ancestors)).flatten() # [N * n_ancestors]
-            ancestor_distances = ancestor_distances.reshape((-1, 1))
-                # [N * n_ancestors, 1]
-            ancestor_features = torch.concat(
-                (ancestor_distances, ancestor_features),
-                dim=-1
-            ) # [N * n_ancestors, slim_dim + 1]
-
-        # Summarize ancestor features.
-        if self.trainer.params.ancestor_summarize:
-            ancestor_features = self.ancestor_layer(ancestor_features)
-                # [N * n_ancestors, anc_dim]
-            ancestor_features = self.dropout(ancestor_features)
-            ancestor_features: torch.Tensor
-
-        # Split ancestors according to the node they correspond to.
-        ancestor_features = ancestor_features.reshape(
-            (len(batch), n_ancestors, -1)) # [N, n_ancestors, anc_dim]
-        ancestor_features = ancestor_features.transpose(0, 1)
-            # [n_ancestors, N, anc_dim]
-
-        # Aggregate ancestor chains.
-        if self.trainer.params.ancestor_function == 'lstm':
-            # Use LSTM.
-            ancestor_chains, _ = self.ancestor_lstm(ancestor_features)
-                # [n_ancestors, N, D * anc_out_dim]
-
-            # Aggregate across ancestors.
-            ancestor_chains = torch.mean(ancestor_chains, dim=0)
-                # [N, D * anc_out_dim]
-
-            ancestor_chains = self.dropout(ancestor_chains)
-        else:
-            # Use simple aggregation function (sum or mean).
-            f = getattr(torch, self.trainer.params.ancestor_function)
-            ancestor_chains = f(ancestor_features, dim=0)
-                # [N, anc_dim]
-
-        return ancestor_chains
-
     def forward(self, batch: list[awe.data.graph.dom.Node]) -> ModelOutput:
         # Propagate visual neighbors.
         if self.trainer.params.visual_neighbors:
             x = self.propagate_visual_neighbors(batch)
         else:
             x = self.get_node_features(batch)
-
-        # Append XPath
-        if self.trainer.params.xpath:
-            x = append(x, self.get_xpath(batch))
 
         # Append ancestor chain.
         if self.trainer.params.ancestor_chain:

@@ -88,18 +88,13 @@ class Params:
     neighbor_distance: VisualNeighborDistance = VisualNeighborDistance.rect
     neighbor_normalize: Optional[AttentionNormalization] = AttentionNormalization.softmax
 
-    # XPath
-    xpath: bool = False
-
     # Ancestor chain
     ancestor_chain: bool = False
-    n_ancestors: int = 5
-    ancestor_function: Optional[str] = 'lstm' # 'lstm', 'attention', 'sum', 'mean'
-    ancestor_lstm_out_dim: Optional[int] = None
+    n_ancestors: Optional[int] = 5
+    """`None` to use all ancestors."""
+    ancestor_lstm_out_dim: int = 10
     ancestor_lstm_args: Optional[dict[str]] = None
-    ancestor_summarize: bool = False
-    ancestor_dim: Optional[int] = None
-    ancestor_normalize: Optional[AttentionNormalization] = AttentionNormalization.softmax
+    ancestor_tag_dim: Optional[int] = 30
 
     # Word vectors
     tokenizer_family: TokenizerFamily = TokenizerFamily.custom
@@ -107,8 +102,12 @@ class Params:
     tokenizer_fast: bool = True
     freeze_word_embeddings: bool = True
     pretrained_word_embeddings: bool = True
+
+    # HTML attributes
     tokenize_node_attrs: list[str] = () # 'itemprop', 'id', 'name', 'class'
     tokenize_node_attrs_only_ancestors: bool = True
+    attr_lstm_out_dim: int = 10
+    attr_lstm_args: Optional[dict[str]] = None
 
     # LSTM
     word_vector_function: Optional[str] = 'sum' # 'lstm', 'sum', 'mean'
