@@ -142,7 +142,14 @@ class Trainer:
         set_seed(42)
 
         # Create device (some features need it when preparing tensors).
-        use_gpu = self.params.use_gpu and torch.cuda.is_available()
+        if self.params.use_gpu:
+            if torch.cuda.is_available():
+                use_gpu = True
+            else:
+                warnings.warn('GPU not available, falling back to CPU.')
+                use_gpu = False
+        else:
+            use_gpu = False
         self.device = torch.device('cuda:0' if use_gpu else 'cpu')
 
         self.label_map = awe.training.context.LabelMap()
