@@ -80,14 +80,9 @@ jq -c . < data/params.json
 
 #### Upload pre-trained model
 
-1. Ensure some params are disabled in `params.json`:
+1. Add `description` and `examples` to `info.json`
 
-   - `validate_data: false`
-   - `classify_only_variable_nodes: false`
-
-2. Add `description` and `examples` to `info.json`
-
-3. Create release on GitHub (at the code the model was trained with).
+2. Create release on GitHub (at the code the model was trained with).
 
 3. Pack and upload the checkpoint.
 
