@@ -31,36 +31,32 @@ class Visuals(awe.features.feature.Feature):
     def get_pickled_keys(self):
         return ('extraction',)
 
-    @property
-    def labels(self):
-        return [
-            l
-            for a in self.visual_attributes
-            for l in a.get_labels()
-        ]
-
     def prepare(self, node: awe.data.graph.dom.Node, train: bool):
-        out_dim = len(self._compute(node, freezed=not train))
-        if self.out_dim is None:
-            self.out_dim = out_dim
-        elif self.out_dim != out_dim:
-            raise RuntimeError('Unexpected different visuals out dim ' +
-                f'({self.out_dim} -> {out_dim}).')
+        if train:
+            for a in self.visual_attributes:
+                a.prepare(awe.data.visual.attribute.AttributeContext(
+                    node=node,
+                    extraction=self.extraction,
+                ))
 
     def freeze(self):
         self.extraction.freeze()
+        self.out_dim = sum(
+            a.get_out_dim(self.extraction)
+            for a in self.visual_attributes
+        )
 
     def compute(self, batch: list[awe.data.graph.dom.Node]):
         return torch.tensor(
             [
-                self._compute(node, freezed=True)
+                self._compute_one(node)
                 for node in batch
             ],
             dtype=torch.float32,
             device=self.trainer.device,
         )
 
-    def _compute(self, node: awe.data.graph.dom.Node, freezed: bool):
+    def _compute_one(self, node: awe.data.graph.dom.Node):
         # Text fragments don't have visuals, but inherit them from their parents.
         if node.is_text:
             node = node.parent
@@ -68,12 +64,8 @@ class Visuals(awe.features.feature.Feature):
         return [
             f
             for a in self.visual_attributes
-            for f in a.select(
-                awe.data.visual.attribute.AttributeContext(
-                    attribute=a,
-                    node=node,
-                    extraction=self.extraction,
-                    freezed=freezed,
-                )
-            )
+            for f in a.compute(awe.data.visual.attribute.AttributeContext(
+                node=node,
+                extraction=self.extraction,
+            ))
         ]

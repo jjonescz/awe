@@ -33,44 +33,28 @@ def parse_border(values: dict[str, str], default: str):
     return [values.get(side, default) for side in BORDER_SIDES]
 
 @dataclasses.dataclass
-class AttributeContext(Generic[T]):
+class AttributeContext:
     """Everything needed to compute feature from `VisualAttribute` of a node."""
 
-    attribute: 'VisualAttribute[T]'
     node: awe.data.graph.dom.Node
     extraction: awe.data.visual.context.Extraction
-    freezed: bool
 
-    @property
-    def value(self) -> T:
-        return self.node.visuals.get(self.attribute.name)
+    def get_value(self, attr: 'VisualAttribute[T]') -> T:
+        return self.node.visuals.get(attr.name)
 
-    @value.setter
-    def value(self, v: T):
-        self.node.visuals[self.attribute.name] = v
+    def set_value(self, attr: 'VisualAttribute[T]', v: T):
+        self.node.visuals[attr.name] = v
 
-def categorical(c: AttributeContext[str]):
-    if c.freezed:
-        i = c.extraction.categorical[c.attribute.name].get(c.value)
-        if i is None:
-            return [0]
-    else:
-        i = c.extraction.categorical[c.attribute.name][c.value]
-        i.count += 1
-    return [i.unique_id]
+def select_color(v: awe.data.visual.structs.Color):
+    return [v.hue, v.brightness / 255, v.alpha / 255]
 
-def select_color(c: AttributeContext[awe.data.visual.structs.Color]):
-    return [c.value.hue, c.value.brightness / 255, c.value.alpha / 255]
+def select_image(v: str):
+    return 'url' if v.startswith('url') else v
 
-def select_image(c: AttributeContext[str]):
-    c.value = 'url' if c.value.startswith('url') else c.value
-    return categorical(c)
+def select_decoration(v: str):
+    return v.split(maxsplit=1)[0]
 
-def select_decoration(c: AttributeContext[str]):
-    c.value = c.value.split(maxsplit=1)[0]
-    return categorical(c)
-
-def select_border(c: AttributeContext[list[str]]):
+def select_border(v: list[str]):
     def get_pixels(token: str):
         if token == 'none':
             return 0
@@ -78,17 +62,13 @@ def select_border(c: AttributeContext[list[str]]):
             return float(token[:-2])
         raise RuntimeError(f'Cannot parse pixels from "{token}".')
 
-    return [get_pixels(v.split(maxsplit=1)[0]) for v in c.value]
+    return [get_pixels(s.split(maxsplit=1)[0]) for s in v]
 
-def select_shadow(c: AttributeContext[str]):
-    if c.value.startswith('rgb'):
-        c.value = 'rgb'
-    return categorical(c)
+def select_shadow(v: str):
+    return 'rgb' if v.startswith('rgb') else v
 
-def select_z_index(c: AttributeContext[str]):
-    if c.value.isdecimal():
-        c.value = 'number'
-    return categorical(c)
+def select_z_index(v: str):
+    return 'number' if v.isdecimal() else v
 
 COLOR = {
     'selector': select_color,
@@ -107,9 +87,9 @@ class VisualAttribute(Generic[T, TInput]):
     name: str
     """Name in snake_case."""
 
-    selector: Optional[Callable[[AttributeContext[T]], list[float]]] = \
+    selector: Optional[Callable[[T], list[float]]] = \
         dataclasses.field(default=None, repr=False)
-    """Converts attribute to feature vector."""
+    """Converts Python value to feature vector."""
 
     parser: Callable[[TInput], T] = dataclasses.field(default=lambda x: x, repr=False)
     """Used when converting from JSON value to Python value."""
@@ -127,7 +107,7 @@ class VisualAttribute(Generic[T, TInput]):
     labels: Optional[list[str]] = dataclasses.field(default=None)
     """Column labels of the resulting feature vector."""
 
-    default: Union[T, Callable[[awe.data.graph.dom.Node], T]] = \
+    default: Union[TInput, Callable[[awe.data.graph.dom.Node], TInput]] = \
         dataclasses.field(default=None, repr=False)
     """Default JSON value if DOM data are missing this attribute."""
 
@@ -135,15 +115,10 @@ class VisualAttribute(Generic[T, TInput]):
     def camel_case_name(self):
         awe.utils.to_camel_case(self.name)
 
-    def get_default(self, node: awe.data.graph.dom.Node) -> T:
+    def get_default(self, node: awe.data.graph.dom.Node) -> TInput:
         if callable(self.default):
             return self.default(node)
         return self.default
-
-    def get_labels(self):
-        if self.labels is not None:
-            return [f'{self.name}_{l}' for l in self.labels]
-        return [self.name]
 
     def parse(self, value: TInput, node_data: dict[str, Any]):
         if self.complex_parser is None:
@@ -166,29 +141,67 @@ class VisualAttribute(Generic[T, TInput]):
     def _simple_parse(self, value: TInput):
         return self.parser(self._check_value(value))
 
-    def select(self, c: AttributeContext[T]):
+    def prepare(self, c: AttributeContext):
+        """Prepares feature during training."""
+
+    # pylint: disable-next=unused-argument
+    def get_out_dim(self, extraction: awe.data.visual.context.Extraction):
+        if self.complex_parser is not None:
+            raise ValueError(
+                'Unable to determine dimension of an attribute with ' +
+                f'a complex parser ({self.name!r}).')
+        if callable(self.default):
+            if self.selector is not None:
+                raise ValueError(
+                    'Unable to determine dimension of an attribute with ' +
+                    'a custom selector and dynamic default value ' +
+                    f'({self.name!r}).')
+            return 1
+        return len(self._select(self._simple_parse(self.default)))
+
+    def compute(self, c: AttributeContext):
+        """Computes feature after all training data have been prepared."""
+        return self._select(c.get_value(self))
+
+    def _select(self, v: T) -> list[float]:
         if self.selector is None:
-            return [c.value]
-        return self.selector(c)
+            return [v]
+        return self.selector(v)
+
+class CategoricalAttribute(VisualAttribute):
+    def prepare(self, c: AttributeContext):
+        i = c.extraction.categorical[self.name][c.get_value(self)]
+        i.count += 1
+
+    def get_out_dim(self, extraction: awe.data.visual.context.Extraction):
+        return len(extraction.categorical[self.name])
+
+    def compute(self, c: AttributeContext):
+        d = c.extraction.categorical[self.name]
+        i = d.get(c.get_value(self))
+        r = [0] * len(d)
+        if i is not None:
+            r[i.unique_id] = 1
+        return r
 
 _VISUAL_ATTRIBUTES: list[VisualAttribute[Any, Any]] = [
-    VisualAttribute('font_family', categorical, parse_font_family,
+    CategoricalAttribute('font_family', parser=parse_font_family,
         default='"Times New Roman"'),
-    VisualAttribute('font_size', lambda c: [c.value or 0],
+    VisualAttribute('font_size', lambda v: [v or 0],
         load_types=(float, int), default=16),
         # In pixels.
-    VisualAttribute('font_weight', lambda c: [c.value / 100],
+    VisualAttribute('font_weight', lambda v: [v / 100],
         parser=float, default='400'),
         # In font weight units divided by 100. E.g., "normal" is 4.
-    VisualAttribute('font_style', categorical, default='normal'),
-    VisualAttribute('text_decoration', select_decoration, default='none'),
-    VisualAttribute('text_align', categorical, parse_prefixed, default='start'),
+    CategoricalAttribute('font_style', default='normal'),
+    CategoricalAttribute('text_decoration', select_decoration, default='none'),
+    CategoricalAttribute('text_align', parser=parse_prefixed, default='start'),
     VisualAttribute('color', **COLOR, default='#000000ff'),
     VisualAttribute('background_color', **COLOR, default='#00000000'),
-    VisualAttribute('background_image', select_image, default='none'),
+    CategoricalAttribute('background_image', select_image, default='none'),
     VisualAttribute('border', **BORDER, default='none'),
-    VisualAttribute('box_shadow', select_shadow, default='none'),
-    VisualAttribute('cursor', categorical, default='auto'),
+    CategoricalAttribute('box_shadow', select_shadow, default='none'),
+    CategoricalAttribute('cursor', default='auto'),
     VisualAttribute('letter_spacing', load_types=(float, int), default=0),
         # In pixels.
     VisualAttribute('line_height', load_types=(float, int),
@@ -197,12 +210,12 @@ _VISUAL_ATTRIBUTES: list[VisualAttribute[Any, Any]] = [
     VisualAttribute('opacity', load_types=(str, int), parser=float, default=1),
         # 0 = transparent, 1 = opaque.
     VisualAttribute('outline', **BORDER, default='none'),
-    VisualAttribute('overflow', categorical, default='auto'),
-    VisualAttribute('pointer_events', categorical, default='auto'),
-    VisualAttribute('text_shadow', select_shadow, default='none'),
-    VisualAttribute('text_overflow', categorical, default='clip'),
-    VisualAttribute('text_transform', categorical, default='none'),
-    VisualAttribute('z_index', select_z_index, default='auto'),
+    CategoricalAttribute('overflow', default='auto'),
+    CategoricalAttribute('pointer_events', default='auto'),
+    CategoricalAttribute('text_shadow', select_shadow, default='none'),
+    CategoricalAttribute('text_overflow', default='clip'),
+    CategoricalAttribute('text_transform', default='none'),
+    CategoricalAttribute('z_index', select_z_index, default='auto'),
 ]
 
 VISUAL_ATTRIBUTES = {
