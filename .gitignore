@@ -17,3 +17,7 @@ __pycache__/
 
 # PyTorch machine learning. See `LOG_DIR` in `gym.py`.
 /logs
+
+# Node.js
+node_modules/
+.pnpm-store/
