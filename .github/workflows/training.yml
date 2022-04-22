@@ -64,7 +64,7 @@ jobs:
               gdrive download query "trashed = false and '${GDRIVE_SWDE_FOLDER}' in parents"
               for f in *.zip; do unzip $f; rm $f; done
             )
-          elif [ $DATASET = 'apify']
+          elif [ $DATASET = 'apify' ]
           then echo "Downloading Apify dataset..."
             (
               mkdir -p data/apify
