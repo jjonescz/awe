@@ -32,7 +32,7 @@ class Visuals(awe.features.feature.Feature):
         return ('extraction',)
 
     def prepare(self, node: awe.data.graph.dom.Node, train: bool):
-        if train:
+        if train and node.needs_visuals:
             for a in self.visual_attributes:
                 a.prepare(awe.data.visual.attribute.AttributeContext(
                     node=node,
