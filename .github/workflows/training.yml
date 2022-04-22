@@ -19,7 +19,9 @@ on:
       command:
         description: "Training command"
         required: false
-        default: "awe.training.crossval"
+        default: >
+          python -m awe.training.crossval
+          && python -m awe.training.crossval_mean 1
       params:
         description: "JSON with training params"
         required: true
@@ -92,7 +94,7 @@ jobs:
         run: |
           docker run --rm -i -v "$(pwd):/storage/awe/src" \
             ${{ github.event.inputs.image }} \
-            python -m ${{ github.event.inputs.command }}
+            bash -c "${{ github.event.inputs.command }}"
 
       - name: Upload logs
         if: always()
