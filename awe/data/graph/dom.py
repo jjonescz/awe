@@ -1,7 +1,8 @@
 import collections
 import dataclasses
-from typing import TYPE_CHECKING, Any, Optional
+import math
 import warnings
+from typing import TYPE_CHECKING, Any, Optional
 
 import numpy as np
 import sklearn.neighbors
@@ -476,7 +477,12 @@ class VisualNeighbor:
 
         root_box = self.neighbor.dom.root.box
         return (
-            self.distance_x / root_box.width,
-            self.distance_y / root_box.width,
-            self.distance / root_box.width
+            _safe_log(self.distance_x / root_box.width),
+            _safe_log(self.distance_y / root_box.width),
+            _safe_log(self.distance / root_box.width)
         )
+
+def _safe_log(x: float):
+    if x > 0:
+        return math.log(x)
+    return 0
