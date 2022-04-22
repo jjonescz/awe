@@ -5,6 +5,7 @@ specifiers:
   '@oclif/errors': 1.3.5
   '@types/cli-progress': 3.9.2
   '@types/express': 4.17.13
+  '@types/natural-compare-lite': 1.4.0
   '@types/node': 16.11.6
   cheerio: 1.0.0-rc.10
   cli-progress: 3.9.1
@@ -13,6 +14,7 @@ specifiers:
   fast-glob: 3.2.7
   generic-pool: 3.8.2
   html-template-tag: 4.0.0
+  natural-compare-lite: 1.4.0
   puppeteer-core: 11.0.0
   python-shell: 3.0.1
   rxjs: 7.4.0
@@ -30,6 +32,7 @@ dependencies:
   fast-glob: 3.2.7
   generic-pool: 3.8.2
   html-template-tag: 4.0.0
+  natural-compare-lite: 1.4.0
   puppeteer-core: 11.0.0
   python-shell: 3.0.1
   rxjs: 7.4.0
@@ -38,6 +41,7 @@ dependencies:
 devDependencies:
   '@types/cli-progress': 3.9.2
   '@types/express': 4.17.13
+  '@types/natural-compare-lite': 1.4.0
   '@types/node': 16.11.6
   ts-node: 10.4.0_0cb88d80cb04d25b21fa3ec194608c65
   typescript: 4.4.4
@@ -210,6 +214,10 @@ packages:
 
   /@types/mime/1.3.2:
     resolution: {integrity: sha512-YATxVxgRqNH6nHEIsvg6k2Boc1JHI9ZbH5iWFFv/MTkchz3b1ieGDa5T0a9RznNdI0KhVbdbWSN+KWWrQZRxTw==}
+    dev: true
+
+  /@types/natural-compare-lite/1.4.0:
+    resolution: {integrity: sha512-ZDcj/yWsRPacqKPpCExWWFq9X1JQwEOfHsu8deN1Qfa6M02z6tN4DK6AMf2IkM7709gp3QW6Bo7m2NFDhA485w==}
     dev: true
 
   /@types/node/16.11.6:
@@ -1096,6 +1104,10 @@ packages:
 
   /ms/2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
+    dev: false
+
+  /natural-compare-lite/1.4.0:
+    resolution: {integrity: sha1-F7CVgZiJef3a/gIB6TG6kzyWy7Q=}
     dev: false
 
   /negotiator/0.6.3:
