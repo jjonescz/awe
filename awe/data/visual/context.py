@@ -1,5 +1,6 @@
 import collections
 import dataclasses
+from typing import Callable
 
 @dataclasses.dataclass
 class CategoryInfo:
@@ -22,6 +23,15 @@ def categorical_dict() -> dict[str, CategoryInfo]:
     d.default_factory = lambda: CategoryInfo(len(d) + 1, 0)
     return d
 
+def update_values(
+    name: str,
+    values: list[float],
+    d: dict[str, list[float]],
+    f: Callable[[float, float], float]
+):
+    d_values = d.setdefault(name, values)
+    d[name] = [f(a, b) for a, b in zip(d_values, values)]
+
 class Extraction:
     """Shared context for visual feature extraction."""
 
@@ -32,8 +42,22 @@ class Extraction:
     info).
     """
 
+    min_values: dict[str, list[float]]
+    max_values: dict[str, list[float]]
+
     def __init__(self):
         self.categorical = collections.defaultdict(categorical_dict)
+        self.min_values = {}
+        self.max_values = {}
+
+    def update_values(self, name: str, values: list[float]):
+        update_values(name, values, self.min_values, min)
+        update_values(name, values, self.max_values, max)
+
+    def describe(self):
+        return self.describe_categorical() | self.describe_min_max() | {
+            'total_categorical': self.total_categorical_count()
+        }
 
     def describe_categorical(self):
         return {
@@ -52,6 +76,12 @@ class Extraction:
             for c in self.categorical.values()
             for i in c.values()
         )
+
+    def describe_min_max(self):
+        return {
+            k: [self.min_values.get(k), self.max_values.get(k)]
+            for k in self.min_values.keys() | self.max_values.keys()
+        }
 
     def freeze(self):
         # Needed to pickle this object.

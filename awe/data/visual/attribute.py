@@ -161,12 +161,15 @@ class VisualAttribute(Generic[T, TInput]):
 
     def compute(self, c: AttributeContext) -> list[float]:
         """Computes feature after all training data have been prepared."""
-        return self._select(c.get_value(self))
+        return self.select(c)
 
     def _select(self, v: T):
         if self.selector is None:
             return [v]
         return self.selector(v)
+
+    def select(self, c: AttributeContext):
+        return self._select(c.get_value(self))
 
 class CategoricalAttribute(VisualAttribute):
     def select(self, c: AttributeContext):
@@ -190,13 +193,26 @@ class CategoricalAttribute(VisualAttribute):
             r[i.unique_id - 1] = 1
         return r
 
+class MinMaxAttribute(VisualAttribute):
+    def prepare(self, c: AttributeContext):
+        values = self.select(c)
+        c.extraction.update_values(self.name, values)
+
+    def compute(self, c: AttributeContext):
+        values = self.select(c)
+        min_values = c.extraction.min_values[self.name]
+        max_values = c.extraction.max_values[self.name]
+        return [
+            (val - min_val) / (max_val - min_val)
+            for val, min_val, max_val in zip(values, min_values, max_values)
+        ]
+
 _VISUAL_ATTRIBUTES: list[VisualAttribute[Any, Any]] = [
     CategoricalAttribute('font_family', parser=parse_font_family,
         default='"Times New Roman"'),
-    VisualAttribute('font_size', lambda v: [v or 0],
-        load_types=(float, int), default=16),
+    MinMaxAttribute('font_size', load_types=(float, int), default=16),
         # In pixels.
-    VisualAttribute('font_weight', lambda v: [v / 100],
+    MinMaxAttribute('font_weight', lambda v: [v / 100],
         parser=float, default='400'),
         # In font weight units divided by 100. E.g., "normal" is 4.
     CategoricalAttribute('font_style', default='normal'),
@@ -205,17 +221,17 @@ _VISUAL_ATTRIBUTES: list[VisualAttribute[Any, Any]] = [
     VisualAttribute('color', **COLOR, default='#000000ff'),
     VisualAttribute('background_color', **COLOR, default='#00000000'),
     CategoricalAttribute('background_image', select_image, default='none'),
-    VisualAttribute('border', **BORDER, default='none'),
+    MinMaxAttribute('border', **BORDER, default='none'),
     CategoricalAttribute('box_shadow', select_shadow, default='none'),
     CategoricalAttribute('cursor', default='auto'),
-    VisualAttribute('letter_spacing', load_types=(float, int), default=0),
+    MinMaxAttribute('letter_spacing', load_types=(float, int), default=0),
         # In pixels.
-    VisualAttribute('line_height', load_types=(float, int),
+    MinMaxAttribute('line_height', load_types=(float, int),
         default=lambda n: n.visuals['font_size'] * 1.2),
         # In pixels.
     VisualAttribute('opacity', load_types=(str, int), parser=float, default=1),
         # 0 = transparent, 1 = opaque.
-    VisualAttribute('outline', **BORDER, default='none'),
+    MinMaxAttribute('outline', **BORDER, default='none'),
     CategoricalAttribute('overflow', default='auto'),
     CategoricalAttribute('pointer_events', default='auto'),
     CategoricalAttribute('text_shadow', select_shadow, default='none'),

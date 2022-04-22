@@ -298,9 +298,7 @@ class Trainer:
         visuals = self.extractor.get_feature(awe.features.visual.Visuals)
         if visuals is None:
             return None
-        return visuals.extraction.describe_categorical() | {
-            '_total': visuals.extraction.total_categorical_count()
-        }
+        return visuals.extraction.describe()
 
     def create_model(self):
         set_seed(42)
