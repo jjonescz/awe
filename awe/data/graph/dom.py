@@ -469,3 +469,14 @@ class VisualNeighbor:
             distance_y=neighbor_center[1] - node_center[1],
             neighbor=neighbor
         )
+
+    def get_visual_distance(self, normalize: bool):
+        if not normalize:
+            return (self.distance_x, self.distance_y, self.distance)
+
+        root_box = self.neighbor.dom.root.box
+        return (
+            self.distance_x / root_box.width,
+            self.distance_y / root_box.width,
+            self.distance / root_box.width
+        )

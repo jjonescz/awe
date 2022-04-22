@@ -87,6 +87,7 @@ class Params:
     n_neighbors: int = 4
     neighbor_distance: VisualNeighborDistance = VisualNeighborDistance.rect
     neighbor_normalize: Optional[AttentionNormalization] = AttentionNormalization.softmax
+    normalize_distance: bool = False
 
     # Ancestor chain
     ancestor_chain: bool = False

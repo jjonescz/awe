@@ -249,7 +249,9 @@ class Model(torch.nn.Module):
             # [n_neighbors * N, node_features]
         distances = torch.tensor(
             [
-                (v.distance_x, v.distance_y, v.distance)
+                v.get_visual_distance(
+                    normalize=self.trainer.params.normalize_distance
+                )
                 for v in neighbors
             ],
             dtype=torch.float32,
