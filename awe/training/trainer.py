@@ -24,6 +24,7 @@ import awe.data.set.pages
 import awe.data.set.swde
 import awe.features.extraction
 import awe.features.text
+import awe.features.visual
 import awe.model.classifier
 import awe.model.decoding
 import awe.model.eval
@@ -292,6 +293,14 @@ class Trainer:
             for node in nodes
             if node.label_keys
         )
+
+    def explore_visuals(self):
+        visuals = self.extractor.get_feature(awe.features.visual.Visuals)
+        if visuals is None:
+            return None
+        return visuals.extraction.describe_categorical() | {
+            '_total': visuals.extraction.total_categorical_count()
+        }
 
     def create_model(self):
         set_seed(42)
