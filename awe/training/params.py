@@ -112,8 +112,6 @@ class Params:
     # HTML attributes
     tokenize_node_attrs: list[str] = () # 'itemprop', 'id', 'name', 'class'
     tokenize_node_attrs_only_ancestors: bool = True
-    attr_lstm_out_dim: int = 10
-    attr_lstm_args: Optional[dict[str]] = None
 
     # LSTM
     word_vector_function: Optional[str] = 'sum' # 'lstm', 'sum', 'mean'

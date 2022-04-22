@@ -104,7 +104,7 @@ class WordIdentifiers(awe.features.feature.Feature):
         self.glove = awe.data.glove.LazyEmbeddings.get_or_create()
         self.node_token_ids = {}
         self.node_attr_token_ids = {}
-        self.default_token_ids = torch.zeros(0,
+        self.default_token_ids = torch.tensor([0],
             dtype=torch.int32,
             device=self.trainer.device
         )
@@ -177,20 +177,11 @@ class WordIdentifiers(awe.features.feature.Feature):
             enforce_sorted=False
         )
 
-    def compute_attr(self, batch: list[list[awe.data.graph.dom.Node]]):
+    def compute_attr(self, batch: list[awe.data.graph.dom.Node]):
         return torch.nn.utils.rnn.pack_sequence(
             [
-                torch.tensor(
-                    [
-                        token_id
-                        for node in row
-                        if (token_ids := self.node_attr_token_ids.get(node))
-                        for token_id in token_ids
-                    ] or [0],
-                    dtype=torch.int32,
-                    device=self.trainer.device,
-                )
-                for row in batch
+                self.node_attr_token_ids.get(node) or self.default_token_ids
+                for node in batch
             ],
             enforce_sorted=False
         )

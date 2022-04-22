@@ -69,15 +69,7 @@ class Model(torch.nn.Module):
             self.trainer.params.tokenize_node_attrs and
             not self.trainer.params.tokenize_node_attrs_only_ancestors
         ):
-            attr_out_dim = self.trainer.params.attr_lstm_out_dim
-            self.attr_lstm = torch.nn.LSTM(
-                self.word_embedding.out_dim,
-                attr_out_dim,
-                **(self.trainer.params.attr_lstm_args or {})
-            )
-            if self.attr_lstm.bidirectional:
-                attr_out_dim *= 2
-            node_feature_dim += attr_out_dim
+            node_feature_dim += self.word_embedding.out_dim
 
         # Node position
         self.position = self.trainer.extractor.get_feature(awe.features.dom.Position)
@@ -171,25 +163,25 @@ class Model(torch.nn.Module):
 
     def get_node_attrs(self, batch: list[awe.data.graph.dom.Node]):
         # Get attr tokens.
-        attr_tokens = self.word_ids.compute_attr([[n] for n in batch])
+        attr_tokens = self.word_ids.compute_attr(batch)
 
         # Embed attr tokens.
         embedded_attrs = self.word_embedding(attr_tokens.data)
         embedded_attrs = self.dropout(embedded_attrs) # [*, word_dim]
+
+        # Pad.
         packed_attrs = awe.model.lstm_utils.re_pack(
             attr_tokens, embedded_attrs
         )
-
-        # Run through LSTM.
-        lstm_output, (_, _) = self.attr_lstm(packed_attrs)
-        padded_attrs, _ = torch.nn.utils.rnn.pad_packed_sequence(lstm_output)
-            # [max_num_attrs, num_nodes, D * lstm_dim]
+        padded_attrs, _ = torch.nn.utils.rnn.pad_packed_sequence(packed_attrs)
+            # [max_num_attrs, num_nodes, word_dim]
 
         # Aggregate.
         node_vectors = torch.mean(padded_attrs, dim=0)
-            # [num_nodes, D * lstm_dim]
+            # [num_nodes, word_dim]
 
         node_vectors = self.dropout(node_vectors)
+        node_vectors: torch.Tensor
 
         return node_vectors
 
@@ -343,7 +335,7 @@ class Model(torch.nn.Module):
         ] # [N, n_ancestors]
 
         ancestor_tags = None
-        ancestor_tokens = None
+        ancestor_attrs = None
         ancestor_features = None # [*, tag_dim + word_dim]
 
         if self.trainer.params.ancestor_tag_dim is not None:
@@ -363,18 +355,20 @@ class Model(torch.nn.Module):
             ancestor_features = append(ancestor_features, embedded_tags)
 
         if self.trainer.params.tokenize_node_attrs:
-            # Get ancestor attr tokens.
-            ancestor_tokens = self.word_ids.compute_attr(ancestors)
+            # Get ancestor attribute word vectors (mean-aggregated per node).
+            ancestor_attrs = torch.nn.utils.rnn.pack_sequence(
+                [
+                    self.get_node_attrs(chain) # [chain_len, word_dim]
+                    for chain in ancestors
+                ],
+                enforce_sorted=False
+            )
 
-            # Embed ancestor tokens.
-            embedded_words = self.word_embedding(ancestor_tokens.data)
-            embedded_words = self.dropout(embedded_words) # [*, word_dim]
-
-            ancestor_features = append(ancestor_features, embedded_tags)
+            ancestor_features = append(ancestor_features, ancestor_attrs.data)
 
         # Pack ancestor features together.
         packed_ancestors = awe.model.lstm_utils.re_pack(
-            ancestor_tags or ancestor_tokens, ancestor_features
+            ancestor_tags or ancestor_attrs, ancestor_features
         )
 
         # Run through LSTM.
