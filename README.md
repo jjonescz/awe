@@ -70,6 +70,12 @@ and compute mean across all cross-validation runs:
 python -m awe.training.crossval_mean <first_version_num>
 ```
 
+To train using GitHub Action, minify params using:
+
+```bash
+jq -c . < data/params.json
+```
+
 ### Release
 
 #### Upload pre-trained model

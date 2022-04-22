@@ -19,7 +19,7 @@ on:
       command:
         description: "Training command"
         required: false
-        default: "awe.training.training"
+        default: "awe.training.crossval"
       params:
         description: "JSON with training params"
         required: true
