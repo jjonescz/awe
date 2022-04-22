@@ -159,18 +159,24 @@ class VisualAttribute(Generic[T, TInput]):
             return 1
         return len(self._select(self._simple_parse(self.default)))
 
-    def compute(self, c: AttributeContext):
+    def compute(self, c: AttributeContext) -> list[float]:
         """Computes feature after all training data have been prepared."""
         return self._select(c.get_value(self))
 
-    def _select(self, v: T) -> list[float]:
+    def _select(self, v: T):
         if self.selector is None:
             return [v]
         return self.selector(v)
 
 class CategoricalAttribute(VisualAttribute):
+    def select(self, c: AttributeContext):
+        v = c.get_value(self)
+        if self.selector is None:
+            return v
+        return self.selector(v)
+
     def prepare(self, c: AttributeContext):
-        i = c.extraction.categorical[self.name][c.get_value(self)]
+        i = c.extraction.categorical[self.name][self.select(c)]
         i.count += 1
 
     def get_out_dim(self, extraction: awe.data.visual.context.Extraction):
@@ -178,7 +184,7 @@ class CategoricalAttribute(VisualAttribute):
 
     def compute(self, c: AttributeContext):
         d = c.extraction.categorical[self.name]
-        i = d.get(c.get_value(self))
+        i = d.get(self.select(c))
         r = [0] * len(d)
         if i is not None:
             r[i.unique_id - 1] = 1
