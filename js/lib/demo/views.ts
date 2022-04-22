@@ -103,7 +103,13 @@ export function results(
         return h`
         <tr>
           <th>${r.labelKey}</th>
-          <td>${r.text}</td>
+          <td>
+            $${
+              r.url === undefined
+                ? h`${r.text}`
+                : h`<a href="${r.url}">${r.text ?? r.url}</a>`
+            }
+          </td>
           <td>${prob} % (${conf})</td>
         </tr>`;
       })

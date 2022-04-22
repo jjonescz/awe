@@ -329,6 +329,9 @@ class Node:
             return f'={self.text}'
         return f'<{self.html_tag}>'
 
+    def get_attribute(self, name: str, default = None):
+        return self.get_attributes().get(name, default)
+
     def get_xpath(self):
         return awe.data.html_utils.get_xpath(self.parsed)
 
