@@ -4,7 +4,11 @@ import dataclasses
 @dataclasses.dataclass
 class CategoryInfo:
     unique_id: int
-    """Unique ID of the category."""
+    """
+    Unique ID of the category.
+
+    Starts from 1, because 0 is reserved for the unknown category.
+    """
 
     count: int
     """How many times was this category used."""

@@ -181,7 +181,7 @@ class CategoricalAttribute(VisualAttribute):
         i = d.get(c.get_value(self))
         r = [0] * len(d)
         if i is not None:
-            r[i.unique_id] = 1
+            r[i.unique_id - 1] = 1
         return r
 
 _VISUAL_ATTRIBUTES: list[VisualAttribute[Any, Any]] = [
