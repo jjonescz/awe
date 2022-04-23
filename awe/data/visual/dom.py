@@ -91,7 +91,7 @@ class DomData:
             # Check `fill_one` was called on this entry.
             filled = node_data.pop('_filled', False)
             if not filled and tag_name != '':
-                raise RuntimeError('Unused visual attributes for ' + \
+                raise RuntimeError('Unused visual attributes for ' +
                     f'{get_xpath(tag_name, parent)!r} in {self.path!r}.')
 
             # Add children to queue.
@@ -145,7 +145,7 @@ class DomData:
                 result = parser(val, node_data)
             except ValueError as e:
                 d = default(node)
-                warnings.warn(f'Cannot parse {snake_case}={val!r} ' + \
+                warnings.warn(f'Cannot parse {snake_case}={val!r} ' +
                     f'using default={d!r} in {self.path!r}: {str(e)}')
                 node.dom.page.valid = False
                 result = parser(d, node_data)
@@ -169,7 +169,7 @@ class DomData:
             if current_data is None:
                 current_xpath = '/' + '/'.join(elements[:index + 1])
                 raise RuntimeError(
-                    f'Cannot find visual attributes for {current_xpath!r} ' + \
+                    f'Cannot find visual attributes for {current_xpath!r} ' +
                     f'while searching for {xpath!r} in {self.path!r}.')
         return current_data
 

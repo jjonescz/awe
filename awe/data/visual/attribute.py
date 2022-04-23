@@ -133,8 +133,8 @@ class VisualAttribute(Generic[T, TInput]):
 
     def _check_value(self, value: TInput):
         if not isinstance(value, self.load_types):
-            raise RuntimeError(f'Expected attribute "{self.name}" to be ' + \
-                f'loaded as {self.load_types} but found {type(value)} ' + \
+            raise RuntimeError(f'Expected attribute "{self.name}" to be ' +
+                f'loaded as {self.load_types} but found {type(value)} ' +
                 f'({repr(value)}).')
         return value
 

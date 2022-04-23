@@ -65,13 +65,13 @@ class Version:
             version = Version(1, name)
         elif latest_version.name == '' and name == '':
             # Overwrite empty version.
-            warnings.warn('Overwriting empty version ' + \
+            warnings.warn('Overwriting empty version ' +
                 f'({latest_version.version_dir_name!r}).')
             version = Version(latest_version.number, name)
         else:
             if latest_version.name == name:
                 raise RuntimeError(
-                    f'Last version {latest_version.version_dir_name!r} has ' + \
+                    f'Last version {latest_version.version_dir_name!r} has ' +
                     'unchanged name.')
 
             version = Version(latest_version.number + 1, name)

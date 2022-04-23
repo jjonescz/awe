@@ -392,7 +392,7 @@ class PageLabels(awe.data.set.labels.PageLabels):
             nodes = self.page.dom.tree.css(selector)
         except awe.data.parsing.Error as e:
             raise RuntimeError(
-                f'Invalid selector {selector!r} for {label_key=} ' + \
+                f'Invalid selector {selector!r} for {label_key=} ' +
                 f'({self.page.html_path!r}).') from e
 
         # Discard empty labeled nodes (if there are more than 1 labeled).

@@ -194,7 +194,7 @@ class Website(awe.data.set.pages.Website):
                 idx for idx in range(self.page_count)
                 if idx not in existing
             ]
-            warnings.warn('Some pages were not created for site ' + \
+            warnings.warn('Some pages were not created for site ' +
                 f'{self.dir_name} ({awe.utils.to_ranges(missing)}).')
 
     @property

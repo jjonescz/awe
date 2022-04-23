@@ -113,7 +113,7 @@ class Trainer:
         if prev_trainer is not None:
             difference = params.difference(prev_trainer.params)
             if difference:
-                warnings.warn('Params of previous trainer differ from ' + \
+                warnings.warn('Params of previous trainer differ from ' +
                     f'provided params ({difference}).')
             print('Loading previous trainer.')
             for key, value in vars(prev_trainer).items():
