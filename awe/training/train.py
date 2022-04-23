@@ -8,6 +8,7 @@ import awe.training.trainer
 def main():
     params = awe.training.params.Params.load_user(normalize=True)
     if params is None:
+        print('Revisit params and re-run.')
         return
     print(f'{params=}')
     trainer = awe.training.trainer.Trainer(params)

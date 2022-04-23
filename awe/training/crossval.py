@@ -15,6 +15,7 @@ def main():
         normalize=not args.print_max_index
     )
     if params is None:
+        print('Revisit params and re-run.')
         return
     if not args.print_max_index:
         print(f'{params=}')
