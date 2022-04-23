@@ -476,6 +476,9 @@ class NodeIdentity:
     page: 'awe.data.set.pages.Page'
     index_path: tuple[int]
 
+    def find_node(self):
+        return self.page.dom.root.find_by_index_path(self.index_path)
+
 @dataclasses.dataclass
 class VisualNeighbor:
     distance: float

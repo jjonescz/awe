@@ -4,11 +4,12 @@ import json
 import sys
 import traceback
 
+import awe.data.graph.pred
 import awe.data.parsing
 import awe.data.set.live
-import awe.training.versioning
 import awe.training.params
 import awe.training.trainer
+import awe.training.versioning
 
 
 def main():
@@ -48,19 +49,7 @@ def main():
             decoded = trainer.decode_raw(preds)
             response = [
                 {
-                    k: [
-                        {
-                            'text': (
-                                awe.data.parsing.normalize_node_text(p.node.text)
-                                if p.node.is_text else None
-                            ),
-                            'url': p.node.get_attribute('href'),
-                            'xpath': p.node.get_xpath(),
-                            'confidence': p.confidence,
-                            'probability': p.probability
-                        }
-                        for p in v
-                    ]
+                    k: [serialize_prediction(p) for p in v]
                     for k, v in d.items()
                 }
                 for d in decoded
@@ -69,6 +58,19 @@ def main():
             response = { 'error': traceback.format_exc() }
         json.dump(response, sys.stdout)
         print() # commit the message by sending a newline character
+
+def serialize_prediction(p: awe.data.graph.pred.NodePrediction):
+    node = p.node.find_node()
+    return {
+        'text': (
+            awe.data.parsing.normalize_node_text(node.text)
+            if node.is_text else None
+        ),
+        'url': node.get_attribute('href'),
+        'xpath': node.get_xpath(),
+        'confidence': p.confidence,
+        'probability': p.probability
+    }
 
 if __name__ == '__main__':
     main()
