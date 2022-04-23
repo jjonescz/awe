@@ -10,7 +10,6 @@ from typing import Callable, Optional
 
 import numpy as np
 import pandas as pd
-import pytorch_lightning as pl
 import torch
 import torch.utils.data
 import torch.utils.tensorboard
@@ -97,7 +96,6 @@ class Trainer:
     model: awe.model.classifier.Model
     version: awe.training.versioning.Version
     writer: Optional[torch.utils.tensorboard.SummaryWriter] = None
-    trainer: pl.Trainer
     optim: torch.optim.Optimizer
     train_progress: Optional[tqdm] = None
     val_progress: Optional[tqdm] = None
