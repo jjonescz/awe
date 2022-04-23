@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 import torch
 
 import awe.data.graph.dom
-import awe.features.context
 import awe.utils
 
 if TYPE_CHECKING:

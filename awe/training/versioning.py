@@ -4,8 +4,6 @@ import re
 import shutil
 import warnings
 
-from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
-
 import awe.utils
 
 LOG_DIR = os.environ.get('LOGDIR', 'logs')
@@ -156,13 +154,6 @@ class Version:
         print(f'Trashing {self.version_dir_path!r} -> {self.bak_dir_path!r}.')
         os.makedirs(self.bak_dir_path, exist_ok=True)
         os.rename(self.version_dir_path, self.bak_dir_path)
-
-    def create_logger(self):
-        return TensorBoardLogger(
-            save_dir=os.getcwd(),
-            name=LOG_DIR,
-            version=self.version_dir_name
-        )
 
 @dataclasses.dataclass
 class Checkpoint:
