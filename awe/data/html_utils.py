@@ -41,14 +41,14 @@ def get_index_path(node: 'awe.data.parsing.Node'):
     analogous DOM tree.
     """
 
-    indices = []
+    indices: list[int] = []
     while node.parent.parent is not None:
         # Determine index of this node inside parent.
         prev_count = sum(1 for _ in iter_prev(node))
         indices.append(prev_count)
         node = node.parent
     indices.reverse()
-    return indices
+    return tuple(indices)
 
 def is_text(node: 'awe.data.parsing.Node'):
     return node.tag == TEXT_TAG

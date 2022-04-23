@@ -143,6 +143,8 @@ class Website:
 class Page(abc.ABC):
     website: Website = dataclasses.field(repr=False)
     index: int = dataclasses.field(repr=False, default=None)
+    labeled_nodes: dict[str, list[list[awe.data.graph.dom.NodeIdentity]]] = \
+        dataclasses.field(repr=False, default=None)
     _labels = None
     _dom = None
 

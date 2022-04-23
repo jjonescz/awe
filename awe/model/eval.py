@@ -103,7 +103,7 @@ class Evaluation:
 
             for label_key, pred_list in pred_page.preds.items():
                 stats = per_label[label_key]
-                gold_groups = page.dom.labeled_nodes.get(label_key)
+                gold_groups = page.labeled_nodes.get(label_key)
                 gold_list = [n for g in gold_groups for n in g]
 
                 if not pred_list:

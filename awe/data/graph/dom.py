@@ -95,6 +95,15 @@ class Dom:
                 for node in group:
                     node.label_keys.append((label_key, group_idx))
 
+        # Save labeled node identities (preserved when DOM is dropped).
+        self.page.labeled_nodes = {
+            key: [
+                [node.get_identity() for node in group]
+                for group in groups
+            ]
+            for key, groups in self.labeled_nodes.items()
+        }
+
     def compute_friend_cycles(self,
         max_ancestor_distance: int = 5,
         max_friends: int = 10,
@@ -347,6 +356,12 @@ class Node:
             return {}
         return self.parsed.attributes
 
+    def get_identity(self):
+        return NodeIdentity(
+            page=self.dom.page,
+            index_path = awe.data.html_utils.get_index_path(self.parsed),
+        )
+
     def find_by_index_path(self, indices: list[int]):
         """Finds node by output of `awe.data.html_utils.get_index_path`."""
         node = self
@@ -455,6 +470,11 @@ class Node:
 
         semantic = self.find_semantic_ancestor()
         return semantic.html_tag
+
+@dataclasses.dataclass(frozen=True)
+class NodeIdentity:
+    page: 'awe.data.set.pages.Page'
+    index_path: tuple[int]
 
 @dataclasses.dataclass
 class VisualNeighbor:

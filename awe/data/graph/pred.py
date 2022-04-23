@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 @dataclasses.dataclass
 class NodePrediction:
-    node: 'awe.data.graph.dom.Node'
+    node: 'awe.data.graph.dom.NodeIdentity'
     confidence: float
     probability: float
 
@@ -48,7 +48,7 @@ class PredictionSet:
         self.preds = {}
 
     def add(self, label_key: str, pred: NodePrediction):
-        self.get_or_add(pred.node.dom.page).add(label_key, pred)
+        self.get_or_add(pred.node.page).add(label_key, pred)
 
     def increment(self, node: 'awe.data.graph.dom.Node'):
         self.get_or_add(node.dom.page).increment()
@@ -70,8 +70,9 @@ class PredictionSet:
         for idx in torch.nonzero(pred_labels):
             label_id = pred_labels[idx]
             label_key = self.trainer.label_map.id_to_label[label_id.item()]
+            pred_node: awe.data.graph.dom.Node = pred.batch[idx.item()]
             node_pred = NodePrediction(
-                node=pred.batch[idx.item()],
+                node=pred_node.get_identity(),
                 confidence=pred.outputs.logits[idx, label_id].item(),
                 probability=probabilities[idx, label_id].item()
             )
