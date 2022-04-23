@@ -102,12 +102,11 @@ class WordIdentifiers(awe.features.feature.Feature):
             self._tokenize = tokenizer.tokenize
 
         self.glove = awe.data.glove.LazyEmbeddings.get_or_create()
-        self.node_token_ids = {}
-        self.node_attr_token_ids = {}
         self.default_token_ids = torch.tensor([0],
             dtype=torch.int32,
             device=self.trainer.device
         )
+        self.enable_cache()
 
     def tokenize(self, text: str, humanize: bool = False):
         if humanize:
@@ -118,45 +117,70 @@ class WordIdentifiers(awe.features.feature.Feature):
         # Indices start at 1; 0 is used for unknown and pad words.
         return self.glove.get_index(token, default=-1) + 1
 
-    def prepare(self, node: awe.data.graph.dom.Node, train: bool):
+    def compute_node_token_ids(self, node: awe.data.graph.dom.Node, train: bool):
         params = self.trainer.params
 
         # Find maximum word count and save token IDs.
-        if node.is_text:
-            counter = 0
-            token_ids = []
-            for i, token in enumerate(self.tokenize(node.text)):
-                if train:
-                    # For train data, find `max_num_words`.
-                    if (
-                        params.cutoff_words is not None and
-                        i >= params.cutoff_words
-                    ):
-                        break
-                else:
-                    if i >= self.max_num_words:
-                        break
-                token_ids.append(self.get_token_id(token))
-                counter += 1
+        counter = 0
+        token_ids = []
+        for i, token in enumerate(self.tokenize(node.text)):
             if train:
-                self.max_num_words = max(self.max_num_words, counter)
-            self.node_token_ids[node] = token_ids
+                # For train data, find `max_num_words`.
+                if (
+                    params.cutoff_words is not None and
+                    i >= params.cutoff_words
+                ):
+                    break
+            else:
+                if i >= self.max_num_words:
+                    break
+            token_ids.append(self.get_token_id(token))
+            counter += 1
+        if train:
+            self.max_num_words = max(self.max_num_words, counter)
+        return token_ids
+
+    def compute_node_attr_token_ids(self, node: awe.data.graph.dom.Node):
+        params = self.trainer.params
 
         # Tokenize attribute values.
-        if self.trainer.params.tokenize_node_attrs:
-            if (attr_text := self.get_node_attr_text(node)):
-                token_ids = list(itertools.islice(
-                    (
-                        token_id
-                        for token in self.tokenize(attr_text, humanize=True)
-                        if (token_id := self.get_token_id(token)) != 0
-                    ),
-                    0, params.attr_cutoff_words
-                ))
-                self.node_attr_token_ids[node] = torch.tensor(token_ids,
-                    dtype=torch.int32,
-                    device=self.trainer.device
-                )
+        if (attr_text := self.get_node_attr_text(node)):
+            token_ids = list(itertools.islice(
+                (
+                    token_id
+                    for token in self.tokenize(attr_text, humanize=True)
+                    if (token_id := self.get_token_id(token)) != 0
+                ),
+                0, params.attr_cutoff_words
+            ))
+            return torch.tensor(token_ids,
+                dtype=torch.int32,
+                device=self.trainer.device
+            )
+        return self.default_token_ids
+
+    def prepare(self, node: awe.data.graph.dom.Node, train: bool):
+        if self.node_token_ids is not None and node.is_text:
+            self.node_token_ids[node] = self.compute_node_token_ids(
+                node=node,
+                train=train
+            )
+
+        if (
+            self.node_attr_token_ids is not None and
+            self.trainer.params.tokenize_node_attrs
+        ):
+            self.node_attr_token_ids[node] = self.compute_node_attr_token_ids(
+                node=node
+            )
+
+    def enable_cache(self, enable: bool = True):
+        if enable:
+            self.node_token_ids = {}
+            self.node_attr_token_ids = {}
+        else:
+            self.node_token_ids = None
+            self.node_attr_token_ids = None
 
     def compute(self, batch: list[list[awe.data.graph.dom.Node]]):
         # Get word token indices.
@@ -167,7 +191,11 @@ class WordIdentifiers(awe.features.feature.Feature):
                         token_id
                         for node in row
                         if node.is_text
-                        for token_id in self.node_token_ids[node]
+                        for token_id in (
+                            self.node_token_ids[node]
+                            if self.node_token_ids is not None
+                            else self.compute_node_token_ids(node, train=False)
+                        )
                     ] or [0],
                     dtype=torch.int32,
                     device=self.trainer.device,
@@ -180,7 +208,11 @@ class WordIdentifiers(awe.features.feature.Feature):
     def compute_attr(self, batch: list[awe.data.graph.dom.Node]):
         return torch.nn.utils.rnn.pack_sequence(
             [
-                self.node_attr_token_ids.get(node) or self.default_token_ids
+                (
+                    self.node_attr_token_ids.get(node) or self.default_token_ids
+                    if self.node_attr_token_ids is not None
+                    else self.compute_node_attr_token_ids(node)
+                )
                 for node in batch
             ],
             enforce_sorted=False

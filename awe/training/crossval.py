@@ -66,6 +66,7 @@ def main():
         trainer.create_model()
         trainer.create_version()
         trainer.train()
+        trainer.extractor.enable_cache(False)
         trainer.test()
 
 def get_cyclic_permutation_indices(seq_len: int, perm_idx: int, perm_len: int):

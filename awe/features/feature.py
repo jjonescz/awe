@@ -30,6 +30,9 @@ class Feature(awe.utils.PickleSubset, abc.ABC):
         features. Can be used for example to populate a global word dictionary.
         """
 
+    def enable_cache(self, enable: bool = True):
+        """Enables or disables (and clears) cache."""
+
     def freeze(self):
         """
         Called after preparing the feature for all training data. Should make

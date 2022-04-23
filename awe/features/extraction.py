@@ -53,6 +53,10 @@ class Extractor:
         for feature in self.features:
             feature.freeze()
 
+    def enable_cache(self, enable: bool = True):
+        for feature in self.features:
+            feature.enable_cache(enable=enable)
+
     def restore_features(self, features: list[awe.features.feature.Feature]):
         self.features = features
         for feature in features:
