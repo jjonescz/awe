@@ -185,9 +185,10 @@ class Params:
     def save_version(self, version: awe.training.versioning.Version):
         self.save_file(version.params_path)
 
-    def save_file(self, path: str):
-        print(f'Saving {path!r}.')
-        with open(path, mode='w', encoding='utf-8') as f:
+    def save_file(self, file_path: str):
+        print(f'Saving {file_path!r}.')
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        with open(file_path, mode='w', encoding='utf-8') as f:
             json.dump(dataclasses.asdict(self), f,
                 indent=2,
                 sort_keys=True
