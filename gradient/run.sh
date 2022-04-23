@@ -27,6 +27,7 @@ echo "[I $(date +'%Y-%m-%d %T.123') ServerApp]  or http://127.0.0.1:8888/lab?tok
 echo ${PAPERSPACE_FQDN}
 
 # Start SSH server.
+echo "Password: ${JUPYTER_TOKEN}"
 echo "root:${JUPYTER_TOKEN}" | chpasswd && /usr/sbin/sshd -eD &
 
 # Listen through huproxy.

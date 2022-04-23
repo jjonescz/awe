@@ -17,27 +17,6 @@ To get started with the extraction, execute:
 pnpm start -- --help
 ```
 
-To start the demo locally (see [`demo/README.md`](../demo/README.md) for a
-containerized version):
-
-1. Make sure there is a pre-trained model in `logs`.
-
-   ```bash
-   cd ..
-   gh auth login
-   gh release download v0.1 --pattern logs.tar.gz
-   tar xvzf logs.tar.gz
-   rm logs.tar.gz
-   cd js
-   ```
-
-2. Start the demo. See `DemoOptions` in `app.ts` for more options (passed as
-   environment variables).
-
-   ```bash
-   DEBUG=1 pnpm run server
-   ```
-
 ## Architecture
 
 1. SWDE dataset is expected to be downloaded and available locally.

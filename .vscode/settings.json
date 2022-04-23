@@ -41,6 +41,7 @@
         "networkx",
         "noscript",
         "optim",
+        "pnpm",
         "preds",
         "relu",
         "selectolax",
