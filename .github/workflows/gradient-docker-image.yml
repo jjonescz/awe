@@ -1,3 +1,4 @@
+# Builds our development Docker image tailored for Gradient.run cloud.
 # MANUAL: Requires secrets `DOCKER_USERNAME` and `DOCKER_PASSWORD`.
 
 name: Gradient Docker Image

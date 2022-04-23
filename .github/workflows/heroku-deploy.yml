@@ -1,3 +1,4 @@
+# Deploys demo to Heroku.
 # MANUAL: Requires secret `HEROKU_API_KEY`.
 
 name: Heroku app

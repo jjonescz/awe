@@ -1,3 +1,4 @@
+# Builds and pushes demo runtime Docker image.
 # MANUAL: Requires secrets `DOCKER_USERNAME` and `DOCKER_PASSWORD`.
 
 name: Demo Docker Image

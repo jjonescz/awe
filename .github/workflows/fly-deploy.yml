@@ -1,3 +1,4 @@
+# Deploys demo to fly.io.
 # See https://fly.io/docs/app-guides/continuous-deployment-with-github-actions/.
 # MANUAL: Requires secret `FLY_API_TOKEN`.
 

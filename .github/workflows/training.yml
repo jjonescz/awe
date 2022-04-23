@@ -1,3 +1,4 @@
+# Runs training and saves logs as a build artifact.
 # MANUAL: May require secrets `DOCKER_USERNAME`, `DOCKER_PASSWORD`,
 # `GDRIVE_TOKEN`, `GDRIVE_SWDE_FOLDER`, `GDRIVE_APIFY_FOLDER`.
 
