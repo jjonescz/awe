@@ -8,7 +8,7 @@ from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 
 import awe.utils
 
-LOG_DIR = 'logs'
+LOG_DIR = os.environ.get('LOGDIR', 'logs')
 
 @dataclasses.dataclass
 class Version:

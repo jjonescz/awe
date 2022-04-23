@@ -13,7 +13,6 @@ import awe.training.versioning
 
 def main():
     args = parse_args()
-    awe.training.versioning.LOG_DIR = args.logdir
 
     # Load all saved metrics.
     last_version = None
@@ -64,10 +63,6 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description='Evaluates cross-validation training',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-    parser.add_argument('--logdir',
-        default=awe.training.versioning.LOG_DIR,
-        help='directory where versions are stored'
     )
     parser.add_argument('version_num',
         type=int,
