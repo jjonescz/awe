@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, Optional, TypeVar
+import warnings
 
 import awe.data.glove
 import awe.data.graph.dom
@@ -38,7 +39,13 @@ class Extractor:
 
         for feature in self.features:
             for node in page_dom.nodes:
-                feature.prepare(node=node, train=train)
+                try:
+                    feature.prepare(node=node, train=train)
+                except:
+                    warnings.warn(
+                        f'Failed to prepare {feature} for ' +
+                        f'{page_dom.page.html_path!r}.')
+                    raise
 
     def get_feature(self, cls: type[T]) -> Optional[T]:
         for feature in self.features:
