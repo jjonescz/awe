@@ -160,6 +160,9 @@ class Trainer:
         self.vertical = self.ds.verticals[0]
         websites = self.vertical.websites
 
+        if len(websites) == 0:
+            raise RuntimeError('No websites found in dataset.')
+
         # Split websites.
         train_website_indices = self.params.train_website_indices
         val_website_indices = [i
