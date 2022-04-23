@@ -26,7 +26,11 @@ existence of `janjones/awe-gradient` on [Docker Hub](https://hub.docker.com/).
 ## Locally
 
 To develop locally, either reproduce your environment
-according to `gradient/Dockerfile`, or
+according to `gradient/Dockerfile`[^1],
+or develop inside a Docker image as described below.
+
+[^1]: Note that all Python package versions are frozen in
+[`requirements.txt`](../../requirements.txt).
 
 1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 
