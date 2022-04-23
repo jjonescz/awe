@@ -26,6 +26,8 @@ python-slugify==5.0.2
 inflection==0.5.1
 # HuggingFace (Transformers)
 transformers==4.15.0
+# Machine learning
+scikit-learn==1.0.2
 # JSON
 ijson==3.1.4
 # Cloud
