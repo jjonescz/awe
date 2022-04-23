@@ -158,7 +158,8 @@ class Model(torch.nn.Module):
 
     def create_optimizer(self):
         return torch.optim.Adam(self.parameters(),
-            lr=(self.lr or self.trainer.params.learning_rate)
+            lr=(self.lr or self.trainer.params.learning_rate),
+            weight_decay=self.trainer.params.weight_decay,
         )
 
     def get_node_attrs(self, batch: list[awe.data.graph.dom.Node]):

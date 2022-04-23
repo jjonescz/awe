@@ -145,6 +145,7 @@ class Params:
 
     # Classifier
     learning_rate: float = 1e-3
+    weight_decay: float = 0.0 # e.g., 0.0001
     label_smoothing: float = 0.0 # e.g., 0.1
     layer_norm: bool = False
     head_dims: list[int] = (128, 64)
