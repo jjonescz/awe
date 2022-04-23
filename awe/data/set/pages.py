@@ -244,6 +244,9 @@ class Page(abc.ABC):
             self._dom = self._create_dom()
         return self._dom
 
+    def clear_dom(self):
+        self._dom = None
+
     def _create_dom(self):
         return awe.data.graph.dom.Dom(self)
 

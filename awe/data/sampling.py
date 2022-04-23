@@ -1,9 +1,11 @@
 import collections
 import hashlib
+import math
 import warnings
 from typing import TYPE_CHECKING
 
 import numpy as np
+import torch.utils.data
 from tqdm.auto import tqdm
 
 import awe.data.graph.dom
@@ -46,11 +48,16 @@ class Sampler:
             awe.features.visual.Visuals
         )
 
-    def load(self):
+    def prepare(self):
         params = self.trainer.params
 
         if params.classify_only_variable_nodes:
             self.find_variable_nodes()
+
+    def load(self):
+        params = self.trainer.params
+
+        self.prepare()
 
         self.init_dom_trees()
 
@@ -58,7 +65,7 @@ class Sampler:
 
         pages = self.pages
         if params.validate_data:
-            if not self.validate():
+            if not self.validate(self.pages, progress_bar=True):
                 if params.ignore_invalid_pages:
                     pages = [p for p in pages if p.valid]
                     warnings.warn(f'Ignored invalid pages in {self.desc!r} ' +
@@ -67,6 +74,25 @@ class Sampler:
                     raise RuntimeError(f'Validation failed for {self.desc!r}.')
 
         return [n for p in pages for n in p.dom.nodes if n.sample]
+
+    def load_one(self, page: awe.data.set.pages.Page):
+        params = self.trainer.params
+
+        try:
+            if page.cache_dom().root is None:
+                self.init_dom_tree(page)
+            self.prepare_features_for_page(page)
+
+            if params.validate_data:
+                if not self.validate([page], progress_bar=False):
+                    if params.ignore_invalid_pages:
+                        return []
+                    else:
+                        raise RuntimeError(f'Validation failed for {self.desc!r}.')
+
+            return [n for n in page.dom.nodes if n.sample]
+        finally:
+            page.clear_dom()
 
     def find_variable_nodes(self):
         # Find all websites contained in `pages`.
@@ -97,15 +123,15 @@ class Sampler:
         if self.train:
             self.trainer.extractor.freeze()
 
-    def validate(self):
+    def validate(self, pages: list[awe.data.set.pages.Page], progress_bar: bool):
         validator = awe.data.validation.Validator(
             only_cached_dom=True,
             # It is not needed to validate visuals as that's automatically
             # performed when they are loaded (a few lines above).
             visuals=False
         )
-        validator.validate_pages(self.pages,
-            progress_bar=f'validate {self.desc}'
+        validator.validate_pages(pages,
+            progress_bar=f'validate {self.desc}' if progress_bar else None
         )
         return validator.num_invalid == 0
 
@@ -250,6 +276,32 @@ class Sampler:
             if e > 0 and included.get(label_key, 0) == 0:
                 raise RuntimeError(f'Excluded all {e} node(s) ' +
                     f'labeled {label_key!r} ({page.html_path!r}).')
+
+class LazySampler(torch.utils.data.IterableDataset):
+    def __init__(self, sampler: Sampler):
+        super().__init__()
+        self.sampler = sampler
+        self.sampler.prepare()
+        self.num_nodes = 0
+        self.num_pages = 0
+
+    def __len__(self):
+        avg_nodes = (
+            self.num_nodes / self.num_pages
+            if self.num_pages != 0 else 2_000
+        )
+        return math.floor(avg_nodes * len(self.sampler.pages))
+
+    def __getitem__(self, index):
+        raise NotImplementedError()
+
+    def __iter__(self):
+        for p in self.sampler.pages:
+            nodes = self.sampler.load_one(p)
+            self.num_nodes += len(nodes)
+            self.num_pages += 1
+            for n in nodes:
+                yield n
 
 class Collater:
     """

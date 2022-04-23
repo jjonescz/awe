@@ -61,7 +61,7 @@ def main():
 
         trainer.init_features()
         trainer.split_data()
-        trainer.create_dataloaders(create_test=True)
+        trainer.create_dataloaders()
         trainer.create_model()
         trainer.create_version()
         trainer.train()

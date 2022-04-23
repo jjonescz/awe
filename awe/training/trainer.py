@@ -53,6 +53,8 @@ class RunInput:
 
     progress_dict: Optional[dict[str]] = None
 
+    lazy: bool = False
+
 class Subsetter:
     def __init__(self):
         self.rng = np.random.default_rng(42)
@@ -182,7 +184,7 @@ class Trainer:
         self.test_pages = subsetter(self.val_websites, self.params.test_subset)
         print(f'{len(self.train_pages)=}, {len(self.val_pages)=}, {len(self.test_pages)=}')
 
-    def create_dataloaders(self, create_test: bool = False):
+    def create_dataloaders(self):
         """Splits data to train/val sets and prepares features on them."""
 
         # Create dataloaders.
@@ -190,25 +192,24 @@ class Trainer:
             shuffle=True,
             train=True,
         )
-        if create_test:
-            # IMPORTANT: This must be created before val if variable nodes
-            # finding is enabled. Because the search is executed only once and
-            # test is superset of val, not all variable nodes would be found the
-            # other way around.
-            self.test_loader = self.create_dataloader(self.test_pages, 'test')
         self.val_loader = self.create_dataloader(self.val_pages, 'val')
+        self.test_loader = self.create_dataloader(self.test_pages, 'test',
+            lazy=True
+        )
 
     def create_dataloader(self,
         pages: list[awe.data.set.pages.Page],
         desc: str,
         shuffle: bool = False,
-        train: bool = False
+        train: bool = False,
+        lazy: bool = False
     ):
         set_seed(42)
 
         flags = {
             'shuffle': shuffle,
-            'train': train
+            'train': train,
+            'lazy': lazy,
         }
         if any(flags.values()):
             desc = f'{desc} ({", ".join(k for k, v in flags.items() if v)})'
@@ -219,12 +220,15 @@ class Trainer:
             desc=desc,
             train=train
         )
-        nodes = sampler.load()
-        num_labels = collections.Counter(
-            None if not n.label_keys else n.label_keys[0][0]
-            for n in nodes
-        )
-        print(f'Sampled {desc!r} nodes {dict(num_labels)}.')
+        if lazy:
+            nodes = awe.data.sampling.LazySampler(sampler)
+        else:
+            nodes = sampler.load()
+            num_labels = collections.Counter(
+                None if not n.label_keys else n.label_keys[0][0]
+                for n in nodes
+            )
+            print(f'Sampled {desc!r} nodes {dict(num_labels)}.')
         return torch.utils.data.DataLoader(
             nodes,
             batch_size=self.params.batch_size,
@@ -236,7 +240,8 @@ class Trainer:
         pages: list[awe.data.set.pages.Page],
         desc: str,
         log: bool = False,
-        shuffle: bool = False
+        shuffle: bool = False,
+        lazy: bool = False,
     ):
         return RunInput(
             pages=pages,
@@ -244,9 +249,11 @@ class Trainer:
             loader=self.create_dataloader(
                 pages=pages,
                 desc=desc,
-                shuffle=shuffle
+                shuffle=shuffle,
+                lazy=lazy,
             ),
             prefix=desc if log else None,
+            lazy=lazy,
         )
 
     def explore_data(self):
@@ -565,6 +572,8 @@ class Trainer:
         for batch in run.loader:
             outputs = self.model.forward(batch)
             evaluation.add(awe.model.classifier.Prediction(batch, outputs))
+            if run.lazy:
+                self.val_progress.total = len(run.loader)
             self.val_progress.update()
         return self._eval(run, evaluation)
 
@@ -618,7 +627,8 @@ class Trainer:
             name='test',
             loader=self.test_loader,
             progress=lambda: self.val_progress,
-            progress_metrics=('loss', 'f1/page')
+            progress_metrics=('loss', 'f1/page'),
+            lazy=True,
         )
         return self.validate(test_run)
 
