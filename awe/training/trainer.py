@@ -228,7 +228,7 @@ class Trainer:
                 None if not n.label_keys else n.label_keys[0][0]
                 for n in nodes
             )
-            print(f'Sampled {desc!r} nodes {dict(num_labels)}.')
+            print(f'Sampled {desc!r} nodes {dict(num_labels)}.', file=sys.stderr)
         return torch.utils.data.DataLoader(
             nodes,
             batch_size=self.params.batch_size,

@@ -44,7 +44,7 @@ def main():
                 html_text=html_text,
                 visuals_data=visuals
             )
-            run = trainer.create_run([page], desc='live', lazy=True)
+            run = trainer.create_run([page], desc='live')
             preds = trainer.predict(run)
             decoded = trainer.decode_raw(preds)
             response = [
