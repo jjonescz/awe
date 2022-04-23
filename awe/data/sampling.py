@@ -290,7 +290,9 @@ class LazySampler(torch.utils.data.IterableDataset):
             self.num_nodes / self.num_pages
             if self.num_pages != 0 else 2_000
         )
-        return math.floor(avg_nodes * len(self.sampler.pages))
+        remaining_pages = len(self.sampler.pages) - self.num_pages
+        remaining_nodes = math.floor(avg_nodes * remaining_pages)
+        return self.num_nodes + remaining_nodes
 
     def __getitem__(self, index):
         raise NotImplementedError()
