@@ -11,7 +11,6 @@ def main():
         return
     print(f'{params=}')
     trainer = awe.training.trainer.Trainer(params)
-    trainer.load_pretrained()
     trainer.load_dataset()
     trainer.init_features()
     trainer.split_data()

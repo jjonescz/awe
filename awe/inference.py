@@ -27,7 +27,6 @@ def main():
 
     print(f'{params=}')
     trainer = awe.training.trainer.Trainer(params)
-    trainer.load_pretrained()
     trainer.init_features()
     trainer.restore_checkpoint(checkpoint)
     trainer.restore_features()

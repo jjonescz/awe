@@ -119,9 +119,6 @@ class Trainer:
 
         self.params = params
 
-    def load_pretrained(self):
-        pass
-
     def load_dataset(self):
         set_seed(42)
 

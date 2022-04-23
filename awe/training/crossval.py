@@ -21,7 +21,6 @@ def main():
 
     # Like FreeDOM and SimpDOM, use cyclic permutations.
     trainer = awe.training.trainer.Trainer(params)
-    trainer.load_pretrained()
     trainer.load_dataset()
 
     websites = trainer.ds.verticals[0].websites
