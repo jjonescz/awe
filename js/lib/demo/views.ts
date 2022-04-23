@@ -105,8 +105,10 @@ export function results(
           <th>${r.labelKey}</th>
           <td>
             $${
-              r.url === undefined
-                ? h`${r.text}`
+              r.url === null
+                ? r.text === null
+                  ? h`<em>empty</em>`
+                  : h`${r.text}`
                 : h`<a href="${r.url}">${r.text ?? r.url}</a>`
             }
           </td>

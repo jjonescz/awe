@@ -10,8 +10,8 @@ export interface InferenceInput {
 }
 
 export interface NodePrediction {
-  text?: string;
-  url?: string;
+  text: string | null;
+  url: string | null;
   xpath: string;
   confidence: number;
   probability: number;
