@@ -41,7 +41,6 @@
         "networkx",
         "noscript",
         "optim",
-        "parsel",
         "preds",
         "relu",
         "selectolax",

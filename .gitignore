@@ -8,9 +8,6 @@ __pycache__/
 .ipynb_checkpoints/
 .Trash-0/
 
-# Python package `doit`. See `dodo.py`.
-.doit.db*
-
 # Data downloaded by `dodo.py` and cached by Python and Node.js code.
 # See `DATA_DIR` in `constants.py` and `constants.ts`.
 /data

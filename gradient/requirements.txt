@@ -6,25 +6,18 @@ jupyterlab==3.2.4
 ipywidgets==7.6.5
 # PyTorch
 torchtext==0.11.0
-pytorch-lightning==1.4.9
 torchinfo==1.6.5
 # HACK: https://github.com/PyTorchLightning/pytorch-lightning/issues/11524
 torchmetrics<0.7
 # TensorBoard
 torch-tb-profiler==0.2.1
-# DoIt (job automation)
-doit==0.33.1
 # HTML parsing
-parsel==1.6.0
-beautifulsoup4==4.10.0
 selectolax==0.3.6
 # Gensim (word embeddings)
 gensim==4.1.2
 # Python formatting and linting
 autopep8==1.6.0
 pylint==2.12.2
-# Graph visualization
-bokeh==2.4.2
 # Plotting
 matplotlib==3.5.1
 plotnine==0.8.0
@@ -33,8 +26,6 @@ python-slugify==5.0.2
 inflection==0.5.1
 # HuggingFace (Transformers)
 transformers==4.15.0
-sentencepiece==0.1.96
-datasets==1.18.0
 # JSON
 ijson==3.1.4
 # Cloud

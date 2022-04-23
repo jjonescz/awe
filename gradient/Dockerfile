@@ -67,10 +67,9 @@ RUN conda install -y --freeze-installed -c conda-forge nodejs==${NODE_VERSION} g
     && corepack enable \
     && conda clean -afy
 
-# Install PyTorch Geometric.
-COPY requirements-*.txt /
-RUN pip install --no-cache-dir -r requirements-torch.txt && \
-    pip install --no-cache-dir -r requirements-pyg.txt
+# Install PyTorch.
+COPY requirements-torch.txt /
+RUN pip install --no-cache-dir -r /requirements-torch.txt
 
 # Configure SSH. Inspired by https://github.com/Paperspace/gradient-ssh-test.
 RUN mkdir /var/run/sshd && \
@@ -99,8 +98,8 @@ RUN curl -fsSL https://github.com/PaulJuliusMartinez/jless/releases/download/v0.
     && rm jless.zip
 
 # Install Python packages.
-COPY requirements.txt /requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt /
+RUN pip install --no-cache-dir -r /requirements.txt
 
 # Persist HuggingFace cache.
 ENV HF_HOME=/storage/.cache/huggingface
