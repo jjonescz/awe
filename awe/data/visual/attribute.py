@@ -168,12 +168,18 @@ class VisualAttribute(Generic[T, TInput]):
             return [v]
         return self.selector(v)
 
+    def get_value_or_default(self, c: AttributeContext):
+        return (
+            c.get_value(self) or
+            self.parse(self.get_default(c.node), node_data={})
+        )
+
     def select(self, c: AttributeContext):
-        return self._select(c.get_value(self))
+        return self._select(self.get_value_or_default(c))
 
 class CategoricalAttribute(VisualAttribute):
     def select(self, c: AttributeContext):
-        v = c.get_value(self)
+        v = self.get_value_or_default(c)
         if self.selector is None:
             return v
         return self.selector(v)

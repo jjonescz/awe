@@ -128,7 +128,6 @@ class DomData:
                 self.load_visual_attribute(node_data, node, a)
         return True
 
-
     def load_attribute(self,
         node_data: dict[str],
         node: awe.data.graph.dom.Node,
