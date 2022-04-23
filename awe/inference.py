@@ -1,4 +1,8 @@
-# Run: `python -m awe.inference`
+"""
+Script for loading the model and running as a server doing inference on demand.
+Used by TypeScript demo application.
+Run as `python -m awe.inference`.
+"""
 
 import json
 import sys
@@ -30,8 +34,11 @@ def main():
     trainer.create_model()
     trainer.restore_model()
 
+    # IMPORTANT: This line is also used as a clue to let TypeScript client node
+    # the inference server is ready.
     print('Inference started.')
 
+    # Read "requests", run inference, and write "responses".
     for line in sys.stdin:
         try:
             data = json.loads(line)
