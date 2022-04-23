@@ -21,7 +21,7 @@ def main():
     checkpoint = version.get_checkpoints()[-1]
     params = awe.training.params.Params.load_version(version)
 
-    # Ensure some paramaters are disabled during inference.
+    # Ensure some paramaters are set correctly for inference.
     params.validate_data = False
     params.classify_only_variable_nodes = False
 
