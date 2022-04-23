@@ -44,7 +44,8 @@ class Validator:
         for page in pages:
             page.valid = None
 
-        for page in (p := tqdm(pages, desc=progress_bar)) if progress_bar is not None else pages:
+        p = tqdm(pages, desc=progress_bar) if progress_bar is not None else None
+        for page in (p or pages):
             if p is not None:
                 p.set_postfix(self.summary(), refresh=False)
             self.validate_page(page)
