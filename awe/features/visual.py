@@ -14,10 +14,6 @@ class Visuals(awe.features.feature.Feature):
     out_dim: int = None
 
     def __post_init__(self, restoring: bool):
-        self.extraction = awe.data.visual.context.Extraction()
-        if restoring:
-            self.freeze()
-
         # Filter visual attributes according to training params.
         enabled = self.trainer.params.enabled_visuals
         disabled = self.trainer.params.disabled_visuals
@@ -27,6 +23,11 @@ class Visuals(awe.features.feature.Feature):
             if enabled is None or a.name in enabled
             if disabled is None or a.name not in disabled
         ]
+
+        if not restoring:
+            self.extraction = awe.data.visual.context.Extraction()
+        else:
+            self.freeze()
 
     def get_pickled_keys(self):
         return ('extraction',)
