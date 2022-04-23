@@ -55,9 +55,10 @@ def main():
 
         # Clear cache, because the whole dataset might not fit into memory and
         # we iteratively load everything across all cross-validation rounds.
-        trainer.ds.clear_cache(awe.data.set.pages.ClearCacheRequest(
-            labels=False
-        ))
+        if args.clear_cache:
+            trainer.ds.clear_cache(awe.data.set.pages.ClearCacheRequest(
+                labels=False
+            ))
 
         trainer.init_features()
         trainer.split_data()
@@ -88,6 +89,12 @@ def parse_args():
         action='store_true',
         default=False,
         help='only print max index and exit'
+    )
+    parser.add_argument('--clear-cache',
+        dest='clear_cache',
+        action='store_true',
+        default=False,
+        help='clear DOM cache before each fold'
     )
     parser.add_argument('-i',
         dest='index',
