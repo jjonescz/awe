@@ -44,7 +44,7 @@ class Extractor:
                 except:
                     warnings.warn(
                         f'Failed to prepare {feature} for ' +
-                        f'{page_dom.page.html_path!r}.')
+                        f'{node.get_xpath()!r} ({page_dom.page.html_path!r}).')
                     raise
 
     def get_feature(self, cls: type[T]) -> Optional[T]:
