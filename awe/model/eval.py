@@ -1,3 +1,5 @@
+"""Model performance evaluation."""
+
 import collections
 from typing import TYPE_CHECKING
 

@@ -1,5 +1,11 @@
-# 1. Set parameters in `data/params.json`.
-# 2. Run `python -m awe.training.crossval`.
+"""
+Script for cross-validation.
+
+Usage:
+1. Set parameters in `data/params.json`.
+2. Run `python -m awe.training.crossval`.
+3. Aggregate results via module `awe.training.crossval_mean`.
+"""
 
 import argparse
 

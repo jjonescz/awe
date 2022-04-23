@@ -1,3 +1,5 @@
+"""Text-related custom layers."""
+
 from typing import TYPE_CHECKING
 import torch
 import torch.nn

@@ -1,3 +1,5 @@
+"""Main entrypoint for training."""
+
 import collections
 import dataclasses
 import itertools
@@ -79,6 +81,8 @@ class Subsetter:
         return self.rng.choice(website.pages, subset, replace=False)
 
 class Trainer:
+    """Calls data loading code. Contains training and validation loops."""
+
     ds: awe.data.set.pages.Dataset = None
     label_map: awe.training.context.LabelMap
     extractor: awe.features.extraction.Extractor

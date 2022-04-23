@@ -1,3 +1,5 @@
+"""Shared training context."""
+
 import warnings
 
 import awe.data.graph.dom

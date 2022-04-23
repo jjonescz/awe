@@ -1,3 +1,9 @@
+"""
+Training versions management (logs, checkpoints).
+
+To change the base logdir, use environment variable `LOGDIR`.
+"""
+
 import dataclasses
 import os
 import re

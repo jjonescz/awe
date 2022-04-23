@@ -1,5 +1,9 @@
-# Computes mean metrics after running `crossval` several times.
-# Run: `python -m awe.training.crossval_mean <first_version_num>`.
+"""
+Computes mean metrics after several folds of cross-validation performed by
+`awe.training.crossval`.
+
+Run: `python -m awe.training.crossval_mean <first_version_num>`.
+"""
 
 import argparse
 import json

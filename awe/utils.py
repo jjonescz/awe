@@ -1,3 +1,5 @@
+"""Common utilities."""
+
 import abc
 import importlib
 import itertools

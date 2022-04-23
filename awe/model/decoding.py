@@ -1,3 +1,5 @@
+"""Model prediction decoding."""
+
 from typing import TYPE_CHECKING
 
 import pandas as pd

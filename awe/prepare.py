@@ -1,6 +1,11 @@
-# Run `python -m awe.prepare`
+"""
+Downloads GloVe embeddings, currently used when building demo inference image.
+
+Run as `python -m awe.prepare`.
+"""
 
 import awe.data.glove
+
 
 def main():
     # HACK: Avoid progress bar (it clutters Docker logs).

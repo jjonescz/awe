@@ -1,3 +1,5 @@
+"""The deep learning model."""
+
 import dataclasses
 from typing import TYPE_CHECKING, Optional
 
@@ -17,6 +19,7 @@ import awe.training.params
 
 if TYPE_CHECKING:
     import awe.training.trainer
+
 
 @dataclasses.dataclass
 class ModelOutput:

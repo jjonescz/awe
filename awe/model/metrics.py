@@ -1,3 +1,5 @@
+"""Custom metrics used by evaluation (`awe.model.eval`)."""
+
 import dataclasses
 
 import torch

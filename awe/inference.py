@@ -1,6 +1,8 @@
 """
 Script for loading the model and running as a server doing inference on demand.
+
 Used by TypeScript demo application.
+
 Run as `python -m awe.inference`.
 """
 

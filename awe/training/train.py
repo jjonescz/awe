@@ -1,5 +1,10 @@
-# 1. Set parameters in `data/params.json`.
-# 2. Run `python -m awe.training.train`.
+"""
+Script for training and validation.
+
+Usage:
+1. Set parameters in `data/params.json`.
+2. Run `python -m awe.training.train`.
+"""
 
 import awe.training.params
 import awe.training.trainer

@@ -1,3 +1,5 @@
+"""Training parameters and their (de)serialization."""
+
 import dataclasses
 import enum
 import json
@@ -29,7 +31,10 @@ class AttentionNormalization(str, enum.Enum):
 
 @dataclasses.dataclass
 class Params:
-    """Hyper parameters with persistence."""
+    """
+    All training hyperparameters including control of feature extraction and
+    data loading.
+    """
 
     # Dataset
     dataset: Dataset = Dataset.swde
