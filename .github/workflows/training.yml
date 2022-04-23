@@ -19,9 +19,7 @@ on:
       command:
         description: "Training command"
         required: false
-        default: >
-          python -m awe.training.crossval
-          && python -m awe.training.crossval_mean 1
+        default: "./sh/crossval.sh"
       params:
         description: "JSON with training params"
         required: true
