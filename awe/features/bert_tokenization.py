@@ -1,4 +1,4 @@
-# pylint: disable=bad-indentation, consider-using-f-string
+# pylint: disable=W,C,R
 
 # From https://github.com/google-research/bert/blob/d66a146741588fb208450bde15aa7db143baaa69/tokenization.py.
 

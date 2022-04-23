@@ -87,8 +87,7 @@ class Sampler:
                 if not self.validate([page], progress_bar=False):
                     if params.ignore_invalid_pages:
                         return []
-                    else:
-                        raise RuntimeError(f'Validation failed for {self.desc!r}.')
+                    raise RuntimeError(f'Validation failed for {self.desc!r}.')
 
             return [n for n in page.dom.nodes if n.sample]
         finally:
@@ -164,7 +163,7 @@ class Sampler:
                     if node.sample and node.box is None:
                         node.sample = False
 
-        self.check_sampled_nodes(page)
+        check_sampled_nodes(page)
 
     def prepare_features_for_page(self, page: awe.data.set.pages.Page):
         params = self.trainer.params
@@ -258,24 +257,24 @@ class Sampler:
             params.classify_also_html_tags)
         )
 
-    def check_sampled_nodes(self, page: awe.data.set.pages.Page):
-        included = collections.defaultdict(int)
-        excluded = collections.defaultdict(int)
-        for node in page.dom.nodes:
-            if node.sample:
-                if len(node.label_keys) != 0:
-                    for label_key in node.label_keys:
-                        included[label_key] += 1
-                yield node
-            elif len(node.label_keys) != 0:
+def check_sampled_nodes(page: awe.data.set.pages.Page):
+    included = collections.defaultdict(int)
+    excluded = collections.defaultdict(int)
+    for node in page.dom.nodes:
+        if node.sample:
+            if len(node.label_keys) != 0:
                 for label_key in node.label_keys:
-                    excluded[label_key] += 1
+                    included[label_key] += 1
+            yield node
+        elif len(node.label_keys) != 0:
+            for label_key in node.label_keys:
+                excluded[label_key] += 1
 
-        for label_key in page.labels.label_keys:
-            e = excluded.get(label_key, 0)
-            if e > 0 and included.get(label_key, 0) == 0:
-                raise RuntimeError(f'Excluded all {e} node(s) ' +
-                    f'labeled {label_key!r} ({page.html_path!r}).')
+    for label_key in page.labels.label_keys:
+        e = excluded.get(label_key, 0)
+        if e > 0 and included.get(label_key, 0) == 0:
+            raise RuntimeError(f'Excluded all {e} node(s) ' +
+                f'labeled {label_key!r} ({page.html_path!r}).')
 
 class LazySampler(torch.utils.data.IterableDataset):
     def __init__(self, sampler: Sampler):

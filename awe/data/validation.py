@@ -33,6 +33,7 @@ class Validator:
         return ', '.join(f'{k}={v}' for k, v in self.summary().items())
 
     def write_invalid_to(self, file_path: str):
+        # pylint: disable-next=consider-using-with
         self.file = open(file_path, mode='w', encoding='utf-8')
 
     def validate_pages(self,

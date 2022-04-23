@@ -78,12 +78,6 @@ class Dataset(awe.data.set.pages.Dataset):
         w = next(w for w in v.websites if w.name == website)
         return w.pages[page]
 
-    def reload(self, page: 'Page'):
-        file_page = FilePage.try_create(page.website, page.html_file_name)
-        page.website.pages[page.index] = file_page
-        page.website.vertical.db.replace(page.index_in_vertical, **file_page.to_row())
-        return file_page
-
 @dataclasses.dataclass
 class Vertical(awe.data.set.pages.Vertical):
     dataset: Dataset
@@ -292,6 +286,12 @@ class Page(awe.data.set.pages.Page):
             'html_text': self.get_html_text(),
             'visuals': self.get_visuals_json_text()
         }
+
+    def reload(self):
+        file_page = FilePage.try_create(self.website, self.html_file_name)
+        self.website.pages[self.index] = file_page
+        self.website.vertical.db.replace(self.index_in_vertical, **file_page.to_row())
+        return file_page
 
 class FilePage(Page):
     @staticmethod

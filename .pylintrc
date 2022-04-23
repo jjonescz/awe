@@ -9,7 +9,10 @@ disable=missing-module-docstring,
     too-many-instance-attributes,
     too-many-arguments,
     too-many-branches,
-    too-many-statements
+    too-many-statements,
+    too-many-nested-blocks,
+    too-many-public-methods,
+    duplicate-code
 
 [TYPECHECK]
 generated-members=torch.*
