@@ -23,7 +23,6 @@ RUN \
     curl \
     vim \
     ca-certificates \
-    python-qt4 \
     libjpeg-dev \
     zip \
     unzip \
