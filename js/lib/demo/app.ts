@@ -240,7 +240,6 @@ export class DemoApp {
         },
       ];
     }
-    log.debug('response', { response });
     res.write(views.logEntry('Rendering screenshot...'));
     this.flushChunk(res);
 

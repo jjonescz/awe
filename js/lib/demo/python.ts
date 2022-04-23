@@ -56,6 +56,7 @@ export class Inference {
 
   public async send(input: InferenceInput) {
     const responseStr = await this.sendStr(JSON.stringify(input));
+    this.log.debug('response', { json: responseStr });
     return JSON.parse(responseStr);
   }
 
