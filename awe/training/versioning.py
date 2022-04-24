@@ -19,16 +19,22 @@ class Version:
     number: int
     name: str
 
-    @staticmethod
-    def _iterate_all():
+    @classmethod
+    def _iterate_all(cls):
         if not os.path.isdir(LOG_DIR):
             return
         for dirname in os.listdir(LOG_DIR):
-            match = re.match(r'(\d+)-(.*)', dirname)
-            if match is not None:
-                number = int(match.group(1))
-                name = match.group(2)
-                yield Version(number, name)
+            if (version := cls.try_parse(dirname)) is not None:
+                yield version
+
+    @staticmethod
+    def try_parse(dirname: str):
+        match = re.match(r'(\d+)-(.*)', dirname)
+        if match is not None:
+            number = int(match.group(1))
+            name = match.group(2)
+            return Version(number, name)
+        return None
 
     @classmethod
     def get_all(cls):
