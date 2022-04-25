@@ -184,9 +184,15 @@ export class DemoApp {
     await extractor.extract();
     const visuals = extractor.data;
 
+    // Take screenshot.
+    const screenshot = (await page.screenshot({
+      fullPage: true,
+      encoding: 'base64',
+    })) as string;
+
     // Log full inputs if desired.
     if (this.options.logInputs) {
-      log.silly('inputs', { html, visuals });
+      log.silly('inputs', { html, visuals, screenshot });
     }
 
     // Pass HTML and visuals to Python.
@@ -205,7 +211,7 @@ export class DemoApp {
       log.debug('inference');
       res.write(views.logEntry('Running inference...'));
       this.flushChunk(res);
-      response = await this.python.send({ url, html, visuals });
+      response = await this.python.send({ url, html, visuals, screenshot });
     } else {
       // Mock inference.
       response = [
@@ -260,12 +266,6 @@ export class DemoApp {
       }
       rows.sort((x, y) => y.confidence - x.confidence);
     }
-
-    // Take screenshot.
-    const screenshot = (await page.screenshot({
-      fullPage: true,
-      encoding: 'base64',
-    })) as string;
 
     res.write(views.logEntry('Done.'));
     res.write(views.logEnd());

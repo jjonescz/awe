@@ -7,6 +7,8 @@ export interface InferenceInput {
   url: string;
   html: string;
   visuals: DomData;
+  /** Base64-encoded image. */
+  screenshot: string;
 }
 
 export interface NodePrediction {
