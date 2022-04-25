@@ -24,12 +24,16 @@ def plot_websites(websites: list[awe.data.set.pages.Website], n_cols: int = 1):
 
 def plot_pages(
     pages: list[tuple[awe.data.set.pages.Page]],
-    set_title: bool = True
+    set_title: bool = True,
+    crop: bool = True,
 ):
     n_cols = max(len(row) for row in pages)
 
     # Find page dimensions.
-    explorers = [[PageExplorer(page) for page in row] for row in pages if row]
+    explorers = [
+        [PageExplorer(page, crop=crop) for page in row]
+        for row in pages if row
+    ]
     heights = [max(e.height/100 for e in row) for row in explorers]
     height = sum(heights)
 
@@ -47,7 +51,7 @@ def plot_pages(
     return fig
 
 class PageExplorer:
-    def __init__(self, page: awe.data.set.pages.Page):
+    def __init__(self, page: awe.data.set.pages.Page, crop: bool = True):
         # Load visuals.
         self.page = page
         self.page_dom = self.page.dom
@@ -56,9 +60,13 @@ class PageExplorer:
         self.page_dom.init_nodes()
         self.page_visuals.fill_tree_light(self.page_dom)
 
-        min_y, max_y = self._find_y_bounds()
-        self.min_y = max(0, math.floor(min_y) - 5)
-        self.max_y = math.ceil(max_y) + 5
+        if crop:
+            min_y, max_y = self._find_y_bounds()
+            self.min_y = max(0, math.floor(min_y) - 5)
+            self.max_y = math.ceil(max_y) + 5
+        else:
+            self.min_y = 0
+            self.max_y = self._find_max_y()
 
     @property
     def height(self):
@@ -78,6 +86,15 @@ class PageExplorer:
                         max_y = y
 
         return min_y, max_y
+
+    def _find_max_y(self):
+        """Finds maximum Y."""
+
+        return max(
+            math.ceil(n.box.y + n.box.height) - 1
+            for n in self.page_dom.nodes
+            if n.box is not None
+        )
 
     def plot_screenshot_with_boxes(self, ax: matplotlib.axes.Axes):
         # Load the screenshot.

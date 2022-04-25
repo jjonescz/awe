@@ -60,7 +60,8 @@ def main():
             # Render screenshot with predicted nodes highlighted.
             page.fill_labels(trainer, preds)
             fig = awe.data.visual.exploration.plot_pages([(page,)],
-                set_title=False
+                set_title=False,
+                crop=False,
             )
             with io.BytesIO() as out_bytes:
                 fig.savefig(out_bytes, format='png', bbox_inches='tight')
