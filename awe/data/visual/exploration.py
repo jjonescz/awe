@@ -25,15 +25,19 @@ def plot_websites(websites: list[awe.data.set.pages.Website], n_cols: int = 1):
 def plot_pages(
     pages: list[tuple[awe.data.set.pages.Page]],
     set_title: bool = True,
-    crop: bool = True,
 ):
-    n_cols = max(len(row) for row in pages)
+    return plot_explorers(
+        [[PageExplorer(page) for page in row] for row in pages if row],
+        set_title=set_title
+    )
+
+def plot_explorers(
+    explorers: list[list['PageExplorer']],
+    set_title: bool = True
+):
+    n_cols = max(len(row) for row in explorers)
 
     # Find page dimensions.
-    explorers = [
-        [PageExplorer(page, crop=crop) for page in row]
-        for row in pages if row
-    ]
     heights = [max(e.height/100 for e in row) for row in explorers]
     height = sum(heights)
 
@@ -51,14 +55,21 @@ def plot_pages(
     return fig
 
 class PageExplorer:
-    def __init__(self, page: awe.data.set.pages.Page, crop: bool = True):
+    def __init__(self,
+        page: awe.data.set.pages.Page,
+        crop: bool = True,
+        init_page: bool = True,
+    ):
         # Load visuals.
         self.page = page
         self.page_dom = self.page.dom
-        self.page_labels = self.page.get_labels()
-        self.page_visuals = self.page.load_visuals()
-        self.page_dom.init_nodes()
-        self.page_visuals.fill_tree_light(self.page_dom)
+        if init_page:
+            self.page_labels = self.page.get_labels()
+            page_visuals = self.page.load_visuals()
+            self.page_dom.init_nodes()
+            page_visuals.fill_tree_light(self.page_dom)
+        else:
+            self.page_labels = self.page.labels
 
         if crop:
             min_y, max_y = self._find_y_bounds()

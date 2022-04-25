@@ -60,10 +60,7 @@ def main():
 
             # Render screenshot with predicted nodes highlighted.
             page.fill_labels(trainer, preds)
-            fig = awe.data.visual.exploration.plot_pages([(page,)],
-                set_title=False,
-                crop=False,
-            )
+            fig = plot_screenshot(page)
             with io.BytesIO() as out_bytes:
                 fig.savefig(out_bytes, format='png', bbox_inches='tight')
                 out_b64 = base64.b64encode(out_bytes.getvalue()).decode('ascii')
@@ -94,6 +91,15 @@ def postprocess(preds: list[awe.model.classifier.Prediction]):
         pred.filter_nodes(lambda n: n.box is None or n.box.is_positive)
         for pred in preds
     ]
+
+def plot_screenshot(page: awe.data.set.live.Page):
+    explorer = awe.data.visual.exploration.PageExplorer(page,
+        crop=False,
+        init_page=False,
+    )
+    return awe.data.visual.exploration.plot_explorers([(explorer,)],
+        set_title=False,
+    )
 
 def serialize_prediction(p: awe.data.graph.pred.NodePrediction):
     node = p.node.find_node()
