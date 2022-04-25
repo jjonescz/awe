@@ -53,7 +53,7 @@ class PageExplorer:
         self.page_visuals.fill_tree_light(self.page_dom)
 
         min_y, max_y = self._find_y_bounds()
-        self.min_y = math.floor(min_y) - 5
+        self.min_y = max(0, math.floor(min_y) - 5)
         self.max_y = math.ceil(max_y) + 5
 
     @property
