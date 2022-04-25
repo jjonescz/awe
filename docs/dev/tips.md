@@ -20,8 +20,8 @@ After a crash, issue GDB command `backtrace`.
 **Get HTML from a scraping log:**
 For example, if it's on line 11, run
 `sed '11!d' data/scraping-logs/2022-03-21T13-26-38.056Z.txt
-| jq -r '.html' > data.html`
-(or `.visuals > data.json`).
+| jq -r '.html' > data/page.html`
+(or `.visuals > data/visuals.json` or `.screenshot > data/screenshot.txt`).
 
 **Start Jupyter server manually (e.g., in Gitpod):**
 Run `jupyter notebook --allow-root --no-browser --NotebookApp.token=''
