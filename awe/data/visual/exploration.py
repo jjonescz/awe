@@ -79,6 +79,9 @@ class PageExplorer:
             self.min_y = 0
             self.max_y = self._find_max_y()
 
+        # Clamp pages that are too tall.
+        self.max_y = min(self.min_y + 10_000, self.max_y)
+
     @property
     def height(self):
         return self.max_y - self.min_y
