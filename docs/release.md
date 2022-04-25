@@ -6,7 +6,7 @@
 
 3. Create release on GitHub (at the code the model was trained with).
 
-4. Pack and upload the checkpoint.
+4. Pack and upload the checkpoint (then [re-deploy demo](demo/deploy.md)).
 
    ```bash
    tar czf logs.tar.gz logs/1-version-name/
