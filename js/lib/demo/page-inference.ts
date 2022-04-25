@@ -15,7 +15,7 @@ export class PageInference {
   private readonly log: Logger;
   private readonly url: string;
   private readonly timeout: number;
-  private page: puppeteer.Page = null!;
+  private page: puppeteer.Page | null = null;
 
   public constructor(
     private readonly app: DemoApp,
@@ -62,7 +62,7 @@ export class PageInference {
     this.flushChunk();
     this.page = await this.app.browser.newPage();
     this.page.setDefaultTimeout(this.timeout * 1000);
-    const nav1 = await this.wrapNavigation((o) => this.page.goto(this.url, o));
+    const nav1 = await this.wrapNavigation((o) => this.page!.goto(this.url, o));
     if (nav1 === 'fail') return;
 
     // Capture snapshot. This can fail if navigation timeouts at a bad time.
@@ -83,7 +83,7 @@ export class PageInference {
       this.flushChunk();
     }
 
-    // Page must be recreated if it timeout occurred.
+    // Page must be recreated if timeout occurred.
     if (nav1 === 'timeout') {
       this.log.debug('recreating page');
       await this.close();
@@ -102,7 +102,7 @@ export class PageInference {
       this.flushChunk();
     }
     const nav2 = await this.wrapNavigation((o) =>
-      this.page.setContent(snapshot, o)
+      this.page!.setContent(snapshot, o)
     );
     if (nav2 === 'fail') return;
 
@@ -240,11 +240,14 @@ export class PageInference {
   }
 
   public async close() {
-    try {
-      await this.page.close();
-    } catch (e) {
-      const error = e as Error;
-      this.log.error('closing failed', { error: error?.stack });
+    if (this.page !== null) {
+      try {
+        await this.page.close();
+        this.page = null;
+      } catch (e) {
+        const error = e as Error;
+        this.log.error('closing failed', { error: error?.stack });
+      }
     }
   }
 
