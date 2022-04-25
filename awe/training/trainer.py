@@ -173,6 +173,10 @@ class Trainer:
             for i in range(len(websites))
             if i not in train_website_indices
         ]
+        if len(val_website_indices) == 0:
+            val_website_indices = train_website_indices
+            warnings.warn(
+                'No unseen websites left, using all websites for validation')
         self.train_websites = [websites[i] for i in train_website_indices]
         self.val_websites = [websites[i] for i in val_website_indices]
         train_website_names = [w.name for w in self.train_websites]
