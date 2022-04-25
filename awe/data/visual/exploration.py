@@ -3,6 +3,7 @@ import math
 import os
 import sys
 
+import matplotlib.axes
 import matplotlib.cm
 import matplotlib.patches
 import matplotlib.pyplot as plt
