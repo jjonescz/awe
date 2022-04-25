@@ -77,7 +77,8 @@ class Decoder:
         return f'<{node.html_tag}>'
 
     def decode_node_pred(self, pred: awe.data.graph.pred.NodePrediction):
-        return f'{self.decode_node(pred.node)}({pred.confidence:.2f})'
+        node = pred.node.find_node()
+        return f'{self.decode_node(node)}({pred.confidence:.2f})'
 
 def get_pred_nodes(
     label_key: str,
