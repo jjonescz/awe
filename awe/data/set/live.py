@@ -104,5 +104,8 @@ class PredictedLabels(awe.data.set.labels.PageLabels):
         ]
 
     def get_labeled_nodes(self, label_key: str):
-        node_preds = self.trainer.decode_raw(self.preds)[0][label_key]
+        decoded = self.trainer.decode_raw(self.preds)
+        if len(decoded) == 0:
+            return []
+        node_preds = decoded[0][label_key]
         return [n.node.find_node().parsed for n in node_preds]

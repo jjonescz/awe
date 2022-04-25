@@ -228,9 +228,11 @@ export class PageInference {
     } else {
       // Render table with results.
       const pagePred = response.pages[0];
-      for (const [labelKey, nodePreds] of Object.entries(pagePred)) {
-        for (const nodePred of nodePreds) {
-          rows.push({ labelKey, ...nodePred });
+      if (pagePred !== undefined) {
+        for (const [labelKey, nodePreds] of Object.entries(pagePred)) {
+          for (const nodePred of nodePreds) {
+            rows.push({ labelKey, ...nodePred });
+          }
         }
       }
       rows.sort((x, y) => y.confidence - x.confidence);
