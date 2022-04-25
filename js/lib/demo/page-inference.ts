@@ -7,7 +7,7 @@ import { Extractor } from '../extractor';
 import { PageInfo } from '../page-info';
 import { PageRecipe } from '../page-recipe';
 import { ScrapeVersion } from '../scrape-version';
-import { temporaryFileName, tryParseInt } from '../utils';
+import { temporaryFilePath, tryParseInt } from '../utils';
 import { DemoApp } from './app';
 import { InferenceOutput } from './python';
 import * as views from './views';
@@ -72,7 +72,7 @@ export class PageInference {
     this.log.debug('snapshot');
     this.res.write(views.logEntry('Freezing page...'));
     this.flushChunk();
-    this.snapshotPath = temporaryFileName('.mhtml');
+    this.snapshotPath = await temporaryFilePath('.mhtml');
     try {
       const cdp = await this.page.target().createCDPSession();
       const { data } = await cdp.send('Page.captureSnapshot', {

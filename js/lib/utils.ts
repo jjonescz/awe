@@ -1,9 +1,10 @@
 import crypto from 'crypto';
 import { existsSync, renameSync, writeFileSync } from 'fs';
-import { readFile } from 'fs/promises';
+import { mkdir, readFile } from 'fs/promises';
 import https from 'https';
 import path from 'path';
 import { URL } from 'url';
+import { TEMPORARY_DIR } from './constants';
 import { logger } from './logging';
 
 export type Writable<T> = { -readonly [P in keyof T]: T[P] };
@@ -131,6 +132,8 @@ export function tryParseInt(input: any, defaultValue: number): number {
   return result;
 }
 
-export function temporaryFileName(extension: string): string {
-  return `tmp${crypto.randomBytes(8).readBigUInt64LE(0)}${extension}`;
+export async function temporaryFilePath(extension: string) {
+  await mkdir(TEMPORARY_DIR, { recursive: true });
+  const num = crypto.randomBytes(8).readBigUInt64LE(0);
+  return `${TEMPORARY_DIR}/${num}${extension}`;
 }
