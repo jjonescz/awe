@@ -100,7 +100,7 @@ export class DemoApp {
     log.info('start', { options, logLevel: log.level, logFile });
 
     // Load model info.
-    const model = await loadModel();
+    const model = await loadModel(log);
     log.verbose('loaded model info', { model });
 
     return new DemoApp(options, log, model);

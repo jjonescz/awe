@@ -1,7 +1,8 @@
 import { readdir, readFile } from 'fs/promises';
-import path from 'path';
-import { LOG_DIR } from '../constants';
 import naturalCompare from 'natural-compare-lite';
+import path from 'path';
+import { Logger } from 'winston';
+import { LOG_DIR } from '../constants';
 
 export interface ModelInfo {
   labels: string[];
@@ -11,7 +12,7 @@ export interface ModelInfo {
   examples: string[] | undefined;
 }
 
-export async function loadModel() {
+export async function loadModel(log: Logger) {
   const versions = await readdir(LOG_DIR);
 
   // Sort versions like a human would.
@@ -21,6 +22,7 @@ export async function loadModel() {
   const versionName = versions.pop()!;
 
   const infoPath = path.join(LOG_DIR, versionName, 'info.json');
+  log.info('found version', { infoPath });
   const infoText = await readFile(infoPath, { encoding: 'utf-8' });
   return JSON.parse(infoText) as ModelInfo;
 }
