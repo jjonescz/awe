@@ -95,6 +95,7 @@ export function results(
       <th></th>
       <th>Value</th>
       <th>Confidence</th>
+      <th>Box</th>
     </tr>
     $${rows
       .map((r) => {
@@ -113,6 +114,7 @@ export function results(
             }
           </td>
           <td>${prob} % (${conf})</td>
+          <td>${r.box?.join(', ') ?? ''}</td>
         </tr>`;
       })
       .join('')}

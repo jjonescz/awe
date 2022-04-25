@@ -177,6 +177,7 @@ export class PageInference {
       });
     } else {
       // Mock inference.
+      const defaults = { url: null, box: null };
       response = {
         screenshot,
         pages: [
@@ -184,7 +185,7 @@ export class PageInference {
             engine: [],
             fuel_economy: [
               {
-                url: null,
+                ...defaults,
                 confidence: 4.112531661987305,
                 probability: 0.9950769543647766,
                 text: '22 / 29 mpg',
@@ -192,7 +193,7 @@ export class PageInference {
                   '/html/body/div[1]/main/div[1]/section[2]/div[1]/div/div[5]/div/div[1]/div[1]/div[2]/div[2]/text()',
               },
               {
-                url: null,
+                ...defaults,
                 confidence: 1.1698349714279175,
                 probability: 0.6030704975128174,
                 text: '5/5',
@@ -203,7 +204,7 @@ export class PageInference {
             model: [],
             price: [
               {
-                url: null,
+                ...defaults,
                 confidence: 1.6609370708465576,
                 probability: 0.6562321186065674,
                 text: '$25,377',

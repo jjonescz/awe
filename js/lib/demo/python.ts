@@ -1,6 +1,6 @@
 import { PythonShell, PythonShellError } from 'python-shell';
 import { Logger } from 'winston';
-import { DomData } from '../extractor';
+import { BoundingBox, DomData } from '../extractor';
 import { DemoOptions } from './app';
 
 export interface InferenceInput {
@@ -23,6 +23,7 @@ export interface NodePrediction {
   xpath: string;
   confidence: number;
   probability: number;
+  box: BoundingBox | null;
 }
 
 type PromiseResolve<T> = (value: T | PromiseLike<T>) => void;

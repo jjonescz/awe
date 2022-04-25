@@ -92,7 +92,8 @@ def serialize_prediction(p: awe.data.graph.pred.NodePrediction):
         'url': node.get_attribute('href'),
         'xpath': node.get_xpath(),
         'confidence': p.confidence,
-        'probability': p.probability
+        'probability': p.probability,
+        'box': node.box.as_tuple() if node.box else None,
     }
 
 if __name__ == '__main__':

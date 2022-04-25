@@ -13,10 +13,12 @@ type TreeData = {
 /** A-RGB color. */
 type Color = `#${string}${string}${string}${string}`;
 
+/** Bounding box (x, y, width, height). */
+export type BoundingBox = readonly [number, number, number, number];
+
 /** Visual attributes for one DOM node. */
 type ElementData = {
-  /** Bounding box (x, y, width, height). */
-  box?: readonly [number, number, number, number];
+  box?: BoundingBox;
   /** Value of `id` attribute (for debugging purposes). */
   id?: string;
   /** Whether this text element is only white-space. */
