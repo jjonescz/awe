@@ -22,7 +22,10 @@ def plot_websites(websites: list[awe.data.set.pages.Website], n_cols: int = 1):
         for w in websites
     ])
 
-def plot_pages(pages: list[tuple[awe.data.set.pages.Page]]):
+def plot_pages(
+    pages: list[tuple[awe.data.set.pages.Page]],
+    set_title: bool = True
+):
     n_cols = max(len(row) for row in pages)
 
     # Find page dimensions.
@@ -39,7 +42,8 @@ def plot_pages(pages: list[tuple[awe.data.set.pages.Page]]):
     explorers = [e for row in explorers for e in row]
     for ax, e in tqdm(zip(axs, explorers), desc='pages', total=len(explorers)):
         e.plot_screenshot_with_boxes(ax)
-        ax.set_title(e.page.website.name)
+        if set_title:
+            ax.set_title(e.page.website.name)
     return fig
 
 class PageExplorer:
