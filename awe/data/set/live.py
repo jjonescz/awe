@@ -41,6 +41,12 @@ class Page(awe.data.set.pages.Page):
         return self._screenshot
 
     @property
+    def labels(self):
+        # This is overridden to avoid caching the labels (the default behavior
+        # in the base class).
+        return self._labels
+
+    @property
     def index_in_dataset(self):
         return self.index
 
