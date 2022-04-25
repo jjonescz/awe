@@ -1,7 +1,7 @@
 """The deep learning model."""
 
 import dataclasses
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Callable, Optional
 
 import torch
 import torch.nn
@@ -24,8 +24,8 @@ if TYPE_CHECKING:
 @dataclasses.dataclass
 class ModelOutput:
     loss: torch.FloatTensor
-    logits: torch.FloatTensor
-    gold_labels: torch.FloatTensor
+    logits: torch.FloatTensor # [batch, label_keys]
+    gold_labels: torch.FloatTensor # [batch]
 
     def get_pred_labels(self):
         return torch.argmax(self.logits, dim=-1)
@@ -37,6 +37,19 @@ class ModelOutput:
 class Prediction:
     batch: list[awe.data.graph.dom.Node]
     outputs: ModelOutput
+
+    def filter_nodes(self,
+        predicate: Callable[[awe.data.graph.dom.Node], bool]
+    ):
+        mask = [predicate(n) for n in self.batch]
+        return Prediction(
+            batch=[n for n, m in zip(self.batch, mask) if m],
+            outputs=ModelOutput(
+                loss=self.outputs.loss,
+                logits=self.outputs.logits[mask],
+                gold_labels=self.outputs.gold_labels[mask],
+            )
+        )
 
 class Model(torch.nn.Module):
     def __init__(self,

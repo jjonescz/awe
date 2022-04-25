@@ -33,6 +33,10 @@ class BoundingBox:
     def corners(self):
         return self.top_left, self.top_right, self.bottom_left, self.bottom_right
 
+    @property
+    def is_positive(self):
+        return self.bottom_right > (0, 0)
+
     def as_tuple(self):
         return self.x, self.y, self.width, self.height
 

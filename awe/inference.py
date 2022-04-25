@@ -16,6 +16,7 @@ import awe.data.graph.pred
 import awe.data.parsing
 import awe.data.set.live
 import awe.data.visual.exploration
+import awe.model.classifier
 import awe.training.params
 import awe.training.trainer
 import awe.training.versioning
@@ -55,7 +56,7 @@ def main():
             )
             run = trainer.create_run([page], desc='live')
             preds = trainer.predict(run)
-            decoded = trainer.decode_raw(preds)
+            preds = postprocess(preds)
 
             # Render screenshot with predicted nodes highlighted.
             page.fill_labels(trainer, preds)
@@ -73,7 +74,7 @@ def main():
                         k: [serialize_prediction(p) for p in v]
                         for k, v in d.items()
                     }
-                    for d in decoded
+                    for d in trainer.decode_raw(preds)
                 ],
                 'screenshot': out_b64
             }
@@ -81,6 +82,18 @@ def main():
             response = { 'error': traceback.format_exc() }
         json.dump(response, sys.stdout)
         print() # commit the message by sending a newline character
+
+def postprocess(preds: list[awe.model.classifier.Prediction]):
+    """
+    Performs simple post-processing.
+
+    Only nodes that are inside the screen are included.
+    """
+
+    return [
+        pred.filter_nodes(lambda n: n.box is None or n.box.is_positive)
+        for pred in preds
+    ]
 
 def serialize_prediction(p: awe.data.graph.pred.NodePrediction):
     node = p.node.find_node()
