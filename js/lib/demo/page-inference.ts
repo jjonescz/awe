@@ -1,11 +1,13 @@
 import { Request, Response } from 'express';
+import { unlink, writeFile } from 'fs/promises';
 import puppeteer from 'puppeteer-core';
+import { pathToFileURL } from 'url';
 import { Logger } from 'winston';
 import { Extractor } from '../extractor';
 import { PageInfo } from '../page-info';
 import { PageRecipe } from '../page-recipe';
 import { ScrapeVersion } from '../scrape-version';
-import { tryParseInt } from '../utils';
+import { temporaryFileName, tryParseInt } from '../utils';
 import { DemoApp } from './app';
 import { InferenceOutput } from './python';
 import * as views from './views';
@@ -16,6 +18,7 @@ export class PageInference {
   private readonly url: string;
   private readonly timeout: number;
   private page: puppeteer.Page | null = null;
+  private snapshotPath: string | null = null;
 
   public constructor(
     private readonly app: DemoApp,
@@ -69,13 +72,13 @@ export class PageInference {
     this.log.debug('snapshot');
     this.res.write(views.logEntry('Freezing page...'));
     this.flushChunk();
-    let snapshot: string;
+    this.snapshotPath = temporaryFileName('.mhtml');
     try {
       const cdp = await this.page.target().createCDPSession();
       const { data } = await cdp.send('Page.captureSnapshot', {
         format: 'mhtml',
       });
-      snapshot = data;
+      await writeFile(this.snapshotPath, data, { encoding: 'utf-8' });
     } catch (e) {
       const error = e as Error;
       this.log.error('snapshot fail', { error: error?.stack });
@@ -86,7 +89,7 @@ export class PageInference {
     // Page must be recreated if timeout occurred.
     if (nav1 === 'timeout') {
       this.log.debug('recreating page');
-      await this.close();
+      await this.closePage();
       this.page = await this.app.browser.newPage();
       this.page.setDefaultTimeout(this.timeout * 1000);
     }
@@ -102,7 +105,7 @@ export class PageInference {
       this.flushChunk();
     }
     const nav2 = await this.wrapNavigation((o) =>
-      this.page!.setContent(snapshot, o)
+      this.page!.goto(pathToFileURL(this.snapshotPath!).toString(), o)
     );
     if (nav2 === 'fail') return;
 
@@ -239,7 +242,7 @@ export class PageInference {
     this.res.end();
   }
 
-  public async close() {
+  private async closePage() {
     if (this.page !== null) {
       try {
         await this.page.close();
@@ -247,6 +250,22 @@ export class PageInference {
       } catch (e) {
         const error = e as Error;
         this.log.error('closing failed', { error: error?.stack });
+      }
+    }
+  }
+
+  public async close() {
+    this.log.debug('closing');
+
+    await this.closePage();
+
+    if (this.snapshotPath !== null) {
+      try {
+        await unlink(this.snapshotPath);
+        this.snapshotPath = null;
+      } catch (e) {
+        const error = e as Error;
+        this.log.error('unlink failed', { error: error?.stack });
       }
     }
   }

@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { existsSync, renameSync, writeFileSync } from 'fs';
 import { readFile } from 'fs/promises';
 import https from 'https';
@@ -128,4 +129,8 @@ export function tryParseInt(input: any, defaultValue: number): number {
   const result = parseInt(input?.toString());
   if (isNaN(result)) return defaultValue;
   return result;
+}
+
+export function temporaryFileName(extension: string): string {
+  return `tmp${crypto.randomBytes(8).readBigUInt64LE(0)}${extension}`;
 }
