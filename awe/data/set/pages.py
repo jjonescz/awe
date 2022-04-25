@@ -212,6 +212,10 @@ class Page(abc.ABC):
         return f'{self.dir_path}/{self.screenshot_file_name}'
 
     @property
+    def screenshot_bytes(self) -> Optional[bytes]:
+        """Screenshot loaded in memory."""
+
+    @property
     @abc.abstractmethod
     def url(self) -> str:
         """Original URL of the page."""

@@ -1,3 +1,4 @@
+import io
 import itertools
 import math
 import os
@@ -75,8 +76,14 @@ class PageExplorer:
         return min_y, max_y
 
     def plot_screenshot_with_boxes(self, ax: matplotlib.axes.Axes):
+        # Load the screenshot.
+        if self.page.screenshot_bytes is not None:
+            img_source = io.BytesIO(self.page.screenshot_bytes)
+        else:
+            img_source = self.page.screenshot_path
+        im = plt.imread(img_source)
+
         # Crop the screenshot.
-        im = plt.imread(self.page.screenshot_path)
         im = im[self.min_y:self.max_y + 1, :, :]
 
         # Plot the screenshot.
