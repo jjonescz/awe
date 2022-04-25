@@ -110,7 +110,9 @@ export function results(
                 ? r.text === null
                   ? h`<em>empty</em>`
                   : h`${r.text}`
-                : h`<a href="${r.url}">${r.text ?? r.url}</a>`
+                : h`<a href="${r.url}">$${
+                    r.text === null ? h`<em>picture</em>` : h`${r.text}`
+                  }</a>`
             }
           </td>
           <td>${prob} % (${conf})</td>
