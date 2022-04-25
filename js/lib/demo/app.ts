@@ -139,7 +139,7 @@ export class DemoApp {
     log.debug('load page');
     res.write(views.logEntry('Loading page...'));
     this.flushChunk(res);
-    const page = await this.browser.newPage();
+    let page = await this.browser.newPage();
     page.setDefaultTimeout(timeout * 1000);
     const nav1 = await DemoApp.wrapNavigation(
       (o) => page.goto(url, o),
@@ -148,30 +148,64 @@ export class DemoApp {
     );
     if (nav1 === 'fail') return;
 
+    // Capture snapshot. This can fail if navigation timeouts at a bad time.
+    log.debug('snapshot');
+    res.write(views.logEntry('Freezing page...'));
+    this.flushChunk(res);
+    let snapshot: string;
+    try {
+      const cdp = await page.target().createCDPSession();
+      const { data } = await cdp.send('Page.captureSnapshot', {
+        format: 'mhtml',
+      });
+      snapshot = data;
+    } catch (e) {
+      const error = e as Error;
+      log.error('snapshot fail', { error: error?.stack });
+      res.write(views.logEntry('Capturing snapshot failed.'));
+      this.flushChunk(res);
+    }
+
+    // Page must be recreated if it timeout occurred.
+    if (nav1 === 'timeout') {
+      log.debug('recreating page');
+      try {
+        page.close();
+      } catch (e) {
+        log.error('page closing failed', { error: (e as Error)?.stack });
+      }
+      page = await this.browser.newPage();
+      page.setDefaultTimeout(timeout * 1000);
+    }
+
+    // Freeze the page.
+    log.debug('freeze page');
+    try {
+      page.setJavaScriptEnabled(false);
+    } catch (e) {
+      const error = e as Error;
+      log.debug('freeze fail', { error: error?.stack });
+      res.write(views.logEntry('Reloading failed.'));
+      this.flushChunk(res);
+    }
+    const nav2 = await DemoApp.wrapNavigation(
+      (o) => page.setContent(snapshot, o),
+      res,
+      log
+    );
+    if (nav2 === 'fail') return;
+
     // Extract HTML. This can fail if navigation timeouts at a bad time.
+    log.debug('extract content');
     let html: string;
     try {
       html = await page.content();
     } catch (e) {
       const error = e as Error;
       log.error('content fail', { error: error?.stack });
-      res.write(views.logEntry('Loading failed.'));
+      res.write(views.logEntry('HTML extraction failed.'));
       res.end();
       return;
-    }
-
-    // Freeze the page.
-    if (nav1 !== 'timeout') {
-      log.debug('freeze page');
-      res.write(views.logEntry('Freezing page...'));
-      this.flushChunk(res);
-      page.setJavaScriptEnabled(false);
-      const nav2 = await DemoApp.wrapNavigation(
-        (o) => page.setContent(html, o),
-        res,
-        log
-      );
-      if (nav2 === 'fail') return;
     }
 
     // Extract visuals.
