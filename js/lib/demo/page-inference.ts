@@ -235,7 +235,9 @@ export class PageInference {
           }
         }
       }
-      rows.sort((x, y) => y.confidence - x.confidence);
+
+      // Display most probable rows first.
+      rows.sort((x, y) => y.probability - x.probability);
     }
 
     this.res.write(views.logEntry('Done.'));
