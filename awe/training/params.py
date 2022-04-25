@@ -213,5 +213,10 @@ class Params:
         b = other.as_set(ignore_vars)
         return a.symmetric_difference(b)
 
+    def patch_for_inference(self):
+        """Ensures some paramaters are set correctly for inference."""
+        self.validate_data = False
+        self.classify_only_variable_nodes = False
+
 if __name__ == '__main__':
     print(Params.load_user(normalize=True))
