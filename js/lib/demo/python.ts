@@ -11,6 +11,12 @@ export interface InferenceInput {
   screenshot: string;
 }
 
+export interface InferenceOutput {
+  pages: { [labelKey: string]: NodePrediction[] }[];
+  /** Base64-encoded image. */
+  screenshot: string;
+}
+
 export interface NodePrediction {
   text: string | null;
   url: string | null;
@@ -59,7 +65,7 @@ export class Inference {
   public async send(input: InferenceInput) {
     const responseStr = await this.sendStr(JSON.stringify(input));
     this.log.debug('response', { json: responseStr });
-    return JSON.parse(responseStr);
+    return JSON.parse(responseStr) as InferenceOutput;
   }
 
   private async sendStr(message: string) {

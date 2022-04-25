@@ -6,6 +6,8 @@ Used by TypeScript demo application.
 Run as `python -m awe.inference`.
 """
 
+import base64
+import io
 import json
 import sys
 import traceback
@@ -13,6 +15,7 @@ import traceback
 import awe.data.graph.pred
 import awe.data.parsing
 import awe.data.set.live
+import awe.data.visual.exploration
 import awe.training.params
 import awe.training.trainer
 import awe.training.versioning
@@ -42,22 +45,37 @@ def main():
             url = data['url']
             html_text = data['html']
             visuals = data['visuals']
+            screenshot = base64.b64decode(data['screenshot'])
             page = awe.data.set.live.Page(
                 index=0,
                 url=url,
                 html_text=html_text,
-                visuals_data=visuals
+                visuals_data=visuals,
+                screenshot=screenshot,
             )
             run = trainer.create_run([page], desc='live')
             preds = trainer.predict(run)
             decoded = trainer.decode_raw(preds)
-            response = [
-                {
-                    k: [serialize_prediction(p) for p in v]
-                    for k, v in d.items()
-                }
-                for d in decoded
-            ]
+
+            # Render screenshot with predicted nodes highlighted.
+            page.fill_labels(trainer, preds)
+            fig = awe.data.visual.exploration.plot_pages([(page,)],
+                set_title=False
+            )
+            with io.BytesIO() as out_bytes:
+                fig.savefig(out_bytes, format='png', bbox_inches='tight')
+                out_b64 = base64.b64encode(out_bytes.getvalue()).decode('ascii')
+
+            response = {
+                'pages': [
+                    {
+                        k: [serialize_prediction(p) for p in v]
+                        for k, v in d.items()
+                    }
+                    for d in decoded
+                ],
+                'screenshot': out_b64
+            }
         except RuntimeError:
             response = { 'error': traceback.format_exc() }
         json.dump(response, sys.stdout)

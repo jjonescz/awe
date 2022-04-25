@@ -8,7 +8,7 @@ import { PageRecipe } from '../page-recipe';
 import { ScrapeVersion } from '../scrape-version';
 import { tryParseInt } from '../utils';
 import { loadModel, ModelInfo } from './model-info';
-import { Inference, NodePrediction } from './python';
+import { Inference, InferenceOutput, NodePrediction } from './python';
 import * as views from './views';
 
 export class DemoOptions {
@@ -185,6 +185,9 @@ export class DemoApp {
     const visuals = extractor.data;
 
     // Take screenshot.
+    log.debug('screenshot');
+    res.write(views.logEntry('Taking screenshot...'));
+    this.flushChunk(res);
     const screenshot = (await page.screenshot({
       fullPage: true,
       encoding: 'base64',
@@ -196,7 +199,7 @@ export class DemoApp {
     }
 
     // Pass HTML and visuals to Python.
-    let response: any;
+    let response: InferenceOutput;
     if (this.python !== null) {
       // Wait for Python inference to fully load.
       const pythonLoading = this.python.loading;
@@ -214,39 +217,45 @@ export class DemoApp {
       response = await this.python.send({ url, html, visuals, screenshot });
     } else {
       // Mock inference.
-      response = [
-        {
-          engine: [],
-          fuel_economy: [
-            {
-              confidence: 4.112531661987305,
-              probability: 0.9950769543647766,
-              text: '22 / 29 mpg',
-              xpath:
-                '/html/body/div[1]/main/div[1]/section[2]/div[1]/div/div[5]/div/div[1]/div[1]/div[2]/div[2]/text()',
-            },
-            {
-              confidence: 1.1698349714279175,
-              probability: 0.6030704975128174,
-              text: '5/5',
-              xpath:
-                '/html/body/div[1]/main/div[1]/section[2]/div[1]/div/div[5]/div/div[1]/div[3]/div[2]/div[2]/text()',
-            },
-          ],
-          model: [],
-          price: [
-            {
-              confidence: 1.6609370708465576,
-              probability: 0.6562321186065674,
-              text: '$25,377',
-              xpath:
-                '/html/body/div[1]/main/div[1]/section[2]/div[1]/div/div[3]/div/table/tbody/tr[1]/td[3]/text()',
-            },
-          ],
-        },
-      ];
+      response = {
+        screenshot,
+        pages: [
+          {
+            engine: [],
+            fuel_economy: [
+              {
+                url: null,
+                confidence: 4.112531661987305,
+                probability: 0.9950769543647766,
+                text: '22 / 29 mpg',
+                xpath:
+                  '/html/body/div[1]/main/div[1]/section[2]/div[1]/div/div[5]/div/div[1]/div[1]/div[2]/div[2]/text()',
+              },
+              {
+                url: null,
+                confidence: 1.1698349714279175,
+                probability: 0.6030704975128174,
+                text: '5/5',
+                xpath:
+                  '/html/body/div[1]/main/div[1]/section[2]/div[1]/div/div[5]/div/div[1]/div[3]/div[2]/div[2]/text()',
+              },
+            ],
+            model: [],
+            price: [
+              {
+                url: null,
+                confidence: 1.6609370708465576,
+                probability: 0.6562321186065674,
+                text: '$25,377',
+                xpath:
+                  '/html/body/div[1]/main/div[1]/section[2]/div[1]/div/div[3]/div/table/tbody/tr[1]/td[3]/text()',
+              },
+            ],
+          },
+        ],
+      };
     }
-    res.write(views.logEntry('Rendering screenshot...'));
+    res.write(views.logEntry('Rendering response...'));
     this.flushChunk(res);
 
     // Log full inputs if they haven't been logged already and there was an
@@ -256,7 +265,7 @@ export class DemoApp {
       if (!this.options.logInputs) log.silly('inputs', { html, visuals });
     } else {
       // Render table with results.
-      const pagePred = response[0];
+      const pagePred = response.pages[0];
       for (const [labelKey, nodePreds] of Object.entries<NodePrediction[]>(
         pagePred
       )) {
@@ -269,7 +278,7 @@ export class DemoApp {
 
     res.write(views.logEntry('Done.'));
     res.write(views.logEnd());
-    res.write(views.results(rows, screenshot));
+    res.write(views.results(rows, response.screenshot));
     res.write(views.layoutEnd());
     res.end();
   };
