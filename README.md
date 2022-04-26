@@ -6,6 +6,7 @@ This repository contains source code of AI-based structured web data extractor.
 - 📜 Thesis: [assignment](https://is.cuni.cz/studium/dipl_st/index.php?id=&tid=&do=main&doo=detail&did=241832)
 - 🚀 Demo: [live](https://bit.ly/awedemo),
   [Docker Hub](https://hub.docker.com/repository/docker/janjones/awe-demo)
+- 🗃️ Data: [SWDE with visuals](https://github.com/jjonescz/swde-visual)
 
 ## Directory structure
 
