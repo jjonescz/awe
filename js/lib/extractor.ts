@@ -37,6 +37,7 @@ type ElementInfo = ElementData & {
 };
 
 interface EvaluateOptions extends JSONObject {
+  extract: ExtractorOptions;
   extractXml: boolean;
 }
 
@@ -74,15 +75,41 @@ async function tryGetXPath(element: ElementHandle<Element>) {
   }
 }
 
+export interface ExtractorOptions extends JSONObject {
+  readonly onlyTextFragments: boolean;
+  readonly alsoHtmlTags: string[];
+}
+
+export class ExtractorOptions {
+  public static readonly default: ExtractorOptions = {
+    onlyTextFragments: false,
+    alsoHtmlTags: [],
+  };
+
+  public static fromModelParams(params: Record<string, any>): ExtractorOptions {
+    return {
+      onlyTextFragments: !!params['classify_only_text_nodes'],
+      alsoHtmlTags: params['classify_also_html_tags'],
+    };
+  }
+}
+
+export class ExtractionStats {
+  public evaluated = 0;
+  public skipped = 0;
+}
+
 /** Can extract visual attributes from a Puppeteer-controlled page. */
 export class Extractor {
   public readonly data: DomData;
+  public readonly stats = new ExtractionStats();
 
   constructor(
     public readonly page: Page,
     public readonly recipe: PageRecipe,
     public readonly logger: winston.Logger,
-    public readonly extractXml: boolean
+    public readonly extractXml: boolean,
+    public readonly options: ExtractorOptions = ExtractorOptions.default
   ) {
     this.data = {
       timestamp: recipe.page.timestamp!,
@@ -161,10 +188,14 @@ export class Extractor {
     element: ElementHandle<Element>
   ): Promise<ElementInfo> {
     // Run code in browser to get element's attributes.
-    const evaluated = await this.evaluate(element);
+    const { skipped, ...evaluated } = await this.evaluate(element);
+
+    // Update stats.
+    if (skipped) this.stats.skipped++;
+    else this.stats.evaluated++;
 
     // Get other attributes that don't directly need browser context.
-    const box = await element.boundingBox();
+    const box = skipped ? null : await element.boundingBox();
 
     // Combine all element attributes together.
     return {
@@ -176,6 +207,7 @@ export class Extractor {
   /** Runs code inside browser for an {@link element}. */
   public evaluate(element: ElementHandle<Element>) {
     return element.evaluate(Extractor.evaluateClient, <EvaluateOptions>{
+      extract: this.options,
       extractXml: this.extractXml,
     });
   }
@@ -196,6 +228,29 @@ export class Extractor {
           ? (true as const)
           : undefined,
       };
+    }
+
+    const tagName = e.nodeName.toLowerCase();
+
+    // Skip extraction if not needed.
+    if (
+      // If only text fragments are requested.
+      o.extract.onlyTextFragments &&
+      // And this is not one of the other requested tag names.
+      o.extract.alsoHtmlTags.indexOf(tagName) < 0
+    ) {
+      // And it does not have a text fragment child.
+      let hasTextFragmentChild = false;
+      e.childNodes.forEach((n) => {
+        if (n.nodeName === '#text') hasTextFragmentChild = true;
+      });
+      if (!hasTextFragmentChild) {
+        return {
+          id: e.getAttribute('id') ?? undefined,
+          tagName,
+          skipped: true,
+        };
+      }
     }
 
     // Note that we cannot reference outside functions easily, hence we define
@@ -333,11 +388,11 @@ export class Extractor {
         const attr = e.attributes.item(0)!;
         attrs[attr.name] = attr.value;
       }
-      return { tagName: e.nodeName.toLowerCase(), attrs, ...picked };
+      return { tagName, attrs, ...picked };
     }
     return {
       id: e.getAttribute('id') ?? undefined,
-      tagName: e.nodeName.toLowerCase(),
+      tagName,
       ...picked,
     };
   }

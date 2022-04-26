@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import puppeteer from 'puppeteer-core';
 import { Logger } from 'winston';
+import { ExtractorOptions } from '../extractor';
 import { logFile } from '../logging';
 import { tryParseInt } from '../utils';
 import { loadModel, Model } from './model-info';
@@ -39,6 +40,7 @@ export class DemoOptions {
 }
 
 export class DemoApp {
+  public readonly extractorOptions: ExtractorOptions;
   public readonly python: Inference | null = null;
   public browser: Promise<puppeteer.Browser> | puppeteer.Browser;
 
@@ -47,6 +49,9 @@ export class DemoApp {
     public readonly log: Logger,
     public readonly model: Model
   ) {
+    this.extractorOptions = ExtractorOptions.fromModelParams(model.params);
+    this.log.info('extractor options', { options: this.extractorOptions });
+
     // Create Express HTTP server.
     const app = express();
     app.get('/', this.mainPage);

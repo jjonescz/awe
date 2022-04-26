@@ -132,9 +132,11 @@ export class PageInference {
       this.page,
       recipe,
       this.log,
-      /* extractXml */ false
+      /* extractXml */ false,
+      this.app.extractorOptions
     );
     await extractor.extract();
+    this.log.debug('extracted', { stats: extractor.stats });
     const visuals = extractor.data;
 
     // Take screenshot.
