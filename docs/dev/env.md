@@ -2,7 +2,7 @@
 
 As IDE, we use [Visual Studio Code](https://code.visualstudio.com/).
 For developing both Python and TypeScript code,
-use Docker image `janjones:awe-gradient`.
+use Docker image `janjones/awe-gradient`.
 
 ## Docker image
 
@@ -68,7 +68,11 @@ If CPU is enough (e.g., to process data or experiment with a simple model),
 ## GPU on Gradient.run
 
 When GPU is needed, [Gradient.run](https://gradient.run/) cloud can be used.
-Since it does not support direct SSH connections, a little trick is needed.
+Since it does not support direct SSH connections, a little trick is needed[^2].
+
+[^2]: This trick is based on directing SSH over WebSockets
+which might stop working if Gradient.run infrastructure is changed
+in a non-trivial way.
 
 1. Create and start Gradient notebook.
    In advanced options
