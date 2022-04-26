@@ -32,50 +32,24 @@ type ElementData = {
 
 export type NodeData = TreeData & ElementData;
 
-type ElementInfo = ElementData & {
-  tagName: string;
-};
-
 /**
  * Structure in which extracted visual attributes are stored for an element and
  * its descendants.
  */
 export type DomData = TreeData & Pick<PageInfo, 'timestamp'>;
 
-const CHILD_SELECTOR = '* | text()';
+// Note that the following objects need to be serializable because they are
+// passed to browser context during evaluation. Extending `JSONObject` ensures
+// that.
 
-async function tryGetXPath(element: ElementHandle<Element>) {
-  try {
-    return await element.evaluate((e) => {
-      // Inspired by https://stackoverflow.com/a/30227178.
-      const getPathTo = (element: Element): string => {
-        let ix = 0;
-        const parent = element.parentNode;
-        const tagName = element.nodeName.toLowerCase();
-        if (parent === null || !(parent instanceof Element))
-          return `/${tagName}`;
-        const siblings = parent.childNodes;
-        for (let i = 0; i < siblings.length; i++) {
-          const sibling = siblings[i];
-          if (sibling === element)
-            return `${getPathTo(parent)}/${tagName}[${ix + 1}]`;
-          if ((sibling as Element)?.tagName === element.tagName) ix++;
-        }
-        return `invalid(${tagName})`;
-      };
-      return getPathTo(e);
-    });
-  } catch (e) {
-    return `error(${(e as Error)?.message})`;
-  }
-}
-
+/** Options for extraction. */
 export interface ExtractorOptions extends JSONObject {
   readonly extractXml: boolean;
   readonly onlyTextFragments: boolean;
   readonly alsoHtmlTags: string[];
 }
 
+/** Convenience methods for creating {@link ExtractorOptions}. */
 export class ExtractorOptions {
   public static readonly default: ExtractorOptions = {
     extractXml: false,
@@ -95,16 +69,23 @@ export class ExtractorOptions {
   }
 }
 
-export class ExtractionStats {
-  public evaluated = 0;
-  public skipped = 0;
+/** Results of in-browser evaluation. */
+export interface EvaluationResult extends JSONObject {
+  evaluated: number;
+  skipped: number;
+  readonly errors: EvaluationError[];
+  readonly data: TreeData;
+}
+
+export interface EvaluationError extends JSONObject {
+  readonly xpath: string;
+  readonly error: string;
 }
 
 /** Can extract visual attributes from a Puppeteer-controlled page. */
 export class Extractor {
   public readonly data: DomData;
   public readonly options: ExtractorOptions;
-  public readonly stats = new ExtractionStats();
 
   constructor(
     public readonly page: Page,
@@ -120,137 +101,42 @@ export class Extractor {
 
   /** Extracts visual attributes for all DOM nodes in the {@link page}. */
   public async extract() {
-    // Start a queue with root elements.
-    const rootElements = await this.page.$x(CHILD_SELECTOR);
-    const queue = rootElements.map((e) => ({
-      element: e,
-      parent: <TreeData>this.data,
-    }));
-    while (queue.length !== 0) {
-      const { element, parent } = queue.shift()!;
+    // Obtain the `document` element.
+    const root = (await this.page.$x('.'))[0];
 
-      // Extract data for an element.
-      const result = await this.tryExtractFor(element);
-      if (result === null) continue;
-      const { tagName, ...info } = result;
+    // Run extraction inside the browser.
+    const result = await this.evaluate(root);
 
-      // Append this element's data to parent `DomData`.
-      const container: NodeData = { ...info };
-      const key = `/${tagName}` as const;
-      const indexedKey = (i: number) => `${key}[${i}]` as const;
-      let finalKey = key;
-      // If parent already contains an indexed child, find new available index.
-      if (parent[indexedKey(1)] !== undefined) {
-        for (let i = 2; ; i++) {
-          if (parent[indexedKey(i)] === undefined) {
-            finalKey = indexedKey(i);
-            break;
-          }
-        }
-      }
-      // Otherwise, determine whether we have to add index `[1]`.
-      else {
-        // Note that `name(.) = "..."` is needed to avoid the need to escape tag
-        // names (e.g., tag names containing colon are problematic).
-        const siblings =
-          tagName === 'text()'
-            ? await element.$x('following-sibling::text()')
-            : await element.$x(`(../*)[name(.) = "${tagName}"][2]`);
-        if (siblings.length !== 0) {
-          finalKey = indexedKey(1);
-        }
-      }
-
-      // Note that we never change `parent[key]`, we only *append*, therefore
-      // the order should match the original order. This is actually not
-      // required (and the processing code should not count on that), but it
-      // helps when looking at the JSON manually.
-      parent[finalKey] = container;
-
-      // Add children to the queue.
-      const children = await element.$x(CHILD_SELECTOR);
-      queue.push(...children.map((e) => ({ element: e, parent: container })));
+    // Log errors.
+    if (result.errors.length !== 0) {
+      this.logger.error('extraction failed', { errors: result.errors });
     }
+
+    // Save data.
+    for (const [key, value] of Object.entries(result.data)) {
+      this.data[key as `/${string}`] = value;
+    }
+
+    // Return stats.
+    const { evaluated, skipped } = result;
+    return { evaluated, skipped };
   }
 
-  public async tryExtractFor(element: ElementHandle<Element>) {
-    try {
-      return await this.extractFor(element);
-    } catch (e) {
-      this.logger.error('extract failed', {
-        error: (e as Error)?.message,
-        element: await tryGetXPath(element),
-      });
-      return null;
-    }
+  /** Extracts visual attributes for all DOM nodes in the tree rooted at
+   * {@link root}.
+   */
+  public evaluate(root: ElementHandle<Element>) {
+    return root.evaluate(Extractor.evaluateClient, this.options);
   }
 
-  /** Extracts visual attributes for one {@link element}. */
-  public async extractFor(
-    element: ElementHandle<Element>
-  ): Promise<ElementInfo> {
-    // Run code in browser to get element's attributes.
-    const { skipped, ...evaluated } = await this.evaluate(element);
-
-    // Update stats.
-    if (skipped) this.stats.skipped++;
-    else this.stats.evaluated++;
-
-    // Get other attributes that don't directly need browser context.
-    const box = skipped ? null : await element.boundingBox();
-
-    // Combine all element attributes together.
-    return {
-      ...evaluated,
-      box: box === null ? undefined : [box.x, box.y, box.width, box.height],
+  /** This method runs inside the browser. */
+  private static evaluateClient(root: Element, options: ExtractorOptions) {
+    const result: EvaluationResult = {
+      evaluated: 0,
+      skipped: 0,
+      errors: [],
+      data: {},
     };
-  }
-
-  /** Runs code inside browser for an {@link element}. */
-  public evaluate(element: ElementHandle<Element>) {
-    return element.evaluate(Extractor.evaluateClient, this.options);
-  }
-
-  /** This method runs inside browser. */
-  private static evaluateClient(e: Element, o: ExtractorOptions) {
-    // Ignore text fragments, they don't have computed style.
-    if (e.nodeName === '#text') {
-      if (o.extractXml) {
-        return {
-          tagName: 'text()',
-          text: e.textContent ?? '',
-        };
-      }
-      return {
-        tagName: 'text()',
-        whiteSpace: /^\s*$/.test(e.textContent ?? '')
-          ? (true as const)
-          : undefined,
-      };
-    }
-
-    const tagName = e.nodeName.toLowerCase();
-
-    // Skip extraction if not needed.
-    if (
-      // If only text fragments are requested.
-      o.onlyTextFragments &&
-      // And this is not one of the other requested tag names.
-      o.alsoHtmlTags.indexOf(tagName) < 0
-    ) {
-      // And it does not have a text fragment child.
-      let hasTextFragmentChild = false;
-      e.childNodes.forEach((n) => {
-        if (n.nodeName === '#text') hasTextFragmentChild = true;
-      });
-      if (!hasTextFragmentChild) {
-        return {
-          id: e.getAttribute('id') ?? undefined,
-          tagName,
-          skipped: true,
-        };
-      }
-    }
 
     // Note that we cannot reference outside functions easily, hence we define
     // them here.
@@ -350,50 +236,219 @@ export class Extractor {
       };
     };
 
-    // Pick some properties from element's computed style.
-    const style = getComputedStyle(e);
-    const picked = {
-      fontFamily: except(style.fontFamily, '"Times New Roman"'),
-      fontSize: except(pixels(style.fontSize), 16),
-      fontWeight: except(style.fontWeight, '400'),
-      fontStyle: except(style.fontStyle, 'normal'),
-      textAlign: except(style.textAlign, 'start'),
-      textDecoration: unless(
-        style.textDecoration,
-        style.textDecorationLine === 'none'
-      ),
-      color: except(color(style.color), '#000000ff'),
-      backgroundColor: visibleColor(style.backgroundColor),
-      backgroundImage: except(style.backgroundImage, 'none'),
-      ...border(style),
-      boxShadow: except(style.boxShadow, 'none'),
-      cursor: except(style.cursor, 'auto'),
-      letterSpacing: pixels(except(style.letterSpacing, 'normal')),
-      lineHeight: pixels(except(style.lineHeight, 'normal')),
-      opacity: except(style.opacity, '1'),
-      ...borderSide(style, 'outline'),
-      overflow: except(style.overflow, 'visible'),
-      pointerEvents: except(style.pointerEvents, 'auto'),
-      textShadow: except(style.textShadow, 'none'),
-      textOverflow: except(style.textOverflow, 'clip'),
-      textTransform: except(style.textTransform, 'none'),
-      zIndex: except(style.zIndex, 'auto'),
+    const isElement = (node: Node): node is Element => {
+      return node.nodeType === Node.ELEMENT_NODE;
     };
 
-    // Construct `ElementInfo`.
-    if (o.extractXml) {
-      const attrs: Record<string, string> = {};
-      for (let i = 0; i < e.attributes.length; i++) {
-        const attr = e.attributes.item(0)!;
-        attrs[attr.name] = attr.value;
-      }
-      return { tagName, attrs, ...picked };
+    const isTextFragment = (node: Node) => {
+      return node.nodeType === Node.TEXT_NODE;
     }
-    return {
-      id: e.getAttribute('id') ?? undefined,
-      tagName,
-      ...picked,
+
+    const getTagName = (node: Node) => node.nodeName.toLowerCase();
+
+    /** Common code used by multiple branches of `extractOne` below. */
+    const extractNonText = (node: Node) => {
+      const tagName = getTagName(node);
+      const rect = isElement(node) ? node.getBoundingClientRect() : null;
+      const box =
+        rect === null
+          ? undefined
+          : ([rect.x, rect.y, rect.width, rect.height] as const);
+
+      if (options.extractXml) {
+        return { tagName, box };
+      }
+
+      return {
+        id:
+          (isElement(node) ? node.getAttribute('id')?.toString() : null) ??
+          undefined,
+        tagName,
+        box,
+      };
     };
+
+    /** Picks some properties from element's computed style. */
+    const pickStyle = (node: Node) => {
+      if (!isElement(node)) return {};
+      const style = getComputedStyle(node);
+      return {
+        fontFamily: except(style.fontFamily, '"Times New Roman"'),
+        fontSize: except(pixels(style.fontSize), 16),
+        fontWeight: except(style.fontWeight, '400'),
+        fontStyle: except(style.fontStyle, 'normal'),
+        textAlign: except(style.textAlign, 'start'),
+        textDecoration: unless(
+          style.textDecoration,
+          style.textDecorationLine === 'none'
+        ),
+        color: except(color(style.color), '#000000ff'),
+        backgroundColor: visibleColor(style.backgroundColor),
+        backgroundImage: except(style.backgroundImage, 'none'),
+        ...border(style),
+        boxShadow: except(style.boxShadow, 'none'),
+        cursor: except(style.cursor, 'auto'),
+        letterSpacing: pixels(except(style.letterSpacing, 'normal')),
+        lineHeight: pixels(except(style.lineHeight, 'normal')),
+        opacity: except(style.opacity, '1'),
+        ...borderSide(style, 'outline'),
+        overflow: except(style.overflow, 'visible'),
+        pointerEvents: except(style.pointerEvents, 'auto'),
+        textShadow: except(style.textShadow, 'none'),
+        textOverflow: except(style.textOverflow, 'clip'),
+        textTransform: except(style.textTransform, 'none'),
+        zIndex: except(style.zIndex, 'auto'),
+      };
+    };
+
+    /** Extracts visual attributes for one {@link node}. */
+    const extractOne = (node: Node) => {
+      // Ignore text fragments, they don't have computed style.
+      if (isTextFragment(node)) {
+        if (options.extractXml) {
+          return {
+            tagName: 'text()',
+            text: node.textContent ?? '',
+          };
+        }
+        return {
+          tagName: 'text()',
+          whiteSpace: /^\s*$/.test(node.textContent ?? '')
+            ? (true as const)
+            : undefined,
+        };
+      }
+
+      // Skip extraction if not needed.
+      if (
+        // If only text fragments are requested.
+        options.onlyTextFragments &&
+        // And this is not one of the other requested tag names.
+        options.alsoHtmlTags.indexOf(getTagName(node)) < 0
+      ) {
+        // And it does not have a text fragment child.
+        let hasTextFragmentChild = false;
+        node.childNodes.forEach((n) => {
+          if (n.nodeName === '#text') hasTextFragmentChild = true;
+        });
+        if (!hasTextFragmentChild) {
+          result.skipped++;
+          return extractNonText(node);
+        }
+      }
+      result.evaluated++;
+
+      // Construct `ElementInfo`.
+      const picked = pickStyle(node);
+      if (options.extractXml) {
+        const attrs: Record<string, string> = {};
+        if (isElement(node)) {
+          for (let i = 0; i < node.attributes.length; i++) {
+            const attr = node.attributes.item(0)!;
+            attrs[attr.name] = attr.value;
+          }
+        }
+        return { ...extractNonText(node), attrs, ...picked };
+      }
+      return {
+        ...extractNonText(node),
+        ...picked,
+      };
+    };
+
+    /** Constructs {@link target}'s XPath. */
+    const tryGetXPath = (target: Node) => {
+      try {
+        // Inspired by https://stackoverflow.com/a/30227178.
+        const getPathTo = (element: Node): string => {
+          let ix = 0;
+          const parent = element.parentNode;
+          const tagName = element.nodeName.toLowerCase();
+          if (parent === null || !(parent instanceof Element))
+            return `/${tagName}`;
+          const siblings = parent.childNodes;
+          for (let i = 0; i < siblings.length; i++) {
+            const sibling = siblings[i];
+            if (sibling === element)
+              return `${getPathTo(parent)}/${tagName}[${ix + 1}]`;
+            if (isElement(sibling) && sibling.tagName.toLowerCase() === tagName)
+              ix++;
+          }
+          return `invalid(${tagName})`;
+        };
+        return getPathTo(target);
+      } catch (e) {
+        return `error(${(e as Error)?.message})`;
+      }
+    };
+
+    /** Catches extraction errors. */
+    const tryExtractOne = (node: Node) => {
+      try {
+        return extractOne(node);
+      } catch (e) {
+        result.errors.push({
+          xpath: tryGetXPath(node),
+          error: (e as Error)?.message,
+        });
+        return null;
+      }
+    };
+
+    // Start a queue with the root's children.
+    const queue: { node: ChildNode; parent: TreeData }[] = [];
+    root.childNodes.forEach((node) =>
+      queue.push({ node, parent: result.data })
+    );
+
+    while (queue.length !== 0) {
+      const { node, parent } = queue.shift()!;
+
+      // Ignore everything except elements and text fragments.
+      if (!isElement(node) && !isTextFragment(node)) continue;
+
+      // Extract data for an element.
+      const result = tryExtractOne(node);
+      if (result === null) continue;
+      const { tagName, ...info } = result;
+
+      // Append this element's data to parent `DomData`.
+      const container: NodeData = { ...info };
+      const key = `/${tagName}` as const;
+      const indexedKey = (i: number) => `${key}[${i}]` as const;
+      let finalKey = key;
+      // If parent already contains an indexed child, find new available index.
+      if (parent[indexedKey(1)] !== undefined) {
+        for (let i = 2; ; i++) {
+          if (parent[indexedKey(i)] === undefined) {
+            finalKey = indexedKey(i);
+            break;
+          }
+        }
+      }
+      // Otherwise, determine whether we have to add index `[1]`.
+      else {
+        for (let s = node.nextSibling; s !== null; s = s.nextSibling) {
+          if (getTagName(s) === getTagName(node)) {
+            finalKey = indexedKey(1);
+            break;
+          }
+        }
+      }
+
+      // Note that we never change `parent[key]`, we only *append*, therefore
+      // the order should match the original order. This is actually not
+      // required (and the processing code should not count on that), but it
+      // helps when looking at the JSON manually.
+      parent[finalKey] = container;
+
+      // Add children to the queue.
+      node.childNodes.forEach((node) =>
+        queue.push({ node, parent: container })
+      );
+    }
+
+    return result;
   }
 
   public async save() {

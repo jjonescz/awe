@@ -134,8 +134,8 @@ export class PageInference {
       this.log,
       this.app.extractorOptions
     );
-    await extractor.extract();
-    this.log.debug('extracted', { stats: extractor.stats });
+    const stats = await extractor.extract();
+    this.log.debug('extracted', { stats });
     const visuals = extractor.data;
 
     // Take screenshot.
