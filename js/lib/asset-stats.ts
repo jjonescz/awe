@@ -26,10 +26,10 @@ export class AssetPageStats {
     request: puppeteer.HTTPRequest,
     response: Partial<puppeteer.ResponseForRequest>
   ) {
-    // TBD.
+    this.cssSuccess++;
   }
 
   public error(request: puppeteer.HTTPRequest) {
-    // TBD.
+    this.cssError++;
   }
 }
