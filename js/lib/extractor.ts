@@ -242,35 +242,42 @@ export class Extractor {
 
     const isTextFragment = (node: Node) => {
       return node.nodeType === Node.TEXT_NODE;
-    }
+    };
 
     const getTagName = (node: Node) => node.nodeName.toLowerCase();
 
+    const getTextBoundingRect = (node: Node) => {
+      const range = document.createRange();
+      range.selectNode(node);
+      const rect = range.getBoundingClientRect();
+      range.detach();
+      return rect;
+    };
+
+    const rectToBox = (rect: DOMRect): BoundingBox | undefined => {
+      if (rect.x === 0 && rect.y === 0 && rect.width === 0 && rect.height === 0)
+        return undefined;
+      return [rect.x, rect.y, rect.width, rect.height] as const;
+    };
+
     /** Common code used by multiple branches of `extractOne` below. */
-    const extractNonText = (node: Node) => {
+    const extractNonText = (node: Element) => {
       const tagName = getTagName(node);
-      const rect = isElement(node) ? node.getBoundingClientRect() : null;
-      const box =
-        rect === null
-          ? undefined
-          : ([rect.x, rect.y, rect.width, rect.height] as const);
+      const box = rectToBox(node.getBoundingClientRect());
 
       if (options.extractXml) {
         return { tagName, box };
       }
 
       return {
-        id:
-          (isElement(node) ? node.getAttribute('id')?.toString() : null) ??
-          undefined,
+        id: node.getAttribute('id')?.toString() ?? undefined,
         tagName,
         box,
       };
     };
 
     /** Picks some properties from element's computed style. */
-    const pickStyle = (node: Node) => {
-      if (!isElement(node)) return {};
+    const pickStyle = (node: Element) => {
       const style = getComputedStyle(node);
       return {
         fontFamily: except(style.fontFamily, '"Times New Roman"'),
@@ -303,21 +310,29 @@ export class Extractor {
 
     /** Extracts visual attributes for one {@link node}. */
     const extractOne = (node: Node) => {
-      // Ignore text fragments, they don't have computed style.
+      // Extract text fragments separately. They don't have computed style.
       if (isTextFragment(node)) {
+        const tagName = 'text()';
+        const box = rectToBox(getTextBoundingRect(node));
+
         if (options.extractXml) {
           return {
-            tagName: 'text()',
+            tagName,
+            box,
             text: node.textContent ?? '',
           };
         }
         return {
-          tagName: 'text()',
+          tagName,
+          box,
           whiteSpace: /^\s*$/.test(node.textContent ?? '')
             ? (true as const)
             : undefined,
         };
       }
+
+      // Ignore everything except elements and text fragments.
+      if (!isElement(node)) return null;
 
       // Skip extraction if not needed.
       if (
@@ -329,7 +344,7 @@ export class Extractor {
         // And it does not have a text fragment child.
         let hasTextFragmentChild = false;
         node.childNodes.forEach((n) => {
-          if (n.nodeName === '#text') hasTextFragmentChild = true;
+          if (isTextFragment(n)) hasTextFragmentChild = true;
         });
         if (!hasTextFragmentChild) {
           result.skipped++;
@@ -342,11 +357,9 @@ export class Extractor {
       const picked = pickStyle(node);
       if (options.extractXml) {
         const attrs: Record<string, string> = {};
-        if (isElement(node)) {
-          for (let i = 0; i < node.attributes.length; i++) {
-            const attr = node.attributes.item(0)!;
-            attrs[attr.name] = attr.value;
-          }
+        for (let i = 0; i < node.attributes.length; i++) {
+          const attr = node.attributes.item(0)!;
+          attrs[attr.name] = attr.value;
         }
         return { ...extractNonText(node), attrs, ...picked };
       }
@@ -360,16 +373,16 @@ export class Extractor {
     const tryGetXPath = (target: Node) => {
       try {
         // Inspired by https://stackoverflow.com/a/30227178.
-        const getPathTo = (element: Node): string => {
+        const getPathTo = (node: Node): string => {
           let ix = 0;
-          const parent = element.parentNode;
-          const tagName = element.nodeName.toLowerCase();
+          const parent = node.parentNode;
+          const tagName = node.nodeName.toLowerCase();
           if (parent === null || !(parent instanceof Element))
             return `/${tagName}`;
           const siblings = parent.childNodes;
           for (let i = 0; i < siblings.length; i++) {
             const sibling = siblings[i];
-            if (sibling === element)
+            if (sibling === node)
               return `${getPathTo(parent)}/${tagName}[${ix + 1}]`;
             if (isElement(sibling) && sibling.tagName.toLowerCase() === tagName)
               ix++;
@@ -403,9 +416,6 @@ export class Extractor {
 
     while (queue.length !== 0) {
       const { node, parent } = queue.shift()!;
-
-      // Ignore everything except elements and text fragments.
-      if (!isElement(node) && !isTextFragment(node)) continue;
 
       // Extract data for an element.
       const result = tryExtractOne(node);
