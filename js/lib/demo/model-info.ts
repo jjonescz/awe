@@ -1,8 +1,15 @@
 import { readdir, readFile } from 'fs/promises';
 import naturalCompare from 'natural-compare-lite';
 import path from 'path';
-import { Logger } from 'winston';
 import { LOG_DIR } from '../constants';
+
+export class Model {
+  constructor(
+    public readonly versionDir: string,
+    public readonly info: ModelInfo,
+    public readonly params: Record<string, any>
+  ) {}
+}
 
 export interface ModelInfo {
   labels: string[];
@@ -12,7 +19,7 @@ export interface ModelInfo {
   examples: string[] | undefined;
 }
 
-export async function loadModel(log: Logger) {
+export async function loadModel() {
   const versions = await readdir(LOG_DIR);
 
   // Sort versions like a human would.
@@ -20,9 +27,16 @@ export async function loadModel(log: Logger) {
 
   // Choose only the last version for now.
   const versionName = versions.pop()!;
+  const versionDir = path.join(LOG_DIR, versionName);
 
-  const infoPath = path.join(LOG_DIR, versionName, 'info.json');
-  log.info('found version', { infoPath });
-  const infoText = await readFile(infoPath, { encoding: 'utf-8' });
-  return JSON.parse(infoText) as ModelInfo;
+  // Load JSON files.
+  const loadJson = async <T>(filename: string) => {
+    const filePath = path.join(versionDir, 'info.json');
+    const text = await readFile(filePath, { encoding: 'utf-8' });
+    return JSON.parse(text) as T;
+  };
+  const info = await loadJson<ModelInfo>('info.json');
+  const params = await loadJson<Record<string, any>>('params.json');
+
+  return new Model(versionDir, info, params);
 }

@@ -3,7 +3,7 @@ import puppeteer from 'puppeteer-core';
 import { Logger } from 'winston';
 import { logFile } from '../logging';
 import { tryParseInt } from '../utils';
-import { loadModel, ModelInfo } from './model-info';
+import { loadModel, Model } from './model-info';
 import { PageInference } from './page-inference';
 import { Inference } from './python';
 
@@ -45,7 +45,7 @@ export class DemoApp {
   private constructor(
     public readonly options: DemoOptions,
     public readonly log: Logger,
-    public readonly model: ModelInfo
+    public readonly model: Model
   ) {
     // Create Express HTTP server.
     const app = express();
@@ -95,9 +95,12 @@ export class DemoApp {
     const log = logger.child({});
     log.info('start', { options, logLevel: log.level, logFile });
 
-    // Load model info.
-    const model = await loadModel(log);
-    log.verbose('loaded model info', { model });
+    // Load model.
+    const model = await loadModel();
+    log.verbose('loaded model', {
+      versionDir: model.versionDir,
+      info: model.info,
+    });
 
     return new DemoApp(options, log, model);
   }
