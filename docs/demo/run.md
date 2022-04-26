@@ -1,15 +1,15 @@
 # Demo
 
-The demo is a completely self-contained.
+The demo is completely self-contained.
 Both build and runtime happens in a Docker container.
-Note that currently it needs between 1 and 2 GiB of RAM at runtime.
+Note that currently it needs around 1 GiB of RAM at runtime.
 
 ## Running as a Docker image
 
 ```bash
 git clean -fXd # optional, removes all Git-ignored files
-docker build -t awe-demo -f demo/Dockerfile --build-arg GITHUB_API_TOKEN=<token> .
-docker run --rm -it -p 3000:3000 awe-demo
+docker build -t janjones/awe-demo -f demo/Dockerfile --build-arg GITHUB_API_TOKEN=<token> .
+docker run --rm -it -p 3000:3000 janjones/awe-demo
 ```
 
 Alternatively, run GitHub Action
