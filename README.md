@@ -9,6 +9,18 @@ This repository contains source code of AI-based structured web data extractor.
 
 ## Directory structure
 
-- [`awe`](awe): Python source code (data loading and machine learning).
-- [`js`](js): Node.js source code (headless browser for visual attribute
-  extraction).
+- 📂 [`awe/`](awe): Python module (data manipulation and machine learning).
+  See [`awe/README.md`](awe/README.md).
+- 📂 [`js/`](js): Node.js app (visual attribute extractor and inference demo).
+  See [`js/README.md`](js/README.md).
+- 📂 [`docs/`](docs)
+  - 📂 [`dev/`](docs/dev)
+    - 📄 [`env.md`](docs/dev/env.md): development environment setup.
+    - 📄 [`tips.md`](docs/dev/tips.md): development guidelines and bash snippets.
+  - 📄 [`data.md`](docs/data.md): dataset preparation.
+  - 📄 [`extractor.md`](docs/extractor.md): running the visual extractor.
+  - 📄 [`train.md`](docs/train.md): training instructions.
+  - 📄 [`release.md`](docs/release.md): release instructions.
+  - 📂 [`demo/`](docs/demo)
+    - 📄 [`run.md`](docs/demo/run.md): developing and running the demo.
+    - 📄 [`deploy.md`](docs/demo/deploy.md): online demo deployment.
