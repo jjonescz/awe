@@ -29,6 +29,7 @@ open JavaScript Debug Terminal in Visual Studio Code
 and start your command with:
 
 ```bash
+cd js
 node -r ts-node/register/transpile-only index.ts
 ```
 
