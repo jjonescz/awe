@@ -35,7 +35,7 @@ docker pull janjones/awe-demo
 docker run --rm -it -p 3000:3000 janjones/awe-demo
 ```
 
-Open browser and navigate to <http://localhost:3000/>.
+Open a web browser and navigate to <http://localhost:3000/>.
 
 For more details, see [`docs/demo/run.md`](docs/demo/run.md).
 
