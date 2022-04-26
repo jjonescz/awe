@@ -30,7 +30,7 @@ according to `gradient/Dockerfile`[^1],
 or develop inside a Docker image as described below.
 
 [^1]: Note that all Python package versions are frozen in
-[`requirements.txt`](../../requirements.txt).
+[`awe/requirements.txt`](../../awe/requirements.txt).
 
 1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 

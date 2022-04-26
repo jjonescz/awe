@@ -5,7 +5,7 @@ Add the package to `gradient/requirements.txt`,
 try if it works by running `pip install -r gradient/requirements.txt`,
 and rebuild the [development Docker image](env.md).
 Also freeze exact versions of all packages by running
-`conda list --export > requirements.txt`.
+`conda list --export > awe/requirements.txt`.
 
 **Kill processes taking up GPU:**
 Run `fuser -k /dev/nvidia0`.
