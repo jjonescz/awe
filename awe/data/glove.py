@@ -35,3 +35,6 @@ class LazyEmbeddings:
                 cls._model = gensim.downloader.load(MODEL_NAME)
                 progress.update()
         return cls._model
+
+if __name__ == '__main__':
+    download_embeddings()
