@@ -34,6 +34,7 @@ def main():
     trainer.restore_features()
     trainer.create_model()
     trainer.restore_model()
+    trainer.extractor.enable_cache(False)
 
     # IMPORTANT: This line is also used as a clue to let TypeScript client node
     # the inference server is ready.
