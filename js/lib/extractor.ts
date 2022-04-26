@@ -36,11 +36,6 @@ type ElementInfo = ElementData & {
   tagName: string;
 };
 
-interface EvaluateOptions extends JSONObject {
-  extract: ExtractorOptions;
-  extractXml: boolean;
-}
-
 /**
  * Structure in which extracted visual attributes are stored for an element and
  * its descendants.
@@ -76,21 +71,27 @@ async function tryGetXPath(element: ElementHandle<Element>) {
 }
 
 export interface ExtractorOptions extends JSONObject {
+  readonly extractXml: boolean;
   readonly onlyTextFragments: boolean;
   readonly alsoHtmlTags: string[];
 }
 
 export class ExtractorOptions {
   public static readonly default: ExtractorOptions = {
+    extractXml: false,
     onlyTextFragments: false,
     alsoHtmlTags: [],
   };
 
+  public static create(partial: Partial<ExtractorOptions>) {
+    return { ...ExtractorOptions.default, ...partial } as ExtractorOptions;
+  }
+
   public static fromModelParams(params: Record<string, any>): ExtractorOptions {
-    return {
+    return ExtractorOptions.create({
       onlyTextFragments: !!params['classify_only_text_nodes'],
       alsoHtmlTags: params['classify_also_html_tags'],
-    };
+    });
   }
 }
 
@@ -102,18 +103,19 @@ export class ExtractionStats {
 /** Can extract visual attributes from a Puppeteer-controlled page. */
 export class Extractor {
   public readonly data: DomData;
+  public readonly options: ExtractorOptions;
   public readonly stats = new ExtractionStats();
 
   constructor(
     public readonly page: Page,
     public readonly recipe: PageRecipe,
     public readonly logger: winston.Logger,
-    public readonly extractXml: boolean,
-    public readonly options: ExtractorOptions = ExtractorOptions.default
+    options: Partial<ExtractorOptions> = ExtractorOptions.default
   ) {
     this.data = {
       timestamp: recipe.page.timestamp!,
     };
+    this.options = ExtractorOptions.create(options);
   }
 
   /** Extracts visual attributes for all DOM nodes in the {@link page}. */
@@ -206,14 +208,11 @@ export class Extractor {
 
   /** Runs code inside browser for an {@link element}. */
   public evaluate(element: ElementHandle<Element>) {
-    return element.evaluate(Extractor.evaluateClient, <EvaluateOptions>{
-      extract: this.options,
-      extractXml: this.extractXml,
-    });
+    return element.evaluate(Extractor.evaluateClient, this.options);
   }
 
   /** This method runs inside browser. */
-  private static evaluateClient(e: Element, o: EvaluateOptions) {
+  private static evaluateClient(e: Element, o: ExtractorOptions) {
     // Ignore text fragments, they don't have computed style.
     if (e.nodeName === '#text') {
       if (o.extractXml) {
@@ -235,9 +234,9 @@ export class Extractor {
     // Skip extraction if not needed.
     if (
       // If only text fragments are requested.
-      o.extract.onlyTextFragments &&
+      o.onlyTextFragments &&
       // And this is not one of the other requested tag names.
-      o.extract.alsoHtmlTags.indexOf(tagName) < 0
+      o.alsoHtmlTags.indexOf(tagName) < 0
     ) {
       // And it does not have a text fragment child.
       let hasTextFragmentChild = false;

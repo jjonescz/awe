@@ -31,7 +31,7 @@ export class PageController {
       this.pageScraper.page,
       recipe,
       this.pageScraper.logger,
-      /* extractXml */ this.controller.extractXml
+      { extractXml: this.controller.extractXml }
     );
 
     // Check if not already scraped.

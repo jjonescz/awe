@@ -132,7 +132,6 @@ export class PageInference {
       this.page,
       recipe,
       this.log,
-      /* extractXml */ false,
       this.app.extractorOptions
     );
     await extractor.extract();
