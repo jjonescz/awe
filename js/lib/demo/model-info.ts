@@ -31,7 +31,7 @@ export async function loadModel() {
 
   // Load JSON files.
   const loadJson = async <T>(filename: string) => {
-    const filePath = path.join(versionDir, 'info.json');
+    const filePath = path.join(versionDir, filename);
     const text = await readFile(filePath, { encoding: 'utf-8' });
     return JSON.parse(text) as T;
   };
