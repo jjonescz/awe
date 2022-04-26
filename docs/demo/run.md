@@ -23,12 +23,10 @@ Demo can be started during [development](../dev/env.md).
 1. Make sure there is a pre-trained model in `logs`.
 
    ```bash
-   cd ..
    gh auth login
    gh release download v0.1 --pattern logs.tar.gz
    tar xvzf logs.tar.gz
    rm logs.tar.gz
-   cd js
    ```
 
 2. Install packages and start the server.
