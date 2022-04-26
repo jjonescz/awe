@@ -99,8 +99,6 @@ export function results(
     </tr>
     $${rows
       .map((r) => {
-        const prob = (r.probability * 100).toFixed(2);
-        const conf = r.confidence.toFixed(2);
         return h`
         <tr>
           <th>${r.labelKey}</th>
@@ -115,7 +113,7 @@ export function results(
                   }</a>`
             }
           </td>
-          <td>${prob} % (${conf})</td>
+          <td>${(r.probability * 100).toFixed(2)}%</td>
           <td>${r.box?.join(', ') ?? ''}</td>
         </tr>`;
       })
