@@ -47,7 +47,14 @@ class DomData:
         `needs_visuals` set), without any validation for now.
         """
 
-        queue = [(dom.root, self.data['/html'])]
+        # Find the root element.
+        if (root := self.data.get(f'/{dom.root.html_tag}')) is None:
+            warnings.warn(
+                f'Cannot find {dom.root.html_tag!r} in data ' +
+                f'{self.data.keys()!r} ({dom.page.html_path!r}).')
+            return
+
+        queue = [(dom.root, root)]
         while len(queue) != 0:
             node, data = queue.pop()
             data: dict[str]
