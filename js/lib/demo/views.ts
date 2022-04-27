@@ -1,6 +1,7 @@
 import h from 'html-template-tag';
 import { ExtractionStats } from '../extractor';
 import { Wayback } from '../wayback';
+import { DemoOptions } from './app';
 import { ModelInfo } from './model-info';
 import { NodePrediction } from './python';
 
@@ -228,17 +229,31 @@ export function layoutStart() {
     <body>`;
 }
 
-export function layoutEnd() {
+function toYyyyMmDd(date: Date) {
+  return date.toISOString().split('T')[0];
+}
+
+export function layoutEnd(options: DemoOptions) {
+  const { url, display } = options.githubInfo;
+
   return h`
     <details open>
       <summary>About</summary>
       <p>
-        Created by <a href="https://github.com/jjonescz" rel="external">Jan Joneš</a>
-        for thesis <a href="https://is.cuni.cz/studium/dipl_st/index.php?id=&tid=&do=main&doo=detail&did=241832" rel="external">AI-based Structured Web Data Extraction</a>.
+        Copyright &copy; 2022
+        <a href="https://github.com/jjonescz" rel="external">Jan Joneš</a>.
       </p>
+        Built from <a href="${url}" rel="external">${display}</a>.
+      </p>
+      $${
+        options.commitTimestamp === null
+          ? ''
+          : h`
       <p>
-        Last updated 2022-04-25.
+        Last updated on ${toYyyyMmDd(options.commitTimestamp)}.
       </p>
+      `
+      }
     </details>
     </body>
   </html>

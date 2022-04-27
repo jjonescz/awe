@@ -20,6 +20,10 @@ WORKDIR /storage/awe/src/js
 # Install JavaScript packages and run type checking.
 RUN pnpm install --frozen-lockfile && pnpm test
 
-ENV PORT=3000
+ARG GIT_COMMIT_HASH \
+    GIT_COMMIT_TIMESTAMP
+ENV PORT=3000 \
+    GIT_COMMIT_HASH=${GIT_COMMIT_HASH} \
+    GIT_COMMIT_TIMESTAMP=${GIT_COMMIT_TIMESTAMP}
 EXPOSE $PORT
 CMD pnpm run server

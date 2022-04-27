@@ -20,6 +20,12 @@ export class DemoOptions {
   public readonly timeout: number;
   /** Send artificially large response chunks to bypass network buffering. */
   public readonly largeChunks: number;
+  /** Base GitHub URL. */
+  public readonly githubUrl: string;
+  /** Git commit hash. */
+  public readonly commitHash: string;
+  /** Git commit timestamp. */
+  public readonly commitTimestamp: Date | null;
 
   public constructor() {
     this.debug = !!process.env.DEBUG;
@@ -28,6 +34,11 @@ export class DemoOptions {
     this.mockInference = !!process.env.MOCK_INFERENCE;
     this.timeout = tryParseInt(process.env.TIMEOUT, 15);
     this.largeChunks = tryParseInt(process.env.LARGE_CHUNKS, 0);
+    this.githubUrl =
+      process.env.GITHUB_URL || 'https://github.com/jjonescz/awe';
+    this.commitHash = process.env.GIT_COMMIT_HASH ?? '';
+    const timestamp = process.env.GIT_COMMIT_TIMESTAMP ?? '';
+    this.commitTimestamp = timestamp === '' ? null : new Date(timestamp);
   }
 
   public get largeChunk() {
@@ -36,6 +47,21 @@ export class DemoOptions {
     } else {
       return null;
     }
+  }
+
+  public get githubRepoShortName() {
+    return new URL(this.githubUrl).pathname.substring(1);
+  }
+
+  public get githubInfo() {
+    if (this.commitHash !== '') {
+      const shortHash = this.commitHash.substring(0, 7);
+      return {
+        url: `${this.githubUrl}/tree/${this.commitHash}`,
+        display: `${this.githubRepoShortName}@${shortHash}`,
+      };
+    }
+    return { url: this.githubUrl, display: this.githubRepoShortName };
   }
 }
 

@@ -47,7 +47,7 @@ export class PageInference {
     );
     if (this.url === '') {
       // Return empty form if no URL was provided.
-      this.res.write(views.layoutEnd());
+      this.res.write(views.layoutEnd(this.app.options));
       this.res.end();
       return;
     }
@@ -248,7 +248,7 @@ export class PageInference {
     this.res.write(views.logEntry('Done.'));
     this.res.write(views.logEnd());
     this.res.write(views.results(rows, response.screenshot, stats));
-    this.res.write(views.layoutEnd());
+    this.res.write(views.layoutEnd(this.app.options));
     this.res.end();
   }
 
