@@ -54,7 +54,9 @@ export class PageInference {
     // Wait for Puppeteer.
     if (this.app.browser instanceof Promise) {
       this.log.debug('wait for Puppeteer');
-      this.res.write(views.logEntry('Waiting for Puppeteer one-time init...'));
+      this.res.write(
+        views.logEntry('⏳ Waiting for Puppeteer one-time init...')
+      );
       this.flushChunk();
       this.app.browser = await this.app.browser;
     }
@@ -82,7 +84,7 @@ export class PageInference {
     } catch (e) {
       const error = e as Error;
       this.log.error('snapshot fail', { error: error?.stack });
-      this.res.write(views.logEntry('Capturing snapshot failed.'));
+      this.res.write(views.logEntry('⛔ Capturing snapshot failed.'));
       this.flushChunk();
     }
 
@@ -101,7 +103,7 @@ export class PageInference {
     } catch (e) {
       const error = e as Error;
       this.log.debug('freeze fail', { error: error?.stack });
-      this.res.write(views.logEntry('Reloading failed.'));
+      this.res.write(views.logEntry('⛔ Reloading failed.'));
       this.flushChunk();
     }
     const nav2 = await this.wrapNavigation((o) =>
@@ -117,7 +119,7 @@ export class PageInference {
     } catch (e) {
       const error = e as Error;
       this.log.error('content fail', { error: error?.stack });
-      this.res.write(views.logEntry('HTML extraction failed.'));
+      this.res.write(views.logEntry('⛔ HTML extraction failed.'));
       this.res.end();
       return;
     }
@@ -160,7 +162,7 @@ export class PageInference {
       if (pythonLoading !== null) {
         this.log.debug('wait for Python');
         this.res.write(
-          views.logEntry('Waiting for inference one-time init...')
+          views.logEntry('⏳ Waiting for inference one-time init...')
         );
         this.flushChunk();
         await pythonLoading;
@@ -285,11 +287,11 @@ export class PageInference {
       const error = e as Error;
       if (error?.name === 'TimeoutError') {
         this.log.debug('goto timeout', { error: error?.stack });
-        this.res.write(views.logEntry('Navigation timeout.'));
+        this.res.write(views.logEntry('⚠️ Navigation timeout.'));
         return 'timeout';
       } else {
         this.log.debug('goto failed', { error: error?.stack });
-        this.res.write(views.logEntry(`Navigation failed: ${error}`));
+        this.res.write(views.logEntry(`⛔ Navigation failed: ${error}`));
         this.res.end();
         return 'fail';
       }
