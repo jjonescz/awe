@@ -42,7 +42,9 @@ export class PageInference {
     this.res.flushHeaders();
     this.res.write(views.layoutStart());
     this.res.write(views.info(this.app.model.info));
-    this.res.write(views.form(this.app.model.info, { url: this.url }));
+    this.res.write(
+      views.form(this.app.model.info, { url: this.url, timeout: this.timeout })
+    );
     if (this.url === '') {
       // Return empty form if no URL was provided.
       this.res.write(views.layoutEnd());

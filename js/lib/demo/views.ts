@@ -23,7 +23,17 @@ export function info(model: ModelInfo) {
   </details>`;
 }
 
-export function form(model: ModelInfo, { url = '' } = {}) {
+/** Encodes URL parameter. */
+function withUrl(url: string) {
+  const params = new URLSearchParams();
+  params.set('url', url);
+  return `/?${params.toString()}`;
+}
+
+export function form(
+  model: ModelInfo,
+  params: { url: string; timeout: number }
+) {
   // Gather Wayback Machine URLs.
   const examples = model.examples?.map((e) => ({
     original: e,
@@ -37,13 +47,13 @@ export function form(model: ModelInfo, { url = '' } = {}) {
   }
 
   return h`
-  <details $${url === '' ? 'open' : ''}>
+  <details $${params.url === '' ? 'open' : ''}>
   <summary>Inputs</summary>
   <form method="get">
     <p>
       <label>
         URL<br />
-        <input type="url" name="url" value="${url}" list="examples" />
+        <input type="url" name="url" value="${params.url}" list="examples" />
         <datalist id="examples">
           $${(model.examples ?? [])
             .map((e) => h`<option value="${e}" />`)
@@ -51,6 +61,15 @@ export function form(model: ModelInfo, { url = '' } = {}) {
         </datalist>
       </label>
     </p>
+    <p>
+      <label>
+        Timeout (seconds)<br />
+        <input type="number" name="timeout"
+               value="${params.timeout.toString()}"
+               onchange="updateTimeout()" />
+      </label>
+    </p>
+    <p><button type="submit">Submit</button></p>
     $${
       examples === undefined
         ? ''
@@ -62,11 +81,13 @@ export function form(model: ModelInfo, { url = '' } = {}) {
         .map(
           (e) =>
             h`<li><span>
-            <a href="/?url=${e.original}">${e.original}</a>
+            <a href="${withUrl(e.original)}">${e.original}</a>
             $${
               e.archived === null
                 ? ''
-                : h`<small>(<a href="/?url=${e.archived}">archived</a>)</small>`
+                : h`<small>
+                  (<a href="${withUrl(e.archived)}">archived</a>)
+                </small>`
             }
             </span></li>`
         )
@@ -75,7 +96,6 @@ export function form(model: ModelInfo, { url = '' } = {}) {
     </p>
     `
     }
-    <p><button type="submit">Submit</button></p>
   </form>
   </details>
   `;
@@ -193,6 +213,17 @@ export function layoutStart() {
           margin-right: 0.5rem;
         }
       </style>
+      <script>
+        ${'' /* Updates timeout of examples upon form input change. */}
+        function updateTimeout() {
+          const timeout = document.querySelector('form input[type=number]').value;
+          document.querySelectorAll('form > ul > li > span a').forEach(a => {
+            const url = new URL(a.href);
+            url.searchParams.set('timeout', 1);
+            a.href = url.toString();
+          });
+        }
+      </script>
     </head>
     <body>`;
 }
