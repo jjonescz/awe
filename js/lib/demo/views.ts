@@ -1,4 +1,5 @@
 import h from 'html-template-tag';
+import { Wayback } from '../wayback';
 import { ModelInfo } from './model-info';
 import { NodePrediction } from './python';
 
@@ -22,6 +23,18 @@ export function info(model: ModelInfo) {
 }
 
 export function form(model: ModelInfo, { url = '' } = {}) {
+  // Gather Wayback Machine URLs.
+  const examples = model.examples?.map((e) => ({
+    original: e,
+    archived: <string | null>null,
+  }));
+  if (examples !== undefined && model.timestamp !== undefined) {
+    const wayback = new Wayback();
+    wayback.variant = 'if_';
+    for (const e of examples)
+      e.archived = wayback.getArchiveUrl(e.original, model.timestamp);
+  }
+
   return h`
   <details $${url === '' ? 'open' : ''}>
   <summary>Inputs</summary>
@@ -38,14 +51,24 @@ export function form(model: ModelInfo, { url = '' } = {}) {
       </label>
     </p>
     $${
-      model.examples === undefined
+      examples === undefined
         ? ''
         : h`
     <p>
       Examples
       <ul>
-      $${model.examples
-        .map((e) => h`<li><a href="/?url=${e}">${e}</a></li>`)
+      $${examples
+        .map(
+          (e) =>
+            h`<li><span>
+            <a href="/?url=${e.original}">${e.original}</a>
+            $${
+              e.archived === null
+                ? ''
+                : h`<small>(<a href="/?url=${e.archived}">archived</a>)</small>`
+            }
+            </span></li>`
+        )
         .join('')}
       </ul>
     </p>
@@ -142,11 +165,19 @@ export function layoutStart() {
         ul {
           padding-left: 1rem;
         }
-        ul > li {
+        ${
+          ''
+          /* Make links in the example section shortened by ellipsis
+           * if they are too long. */
+        }
+        ul > li > span {
+          display: flex;
+        }
+        ul > li > span > a {
           overflow-x: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
-          list-style-position: inside;
+          margin-right: 0.5rem;
         }
       </style>
     </head>

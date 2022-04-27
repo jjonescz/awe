@@ -17,6 +17,7 @@ export interface ModelInfo {
   description: string | undefined;
   websites: string[];
   examples: string[] | undefined;
+  timestamp: string | undefined;
 }
 
 export async function loadModel() {

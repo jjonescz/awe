@@ -3,6 +3,9 @@
 1. Train a model (see [Training](train.md)).
 
 2. Add `description` and `examples` to `info.json` in the model's version dir.
+   Also add `timestamp` in `YYYYMMDD` format
+   to show example [Wayback Machine](https://web.archive.org/) links
+   in the demo.
 
 3. Create release on GitHub (at the code the model was trained with).
 
