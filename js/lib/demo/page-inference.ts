@@ -41,7 +41,7 @@ export class PageInference {
     this.res.setHeader('Transfer-Encoding', 'chunked');
     this.res.flushHeaders();
     this.res.write(views.layoutStart());
-    this.res.write(views.info(this.app.model.info));
+    this.res.write(views.info(this.app.model.info, this.app.options));
     this.res.write(
       views.form(this.app.model.info, { url: this.url, timeout: this.timeout })
     );

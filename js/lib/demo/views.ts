@@ -5,9 +5,13 @@ import { DemoOptions } from './app';
 import { ModelInfo } from './model-info';
 import { NodePrediction } from './python';
 
-export function info(model: ModelInfo) {
+export function info(model: ModelInfo, options: DemoOptions) {
   return h`
   <h1><a href="/">AWE</a></h1>
+  <p>
+    AI-based web extractor (more details on
+    <a href="${options.githubUrl}#readme" rel="external">GitHub</a>).
+  </p>
   <details>
   <summary>Model</summary>
   $${model.description !== undefined ? h`<p>${model.description}</p>` : ''}
