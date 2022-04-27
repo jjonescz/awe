@@ -70,9 +70,7 @@ export class ExtractorOptions {
 }
 
 /** Results of in-browser evaluation. */
-export interface EvaluationResult extends JSONObject {
-  evaluated: number;
-  skipped: number;
+export interface EvaluationResult extends JSONObject, ExtractionStats {
   readonly errors: EvaluationError[];
   readonly data: TreeData;
 }
@@ -80,6 +78,11 @@ export interface EvaluationResult extends JSONObject {
 export interface EvaluationError extends JSONObject {
   readonly xpath: string;
   readonly error: string;
+}
+
+export interface ExtractionStats {
+  evaluated: number;
+  skipped: number;
 }
 
 /** Can extract visual attributes from a Puppeteer-controlled page. */
@@ -100,7 +103,7 @@ export class Extractor {
   }
 
   /** Extracts visual attributes for all DOM nodes in the {@link page}. */
-  public async extract() {
+  public async extract(): Promise<ExtractionStats> {
     // Obtain the `document` element.
     const root = (await this.page.$x('.'))[0];
 

@@ -1,4 +1,5 @@
 import h from 'html-template-tag';
+import { ExtractionStats } from '../extractor';
 import { Wayback } from '../wayback';
 import { ModelInfo } from './model-info';
 import { NodePrediction } from './python';
@@ -107,7 +108,8 @@ export function results(
   rows: ({
     labelKey: string;
   } & NodePrediction)[],
-  screenshot: string
+  screenshot: string,
+  stats: ExtractionStats
 ) {
   return h`
   <details open>
@@ -144,6 +146,17 @@ export function results(
   </table>
   <h2>Screenshot</h2>
   <img src="data:image/png;base64,${screenshot}" />
+  <h2>Stats</h2>
+  <table>
+    <tr>
+      <th>all nodes</th>
+      <td>${(stats.evaluated + stats.skipped).toLocaleString()}</td>
+    </tr>
+    <tr>
+      <th>candidate nodes</th>
+      <td>${stats.evaluated.toLocaleString()}</td>
+    </tr>
+  </table>
   </details>`;
 }
 

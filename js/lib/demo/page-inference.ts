@@ -245,7 +245,7 @@ export class PageInference {
 
     this.res.write(views.logEntry('Done.'));
     this.res.write(views.logEnd());
-    this.res.write(views.results(rows, response.screenshot));
+    this.res.write(views.results(rows, response.screenshot, stats));
     this.res.write(views.layoutEnd());
     this.res.end();
   }
