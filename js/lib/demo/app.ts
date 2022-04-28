@@ -26,6 +26,10 @@ export class DemoOptions {
   public readonly commitHash: string;
   /** Git commit timestamp. */
   public readonly commitTimestamp: Date | null;
+  /** If `true`, examples from model `info.json` won't be used. */
+  public readonly resetExamples: boolean;
+  /** Additional example URLs to show. */
+  public readonly moreExamples: string[];
 
   public constructor() {
     this.debug = !!process.env.DEBUG;
@@ -37,8 +41,13 @@ export class DemoOptions {
     this.githubUrl =
       process.env.GITHUB_URL || 'https://github.com/jjonescz/awe';
     this.commitHash = process.env.GIT_COMMIT_HASH ?? '';
+    // The timestamp should be in ISO 8601 format.
     const timestamp = process.env.GIT_COMMIT_TIMESTAMP ?? '';
     this.commitTimestamp = timestamp === '' ? null : new Date(timestamp);
+    this.resetExamples = !!process.env.RESET_EXAMPLES;
+    // The list of more examples should be a comma-separated list of URLs.
+    const moreExamples = process.env.MORE_EXAMPLES ?? '';
+    this.moreExamples = moreExamples === '' ? [] : moreExamples.split(',');
   }
 
   public get largeChunk() {
@@ -134,6 +143,12 @@ export class DemoApp {
     });
 
     return new DemoApp(options, log, model);
+  }
+
+  public getExamples() {
+    return (
+      this.options.resetExamples ? [] : this.model.info.examples ?? []
+    ).concat(this.options.moreExamples);
   }
 
   private mainPage = async (req: Request, res: Response) => {

@@ -3,6 +3,7 @@ import { ExtractionStats } from '../extractor';
 import { Wayback } from '../wayback';
 import { DemoOptions } from './app';
 import { ModelInfo } from './model-info';
+import { PageInference } from './page-inference';
 import { NodePrediction } from './python';
 
 export function info(model: ModelInfo, options: DemoOptions) {
@@ -35,34 +36,30 @@ function withUrl(url: string) {
   return `/?${params.toString()}`;
 }
 
-export function form(
-  model: ModelInfo,
-  params: { url: string; timeout: number }
-) {
+export function form(page: PageInference) {
   // Gather Wayback Machine URLs.
-  const examples = model.examples?.map((e) => ({
+  const examples = page.app.getExamples().map((e) => ({
     original: e,
     archived: <string | null>null,
   }));
-  if (examples !== undefined && model.timestamp !== undefined) {
+  const timestamp = page.app.model.info.timestamp;
+  if (examples.length !== 0 && timestamp !== undefined) {
     const wayback = new Wayback();
     wayback.variant = 'if_';
     for (const e of examples)
-      e.archived = wayback.getArchiveUrl(e.original, model.timestamp);
+      e.archived = wayback.getArchiveUrl(e.original, timestamp);
   }
 
   return h`
-  <details $${params.url === '' ? 'open' : ''}>
+  <details $${page.url === '' ? 'open' : ''}>
   <summary>Inputs</summary>
   <form method="get">
     <p>
       <label>
         URL<br />
-        <input type="url" name="url" value="${params.url}" list="examples" />
+        <input type="url" name="url" value="${page.url}" list="examples" />
         <datalist id="examples">
-          $${(model.examples ?? [])
-            .map((e) => h`<option value="${e}" />`)
-            .join('')}
+          $${examples.map((e) => h`<option value="${e.original}" />`).join('')}
         </datalist>
       </label>
     </p>
@@ -70,7 +67,7 @@ export function form(
       <label>
         Timeout (seconds)<br />
         <input type="number" name="timeout"
-               value="${params.timeout.toString()}"
+               value="${page.timeout.toString()}"
                onchange="updateTimeout()" />
       </label>
     </p>

@@ -15,13 +15,13 @@ import * as views from './views';
 /** Inference of a page. */
 export class PageInference {
   private readonly log: Logger;
-  private readonly url: string;
-  private readonly timeout: number;
+  public readonly url: string;
+  public readonly timeout: number;
   private page: puppeteer.Page | null = null;
   private snapshotPath: string | null = null;
 
   public constructor(
-    private readonly app: DemoApp,
+    public readonly app: DemoApp,
     private readonly req: Request,
     private readonly res: Response
   ) {
@@ -42,9 +42,7 @@ export class PageInference {
     this.res.flushHeaders();
     this.res.write(views.layoutStart());
     this.res.write(views.info(this.app.model.info, this.app.options));
-    this.res.write(
-      views.form(this.app.model.info, { url: this.url, timeout: this.timeout })
-    );
+    this.res.write(views.form(this));
     if (this.url === '') {
       // Return empty form if no URL was provided.
       this.res.write(views.layoutEnd(this.app.options));
