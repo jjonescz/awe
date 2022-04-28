@@ -14,12 +14,12 @@ export function info(model: ModelInfo, options: DemoOptions) {
     <a href="${options.githubUrl}#readme" rel="external">GitHub</a>).
   </p>
   <details>
-  <summary>Model</summary>
+  <summary>Model training details</summary>
   $${model.description !== undefined ? h`<p>${model.description}</p>` : ''}
   <dl>
-    <dt>Vertical</dt>
+    <dt>Vertical <small>(which type of websites is the model tailored for)</small></dt>
     <dd>${model.vertical}</dd>
-    <dt>Label keys</dt>
+    <dt>Label keys <small>(what the model can extract)</small></dt>
     <dd>$${model.labels.map((l) => h`<code>${l}</code>`).join(', ')}</dd>
     <dt>Trained on</dt>
     <dd>$${model.websites
@@ -42,22 +42,27 @@ export function form(page: PageInference) {
     original: e,
     archived: <string | null>null,
   }));
-  const timestamp = page.app.model.info.timestamp;
-  if (examples.length !== 0 && timestamp !== undefined) {
+  const model = page.app.model.info;
+  if (examples.length !== 0 && model.timestamp !== undefined) {
     const wayback = new Wayback();
     wayback.variant = 'if_';
     for (const e of examples)
-      e.archived = wayback.getArchiveUrl(e.original, timestamp);
+      e.archived = wayback.getArchiveUrl(e.original, model.timestamp);
   }
 
   return h`
   <details $${page.url === '' ? 'open' : ''}>
-  <summary>Inputs</summary>
+  <summary>Try extracting data from any page</summary>
+  <p>
+    💡 The page should display <em>${model.vertical}</em> details.
+    See the section above for details about the extractor's capabilities.
+  </p>
   <form method="get">
     <p>
       <label>
         URL<br />
-        <input type="url" name="url" value="${page.url}" list="examples" />
+        <input type="url" name="url" value="${page.url}" list="examples"
+               placeholder="https://example.com/" />
         <datalist id="examples">
           $${examples.map((e) => h`<option value="${e.original}" />`).join('')}
         </datalist>
@@ -77,7 +82,7 @@ export function form(page: PageInference) {
         ? ''
         : h`
     <p>
-      Examples
+      Or pick an example:
       <ul>
       $${examples
         .map(
