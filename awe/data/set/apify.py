@@ -47,7 +47,7 @@ class Dataset(awe.data.set.pages.Dataset):
         self.skip_without_visuals = skip_without_visuals
         self.only_label_keys = only_label_keys
         self.verticals = [
-            Vertical(dataset=self, name='products', prev_page_count=0)
+            Vertical(dataset=self, name='product', prev_page_count=0)
         ]
 
     def filter_label_keys(self, df: pd.DataFrame):
