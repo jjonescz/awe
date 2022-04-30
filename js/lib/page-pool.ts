@@ -9,6 +9,7 @@ export interface PagePoolOptions {
   disableJavaScript: boolean;
 }
 
+/** Creates a pool of reusable Puppeteer pages. */
 export function createPagePool(scraper: Scraper, opts: PagePoolOptions) {
   const factory = <genericPool.Factory<puppeteer.Page>>{
     create: async () => {

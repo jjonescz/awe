@@ -13,6 +13,7 @@ export function nameOf<T>(name: Extract<keyof T, string>): string {
   return name;
 }
 
+/** Replaces file extension of {@link fullPath} with {@link ext}. */
 export function replaceExtension(fullPath: string, ext: string) {
   return path.format({
     ...path.parse(fullPath),
@@ -21,6 +22,10 @@ export function replaceExtension(fullPath: string, ext: string) {
   });
 }
 
+/**
+ * Replaces {@link prefix} inside file name of {@link fullPath} with
+ * {@link replacement}.
+ */
 export function replacePrefix(
   fullPath: string,
   prefix: string,
@@ -35,6 +40,7 @@ export function replacePrefix(
   });
 }
 
+/** Adds {@link suffix} to file name (before extension) of {@link fullPath}. */
 export function addSuffix(fullPath: string, suffix: string) {
   const parsed = path.parse(fullPath);
   return path.format({
@@ -44,6 +50,7 @@ export function addSuffix(fullPath: string, suffix: string) {
   });
 }
 
+/** Reads file at {@link fullPath} if it exists. */
 export async function tryReadFile(fullPath: string, defaultContents: string) {
   if (!existsSync(fullPath)) return defaultContents;
   return await readFile(fullPath, { encoding: 'utf-8' });
@@ -61,6 +68,7 @@ export function writeFileSafe(file: string, data: string) {
   renameSync(tempFile, file);
 }
 
+/** Escapes {@link filePath} to be safe for use in a glob pattern. */
 export function escapeFilePath(filePath: string) {
   return filePath.replace(/[`$^*+?()[\]]/g, '\\$&');
 }
@@ -95,6 +103,7 @@ export function getHttps(url: string, query: Record<string, string>) {
   });
 }
 
+/** Normalizes {@link url} so it can be compared for equality. */
 export function normalizeUrl(url: string) {
   // This removes superfluous port numbers.
   try {
@@ -106,14 +115,17 @@ export function normalizeUrl(url: string) {
   }
 }
 
+/** Compares two URLs for equality. */
 export function urlsEqual(a: string, b: string) {
   return normalizeUrl(a) === normalizeUrl(b);
 }
 
+/** Iterates over elements of {@link array} along their indices. */
 export function enumerate<T>(array: T[]) {
   return array.map((v, i) => [i, v] as const);
 }
 
+/** Removes elements from {@link array} where {@link predicate} holds. */
 export function removeWhere<T>(
   array: T[],
   predicate: (item: T, index: number) => boolean
@@ -126,12 +138,14 @@ export function removeWhere<T>(
   }
 }
 
+/** Parses {@link input} into an integer if possible. */
 export function tryParseInt(input: any, defaultValue: number): number {
   const result = parseInt(input?.toString());
   if (isNaN(result)) return defaultValue;
   return result;
 }
 
+/** Constructs temporary file path with the given file {@link extension}. */
 export async function temporaryFilePath(extension: string) {
   await mkdir(TEMPORARY_DIR, { recursive: true });
   const num = crypto.randomBytes(8).readBigUInt64LE(0);

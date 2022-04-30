@@ -1,5 +1,6 @@
 import { nameOf } from './utils';
 
+/** Simple numerical statistics of scraping. */
 export class ScrapingStats {
   /** Map from status code to number of occurrences. */
   public readonly status: Record<number, number> = {};

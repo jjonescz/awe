@@ -19,8 +19,13 @@ export class Wayback {
    */
   private responses: Record<string, string | null> = {};
 
+  /** Variant to use for {@link getArchiveUrl}. */
   public variant = 'id_';
 
+  /**
+   * Constructs URL to Wayback Machine displaying {@link url} at
+   * {@link timestamp}.
+   */
   public getArchiveUrl(url: string, timestamp: string) {
     url = normalizeUrl(url);
     // For URL scheme, see
@@ -28,6 +33,7 @@ export class Wayback {
     return `https://web.archive.org/web/${timestamp}${this.variant}/${url}`;
   }
 
+  /** Parses Wayback Machine {@link url} scheme. */
   public parseArchiveUrl(url: string) {
     url = normalizeUrl(url);
     const match = url.match(ARCHIVE_URL_REGEX);
@@ -36,6 +42,10 @@ export class Wayback {
     return [date, pageUrl] as const;
   }
 
+  /**
+   * Determines whether {@link request} corresponds to redirect of Wayback
+   * Machine.
+   */
   public isArchiveRedirect(request: HTTPRequest) {
     const archive = this.parseArchiveUrl(request.url());
     if (archive == null) return null;

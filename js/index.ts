@@ -14,6 +14,7 @@ function* getLogLevelNames() {
   for (const name in logger.levels) yield name;
 }
 
+/** Entrypoint of the visual extractor CLI app. */
 class Program extends Command {
   static flags = {
     version: flags.version(),
