@@ -7,6 +7,8 @@ import torch
 
 @dataclasses.dataclass
 class PredStats:
+    """Gathers prediction counters."""
+
     true_positives: int = 0
     true_negatives: int = 0
     false_positives: int = 0
@@ -14,6 +16,8 @@ class PredStats:
 
 @dataclasses.dataclass
 class F1Metrics:
+    """Computes F1 score and related metrics."""
+
     precision: float = 0.0
     recall: float = 0.0
     f1: float = 0.0

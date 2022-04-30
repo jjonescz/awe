@@ -77,9 +77,27 @@ def main():
         trainer.test()
 
 def get_cyclic_permutation_indices(seq_len: int, perm_idx: int, perm_len: int):
+    """
+    For a sequence of length `seq_len`, obtains `perm_idx`-th permutation of
+    length `perm_len`.
+
+    For example, if `seq_len=4`, `perm_len=3`,
+    - `perm_idx=0` → `[0, 1, 2]`,
+    - `perm_idx=1` → `[1, 2, 3]`,
+    - `perm_idx=2` → `[2, 3, 0]`.
+    """
+
     return [(perm_idx + idx) % seq_len for idx in range(perm_len)]
 
 def get_cyclic_permutation(seq: list[str], perm_idx: int, perm_len: int):
+    """
+    For a sequence `seq`, obtains `perm_idx`-th permutation of length
+    `perm_len`.
+
+    Simply takes elements from `seq` according to
+    `get_cyclic_permutation_indices`.
+    """
+
     indices = get_cyclic_permutation_indices(
         seq_len=len(seq),
         perm_idx=perm_idx,

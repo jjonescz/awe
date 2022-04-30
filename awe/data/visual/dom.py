@@ -23,18 +23,24 @@ class DomData:
         self.path = path
 
     def exists(self):
+        """Whether the visuals JSON file exists."""
+
         return os.path.exists(self.path)
 
     def get_json_str(self):
+        """Reads the visuals JSON stored on disk into a string."""
+
         with open(self.path, mode='r', encoding='utf-8') as file:
             return file.read()
 
     def load_json_str(self, json_text: str):
-        """Reads DOM data from JSON."""
+        """Loads DOM data from a JSON string."""
+
         self.data = json.loads(json_text)
 
     def load_json(self):
-        """Reads DOM data from JSON."""
+        """Reads DOM data from the JSON stored on disk."""
+
         self.load_json_str(self.get_json_str())
 
     def fill_tree_light(self,
@@ -44,7 +50,7 @@ class DomData:
         """
         Lighter version of `fill_tree` that loads only bounding boxes (for all
         nodes) and visuals specified in the parameter `attrs` (for nodes with
-        `needs_visuals` set), without any validation for now.
+        `needs_visuals` set), without any validation.
         """
 
         # Find the root element.
@@ -80,6 +86,11 @@ class DomData:
                     queue.append((child, child_data))
 
     def fill_tree(self, dom: awe.data.graph.dom.Dom):
+        """
+        Loads all visuals and validates that the visuals DOM data correspond to
+        the HTML DOM tree.
+        """
+
         for node in dom.nodes:
             self.fill_one(node)
 
@@ -110,6 +121,8 @@ class DomData:
                     queue.insert(0, (child_data, child_name, item))
 
     def fill_one(self, node: awe.data.graph.dom.Node):
+        """Loads visuals for one `node`."""
+
         xpath = node.get_xpath()
         node_data = self.find(xpath)
         node_data['_filled'] = True
@@ -142,7 +155,10 @@ class DomData:
         parser: Callable[[Any, dict[str, Any]], Any] = lambda x: x,
         default: Callable[[awe.data.graph.dom.Node], Any] = lambda _: None
     ):
-        """Loads `node_data` element into `node`."""
+        """
+        Loads a visual attribute from `node_data` element (from visuals JSON) of
+        a `node`.
+        """
 
         camel_case = awe.utils.to_camel_case(snake_case)
         val = node_data.get(camel_case) or default(node)
@@ -163,11 +179,15 @@ class DomData:
         node: awe.data.graph.dom.Node,
         attr: awe.data.visual.attribute.VisualAttribute,
     ):
+        """Loads visual `attr` into `node.visuals`."""
+
         node.visuals[attr.name] = self.load_attribute(
             node_data, node, attr.name, attr.parse, attr.get_default
         )
 
     def find(self, xpath: str):
+        """Finds node data element in visuals DOM data given `xpath`."""
+
         elements = xpath.split('/')[1:]
         current_data = self.data
         for index, element in enumerate(elements):
@@ -180,4 +200,6 @@ class DomData:
         return current_data
 
 def get_tag_name(xpath_element: str):
+    """Extracts HTML tag name from `xpath_element` (strips the indexer)."""
+
     return re.match(XPATH_ELEMENT_REGEX, xpath_element).group(1)

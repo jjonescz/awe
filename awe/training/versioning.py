@@ -13,9 +13,19 @@ import warnings
 import awe.utils
 
 LOG_DIR = os.environ.get('LOGDIR', 'logs')
+"""
+Directory where all version subdirectories are stored, a.k.a. logdir.
+
+By default `logs`. Can be changed via environment variable `LOGDIR`.
+"""
 
 @dataclasses.dataclass
 class Version:
+    """
+    Represents one model version, i.e., one experiment with one set of
+    hyper-parameters.
+    """
+
     number: int
     name: str
 
@@ -29,6 +39,8 @@ class Version:
 
     @staticmethod
     def try_parse(dirname: str):
+        """Inverse of `version_dir_name`."""
+
         match = re.match(r'(\d+)-(.*)', dirname)
         if match is not None:
             number = int(match.group(1))
@@ -38,10 +50,13 @@ class Version:
 
     @classmethod
     def get_all(cls):
+        """List of all versions inside logdir."""
         return list(cls._iterate_all())
 
     @classmethod
     def get_latest(cls):
+        """Finds version with the highest number."""
+
         existing_versions = cls.get_all()
         if len(existing_versions) == 0:
             return None
@@ -49,6 +64,8 @@ class Version:
 
     @classmethod
     def find_by_number(cls, number: int):
+        """Finds version with the specified `number`."""
+
         for v in cls._iterate_all():
             if v.number == number:
                 return v
@@ -57,8 +74,8 @@ class Version:
     @classmethod
     def delete_last(cls, name: str):
         """
-        If the last version has the given `name`, deletes it. If it has no name,
-        keeps it (will be overwritten).
+        If the last version has the given `name`, deletes it (see `delete`). If
+        it has no name, keeps it (will be overwritten).
         """
 
         latest_version = cls.get_latest()
@@ -106,6 +123,8 @@ class Version:
 
     @property
     def checkpoints_dir_path(self):
+        """A directory where checkpoints of this version are stored."""
+
         return f'{self.version_dir_path}/checkpoints'
 
     def get_checkpoints(self):
@@ -156,6 +175,11 @@ class Version:
         os.makedirs(self.version_dir_path, exist_ok=True)
 
     def delete(self):
+        """
+        Deletes version directory, first only renaming it (so if it was an
+        accident, it can be reverted).
+        """
+
         if not os.path.exists(self.version_dir_path):
             return
 
@@ -169,6 +193,8 @@ class Version:
 
 @dataclasses.dataclass
 class Checkpoint:
+    """Represents one checkpoint of a model, i.e., all its trained weights."""
+
     version: Version
     epoch: int
     step: int

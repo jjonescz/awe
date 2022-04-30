@@ -15,6 +15,8 @@ if TYPE_CHECKING:
 
 
 class WordEmbedding(torch.nn.Module):
+    """Wrapper for word embedding."""
+
     def __init__(self, parent: 'awe.model.classifier.Model'):
         super().__init__()
         self.trainer = parent.trainer
@@ -42,6 +44,8 @@ class WordEmbedding(torch.nn.Module):
         return self.word_embedding(word_ids)
 
 class WordLstm(torch.nn.Module):
+    """Wrapper for text LSTM."""
+
     def __init__(self, parent: 'awe.model.classifier.Model'):
         super().__init__()
         self.trainer = parent.trainer

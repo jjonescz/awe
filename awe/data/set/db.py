@@ -4,6 +4,11 @@ from typing import Optional
 
 
 class Database:
+    """
+    SQLite database wrapper for holding a dataset of HTML pages and their
+    visuals.
+    """
+
     def __init__(self, db_file_path: str):
         self.db_file_path = db_file_path
         self.fresh = not os.path.exists(self.db_file_path)
@@ -29,6 +34,8 @@ class Database:
         html_text: str,
         visuals: Optional[str] = None,
     ):
+        """Adds new page."""
+
         self.db.execute('''
             insert into pages(id, url, html, visuals)
                 values(:id, :url, :html, :visuals)
@@ -40,6 +47,8 @@ class Database:
         })
 
     def save(self):
+        """Saves the database to disk."""
+
         self.db.commit()
 
     def replace(self,
@@ -48,6 +57,8 @@ class Database:
         html_text: str,
         visuals: Optional[str] = None,
     ):
+        """Replaces page at `idx`."""
+
         with self.db:
             self.db.execute('''
                 update pages
@@ -70,6 +81,8 @@ class Database:
         return 0
 
     def _get(self, idx: int, col: str):
+        """Gets `col` of page at `idx`."""
+
         q = self.db.execute(f'select {col} from pages where id = :id', {
             'id': idx
         })
@@ -78,10 +91,16 @@ class Database:
         raise RuntimeError(f'Page {idx} not found in {self.db_file_path!r}.')
 
     def get_url(self, idx: int) -> str:
+        """Gets URL of page at `idx`."""
+
         return self._get(idx, 'url')
 
     def get_html_text(self, idx: int) -> str:
+        """Gets HTML string of page at `idx`."""
+
         return self._get(idx, 'html')
 
     def get_visuals(self, idx: int) -> Optional[str]:
+        """Gets visuals JSON string of page at `idx`."""
+
         return self._get(idx, 'visuals')

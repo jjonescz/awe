@@ -1,4 +1,8 @@
-# Run: `python -m awe.data.validate`
+"""
+Validates dataset of pages.
+
+Run: `python -m awe.data.validate`.
+"""
 
 import argparse
 import os

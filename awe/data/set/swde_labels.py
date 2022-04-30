@@ -1,3 +1,5 @@
+"""Gold label parsing for the SWDE dataset."""
+
 import dataclasses
 import html
 import re
@@ -34,8 +36,13 @@ class GroundtruthFile:
     """
 
     website: 'awe.data.set.swde.Website'
+    """Website this file contains ground-truth values of."""
+
     label_key: str
+    """Label key this file corresponds to."""
+
     entries: list['GroundtruthEntry'] = dataclasses.field(repr=False)
+    """List of entries inside this file."""
 
     def __init__(self, website: 'awe.data.set.swde.Website', file_name: str):
         self.website = website
@@ -80,8 +87,16 @@ class GroundtruthFile:
 
 @dataclasses.dataclass
 class GroundtruthEntry:
+    """
+    One entry inside `GroundtruthFile`, representing gold values for a single
+    SWDE page.
+    """
+
     file: GroundtruthFile = dataclasses.field(repr=False)
+    """The parent `GroundtruthFile`."""
+
     index: int
+    """Page index inside the website."""
 
     label_values: list[str]
     """Label values as loaded from the groundtruth `field` file."""

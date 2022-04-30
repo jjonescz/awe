@@ -16,6 +16,8 @@ if TYPE_CHECKING:
 
 
 class Evaluator:
+    """Evaluation factory."""
+
     def __init__(self, trainer: 'awe.training.trainer.Trainer'):
         self.trainer = trainer
 
@@ -23,6 +25,8 @@ class Evaluator:
         return Evaluation(self)
 
 class FloatMetric:
+    """Represent one metric that can be aggregated by the mean function."""
+
     total: float = 0.0
     count: int = 0
 
@@ -34,7 +38,10 @@ class FloatMetric:
         return self.total / self.count
 
 class Metrics:
-    """Wrapper for `MetricCollection` handling some edge cases."""
+    """
+    Wrapper for `MetricCollection` where `compute` can be safely called even
+    after `reset`.
+    """
 
     updated: bool = False
 
@@ -55,6 +62,14 @@ class Metrics:
         self.updated = False
 
 class Evaluation:
+    """
+    One evaluation run.
+
+    Usage:
+    1. Add predictions via `add*` methods.
+    2. Compute aggregated results via the `compute` method.
+    """
+
     metrics: dict[str, FloatMetric]
 
     pred_set_dirty: bool = False
@@ -69,11 +84,15 @@ class Evaluation:
         }, postfix='/node')
 
     def clear(self):
+        """Clears all state."""
+
         self.pred_set.clear()
         self.metrics.clear()
         self.nodes.reset()
 
     def compute(self):
+        """Computes aggregated metrics from the current state."""
+
         metrics_dict = { k: v.compute() for k, v in self.metrics.items() }
         metrics_dict.update(self.nodes.compute())
 
@@ -156,13 +175,19 @@ class Evaluation:
         metrics_dict.update(page_metrics.to_dict(postfix=f'{em}/page'))
 
     def add(self, pred: 'awe.model.classifier.Prediction'):
+        """Adds model's prediction to this evaluation."""
+
         self.add_fast(pred.outputs)
         self.add_slow(pred)
 
     def add_fast(self, outputs: 'awe.model.classifier.ModelOutput'):
+        """Like `add` but only evaluates loss."""
+
         self.metrics['loss'].add(outputs.loss.item())
 
     def add_slow(self, pred: 'awe.model.classifier.Prediction'):
+        """Like `add` but only evaluates metrics other than loss."""
+
         self.nodes.update(preds=pred.outputs.logits, target=pred.outputs.gold_labels)
         self.pred_set.add_batch(pred)
         self.pred_set_dirty = True

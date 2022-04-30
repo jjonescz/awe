@@ -7,6 +7,8 @@ import awe.data.set.pages
 
 
 class PageLabels(abc.ABC):
+    """Gold page labels."""
+
     def __init__(self, page: awe.data.set.pages.Page):
         self.page = page
 
@@ -20,6 +22,10 @@ class PageLabels(abc.ABC):
 
     # pylint: disable-next=no-self-use,unused-argument
     def get_selector(self, label_key: str) -> Optional[str]:
+        """
+        CSS selector that can be used to find gold nodes for the specified
+        `label_key` if provided in the dataset.
+        """
         return None
 
     @abc.abstractmethod

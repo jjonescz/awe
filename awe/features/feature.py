@@ -11,6 +11,8 @@ if TYPE_CHECKING:
 
 
 class Feature(awe.utils.PickleSubset, abc.ABC):
+    """Interface for all features."""
+
     def __init__(self, trainer: 'awe.training.trainer.Trainer'):
         self.trainer = trainer
         self.__post_init__(restoring=False)

@@ -8,7 +8,12 @@ import awe.utils
 
 
 class Visuals(awe.features.feature.Feature):
-    """Visual features."""
+    """
+    Visual features.
+
+    Forwards preparation/computation calls to each enabled visual attribute
+    defined in module `awe.data.visual.attribute`.
+    """
 
     extraction: awe.data.visual.context.Extraction
     out_dim: int = None

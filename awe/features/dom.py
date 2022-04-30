@@ -8,6 +8,8 @@ import awe.data.visual.structs
 
 
 class HtmlTag(awe.features.feature.Feature):
+    """HTML tag name feature."""
+
     _html_tags: set[str]
     html_tag_ids: dict[str, int]
 
@@ -43,6 +45,8 @@ class HtmlTag(awe.features.feature.Feature):
         )
 
 class Position(awe.features.feature.Feature):
+    """Visual position feature. See `compute_position`."""
+
     out_dim: int = 4
 
     def compute(self, batch: list[awe.data.graph.dom.Node]):
@@ -52,7 +56,12 @@ class Position(awe.features.feature.Feature):
         )
 
 def compute_position(node: awe.data.graph.dom.Node):
-    """Computes node's relative xy position and size."""
+    """
+    Computes node's relative xy position and size.
+
+    Given the bounding box of a node `[x, y, w, h]` and its page `[0, 0, W, H]`,
+    this feature is computed as `[x/W, y/H, log(w/W), log(h/H)]`.
+    """
 
     root_box = node.dom.root.box
     return (

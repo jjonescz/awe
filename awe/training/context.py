@@ -5,6 +5,14 @@ import warnings
 import awe.data.graph.dom
 
 class LabelMap:
+    """
+    Map from attribute keys (a.k.a. labels) to IDs (a.k.a. classification
+    classes).
+
+    Note that ID 0 is reserved for `None` label.
+    Hence, for N attribute keys, IDs are in range [0, N].
+    """
+
     label_to_id: dict[str, int]
     id_to_label: dict[int, str]
 

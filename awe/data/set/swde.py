@@ -1,3 +1,5 @@
+"""The SWDE dataset implementation."""
+
 import abc
 import dataclasses
 import glob
@@ -38,7 +40,11 @@ BASE_TAG_REGEX = r'^<base href="([^\n]*)"/>\w*\n$'
 @dataclasses.dataclass
 class Dataset(awe.data.set.pages.Dataset):
     verticals: list['Vertical'] = dataclasses.field(repr=False)
+
     suffix: Optional[str] = None
+    """
+    Suffix corresponding to outputs of the visual extractor (e.g., `-exact`).
+    """
 
     def __init__(self,
         suffix: Optional[str] = None,
@@ -46,6 +52,12 @@ class Dataset(awe.data.set.pages.Dataset):
         only_websites: Optional[list[str]] = None,
         convert: bool = True
     ):
+        """
+        - `only_verticals`: names of verticals to load,
+        - `only_websites`: names of websites to load,
+        - `convert`: save the dataset as SQLite or load existing database.
+        """
+
         super().__init__(
             name=f'swde{suffix or ""}',
             dir_path=DATA_DIR,
@@ -57,6 +69,8 @@ class Dataset(awe.data.set.pages.Dataset):
         self.verticals = list(self._iterate_verticals())
 
     def _iterate_verticals(self):
+        """Constructs `Vertical` instances."""
+
         # Get list of verticals to load.
         if self.only_verticals:
             vertical_names = self.only_verticals
@@ -74,6 +88,10 @@ class Dataset(awe.data.set.pages.Dataset):
             page_count += vertical.page_count
 
     def find_page(self, vertical: str, website: str, page: int):
+        """
+        Finds page given its `vertical` name, `website` name and `page` index.
+        """
+
         v = next(v for v in self.verticals if v.name == vertical)
         w = next(w for w in v.websites if w.name == website)
         return w.pages[page]
@@ -82,7 +100,9 @@ class Dataset(awe.data.set.pages.Dataset):
 class Vertical(awe.data.set.pages.Vertical):
     dataset: Dataset
     websites: list['Website'] = dataclasses.field(repr=False, default_factory=list)
+
     db: awe.data.set.db.Database = dataclasses.field(repr=False, default=None)
+    """SQLite database holding all data for this website."""
 
     def __post_init__(self):
         if not os.path.exists(self.dir_path):
@@ -126,13 +146,19 @@ class Vertical(awe.data.set.pages.Vertical):
 
     @property
     def groundtruth_dir(self):
+        """Directory containing `GroundtruthFile`s."""
+
         return f'{self.dataset.dir_path}/groundtruth/{self.name}'
 
     @property
     def groundtruth_path_prefix(self):
+        """Path to `GroundtruthFile`s of this vertical."""
+
         return f'{self.groundtruth_dir}/{self.name}'
 
     def _iterate_websites(self, cls: type['Website']):
+        """Constructs `Website` instances of the specified type (`cls`)."""
+
         # Get list of websites to load.
         website_dirs = sorted(os.listdir(self.dir_path))
         if self.dataset.only_websites is not None:
@@ -165,8 +191,10 @@ class Vertical(awe.data.set.pages.Vertical):
 class Website(awe.data.set.pages.Website):
     vertical: Vertical
     pages: list['Page'] = dataclasses.field(repr=False)
+
     groundtruth_files: dict[str, awe.data.set.swde_labels.GroundtruthFile] = \
         dataclasses.field(repr=False, default=None)
+    """`GroundtruthFile`s for attribute keys of this website."""
 
     def __init__(self, vertical: Vertical, dir_name: str, prev_page_count: int):
         match = re.search(WEBSITE_REGEX, dir_name)
@@ -205,13 +233,17 @@ class Website(awe.data.set.pages.Website):
 
     @property
     def groundtruth_path_prefix(self):
+        """Path to `GroundtruthFile`s of this website."""
+
         return f'{self.vertical.groundtruth_path_prefix}-{self.name}'
 
     @abc.abstractmethod
     def _iterate_pages(self):
-        pass
+        """Constructs `Page` instances."""
 
     def _iterate_groundtruth(self):
+        """Constructs `GroundtruthFile` instances."""
+
         for file in glob.glob(f'{self.groundtruth_path_prefix}-*.txt'):
             file_name = os.path.basename(file)
             groundtruth = awe.data.set.swde_labels.GroundtruthFile(
@@ -222,6 +254,8 @@ class Website(awe.data.set.pages.Website):
             yield groundtruth
 
     def get_page_at(self, idx: int):
+        """Finds page at the specified `idx`."""
+
         # Hot path: try indexing directly.
         if idx < len(self.pages) and (page := self.pages[idx]).index == idx:
             return page
@@ -233,6 +267,8 @@ class Website(awe.data.set.pages.Website):
         return None
 
 class FileWebsite(Website):
+    """SWDE website with pages stored in the original files."""
+
     def _iterate_pages(self):
         for file in sorted(os.listdir(f'{self.dir_path}')):
             page = FilePage.try_create(website=self, file_name=file)
@@ -241,6 +277,8 @@ class FileWebsite(Website):
                 yield page
 
 class DbWebsite(Website):
+    """SWDE website with pages stored in the SQLite database."""
+
     def _iterate_pages(self):
         for idx in range(self.page_count):
             yield DbPage(website=self, index=idx)
@@ -248,9 +286,13 @@ class DbWebsite(Website):
 @dataclasses.dataclass(eq=False)
 class Page(awe.data.set.pages.Page):
     website: Website
+
     _url: Optional[str] = dataclasses.field(repr=False, init=False, default=None)
+    """Original URL of the page."""
+
     groundtruth_entries: dict[str, awe.data.set.swde_labels.GroundtruthEntry] = \
         dataclasses.field(repr=False, default=None)
+    """`GroundtruthEntry`s for attribute keys of this page."""
 
     def __post_init__(self):
         self.groundtruth_entries = {
@@ -281,6 +323,11 @@ class Page(awe.data.set.pages.Page):
         return self.create_visuals().get_json_str()
 
     def to_row(self):
+        """
+        Constructs dictionary with page metadata (to be stored in the SQLite
+        database).
+        """
+
         return {
             'url': self.url,
             'html_text': self.get_html_text(),
@@ -288,14 +335,20 @@ class Page(awe.data.set.pages.Page):
         }
 
     def reload(self):
+        """Reloads this page in the database from the original file."""
+
         file_page = FilePage.try_create(self.website, self.html_file_name)
         self.website.pages[self.index] = file_page
         self.website.vertical.db.replace(self.index_in_vertical, **file_page.to_row())
         return file_page
 
 class FilePage(Page):
+    """Page inside `FileWebsite`."""
+
     @staticmethod
     def try_create(website: Website, file_name: str):
+        """Creates instance if `file_name` matches the correct pattern."""
+
         match = re.search(PAGE_REGEX, file_name)
         if match is None:
             return None
@@ -329,8 +382,12 @@ class FilePage(Page):
         return visuals
 
 class DbPage(Page):
+    """Page inside `DbWebsite`."""
+
     @property
     def db(self):
+        """SQLite database where this page is stored."""
+
         return self.website.vertical.db
 
     @property

@@ -20,10 +20,7 @@ if TYPE_CHECKING:
     import awe.training.trainer
 
 class Sampler:
-    """
-    Prepares data samples for training. Method `load` takes pages and returns
-    list of samples.
-    """
+    """Prepares data samples for model."""
 
     var_nodes: dict[str, set[str]]
 
@@ -55,6 +52,8 @@ class Sampler:
             self.find_variable_nodes()
 
     def load(self):
+        """Prepares all pages and returns list of sampled nodes."""
+
         params = self.trainer.params
 
         self.prepare()
@@ -76,6 +75,12 @@ class Sampler:
         return [n for p in pages for n in p.dom.nodes if n.sample]
 
     def load_one(self, page: awe.data.set.pages.Page):
+        """
+        Prepares one page (lazily) and returns list of its nodes.
+
+        Should be used via `LazySampler`.
+        """
+
         params = self.trainer.params
 
         try:
@@ -94,6 +99,8 @@ class Sampler:
             page.clear_dom()
 
     def find_variable_nodes(self):
+        """Finds variable nodes for all websites that will be sampled from."""
+
         # Find all websites contained in `pages`.
         websites = {}
         for page in self.pages:
@@ -109,12 +116,16 @@ class Sampler:
         }
 
     def init_dom_trees(self):
+        """Parses HTML into DOM trees of all pages."""
+
         for page in tqdm(self.pages, desc=f'init {self.desc}'):
             page: awe.data.set.pages.Page
             if page.cache_dom().root is None:
                 self.init_dom_tree(page)
 
     def prepare_features(self):
+        """Prepares features for all pages."""
+
         for page in tqdm(self.pages, desc=f'prepare {self.desc}'):
             self.prepare_features_for_page(page)
 
@@ -123,6 +134,8 @@ class Sampler:
             self.trainer.extractor.freeze()
 
     def validate(self, pages: list[awe.data.set.pages.Page], progress_bar: bool):
+        """Validates `pages`."""
+
         validator = awe.data.validation.Validator(
             only_cached_dom=True,
             # It is not needed to validate visuals as that's automatically
@@ -135,9 +148,13 @@ class Sampler:
         return validator.num_invalid == 0
 
     def is_variable_node(self, node: awe.data.graph.dom.Node):
+        """Determines whether `node` is in the set of variable nodes."""
+
         return node.get_xpath() in self.var_nodes[node.dom.page.website.name]
 
     def init_dom_tree(self, page: awe.data.set.pages.Page):
+        """Parses HTML into DOM tree for one `page`."""
+
         params = self.trainer.params
 
         page.dom.init_nodes(
@@ -166,6 +183,8 @@ class Sampler:
         check_sampled_nodes(page)
 
     def prepare_features_for_page(self, page: awe.data.set.pages.Page):
+        """Prepares features for one `page`."""
+
         params = self.trainer.params
 
         # Compute friend cycles.
@@ -196,6 +215,8 @@ class Sampler:
         self.trainer.extractor.prepare_page(page.dom, train=self.train)
 
     def load_visuals(self, page: awe.data.set.pages.Page):
+        """Loads visuals into DOM tree of one `page`."""
+
         # Mark nodes that need visuals parsed.
         for node in page.dom.nodes:
             if node.sample:
@@ -212,6 +233,8 @@ class Sampler:
         )
 
     def init_labels(self, page: awe.data.set.pages.Page):
+        """Loads labels into DOM tree of one `page`."""
+
         params = self.trainer.params
 
         page.dom.init_labels(
@@ -219,6 +242,8 @@ class Sampler:
         )
 
     def should_sample(self, node: awe.data.graph.dom.Node):
+        """Decides whether `node` should be sampled."""
+
         params = self.trainer.params
 
         if params.classify_only_variable_nodes:
@@ -237,6 +262,8 @@ class Sampler:
         return True
 
     def should_cutoff(self, node: awe.data.graph.dom.Node):
+        """Applies `Params.none_cutoff`."""
+
         params = self.trainer.params
 
         # If the node is not labeled, cut it off with some probability (to
@@ -249,6 +276,8 @@ class Sampler:
         )
 
     def is_text_or_correct_leaf(self, node: awe.data.graph.dom.Node):
+        """Determines whether `node` should be sampled according to `Params`."""
+
         params = self.trainer.params
 
         return (
@@ -258,6 +287,8 @@ class Sampler:
         )
 
 def check_sampled_nodes(page: awe.data.set.pages.Page):
+    """Checks that all target nodes are indeed sampled."""
+
     included = collections.defaultdict(int)
     excluded = collections.defaultdict(int)
     for node in page.dom.nodes:
@@ -277,6 +308,8 @@ def check_sampled_nodes(page: awe.data.set.pages.Page):
                 f'labeled {label_key!r} ({page.html_path!r}).')
 
 class LazySampler(torch.utils.data.IterableDataset):
+    """`IterableDataset` implementation for `Sampler`."""
+
     def __init__(self, sampler: Sampler):
         super().__init__()
         self.sampler = sampler
@@ -285,6 +318,8 @@ class LazySampler(torch.utils.data.IterableDataset):
         self.num_pages = 0
 
     def __len__(self):
+        # Estimate length of not-yet-prepared pages by using the average number
+        # of nodes per page of prepared pages.
         avg_nodes = (
             self.num_nodes / self.num_pages
             if self.num_pages != 0 else 2_000

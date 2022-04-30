@@ -1,9 +1,13 @@
+"""Structures holding visual attribute values."""
+
 import colorsys
 import dataclasses
 
 
 @dataclasses.dataclass
 class BoundingBox:
+    """Coordinates of a node on rendered page."""
+
     x: int
     y: int
     width: int
@@ -42,6 +46,8 @@ class BoundingBox:
 
 @dataclasses.dataclass
 class Color:
+    """Color in RGBA format."""
+
     red: int
     green: int
     blue: int
@@ -63,6 +69,8 @@ class Color:
 
     @classmethod
     def parse(cls, s: str):
+        """Parses color from its hex representation (e.g., `#00112233`)."""
+
         def h(i: int):
             return int(s[i:(i + 2)], 16)
         return Color(h(1), h(3), h(5), h(7))

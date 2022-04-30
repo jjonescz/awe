@@ -1,3 +1,5 @@
+"""A simple dataset implementation for live (unlabeled) pages."""
+
 import dataclasses
 from typing import Optional
 

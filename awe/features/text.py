@@ -109,15 +109,24 @@ class WordIdentifiers(awe.features.feature.Feature):
         self.enable_cache()
 
     def tokenize(self, text: str, humanize: bool = False):
+        """Obtains list of tokens from `text` using the configured tokenizer."""
+
         if humanize:
             text = humanize_string(text)
         return self._tokenize(text)
 
     def get_token_id(self, token: str):
-        # Indices start at 1; 0 is used for unknown and pad words.
+        """
+        Transforms textual token to its dictionary ID.
+
+        IDs start at 1; 0 is used for unknown and pad tokens.
+        """
+
         return self.glove.get_index(token, default=-1) + 1
 
     def compute_node_token_ids(self, node: awe.data.graph.dom.Node, train: bool):
+        """Computes list of token IDs for `node`'s textual content."""
+
         params = self.trainer.params
 
         # Find maximum word count and save token IDs.
@@ -141,6 +150,8 @@ class WordIdentifiers(awe.features.feature.Feature):
         return token_ids
 
     def compute_node_attr_token_ids(self, node: awe.data.graph.dom.Node):
+        """Computes list of token IDs for selected `node`'s attribute values."""
+
         params = self.trainer.params
 
         # Tokenize attribute values.
@@ -160,6 +171,8 @@ class WordIdentifiers(awe.features.feature.Feature):
         return self.default_token_ids
 
     def prepare(self, node: awe.data.graph.dom.Node, train: bool):
+        """If cache is enabled, token IDs are cached for the `node`."""
+
         if self.node_token_ids is not None and node.is_text:
             self.node_token_ids[node] = self.compute_node_token_ids(
                 node=node,
@@ -183,6 +196,8 @@ class WordIdentifiers(awe.features.feature.Feature):
             self.node_attr_token_ids = None
 
     def compute(self, batch: list[list[awe.data.graph.dom.Node]]):
+        """Computes (or retrieves cached) token IDs for all nodes in `batch`."""
+
         # Get word token indices.
         return torch.nn.utils.rnn.pack_sequence(
             [
@@ -206,6 +221,11 @@ class WordIdentifiers(awe.features.feature.Feature):
         )
 
     def compute_attr(self, batch: list[awe.data.graph.dom.Node]):
+        """
+        Like `compute` but for node DOM attribute values instead of textual
+        content.
+        """
+
         return torch.nn.utils.rnn.pack_sequence(
             [
                 (
@@ -219,12 +239,19 @@ class WordIdentifiers(awe.features.feature.Feature):
         )
 
     def get_node_attr_text(self, node: awe.data.graph.dom.Node):
+        """Convenience wrapper for static method `get_node_attr_text`."""
+
         return get_node_attr_text(node=node, params=self.trainer.params)
 
 def get_node_attr_text(
     node: awe.data.graph.dom.Node,
     params: awe.training.params.Params
 ):
+    """
+    Obtains attribute values of `node` as normal space-separated text that can
+    be tokenized as usual.
+    """
+
     attrs = node.get_attributes()
     return ' '.join(
         v

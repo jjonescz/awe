@@ -36,12 +36,17 @@ import awe.training.versioning
 
 @dataclasses.dataclass
 class RunInput:
+    """Input for training, evaluation, or prediction."""
+
     # Currently unused, but might be useful in the future.
     pages: list[awe.data.set.pages.Page]
+    """Set of pages used to create the set of sampled nodes."""
 
     loader: torch.utils.data.DataLoader
+    """Loader producing the sampled nodes."""
 
     name: str
+    """Name used for reporting (e.g., `train`, `val`, `test`)."""
 
     prefix: Optional[str] = None
     """
@@ -49,14 +54,23 @@ class RunInput:
     """
 
     progress: Optional[Callable[[], tqdm]] = None
+    """Progress bar unless disabled."""
 
     progress_metrics: list[str] = ()
+    """Metric names to show in the `progress` bar."""
 
     progress_dict: Optional[dict[str]] = None
+    """Current `progress_metrics` and their values."""
 
     lazy: bool = False
+    """
+    Whether pages should be prepared lazily. Otherwise, all pages are prepared
+    up-front and the sampled nodes are cached in a list.
+    """
 
 class Subsetter:
+    """Takes random subset of pages."""
+
     def __init__(self):
         self.rng = np.random.default_rng(42)
 
@@ -124,6 +138,8 @@ class Trainer:
         self.params = params
 
     def load_dataset(self):
+        """Loads dataset of pages."""
+
         set_seed(42)
 
         if self.params.dataset == awe.training.params.Dataset.swde:
@@ -141,6 +157,15 @@ class Trainer:
                 f'Unrecognized dataset param {self.params.dataset!r}.')
 
     def init_features(self):
+        """
+        Creates fresh instances of features.
+
+        Next, these blank features should be populated with context (such as the
+        set of possible HTML tags) by preparing them on training data (via
+        method `create_dataloader`) or loading from checkpoint (via method
+        `restore_features`).
+        """
+
         set_seed(42)
 
         # Create device (some features need it when preparing tensors).
@@ -158,6 +183,8 @@ class Trainer:
         self.extractor = awe.features.extraction.Extractor(self)
 
     def split_data(self):
+        """Creates subsets of pages for training, validation, and testing."""
+
         set_seed(42)
 
         # Load websites from one vertical.
@@ -191,7 +218,10 @@ class Trainer:
         print(f'{len(self.train_pages)=}, {len(self.val_pages)=}, {len(self.test_pages)=}')
 
     def create_dataloaders(self):
-        """Splits data to train/val sets and prepares features on them."""
+        """
+        Samples nodes for train/val/test subsets of pages and extracts features
+        for them. Convenience wrapper for `create_dataloader`.
+        """
 
         # Create dataloaders.
         self.train_loader = self.create_dataloader(self.train_pages, 'train',
@@ -210,6 +240,20 @@ class Trainer:
         train: bool = False,
         lazy: bool = False
     ):
+        """
+        Creates a `torch.utils.data.DataLoader` by sampling nodes from `pages`
+        and extracting their features.
+
+        This is mainly for internal use. Externally, it is recommended to use
+        `create_run` instead.
+
+        Parameters:
+        - `desc`: name for reporting, e.g., `train`, `val`, `test`,
+        - `shuffle`: shuffle node samples (should be used only for training),
+        - `train`: update feature context (otherwise, it's frozen),
+        - `lazy`: do not cache prepared samples.
+        """
+
         set_seed(42)
 
         flags = {
@@ -249,6 +293,16 @@ class Trainer:
         shuffle: bool = False,
         lazy: bool = False,
     ):
+        """
+        Creates `RunInput`. Convenience wrapper for `create_dataloader`.
+
+        Parameters:
+        - `desc`: name for reporting, e.g., `train`, `val`, `test`,
+        - `log`: enable TensorBoard logging,
+        - `shuffle`: shuffle node samples (should be used only for training),
+        - `lazy`: do not cache prepared samples.
+        """
+
         return RunInput(
             pages=pages,
             name=desc,
@@ -263,6 +317,13 @@ class Trainer:
         )
 
     def explore_data(self):
+        """
+        Simple data exploration.
+
+        Shows target nodes and what the model will see for them (according to
+        current hyper-parameters).
+        """
+
         nodes: list[awe.data.graph.dom.Node] = self.train_loader.dataset
 
         def get_text(node: awe.data.graph.dom.Node):
@@ -308,18 +369,33 @@ class Trainer:
         )
 
     def explore_visuals(self):
+        """Displays statistics for prepared visual features."""
+
         visuals = self.extractor.get_feature(awe.features.visual.Visuals)
         if visuals is None:
             return None
         return visuals.extraction.describe()
 
     def create_model(self):
+        """Creates fresh model (without any trained weights)."""
+
         set_seed(42)
 
         self.evaluator = awe.model.eval.Evaluator(self)
         self.model = awe.model.classifier.Model(self).to(self.device)
 
     def create_version(self):
+        """
+        Creates version directory and initializes TensorBoard logging in it.
+
+        The previous version directory is automatically removed if it has the
+        same name (so it is effectively overwritten by this new version). See
+        `Version.delete_last`.
+
+        If hyper-parameter `restore_num` is specified, a previous version is
+        restored instead of creating a new version.
+        """
+
         if self.params.restore_num is not None:
             self.version = awe.training.versioning.Version(
                 number=self.params.restore_num,
@@ -349,6 +425,8 @@ class Trainer:
         )
 
     def restore_version(self, version: awe.training.versioning.Version):
+        """Restores last model checkpoint of the specified `version`."""
+
         checkpoints = version.get_checkpoints()
         if len(checkpoints) == 0:
             raise RuntimeError(f'No checkpoints ({version.version_dir_path!r})')
@@ -365,6 +443,8 @@ class Trainer:
         self.restore_checkpoint(checkpoints[-1])
 
     def restore_checkpoint(self, checkpoint: awe.training.versioning.Checkpoint):
+        """Restores the specified model `checkpoint`."""
+
         print(f'Loading {checkpoint.file_path!r}...')
         self.restored_state = torch.load(checkpoint.file_path,
             # Load GPU tensors to CPU if GPU is not available.
@@ -372,21 +452,29 @@ class Trainer:
         )
 
     def restore_features(self):
+        """Restores feature context (after calling `restore_checkpoint`)."""
+
         print('Restoring features...')
         self.label_map = self.restored_state['label_map']
         self.extractor.restore_features(self.restored_state['features'])
 
     def restore_model(self):
+        """Restores model weights (after calling `restore_checkpoint`)."""
+
         print('Restoring model state...')
         return self.model.load_state_dict(self.restored_state['model'])
 
     def _reset_loop(self):
+        """Resets variables tracking state of a train/val/predict loop."""
+
         set_seed(42)
         self.step = 0
         self.train_progress = None
         self.val_progress = None
 
     def _finalize(self):
+        """Cleanup of a train/val/predict loop."""
+
         if self.writer is not None:
             self.writer.flush()
         if self.train_progress is not None:
@@ -399,6 +487,13 @@ class Trainer:
         train_progress_metrics: list[str] = ('loss', 'f1/page'),
         val_progress_metrics: list[str] = ('loss', 'f1/page')
     ):
+        """
+        Creates `RunInput`s `train`, `val` and executes training with validation
+        after each epoch.
+
+        If `restore_checkpoint` has been called, training state is restored.
+        """
+
         self._reset_loop()
         self.optim = self.model.create_optimizer()
 
@@ -488,6 +583,8 @@ class Trainer:
         self._finalize()
 
     def save_checkpoint(self, epoch_idx: int, best_val_loss: int = sys.maxsize):
+        """Saves model `checkpoint` including training state."""
+
         ckpt = self.version.create_checkpoint(epoch=epoch_idx, step=self.step)
         state = {
             'model': self.model.state_dict(),
@@ -507,6 +604,11 @@ class Trainer:
         return ckpt
 
     def get_info(self):
+        """
+        Constructs JSON object conforming to interface `ModelInfo` defined in
+        `js/lib/demo/model-info.ts`.
+        """
+
         website_url_domains = [
             os.path.commonprefix([p.url for p in g])
             for _, g in itertools.groupby(
@@ -521,6 +623,8 @@ class Trainer:
         }
 
     def _train_epoch(self, run: RunInput, val_run: RunInput):
+        """Trains the model for one epoch with evaluation afterwards."""
+
         self.model.train()
         if self.train_progress is None:
             self.train_progress = tqdm(desc='epoch')
@@ -566,6 +670,8 @@ class Trainer:
         return total_eval.compute()
 
     def _validate_epoch(self, run: RunInput):
+        """Evaluates the model after one epoch of training."""
+
         with torch.no_grad():
             return self._validate_epoch_core(run)
 
@@ -587,6 +693,8 @@ class Trainer:
         run: RunInput,
         evaluation: awe.model.eval.Evaluation
     ):
+        """Populates progress bar and TensorBoard with evaluation metrics."""
+
         # Compute aggregate metrics.
         metrics = evaluation.compute()
 
@@ -615,6 +723,8 @@ class Trainer:
         return metrics
 
     def validate(self, run: RunInput):
+        """Evaluates the subset `run` (independently of training)."""
+
         self._reset_loop()
         metrics = self._validate_epoch(run)
         self._finalize()
@@ -628,6 +738,11 @@ class Trainer:
         return metrics
 
     def test(self):
+        """
+        Like `validate`, but the set of pages for training is created in
+        `create_dataloader` according to hyper-parameters.
+        """
+
         test_run = RunInput(
             pages=self.test_pages,
             name='test',
@@ -639,6 +754,8 @@ class Trainer:
         return self.validate(test_run)
 
     def predict(self, run: RunInput):
+        """Obtains model predictions for the subset `run`."""
+
         predictions: list[awe.model.classifier.Prediction] = []
         self.model.eval()
         with torch.no_grad():
@@ -648,12 +765,23 @@ class Trainer:
         return predictions
 
     def decode(self, preds: list[awe.model.classifier.Prediction]):
+        """A convenience wrapper for `Decoder.decode`."""
+
         return awe.model.decoding.Decoder(self).decode(preds)
 
     def decode_raw(self, preds: list[awe.model.classifier.Prediction]):
+        """A convenience wrapper for `Decoder.decode_raw`."""
+
         return awe.model.decoding.Decoder(self).decode_raw(preds)
 
 def set_seed(seed: int):
+    """
+    Utility for fixing seeds, so all randomness is reproducible.
+
+    This is called inside each `Trainer`'s top-level method, so repeated
+    invocations are always deterministic (e.g., in Jupyter notebooks).
+    """
+
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)

@@ -1,3 +1,5 @@
+"""The Apify dataset implementation."""
+
 import dataclasses
 import glob
 import json
@@ -26,6 +28,8 @@ LONG_SLUG_WEBSITES = { 'alzaEn', 'bestbuyEn', 'conradEn', 'ikeaEn', 'notinoEn', 
 
 @dataclasses.dataclass
 class Dataset(awe.data.set.pages.Dataset):
+    """The Apify dataset."""
+
     verticals: list['Vertical'] = dataclasses.field(repr=False)
 
     def __init__(self,
@@ -36,6 +40,16 @@ class Dataset(awe.data.set.pages.Dataset):
         skip_without_visuals: bool = False,
         only_label_keys: Optional[list[str]] = None
     ):
+        """
+        - `only_websites`: names of websites to load,
+        - `exclude_websites`: names of websites to skip,
+        - `convert`: save the dataset as SQLite or load existing database,
+        - `convert_slim`: save full dataset JSON into a slim version without
+          HTML,
+        - `skip_without_visuals`: skip pages that have not visuals JSON,
+        - `only_label_keys`: see `filter_label_keys`.
+        """
+
         super().__init__(
             name='apify',
             dir_path=DIR,
@@ -51,6 +65,10 @@ class Dataset(awe.data.set.pages.Dataset):
         ]
 
     def filter_label_keys(self, df: pd.DataFrame):
+        """
+        Transforms the loaded dataset to contain only the specified label keys.
+        """
+
         if (label_keys := self.only_label_keys) is not None:
             all_label_keys = {
                 col[len(SELECTOR_PREFIX):]
@@ -74,6 +92,8 @@ class Vertical(awe.data.set.pages.Vertical):
         return self.dataset.dir_path
 
     def get_website_dirs(self):
+        """Website names obtained from directories stored on disk."""
+
         return [
             subdir for subdir in sorted(os.listdir(self.dir_path))
             # Ignore some directories.
@@ -83,6 +103,8 @@ class Vertical(awe.data.set.pages.Vertical):
         ]
 
     def _iterate_websites(self):
+        """Construct `Website` instances."""
+
         if not os.path.exists(self.dir_path):
             warnings.warn(
                 f'Dataset directory does not exist ({self.dir_path}).')
@@ -108,8 +130,14 @@ class Vertical(awe.data.set.pages.Vertical):
 @dataclasses.dataclass
 class Website(awe.data.set.pages.Website):
     vertical: Vertical
+
     db: Optional[awe.data.set.db.Database] = dataclasses.field(repr=False, default=None)
+    """SQLite database holding all data for this website."""
+
     df: Optional[pd.DataFrame] = dataclasses.field(repr=False, default=None)
+    """
+    The original JSON dataset holding all data except visuals for this website.
+    """
 
     exact_html: bool = dataclasses.field(repr=False, default=False)
     """Whether exact `.html` files have been extracted for this website."""
@@ -160,14 +188,22 @@ class Website(awe.data.set.pages.Website):
 
     @property
     def slim_dataset_json_path(self):
+        """
+        Path to JSON dataset extracted from the original excluding HTML content.
+        """
+
         return f'{self.dir_path}/slim_dataset.json'
 
     @property
     def dataset_json_path(self):
+        """Path to the original JSON dataset."""
+
         return f'{self.dir_path}/augmented_dataset.json'
 
     @property
     def dataset_db_path(self):
+        """Path to converted SQLite database."""
+
         return f'{self.dir_path}/dataset.db'
 
     @property
@@ -176,16 +212,22 @@ class Website(awe.data.set.pages.Website):
 
     @property
     def short_slug(self):
+        """Whether this website uses short slugs for HTML file names."""
+
         return self.name not in LONG_SLUG_WEBSITES
 
     @staticmethod
     def read_json_df(file_path: str):
+        """Loads JSON dataset."""
+
         if not os.path.exists(file_path):
             raise RuntimeError(
                 f'JSON not found ({file_path!r}).')
         return pd.read_json(file_path)
 
     def load_json_df(self, *, slim: bool):
+        """Loads JSON (optionally `slim`) dataset."""
+
         if slim:
             self.df = self.read_json_df(self.slim_dataset_json_path)
         else:
@@ -196,12 +238,16 @@ class Website(awe.data.set.pages.Website):
             print(f'Loaded {self.dataset_json_path!r}.')
 
     def init_pages(self):
+        """Construct `Page` instances."""
+
         self.pages = [
             Page(website=self, index=idx)
             for idx in range(self.page_count)
         ]
 
     def remove_pages_without_visuals(self):
+        """Removes `Page` instances that do not have visuals JSON."""
+
         remove_indices = [
             p.index for p in self.pages
             if not p.visuals_exist()
@@ -218,9 +264,13 @@ class Website(awe.data.set.pages.Website):
 
     @staticmethod
     def save_json_df(df: pd.DataFrame, file_path: str):
+        """Saves JSON dataset to `file_path`."""
+
         df.to_json(file_path, orient='records')
 
     def convert_to_db(self, db: awe.data.set.db.Database):
+        """Converts JSON dataset to SQLite database."""
+
         # Add rows to database.
         for page in tqdm(self.pages, desc=self.dataset_db_path):
             page: Page
@@ -234,6 +284,10 @@ class Website(awe.data.set.pages.Website):
         db.save()
 
     def create_slim_dataset(self):
+        """
+        Converts original JSON dataset to a slim version without HTML texts.
+        """
+
         input_path = self.dataset_json_path
         output_path = self.slim_dataset_json_path
 
@@ -276,22 +330,32 @@ class Page(awe.data.set.pages.Page):
 
     @property
     def db(self):
+        """SQLite database where this page is stored."""
+
         return self.website.db
 
     @property
     def df(self):
+        """JSON dataset where this page is stored."""
+
         return self.website.df
 
     @property
     def row(self):
+        """Row of JSON dataset corresponding to this page."""
+
         return self.df.iloc[self.index]
 
     @property
     def metadata(self):
+        """Dictionary of metadata for this page such as CSS selectors."""
+
         return self.row
 
     @property
     def url_slug(self):
+        """URL transformed to construct HTML file name."""
+
         if self.website.short_slug:
             # HACK: The slug is limited to 100 characters but setting
             # `max_length=100` would sometimes omit the trailing dash.
@@ -345,6 +409,8 @@ class Page(awe.data.set.pages.Page):
         return visuals
 
 class PageLabels(awe.data.set.labels.PageLabels):
+    """Labels of a `Page` from the Apify dataset."""
+
     page: Page
 
     @property

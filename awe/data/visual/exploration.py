@@ -1,3 +1,7 @@
+"""
+Utilities for displaying page screenshots with target nodes highlighted.
+"""
+
 import io
 import itertools
 import math
@@ -14,6 +18,8 @@ import awe.data.set.pages
 
 
 def plot_websites(websites: list[awe.data.set.pages.Website], n_cols: int = 1):
+    """Plots websites and their first `n_cols` pages that have screenshots."""
+
     return plot_pages([
         tuple(itertools.islice(
             (p for p in w.pages if os.path.exists(p.screenshot_path)),
@@ -26,6 +32,8 @@ def plot_pages(
     pages: list[tuple[awe.data.set.pages.Page]],
     set_title: bool = True,
 ):
+    """Plots `pages` into a grid."""
+
     return plot_explorers(
         [[PageExplorer(page) for page in row] for row in pages if row],
         set_title=set_title
@@ -35,6 +43,8 @@ def plot_explorers(
     explorers: list[list['PageExplorer']],
     set_title: bool = True
 ):
+    """Like `plot_pages`, but `PageExplorer`s are created manually."""
+
     n_cols = max(len(row) for row in explorers)
 
     # Find page dimensions.
@@ -55,6 +65,8 @@ def plot_explorers(
     return fig
 
 class PageExplorer:
+    """Explores one page."""
+
     def __init__(self,
         page: awe.data.set.pages.Page,
         crop: bool = True,
@@ -111,6 +123,8 @@ class PageExplorer:
         )
 
     def plot_screenshot_with_boxes(self, ax: matplotlib.axes.Axes):
+        """Plots page screenshot with target node bounding boxes to `ax`."""
+
         # Load the screenshot.
         if self.page.screenshot_bytes is not None:
             img_source = io.BytesIO(self.page.screenshot_bytes)

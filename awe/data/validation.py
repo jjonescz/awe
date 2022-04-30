@@ -11,15 +11,32 @@ import awe.data.set.pages
 
 @dataclasses.dataclass
 class Validator:
+    """Validates pages from a dataset."""
+
     labels: bool = True
+    """Validate that labels are consistent."""
+
     only_cached_dom: bool = False
+    """Skip pages that do not have their DOM loaded in memory."""
+
     visuals: bool = True
+    """Validate that visuals are consistent."""
+
     labeled_boxes: bool = True
+    """Validate that all target nodes have a bounding box (ergo are visible)."""
+
     num_invalid: int = 0
+    """Count of invalid pages."""
+
     num_tested: int = 0
+    """Count of validated pages (does not include skipped pages)."""
+
     file: Optional[TextIOWrapper] = None
+    """File where invalid page paths are written to."""
 
     def summary(self):
+        """Summarizes validation statistics into a dictionary."""
+
         stats = {
             'invalid': self.num_invalid,
             'tested': self.num_tested,
@@ -30,9 +47,13 @@ class Validator:
         }
 
     def summary_str(self):
+        """Stringifies `summary`."""
+
         return ', '.join(f'{k}={v}' for k, v in self.summary().items())
 
     def write_invalid_to(self, file_path: str):
+        """Opens file at `file_path` and sets it as the output `file`."""
+
         # pylint: disable-next=consider-using-with
         self.file = open(file_path, mode='w', encoding='utf-8')
 
@@ -41,6 +62,14 @@ class Validator:
         progress_bar: Optional[str] = 'pages',
         max_invalid: Optional[int] = None
     ):
+        """
+        Validates the given set of `pages`.
+
+        Parameters:
+        - `progress_bar`: name of progress bar to show (or `None` to hide it),
+        - `max_invalid`: stop the validation after this many invalid pages.
+        """
+
         # Reset validation state.
         for page in pages:
             page.valid = None
@@ -60,11 +89,15 @@ class Validator:
 
     @staticmethod
     def get_selector_str(page: awe.data.set.pages.Page, key: str):
+        """Gets representation of CSS selector for attribute `key` in `page`."""
+
         selector = page.labels.get_selector(key)
         s = '' if selector is None else f'({selector=})'
         return f'{key!r}{s}'
 
     def validate_page(self, page: awe.data.set.pages.Page):
+        """Validates one `page`."""
+
         if self.only_cached_dom:
             page_dom = page.try_get_dom()
         else:

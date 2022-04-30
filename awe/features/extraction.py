@@ -48,23 +48,36 @@ class Extractor:
                     raise
 
     def get_feature(self, cls: type[T]) -> Optional[T]:
+        """Finds feature by given type (`cls`)."""
+
         for feature in self.features:
             if awe.utils.same_types(feature.__class__, cls):
                 return feature
         return None
 
     def has_feature(self, cls: type):
+        """Determines whether the given feature is enabled."""
+
         return self.get_feature(cls) is not None
 
     def freeze(self):
+        """
+        Freezes all features (after they are prepared on the training dataset),
+        so they can be pickled.
+        """
+
         for feature in self.features:
             feature.freeze()
 
     def enable_cache(self, enable: bool = True):
+        """Enables/disables cache of all features."""
+
         for feature in self.features:
             feature.enable_cache(enable=enable)
 
     def restore_features(self, features: list[awe.features.feature.Feature]):
+        """Loads features restored from a checkpoint."""
+
         self.features = features
         for feature in features:
             feature.trainer = self.trainer

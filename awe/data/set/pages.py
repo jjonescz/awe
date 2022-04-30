@@ -1,3 +1,5 @@
+"""Dataset interfaces."""
+
 import abc
 import collections
 import dataclasses
@@ -18,20 +20,37 @@ if TYPE_CHECKING:
 
 @dataclasses.dataclass
 class ClearCacheRequest:
+    """Input for method `Dataset.clear_cache`."""
+
     dom: bool = True
+    """Clear DOM trees."""
+
     labels: bool = True
+    """Clear `PageLabels`."""
+
     dom_dirty_flags: bool = False
+    """Unset DOM flags `*_computed`."""
 
 @dataclasses.dataclass
 class Dataset:
     name: str
+    """Dataset name in `snake_case`."""
 
     dir_path: str = dataclasses.field(repr=False)
     """Path to root directory of the dataset, relative to project root dir."""
 
     verticals: list['Vertical'] = dataclasses.field(repr=False, default_factory=list)
+    """List of verticals in the dataset."""
 
     def get_all_pages(self, *, zip_verticals: bool = False, zip_websites: bool = False):
+        """
+        Obtains pages from all verticals and all websites.
+
+        When validating, it can be useful to shuffle websites and verticals, so
+        errors are detected as early as possible. Use `zip_*` parameters for
+        that.
+        """
+
         page_lists = (
             v.get_all_pages(zip_websites=zip_websites)
             for v in self.verticals
@@ -39,33 +58,58 @@ class Dataset:
         return get_all_pages(page_lists, zip_lists=zip_verticals)
 
     def clear_cache(self, request: ClearCacheRequest):
+        """Clears cached objects in the whole dataset."""
+
         for page in self.get_all_pages():
             page.clear_cache(request)
         return gc.collect()
 
 @dataclasses.dataclass
 class Vertical:
+    """
+    Vertical contains websites representing entities of the same type (e.g.,
+    books, products, articles).
+    """
+
     dataset: Dataset
+    """The parent `Dataset`."""
+
     name: str
+    """Name in `snake_case`."""
+
     websites: list['Website'] = dataclasses.field(repr=False, default_factory=list)
+    """List of websites in this vertical."""
+
     prev_page_count: int = dataclasses.field(repr=False, default=None)
+    """Total number of pages in previous verticals in the same dataset."""
+
     page_count: int = dataclasses.field(repr=False, default=None)
+    """Total number of pages across `websites` in this vertical."""
 
     def get_all_pages(self, *, zip_websites: bool = False):
+        """Like `Dataset.get_all_pages`, but only for one vertical."""
+
         page_lists = (w.pages for w in self.websites)
         return get_all_pages(page_lists, zip_lists=zip_websites)
 
 @dataclasses.dataclass
 class Website:
+    """Website contains pages generated from the same template."""
+
     vertical: Vertical = dataclasses.field(repr=False)
+    """The parent vertical."""
 
     name: str
     """Website identifier, usually domain name."""
 
     pages: list['Page'] = dataclasses.field(repr=False, default_factory=list)
+    """List of pages in this website."""
 
     prev_page_count: int = dataclasses.field(repr=False, default=None)
+    """Total number of pages in previous websites in the same dataset."""
+
     page_count: int = dataclasses.field(repr=False, default=None)
+    """Total number of pages in this website."""
 
     @property
     @abc.abstractmethod
@@ -73,9 +117,15 @@ class Website:
         """Path to a file containing list of variable node XPaths."""
 
     def get_common_prefix(self):
+        """Determine common prefix of all page URLs in this website."""
+
         return os.path.commonprefix([p.url for p in self.pages])
 
     def get_domain(self):
+        """
+        Extract domain (e.g., `example.com`) from result of `get_common_prefix`.
+        """
+
         return urllib.parse.urlparse(self.get_common_prefix()).netloc
 
     def find_variable_xpaths(self,
@@ -84,6 +134,7 @@ class Website:
         """
         Determines whether text nodes are variable or fixed in pages across the
         website (as defined in the SimpDOM paper).
+
         Returns the set of variable XPaths.
         """
 
@@ -141,21 +192,42 @@ class Website:
 
 @dataclasses.dataclass(eq=False)
 class Page(abc.ABC):
+    """One HTML page."""
+
     website: Website = dataclasses.field(repr=False)
+    """The parent website."""
+
     index: int = dataclasses.field(repr=False, default=None)
+    """Index of this page inside `website`."""
+
     labeled_nodes: dict[str, list[list[awe.data.graph.dom.NodeIdentity]]] = \
         dataclasses.field(repr=False, default=None)
+    """
+    List of labeled node groups for each attribute key.
+
+    Node group is a list of nodes propagated to from one originally-labeled node
+    (see `Params.propagate_labels_to_leaves`) or just a list with a single node
+    if propagation is disabled.
+    """
+
     _labels = None
+    """Cached `PageLabels`."""
+
     _dom = None
+    """Cache page `Dom`."""
 
     valid: Optional[bool] = dataclasses.field(repr=False, default=None)
     """
+    Validation state for this page (see `awe.data.validation`).
+
     Set by various components of the validation pipeline (hence the shared
     state).
     """
 
     @property
     def original_file_name_no_extension(self):
+        """The core of `original_html_path`."""
+
         return self.file_name_no_extension
 
     @property
@@ -173,10 +245,14 @@ class Page(abc.ABC):
 
     @property
     def original_html_file_name(self):
+        """HTML `original_file_name_no_extension`."""
+
         return f'{self.original_file_name_no_extension}.htm'
 
     @property
     def html_file_name(self):
+        """HTML `file_name_no_extension`."""
+
         return f'{self.file_name_no_extension}.htm'
 
     @property
@@ -185,30 +261,43 @@ class Page(abc.ABC):
         Path to non-modified HTML file (can be different from `html_path` if
         that points to a snapshot saved by the JavaScript scraper).
         """
+
         return f'{self.dir_path}/{self.original_html_file_name}'
 
     @property
     def html_path(self):
+        """Full path to `html_file_name`."""
+
         return f'{self.dir_path}/{self.html_file_name}'
 
     @property
     def visuals_suffix(self):
+        """Suffix in file name of visuals JSON."""
+
         return ''
 
     @property
     def visuals_file_name(self):
+        """Visuals JSON `file_name_no_extension`"""
+
         return f'{self.file_name_no_extension}{self.visuals_suffix}.json'
 
     @property
     def visuals_path(self):
+        """Full path to `visuals_file_name`."""
+
         return f'{self.dir_path}/{self.visuals_file_name}'
 
     @property
     def screenshot_file_name(self):
+        """PNG screenshot `file_name_no_extension`."""
+
         return f'{self.file_name_no_extension}{self.visuals_suffix}-full.png'
 
     @property
     def screenshot_path(self):
+        """Full path to `screenshot_file_name`."""
+
         return f'{self.dir_path}/{self.screenshot_file_name}'
 
     @property
@@ -222,28 +311,44 @@ class Page(abc.ABC):
 
     @property
     def index_in_vertical(self):
+        """
+        Index of the page among all pages across all websites in one vertical.
+        """
+
         return self.website.prev_page_count + self.index
 
     @property
     def index_in_dataset(self):
+        """
+        Index of the page among all pages across all verticals in the dataset.
+        """
+
         return self.website.vertical.prev_page_count + self.index_in_vertical
 
     @property
     def labels(self):
+        """Constructs and caches `PageLabels` or retrieves a cached instance."""
+
         if self._labels is None:
             self._labels = self.get_labels()
         return self._labels
 
     @property
     def dom(self):
+        """Constructs page `Dom` or retrieves a cached instance."""
+
         if self._dom is None:
             return self._create_dom()
         return self._dom
 
     def try_get_dom(self):
+        """Retrieves cached page `Dom` instance."""
+
         return self._dom
 
     def cache_dom(self):
+        """Caches page `Dom` if not already cached."""
+
         # Note that creating page DOM can be memory consuming (especially if
         # done for many pages), hence this method exists to make it explicit.
         if self._dom is None:
@@ -251,12 +356,18 @@ class Page(abc.ABC):
         return self._dom
 
     def clear_dom(self):
+        """Clears cached page `Dom`."""
+
         self._dom = None
 
     def _create_dom(self):
+        """Constructs page `Dom`."""
+
         return awe.data.graph.dom.Dom(self)
 
     def create_visuals(self):
+        """Constructs page visuals (`DomData`)."""
+
         return awe.data.visual.dom.DomData(self.visuals_path)
 
     @abc.abstractmethod
@@ -264,6 +375,8 @@ class Page(abc.ABC):
         """Loads visual attributes for the page."""
 
     def clear_cache(self, request: ClearCacheRequest):
+        """Clears cache for this page."""
+
         if request.dom or request.dom_dirty_flags:
             self.website.found_variable_nodes = False
         if request.dom:
@@ -296,6 +409,8 @@ class Page(abc.ABC):
         return self.index_in_dataset
 
 def get_all_pages(page_lists: list[list[Page]], *, zip_lists: bool = False):
+    """Common utility for obtaining and zipping page lists."""
+
     if zip_lists:
         return [
             page

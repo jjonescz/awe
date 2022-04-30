@@ -1,4 +1,8 @@
-# Run: `python -m awe.data.find_variable_nodes`.
+"""
+Script for finding variable nodes in all pages in a dataset.
+
+Run: `python -m awe.data.find_variable_nodes <target>`.
+"""
 
 import argparse
 

@@ -1,3 +1,5 @@
+"""DOM graph."""
+
 import collections
 import dataclasses
 import math
@@ -16,11 +18,26 @@ if TYPE_CHECKING:
 
 
 class Dom:
+    """Document Object Model of a page parsed from its HTML."""
+
     root: Optional['Node'] = None
+    """The root `<html>` node."""
+
     nodes: Optional[list['Node']] = None
+    """All nodes in the graph."""
+
     labeled_nodes: dict[str, list[list['Node']]]
+    """
+    Target node groups for each attribute key.
+
+    See also `Page.labeled_nodes`.
+    """
+
     friend_cycles_computed: bool = False
+    """A flag whether `compute_friend_cycles` method has been called."""
+
     visual_neighbors_computed: bool = False
+    """A flag whether `compute_visual_neighbors` method has been called."""
 
     def __init__(self,
         page: 'awe.data.set.pages.Page'
@@ -30,6 +47,13 @@ class Dom:
         self.tree = awe.data.parsing.parse_html(page.get_html_text())
 
     def init_nodes(self, filter_tree: bool = False):
+        """
+        Creates `Node` high-level wrappers around parsed nodes.
+
+        Parameters:
+        - `filter_tree`: perform equivalent of `filter_nodes` immediately.
+        """
+
         if filter_tree:
             awe.data.parsing.filter_tree(self.tree)
 
@@ -51,6 +75,12 @@ class Dom:
         self.nodes = nodes
 
     def filter_nodes(self):
+        """
+        Filters white-space text fragments.
+
+        See also `awe.data.parsing.filter_nodes`.
+        """
+
         awe.data.parsing.filter_tree(self.tree)
         self.nodes = [
             node
@@ -61,6 +91,10 @@ class Dom:
             node.children = [n for n in node.children if not n.is_detached]
 
     def find_parsed_node(self, node: awe.data.parsing.Node):
+        """
+        Finds high-level `Node` wrapper corresponding to low-level parsed node.
+        """
+
         index_path = awe.data.html_utils.get_index_path(node)
         return self.root.find_by_index_path(index_path)
 
@@ -68,6 +102,17 @@ class Dom:
         propagate_to_leaves: bool = False,
         propagate_to_descendants: bool = False,
     ):
+        """
+        Populates `labeled_nodes` and `Node.label_keys` of each node.
+
+        Parameters:
+
+        - `propagate_to_leaves`: propagates labels from inner nodes to their
+          leaf descendants,
+        - `propagate_to_descendants`: propagates labels from inner nodes to all
+          their descendants.
+        """
+
         # Clear DOM node labeling.
         self.labeled_nodes.clear()
         for node in self.nodes:
@@ -149,6 +194,12 @@ class Dom:
         self.friend_cycles_computed = True
 
     def compute_visual_neighbors(self, n_neighbors: int = 4):
+        """
+        Finds `n_neighbors` closest `Node.visual_neighbors` for each node.
+
+        Uses distance of node centers to determine closest nodes.
+        """
+
         sample_nodes = [n for n in self.nodes if n.sample]
         coords = np.array([n.box.center_point for n in sample_nodes])
         n_neighbors += 1 # 0th neighbor is the node itself
@@ -194,6 +245,12 @@ class Dom:
         self.visual_neighbors_computed = True
 
     def compute_visual_neighbors_rect(self, n_neighbors: int = 4):
+        """
+        Finds `n_neighbors` closest `Node.visual_neighbors` for each node.
+
+        Uses distance between all node corners to determine closest nodes.
+        """
+
         sample_nodes = [n for n in self.nodes if n.sample]
         coords = np.array([c for n in sample_nodes for c in n.box.corners])
         n_neighbors += 1 # 0th neighbor is the node itself
@@ -247,10 +304,19 @@ class Dom:
 # from `Object` (https://stackoverflow.com/a/53990477).
 @dataclasses.dataclass(eq=False)
 class Node:
+    """High-level wrapper around parsed node."""
+
     dom: Dom = dataclasses.field(repr=False)
+    """The parent DOM tree."""
+
     parsed: awe.data.parsing.Node
+    """The wrapped low-level parsed node."""
+
     parent: Optional['Node'] = dataclasses.field(repr=False)
+    """Immediate ancestor of the node in the DOM tree (`None` for root node)."""
+
     children: list['Node'] = dataclasses.field(repr=False, default_factory=list)
+    """Immediate descendants of the node in the DOM tree."""
 
     same_tag_index: Optional[int] = dataclasses.field(repr=False, default=-1)
     """
@@ -289,6 +355,7 @@ class Node:
 
     box: Optional[awe.data.visual.structs.BoundingBox] = \
         dataclasses.field(repr=False, default=None)
+    """Visual coordinates of the node when rendered on a page."""
 
     needs_visuals: bool = dataclasses.field(repr=False, default=False)
     """Whether `visuals` should be loaded for this node."""
@@ -302,61 +369,89 @@ class Node:
 
     @property
     def id(self):
+        """Value of the `id` HTML attribute."""
+
         return self.parsed.id
 
     @property
     def is_text(self):
+        """Whether this node is a text fragment."""
+
         return awe.data.html_utils.is_text(self.parsed)
 
     @property
     def text(self):
+        """Text content of the text fragment."""
+
         assert self.is_text
         return self.parsed.text(deep=False)
 
     @property
     def is_root(self):
+        """Whether this is the root `<html>` node."""
+
         return self.dom.root == self
 
     @property
     def is_detached(self):
+        """Whether this node is still part of the `dom` tree."""
+
         return not self.is_root and self.parsed.parent is None
 
     @property
     def is_empty(self):
+        """Whether this node is leaf and does not have any text content."""
+
         return awe.data.html_utils.is_empty(self.parsed)
 
     @property
     def is_leaf(self):
+        """Whether `node` does not have any children (except text fragments)."""
+
         return awe.data.html_utils.is_leaf(self.parsed)
 
     @property
     def html_tag(self):
+        """HTML tag name of this node."""
+
         return self.parsed.tag
 
     def get_text_or_tag(self):
+        """Representation of this node for displaying."""
+
         if self.is_text:
             return f'={self.text}'
         return f'<{self.html_tag}>'
 
     def get_attribute(self, name: str, default = None):
+        """Retrieves HTML attribute `name` or returns `default` value."""
+
         return self.get_attributes().get(name, default)
 
     def get_xpath(self):
+        """Constructs absolute XPath of this node."""
+
         return awe.data.html_utils.get_xpath(self.parsed)
 
     def get_xpath_element(self):
+        """Constructs XPath element (tag name + indexer) of this node."""
+
         tag = self.html_tag if not self.is_text else 'text()'
         if self.same_tag_index is None:
             return tag
         return f'{tag}[{self.same_tag_index + 1}]'
 
     def get_attributes(self):
+        """Retrieves all HTML attributes of this node as dictionary."""
+
         if self.is_text:
             # HACK: Lexbor can crash when querying attributes of text fragments.
             return {}
         return self.parsed.attributes
 
     def get_identity(self):
+        """Constructs `NodeIdentity` for this node."""
+
         return NodeIdentity(
             page=self.dom.page,
             index_path = awe.data.html_utils.get_index_path(self.parsed),
@@ -364,12 +459,15 @@ class Node:
 
     def find_by_index_path(self, indices: list[int]):
         """Finds node by output of `awe.data.html_utils.get_index_path`."""
+
         node = self
         for idx in indices:
             node = node.children[idx]
         return node
 
     def create_children(self):
+        """Initializes the `children` with `Node` instances."""
+
         self.children = [
             Node(dom=self.dom, parsed=parsed_node, parent=self)
             for parsed_node in self.parsed.iter(include_text=True)
@@ -398,9 +496,12 @@ class Node:
         """
         List of ancestors up to length `num` starting from this node's parent.
         """
+
         return list(self.iterate_ancestors(num))
 
     def iterate_ancestors(self, num: int):
+        """Lazy version of `get_ancestors`."""
+
         node = self.parent
         for _ in range(num):
             if node is None:
@@ -416,11 +517,14 @@ class Node:
         Most nodes being classified have `num` ancestors and returning a
         fixed-sized list simplifies feature and deep learning computation.
         """
+
         result = list(self.iterate_ancestor_chain(num))
         result.reverse()
         return result
 
     def iterate_ancestor_chain(self, num: int):
+        """Lazy version of `get_ancestor_chain`."""
+
         node = self
         for _ in range(num):
             if node.parent is not None:
@@ -428,20 +532,30 @@ class Node:
             yield node
 
     def get_all_ancestors(self):
+        """
+        Like `get_ancestor_chain` but obtains all ancestors up to the root.
+        """
+
         result = list(self.iterate_all_ancestors())
         result.reverse()
         return result
 
     def iterate_all_ancestors(self):
+        """Lazy version of `get_all_ancestors`."""
+
         node = self
         while node is not None:
             yield node
             node = node.parent
 
     def distance_to(self, other: 'Node'):
+        """Computes distance to `other` node in the DOM tree."""
+
         return abs(self.deep_index - other.deep_index)
 
     def get_partner_set(self):
+        """Set of `partner` nodes."""
+
         if self.partner is not None:
             return [self.partner]
         return []
@@ -463,6 +577,8 @@ class Node:
         return node
 
     def find_semantic_ancestor(self):
+        """Finds most semantic ancestor of the node."""
+
         return self.unwrap(tag_names={ 'span', 'div' })
 
     def find_semantic_html_tag(self):
@@ -473,21 +589,56 @@ class Node:
 
 @dataclasses.dataclass(frozen=True)
 class NodeIdentity:
+    """
+    Unique identity of a node inside its DOM tree.
+
+    This can be held separately from `Node` instance, hence releasing memory for
+    DOM trees, while still being able to identify some (e.g., target) nodes.
+    """
+
     page: 'awe.data.set.pages.Page'
+    """Page where the node can be found."""
+
     index_path: tuple[int]
+    """Output of `awe.data.html_utils.get_index_path`."""
 
     def find_node(self):
+        """
+        Finds `Node` instance corresponding to this identity in `page`'s DOM
+        tree.
+        """
+
         return self.page.dom.root.find_by_index_path(self.index_path)
 
 @dataclasses.dataclass
 class VisualNeighbor:
+    """
+    Represents one of N closest visual neighbors of a `Node`.
+
+    Encapsulates output of `Dom.compute_visual_neighbors`.
+    """
+
     distance: float
+    """
+    Distance used to find this visual neighbor as one of the N closest ones.
+
+    This depends on the method called to obtain this instance (more precisely,
+    whether or not it has the `_rect` suffix).
+    """
+
     distance_x: float
+    """Horizontal distance between node's and its neighbor's centers."""
+
     distance_y: float
+    """Vertical distance between node's and its neighbor's centers."""
+
     neighbor: Node
+    """The neighbor `Node`."""
 
     @staticmethod
     def create(distance: float, node: Node, neighbor: Node):
+        """Creates new visual `neighbor` of `node`."""
+
         node_center = node.box.center_point
         neighbor_center = neighbor.box.center_point
         return VisualNeighbor(
@@ -498,6 +649,8 @@ class VisualNeighbor:
         )
 
     def get_visual_distance(self, normalize: bool):
+        """Computes visual distance feature vector."""
+
         if not normalize:
             return (self.distance_x, self.distance_y, self.distance)
 

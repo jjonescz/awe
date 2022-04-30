@@ -1,3 +1,5 @@
+"""Implementation of all visual attributes."""
+
 import dataclasses
 from typing import Any, Callable, Generic, Optional, Tuple, TypeVar, Union
 
@@ -10,6 +12,8 @@ T = TypeVar('T')
 TInput = TypeVar('TInput')
 
 def parse_font_family(value: str):
+    """Parses CSS font family string into a list of font families."""
+
     values = [
         v.strip().strip('"').strip()
         for v in value.split(',')
@@ -19,6 +23,7 @@ def parse_font_family(value: str):
 
 def parse_prefixed(value: str):
     """Trims vendor prefixes from CSS value (e.g., `-webkit-left` -> `left`)."""
+
     PREFIX = '-webkit-' # only Chrome should be enough for computed CSS
     if value.startswith(PREFIX):
         return value[len(PREFIX):]
@@ -27,6 +32,9 @@ def parse_prefixed(value: str):
 BORDER_SIDES = ['left', 'top', 'right', 'bottom']
 
 def parse_border(values: dict[str, str], default: str):
+    """Parses border CSS properties into a tuple for all border sides."""
+
+    # The visual extractor gives only one value if it's the same for all sides.
     value = values.get('')
     if value is not None:
         return [value] * 4
@@ -46,15 +54,29 @@ class AttributeContext:
         self.node.visuals[attr.name] = v
 
 def select_color(v: awe.data.visual.structs.Color):
+    """Transforms RGB color into a normalized feature vector."""
+
     return [v.hue, v.brightness / 255, v.alpha / 255]
 
 def select_image(v: str):
+    """
+    Transforms image into a categorical feature, ignoring the actual URL, but
+    not e.g., linear gradient.
+    """
+
     return 'url' if v.startswith('url') else v
 
 def select_decoration(v: str):
+    """
+    Transforms `text-decoration` to include only the first value (decoration
+    style), but not the others (line, thickness, etc.).
+    """
+
     return v.split(maxsplit=1)[0]
 
 def select_border(v: list[str]):
+    """Transforms border value from string with units to actual number."""
+
     def get_pixels(token: str):
         if token == 'none':
             return 0
@@ -65,9 +87,19 @@ def select_border(v: list[str]):
     return [get_pixels(s.split(maxsplit=1)[0]) for s in v]
 
 def select_shadow(v: str):
+    """
+    Transforms `text-shadow` into a categorical feature ignoring RGB values, but
+    not offset.
+    """
+
     return 'rgb' if v.startswith('rgb') else v
 
 def select_z_index(v: str):
+    """
+    Transforms `z-index` into a categorical feature ignoring the actual value,
+    but not `auto`.
+    """
+
     return 'number' if v.isdecimal() else v
 
 COLOR = {
@@ -84,6 +116,11 @@ BORDER = {
 
 @dataclasses.dataclass
 class VisualAttribute(Generic[T, TInput]):
+    """
+    Represents one visual attribute of JSON DOM data type `TInput` and parsed
+    Python type `T`.
+    """
+
     name: str
     """Name in snake_case."""
 
@@ -116,11 +153,15 @@ class VisualAttribute(Generic[T, TInput]):
         awe.utils.to_camel_case(self.name)
 
     def get_default(self, node: awe.data.graph.dom.Node) -> TInput:
+        """Default parsed value for given `node`."""
+
         if callable(self.default):
             return self.default(node)
         return self.default
 
     def parse(self, value: TInput, node_data: dict[str, Any]):
+        """Parses JSON `value` into Python type `T`."""
+
         if self.complex_parser is None:
             return self._simple_parse(value)
 
@@ -132,6 +173,8 @@ class VisualAttribute(Generic[T, TInput]):
         return self.complex_parser(values, self.default)
 
     def _check_value(self, value: TInput):
+        """Checks JSON `value` against `load_types`."""
+
         if not isinstance(value, self.load_types):
             raise RuntimeError(f'Expected attribute "{self.name}" to be ' +
                 f'loaded as {self.load_types} but found {type(value)} ' +
@@ -142,10 +185,15 @@ class VisualAttribute(Generic[T, TInput]):
         return self.parser(self._check_value(value))
 
     def prepare(self, c: AttributeContext):
-        """Prepares feature during training."""
+        """Prepares this visual feature on the training set."""
 
     # pylint: disable-next=unused-argument
     def get_out_dim(self, extraction: awe.data.visual.context.Extraction):
+        """
+        Computes output dimension of this attribute's feature vector (returned
+        by `compute`).
+        """
+
         if self.complex_parser is not None:
             raise ValueError(
                 'Unable to determine dimension of an attribute with ' +
@@ -160,31 +208,43 @@ class VisualAttribute(Generic[T, TInput]):
         return len(self._select(self._simple_parse(self.default)))
 
     def compute(self, c: AttributeContext) -> list[float]:
-        """Computes feature after all training data have been prepared."""
+        """Computes feature vector."""
+
         return self.select(c)
 
     def _select(self, v: T):
+        """Transforms parsed value `v` into a final value."""
+
         if self.selector is None:
             return [v]
         return self.selector(v)
 
     def get_value_or_default(self, c: AttributeContext):
+        """Gets default parsed value if one has not been loaded from visuals."""
+
         return (
             c.get_value(self) or
             self.parse(self.get_default(c.node), node_data={})
         )
 
     def select(self, c: AttributeContext):
+        """Obtains transformed parsed value or a default one."""
+
         return self._select(self.get_value_or_default(c))
 
 class CategoricalAttribute(VisualAttribute):
+    """Categorical visual attribute."""
+
     def select(self, c: AttributeContext):
+        """Transforms parsed value into the final category name."""
+
         v = self.get_value_or_default(c)
         if self.selector is None:
             return v
         return self.selector(v)
 
     def prepare(self, c: AttributeContext):
+        # Determine how many unique categories there are.
         i = c.extraction.categorical[self.name][self.select(c)]
         i.count += 1
 
@@ -192,6 +252,7 @@ class CategoricalAttribute(VisualAttribute):
         return len(extraction.categorical[self.name])
 
     def compute(self, c: AttributeContext):
+        # Return one-hot encoded category.
         d = c.extraction.categorical[self.name]
         i = d.get(self.select(c))
         r = [0] * len(d)
@@ -200,11 +261,15 @@ class CategoricalAttribute(VisualAttribute):
         return r
 
 class MinMaxAttribute(VisualAttribute):
+    """Numerical visual attribute that is min-max scaled."""
+
     def prepare(self, c: AttributeContext):
+        # Determine min and max values in the training data.
         values = self.select(c)
         c.extraction.update_values(self.name, values)
 
     def compute(self, c: AttributeContext):
+        # Perform min-max scaling.
         values = self.select(c)
         min_values = c.extraction.min_values[self.name]
         max_values = c.extraction.max_values[self.name]

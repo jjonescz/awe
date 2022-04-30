@@ -1,4 +1,11 @@
-# Run: `python -m awe.data.set.patch_apify`
+"""
+Script to patch the original Apify JSON datasets.
+
+This is only temporary; expected to be removed once these bugs are fixed in next
+version of the dataset.
+
+Run: `python -m awe.data.set.patch_apify`.
+"""
 
 import pandas as pd
 from tqdm.auto import tqdm

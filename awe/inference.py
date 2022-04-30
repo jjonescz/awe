@@ -103,6 +103,11 @@ def plot_screenshot(page: awe.data.set.live.Page):
     )
 
 def serialize_prediction(p: awe.data.graph.pred.NodePrediction):
+    """
+    Converts Python object `NodePrediction` to a JSON object compatible with
+    TypeScript interface `NodePrediction` defined in `js/lib/demo/python.ts`.
+    """
+
     node = p.node.find_node()
     return {
         'text': (

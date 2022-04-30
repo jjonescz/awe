@@ -23,24 +23,45 @@ if TYPE_CHECKING:
 
 @dataclasses.dataclass
 class ModelOutput:
+    """Output of the classifier for one batch of inputs."""
+
     loss: torch.FloatTensor
-    logits: torch.FloatTensor # [batch, label_keys]
-    gold_labels: torch.FloatTensor # [batch]
+    """Loss value."""
+
+    logits: torch.FloatTensor
+    """Logit values with shape `[batch_size, label_keys]`."""
+
+    gold_labels: torch.FloatTensor
+    """Gold label IDs with shape `[batch_size]`."""
 
     def get_pred_labels(self):
+        """Computes predicted label IDs from `logits`."""
+
         return torch.argmax(self.logits, dim=-1)
 
     def get_probabilities(self):
+        """Normalizes `logits` to probabilities."""
+
         return F.softmax(self.logits, dim=-1)
 
 @dataclasses.dataclass
 class Prediction:
+    """Model's input and the corresponding output."""
+
     batch: list[awe.data.graph.dom.Node]
+    """Input batch of nodes."""
+
     outputs: ModelOutput
+    """Output of the model when given the input `batch`."""
 
     def filter_nodes(self,
         predicate: Callable[[awe.data.graph.dom.Node], bool]
     ):
+        """
+        Consistently filters the batch and the output according to the given
+        `predicate`.
+        """
+
         mask = [predicate(n) for n in self.batch]
         return Prediction(
             batch=[n for n, m in zip(self.batch, mask) if m],
@@ -52,6 +73,8 @@ class Prediction:
         )
 
 class Model(torch.nn.Module):
+    """The main classifier model."""
+
     def __init__(self,
         trainer: 'awe.training.trainer.Trainer',
         lr: Optional[float] = None,
@@ -173,12 +196,16 @@ class Model(torch.nn.Module):
         )
 
     def create_optimizer(self):
+        """Initializes new optimizer for training."""
+
         return torch.optim.Adam(self.parameters(),
             lr=(self.lr or self.trainer.params.learning_rate),
             weight_decay=self.trainer.params.weight_decay,
         )
 
     def get_node_attrs(self, batch: list[awe.data.graph.dom.Node]):
+        """Computes the DOM attribute feature for `batch`."""
+
         # Get attr tokens.
         attr_tokens = self.word_ids.compute_attr(batch)
 
@@ -203,7 +230,7 @@ class Model(torch.nn.Module):
         return node_vectors
 
     def get_node_features(self, batch: list[awe.data.graph.dom.Node]):
-        """Features used for a node and its visual neighbors."""
+        """Computes features used for a node and its visual neighbors."""
 
         x = None
 
@@ -253,6 +280,8 @@ class Model(torch.nn.Module):
         return x
 
     def propagate_visual_neighbors(self, batch: list[awe.data.graph.dom.Node]):
+        """Aggregates features from visual neighbors of nodes in `batch`."""
+
         n_neighbors = self.trainer.params.n_neighbors
         neighbors = [
             v
@@ -314,6 +343,8 @@ class Model(torch.nn.Module):
             # [N, 2 * node_features]
 
     def get_xpath(self, batch: list[awe.data.graph.dom.Node]):
+        """Similar to ancestor chain, but simpler."""
+
         # Get features for each ancestor.
         ancestor_html_tag_ids = torch.nn.utils.rnn.pack_sequence(
             [
@@ -343,6 +374,8 @@ class Model(torch.nn.Module):
         return node_vectors
 
     def get_ancestor_chain(self, batch: list[awe.data.graph.dom.Node]):
+        """Aggregates feature of the ancestor chain of each node in `batch`."""
+
         # Get ancestor chain.
         n_ancestors = self.trainer.params.n_ancestors
         ancestors = [
@@ -404,6 +437,8 @@ class Model(torch.nn.Module):
         return node_vectors
 
     def forward(self, batch: list[awe.data.graph.dom.Node]) -> ModelOutput:
+        """Classifies nodes in `batch`."""
+
         # Propagate visual neighbors.
         if self.trainer.params.visual_neighbors:
             x = self.propagate_visual_neighbors(batch)
@@ -438,6 +473,8 @@ class Model(torch.nn.Module):
         )
 
 def append(x: Optional[torch.Tensor], y: torch.Tensor):
+    """Safely concatenates features."""
+
     if x is None:
         return y
     return torch.concat((x, y), dim=-1)
