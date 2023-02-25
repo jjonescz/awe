@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Joneš"
+  given-names: "Jan"
+title: "AI-based Structured Web Data Extraction"
+version: 1.0.0
+date-released: 2022-05-04
+url: "https://github.com/jjonescz/awe"
+repository-code: "https://github.com/jjonescz/awe"
+repository-artifacts: "https://github.com/jjonescz/awe/releases/tag/v1.0"
+preferred-citation:
+  type: thesis
+  authors:
+  - family-names: "Joneš"
+    given-names: "Jan"
+  title: "AI-based Structured Web Data Extraction"
+  thesis-type: MS
+  year: 2022
+  department: Department of Software Engineering
+  institution:
+    name: Charles University
+    city: Prague
+    country: CZ
+  date-published: 2022-06-15
+  url: "http://hdl.handle.net/20.500.11956/174143"
